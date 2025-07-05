@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Productos - Florería y Vivero Cristina{% endblock %}
+
+{% block content %}
+<div class="container bg-white rounded-4 shadow-sm py-4 px-3 mt-4">
+    <div class="row">
+        <!-- Sidebar con categorías -->
+        <aside class="col-md-3">
+            <div class="card sidebar-card border-0 rounded-4 shadow h-100 floral-sidebar-bg">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Categorías</h5>
+                </div>
+                <nav class="sidebar bg-light p-4 rounded-4 shadow-sm mb-4 floral-sidebar-list">
+                    {% for category in categories %}
+                    <a href="{% url 'catalogo:categoria' category.slug %}" class="list-group-item list-group-item-action sidebar-link">
+                        {{ category.nombre }}
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item">No hay categorías disponibles</div>
+                    {% endfor %}
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Lista de productos -->
+        <main class="col-md-9">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                <h1 class="section-title mb-0">Nuestros Productos</h1>
+                <div style="min-width:180px;">
+                    <select class="form-select floral-select" id="sort">
+                        <option value="">Ordenar por</option>
+                        <option value="price_asc">Precio: Menor a mayor</option>
+                        <option value="price_desc">Precio: Mayor a menor</option>
+                        <option value="name_asc">Nombre: A-Z</option>
+                        <option value="name_desc">Nombre: Z-A</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                {% for product in page_obj %}
+                <div class="col-12 col-sm-6 col-lg-4 mb-4">
+                    <div class="card product-card h-100 border-0 rounded-4 shadow floral-product-card">
+                        {% if product.discount_percentage > 0 %}
+                        <span class="badge badge-descuento position-absolute m-2 rounded-pill px-3 py-2 fs-6 shadow">-{{ product.discount_percentage }}%</span>
+                        {% endif %}
+                        <img src="{{ product.get_primary_image_url }}" class="card-img-top product-img rounded-top floral-img-hover" alt="{{ product.nombre }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.nombre }}</h5>
+                            <p class="card-text text-muted small">{{ product.descripcion_corta|truncatewords:10 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if product.discount_price %}
+                                    <small class="text-decoration-line-through text-muted me-2">${{ product.precio }}</small>
+                                    <span class="fw-bold text-success">${{ product.precio_descuento }}</span>
+                                    {% else %}
+                                    <span class="fw-bold text-success">${{ product.precio }}</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'carrito:agregar' product.id %}" class="btn btn-sm btn-floral-cart rounded-circle me-2" title="Agregar al carrito">
+                                    <i class="bi bi-cart-plus"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="{% url 'catalogo:detalle_producto' product.slug %}" class="btn btn-floral-detail btn-sm rounded-pill w-100 mt-2">Ver Detalles</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">No hay productos disponibles en este momento.</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginación -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                    {% endif %}
+                    {% for i in page_obj.paginator.page_range %}
+                        {% if page_obj.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

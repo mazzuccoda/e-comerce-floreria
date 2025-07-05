@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="wizard-step">
+  <h2>5. Selecciona el método de pago</h2>
+  <form method="post">{% csrf_token %}
+    {{ wizard.management_form }}
+    {{ form.non_field_errors }}
+    <div class="form-group">{{ form.medio_pago.label_tag }}</div>
+    <div class="form-group">{{ form.medio_pago }}</div>
+    <button type="submit" class="btn btn-success">Finalizar pedido</button>
+  </form>
+</div>
+{% endblock %}

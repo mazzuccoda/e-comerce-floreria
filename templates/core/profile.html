@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Mi Perfil{% endblock %}
+{% block content %}
+<section class="profile-section py-5">
+  <div class="container">
+    <div class="profile-box bg-white rounded-4 shadow p-4 mx-auto" style="max-width: 420px;">
+      <h2 class="section-title mb-3">Mi Perfil</h2>
+      <p class="section-desc">Esta es una página de perfil de usuario de ejemplo. Aquí podrás ver y editar tu información personal próximamente.</p>
+      <div class="d-flex flex-column align-items-center mt-4">
+        <div class="profile-avatar mb-3" style="width: 90px; height: 90px; background: #f8bbd0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-person" style="font-size: 2.8rem; color: #fff;"></i>
+        </div>
+        <div class="text-center">
+          <strong>Usuario Demo</strong><br>
+          <span class="text-muted">usuario@email.com</span>
+        </div>
+      </div>
+      <hr class="my-4">
+      <a href="#" class="btn btn-secondary w-100 disabled">Editar perfil (próximamente)</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

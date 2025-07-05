@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} - Florería y Vivero Cristina{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'catalogo:productos' %}">Productos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="card product-card mb-4 border-0 rounded-4 shadow h-100 position-relative">
+            <h1>{{ category.name }}</h1>
+            {% if category.description %}
+            <p class="lead">{{ category.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Filtros y ordenamiento -->
+        <div class="card product-card mb-4 border-0 rounded-4 shadow h-100 position-relative">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="sort" class="form-label">Ordenar por</label>
+                            <select class="form-select" id="sort">
+                                <option value="">Seleccionar...</option>
+                                <option value="price_asc">Precio: Menor a mayor</option>
+                                <option value="price_desc">Precio: Mayor a menor</option>
+                                <option value="name_asc">Nombre: A-Z</option>
+                                <option value="name_desc">Nombre: Z-A</option>
+                                <option value="newest">Más recientes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="filter" class="form-label">Filtrar por</label>
+                            <select class="form-select" id="filter">
+                                <option value="">Todos los productos</option>
+                                <option value="in_stock">En stock</option>
+                                <option value="on_sale">En oferta</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de productos -->
+        <div class="col-12">
+            <div class="row">
+                {% for product in page_obj %}
+                <div class="category-header mb-4 bg-white rounded-4 shadow-sm p-4">
+                    <div class="card h-100">
+                        {% if product.discount_percentage > 0 %}
+                        <span class="badge bg-danger position-absolute m-2 rounded-pill px-3 py-2 fs-6">-{{ product.discount_percentage }}%</span>
+                        {% endif %}
+                        <img src="{{ product.get_primary_image_url }}" class="card-img-top product-card-img" alt="{{ product.name }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text text-muted small">{{ product.short_description|truncatewords:10 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if product.discount_price %}
+                                    <small class="text-decoration-line-through text-muted me-2">${{ product.price }}</small>
+                                    <span class="fw-bold text-success">${{ product.discount_price }}</span>
+                                    {% else %}
+                                    <span class="fw-bold text-success">${{ product.price }}</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{% url 'carrito:cart_add' product.id %}" class="btn btn-sm btn-outline-success" title="Agregar {{ product.name }} al carrito">
+                                    <i class="bi bi-cart-plus"></i>
+                                    <span class="visually-hidden">Agregar {{ product.name }} al carrito</span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="{% url 'catalogo:detalle_producto' product.slug %}" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-2">Ver Detalles</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">No hay productos disponibles en esta categoría en este momento.</div>
+                </div>
+                {% endfor %}
+
+            </div> <!-- Fin row de productos -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación de productos">
+                <!-- Paginación en una sola línea para cumplir con el linter que no permite espacios en blanco dentro de <ul> -->
+                <ul class="pagination justify-content-center">{% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Anterior"><span aria-hidden="true">&laquo;</span></a></li>{% else %}<li class="page-item disabled"><span class="page-link">&laquo;</span></li>{% endif %}{% for i in page_obj.paginator.page_range %}{% if page_obj.number == i %}<li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>{% else %}<li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>{% endif %}{% endfor %}{% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Siguiente"><span aria-hidden="true">&raquo;</span></a></li>{% else %}<li class="page-item disabled"><span class="page-link">&raquo;</span></li>{% endif %}</ul>
+            </nav>
+            {% endif %}
+    </div>
+</div>
+
+<!-- Descripción de la categoría (si existe) -->
+{% if category.long_description %}
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="h4 mb-3">Sobre {{ category.name }}</h2>
+                {{ category.long_description|safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

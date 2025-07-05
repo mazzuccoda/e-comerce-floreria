@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load pedidos_extras %}
+
+{% block title %}{{ wizard.steps.current|capfirst }} - Proceso de Compra{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <!-- Indicador de Progreso del Wizard -->
+            <div class="progress-wizard mb-5">
+                {% for step in wizard.steps.all %}
+                    {% with forloop.counter0 as step_index %}
+                        {% with wizard.steps.index as current_index %}
+                            <div class="progress-wizard-step {% if step_index < current_index %}completed{% elif step_index == current_index %}active{% endif %}">
+                                <div class="progress-wizard-dot"></div>
+                                <div class="progress-wizard-label d-none d-md-block">{{ step_titles|get_item:step_index }}</div>
+                            </div>
+                        {% endwith %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Paso {{ wizard.steps.step1 }} de {{ wizard.steps.count }}: {{ step_titles|get_item:wizard.steps.index }}</h4>
+                </div>
+                <div class="card-body">
+                    {% block wizard_content %}
+                    <!-- El contenido específico de cada paso irá aquí -->
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

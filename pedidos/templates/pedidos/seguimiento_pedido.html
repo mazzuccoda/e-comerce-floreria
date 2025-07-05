@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Seguimiento de Pedido - Florería Cristina{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Seguimiento de tu Pedido</h4>
+                </div>
+                <div class="card-body">
+                    <p>Ingresa el número de tu pedido para ver su estado actual.</p>
+                    <form method="post" class="mb-4">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            {{ form.pedido_id }}
+                            <button class="btn btn-primary" type="submit">Buscar</button>
+                        </div>
+                        {% if form.pedido_id.errors %}
+                            <div class="text-danger mt-2">
+                                {% for error in form.pedido_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </form>
+
+                    {% if pedido %}
+                        <hr>
+                        <h5 class="card-title">Detalles del Pedido #{{ pedido.id }}</h5>
+                        <p><strong>Estado:</strong> <span class="badge bg-success">{{ pedido.get_estado_display }}</span></p>
+                        <p><strong>Destinatario:</strong> {{ pedido.nombre_destinatario }}</p>
+                        <p><strong>Fecha de Entrega:</strong> {{ pedido.fecha_entrega|date:"d/m/Y" }}</p>
+
+                        <!-- Barra de Progreso del Estado -->
+                        <div class="progress progress-seguimiento mt-4" title="Progreso del pedido">
+                            {% with estado=pedido.estado %}
+                                <div class="progress-bar progress-bar-step {% if estado == 'recibido' or estado == 'preparando' or estado == 'en_camino' or estado == 'entregado' %}bg-success{% endif %}" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" title="Paso 1 de 4: Recibido">Recibido</div>
+                                <div class="progress-bar progress-bar-step {% if estado == 'preparando' or estado == 'en_camino' or estado == 'entregado' %}bg-success{% else %}bg-light text-dark{% endif %}" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" title="Paso 2 de 4: Preparando">Preparando</div>
+                                <div class="progress-bar progress-bar-step {% if estado == 'en_camino' or estado == 'entregado' %}bg-success{% else %}bg-light text-dark{% endif %}" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" title="Paso 3 de 4: En Camino">En Camino</div>
+                                <div class="progress-bar progress-bar-step {% if estado == 'entregado' %}bg-success{% else %}bg-light text-dark{% endif %}" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" title="Paso 4 de 4: Entregado">Entregado</div>
+                            {% endwith %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Compra - Paso{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="mb-4">{{ wizard.steps.step1 }} de {{ wizard.steps.count }}: {{ wizard.steps.current|title }}</h2>
+                    <form method="post">{% csrf_token %}
+                        {{ wizard.management_form }}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        {% for field in form.visible_fields %}
+                            <div class="mb-3">
+                                {{ field.label_tag }}
+                                {{ field }}
+                                {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                {% for error in field.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-between mt-4">
+                            {% if wizard.steps.prev %}
+                                <button name="wizard_goto_step" type="submit" value="{{ wizard.steps.prev }}" class="btn btn-outline-secondary">Anterior</button>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">Siguiente</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

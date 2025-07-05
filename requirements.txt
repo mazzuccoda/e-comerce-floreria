@@ -1,0 +1,71 @@
+# Core Dependencies
+Django==5.0.0
+psycopg2-binary==2.9.9
+Pillow==10.0.0
+python-dotenv==1.0.0
+django-environ==0.11.2
+
+# Django Extensions
+django-crispy-forms==2.1
+crispy-bootstrap5==2023.10
+django-allauth==0.58.2
+django-widget-tweaks==1.5.0
+django-debug-toolbar==4.2.0
+django-extensions==3.2.3
+whitenoise[brotli]==6.6.0
+twilio==8.9.1  # Para notificaciones por WhatsApp
+
+# ASGI Server
+gunicorn==21.2.0
+
+# Celery
+celery[redis]==5.3.4
+django-celery-beat==2.5.0
+django-celery-results==2.5.1
+redis==5.0.1
+
+# Utilities
+requests==2.31.0
+python-dateutil==2.8.2
+sendgrid==6.11.0
+python-stdnum==1.19
+stripe==7.6.0
+mercadopago==2.1.3
+
+# Storage
+django-storages[boto3]==1.14.0
+
+# Frontend
+django-compressor==4.4.0
+django-libsass==0.9
+django-ckeditor==6.6.0
+
+# Import/Export
+django-import-export==3.3.0
+
+# Cleanup
+django-cleanup==8.0.0
+
+# API
+django-cors-headers==4.3.0
+django-filter==23.5
+drf-yasg[validation]==1.21.7
+djangorestframework[gis]==3.14.0
+django-rest-auth==0.9.5
+drf-social-oauth2[with_social]==1.3.1
+
+# Development Dependencies
+pytest==7.4.0
+pytest-django==4.7.0
+pytest-cov==4.1.0
+factory-boy==3.3.0
+Faker==19.3.0
+black==23.9.0
+isort==5.12.0
+flake8==6.1.0
+mypy==1.5.1
+bandit==1.7.5
+safety==2.3.5
+pre-commit==3.3.3
+pip-audit==2.5.3
+django-formtools>=2.4

@@ -1,0 +1,19 @@
+body {
+    background: #fff;
+    color: #222;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+.navbar-brand span {
+    letter-spacing: 2px;
+}
+.nav-link.active, .nav-link:focus, .nav-link:hover {
+    color: #e94f4f !important;
+}
+.btn-primary {
+    background-color: #4f8671;
+    border-color: #4f8671;
+}
+.btn-primary:hover {
+    background-color: #e94f4f;
+    border-color: #e94f4f;
+}

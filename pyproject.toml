@@ -1,0 +1,104 @@
+[tool.poetry]
+name = "floreria-cristina"
+version = "0.1.0"
+description = "E-commerce platform for Florería y Vivero Cristina"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "floreria_cristina"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Django = "^5.0.0"
+psycopg2-binary = "^2.9.9"
+Pillow = "^10.0.0"
+python-dotenv = "^1.0.0"
+django-environ = "^0.11.2"
+django-crispy-forms = "^2.1"
+crispy-bootstrap5 = "^2023.10"
+django-allauth = "^0.58.2"
+django-widget-tweaks = "^1.5.0"
+django-debug-toolbar = "^4.2.0"
+django-extensions = "^3.2.3"
+whitenoise = {extras = ["brotli"], version = "^6.6.0"}
+gunicorn = "^21.2.0"
+celery = {extras = ["redis"], version = "^5.3.4"}
+django-celery-beat = "^2.5.0"
+django-celery-results = "^2.5.1"
+redis = "^5.0.1"
+requests = "^2.31.0"
+python-dateutil = "^2.8.2"
+sendgrid = "^6.11.0"
+python-stdnum = "^1.19"
+stripe = "^7.6.0"
+mercadopago = "^2.1.3"
+django-storages = {extras = ["boto3"], version = "^1.14.0"}
+django-compressor = "^4.4.0"
+django-ckeditor = "^6.6.0"
+django-import-export = "^3.3.0"
+django-cleanup = "^8.0.0"
+django-cors-headers = "^4.3.0"
+django-filter = "^23.5"
+drf-yasg = {extras = ["validation"], version = "^1.21.7"}
+djangorestframework = {extras = ["gis"], version = "^3.14.0"}
+django-rest-auth = "^0.9.5"
+drf-social-oauth2 = {extras = ["with_social"], version = "^1.3.1"}
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0"
+pytest-django = "^4.7.0"
+pytest-cov = "^4.1.0"
+factory-boy = "^3.3.0"
+Faker = "^19.3.0"
+black = "^23.9.0"
+isort = "^5.12.0"
+flake8 = "^6.1.0"
+mypy = "^1.5.1"
+bandit = "^1.7.5"
+safety = "^2.3.5"
+pre-commit = "^3.3.3"
+pip-audit = "^2.5.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+django_find_project = false
+addopts = "-v --cov=floreria_cristina --cov-report=term-missing"
+python_files = "test_*.py"
+
+[tool.coverage.run]
+source = ["floreria_cristina"]
+omit = [
+    "**/migrations/*",
+    "**/tests/*",
+    "**/settings/*",
+    "**/__init__.py",
+    "manage.py",
+]
+
+[bandit]
+targets = ["floreria_cristina"]
+skips = ["B101", "B404"]
+
+test = "pytest"
+lint = "flake8"
+type_check = "mypy"
+format = "black . && isort ."
+check_format = "black --check . && isort --check-only ."

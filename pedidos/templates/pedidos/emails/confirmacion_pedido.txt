@@ -1,0 +1,38 @@
+¡Gracias por tu compra en Florería Cristina!
+
+Hola {{ pedido.nombre_cliente }},
+
+Hemos recibido tu pedido #{{ pedido.id }} y ya estamos preparándolo. A continuación, te dejamos un resumen de tu compra.
+
+----------------------------------------
+Resumen del Pedido
+----------------------------------------
+
+{% for item in items_del_pedido -%}
+- {{ item.nombre }}: ${{ item.precio|floatformat:2 }}
+{% endfor %}
+
+Total: ${{ pedido.total|floatformat:2 }}
+
+----------------------------------------
+Detalles de Entrega
+----------------------------------------
+
+Destinatario: {{ pedido.nombre_destinatario }}
+Dirección: {{ pedido.direccion }}
+Fecha de Entrega: {{ pedido.fecha_entrega|date:"d/m/Y" }}
+Franja Horaria: {{ pedido.get_franja_horaria_display }}
+
+{% if pedido.dedicatoria -%}
+----------------------------------------
+Dedicatoria
+----------------------------------------
+
+"{{ pedido.dedicatoria }}"
+{% endif %}
+
+Te notificaremos nuevamente cuando tu pedido esté en camino. ¡Gracias por confiar en nosotros!
+
+--
+Florería Cristina
+Tucumán, Argentina

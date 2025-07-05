@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.nombre }} - Florería Cristina{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Columna de la Imagen del Producto -->
+        <div class="col-md-6 mb-4">
+            <img src="{{ product.get_primary_image_url }}" class="img-fluid rounded shadow-sm" alt="{{ product.nombre }}">
+        </div>
+
+        <!-- Columna de Detalles del Producto -->
+        <div class="col-md-6">
+            <h1 class="display-5">{{ product.nombre }}</h1>
+            <p class="text-muted">Categoría: <a href="{{ product.categoria.get_absolute_url }}">{{ product.categoria.nombre }}</a></p>
+            
+            <hr>
+
+            <p class="lead">{{ product.descripcion_corta }}</p>
+            <p>{{ product.descripcion|linebreaks }}</p>
+
+            <!-- Precio -->
+            <div class="my-3">
+                {% if product.tiene_descuento %}
+                    <span class="h3 text-danger">${{ product.get_precio_final|floatformat:2 }}</span>
+                    <span class="h5 text-muted text-decoration-line-through ms-2">${{ product.precio|floatformat:2 }}</span>
+                    <span class="badge bg-success ms-2">{{ product.porcentaje_descuento }}% OFF</span>
+                {% else %}
+                    <span class="h3 text-primary">${{ product.get_precio_final|floatformat:2 }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Formulario para Añadir al Carrito -->
+            <form action="{% url 'carrito:cart_add' product.id %}" method="post" class="my-4">
+                {% csrf_token %}
+                <div class="row g-3 align-items-center">
+                    <div class="col-auto">
+                        {{ cart_product_form.quantity }}
+                        {{ cart_product_form.update }}
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-cart-plus me-2"></i> Añadir al Carrito
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="text-muted">
+                <p><i class="fas fa-check-circle text-success me-2"></i>Stock disponible: {{ product.stock }}</p>
+                <p><i class="fas fa-truck text-info me-2"></i>Envíos a Yerba Buena y S.M. de Tucumán</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos Relacionados -->
+    {% if related_products %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="mb-4">También te podría interesar</h2>
+            <hr>
+        </div>
+        {% for related in related_products %}
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="card h-100 text-center">
+                <a href="{{ related.get_absolute_url }}">
+                    <img src="{{ related.get_primary_image_url }}" class="card-img-top" alt="{{ related.nombre }}">
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title">{{ related.nombre }}</h5>
+                    <p class="card-text text-primary fw-bold">${{ related.get_precio_final|floatformat:2 }}</p>
+                    <a href="{{ related.get_absolute_url }}" class="btn btn-outline-secondary">Ver detalle</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

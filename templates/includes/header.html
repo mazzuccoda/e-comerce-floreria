@@ -1,0 +1,155 @@
+<header class="main-header fixed-top">
+    <div class="container">
+        <div class="header-content d-flex justify-content-between align-items-center py-3">
+            <!-- Logo -->
+            <div class="logo">
+                <a href="{% url 'core:home' %}" class="navbar-brand p-0">
+                    <img src="{% static 'img/logo.png' %}" alt="Florería Cristina - Envío de flores a domicilio" height="50">
+                </a>
+            </div>
+
+            <!-- Menú de navegación -->
+            <nav class="main-nav" aria-label="Navegación principal">
+                <ul class="nav-list d-flex align-items-center mb-0 ps-0">
+                    <li class="nav-item">
+                        <a href="{% url 'core:home' %}" class="nav-link {% if request.path == '/' %}active{% endif %}" aria-current="{% if request.path == '/' %}page{% else %}false{% endif %}">
+                            Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" id="catalogoDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+                            Catálogo <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                        </a>
+                        <div class="dropdown-menu mega-menu-container" aria-labelledby="catalogoDropdown">
+                            <div class="mega-menu d-flex">
+                                <div class="mega-menu-column">
+                                    <h3 class="mega-menu-title">Por Ocasión</h3>
+                                    <ul class="mega-menu-list list-unstyled">
+                                        <li><a href="#" class="dropdown-item">Cumpleaños</a></li>
+                                        <li><a href="#" class="dropdown-item">Aniversario</a></li>
+                                        <li><a href="#" class="dropdown-item">Día de la Madre</a></li>
+                                        <li><a href="#" class="dropdown-item">San Valentín</a></li>
+                                    </ul>
+                                </div>
+                                <div class="mega-menu-column">
+                                    <h3 class="mega-menu-title">Por Tipo de Flor</h3>
+                                    <ul class="mega-menu-list list-unstyled">
+                                        <li><a href="#" class="dropdown-item">Rosas</a></li>
+                                        <li><a href="#" class="dropdown-item">Tulipanes</a></li>
+                                        <li><a href="#" class="dropdown-item">Lirios</a></li>
+                                        <li><a href="#" class="dropdown-item">Orquídeas</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'core:nosotros' %}" 
+                           class="nav-link {% if '/nosotros/' in request.path %}active{% endif %}"
+                           aria-current="{% if '/nosotros/' in request.path %}page{% else %}false{% endif %}">
+                            Nosotros
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'core:contacto' %}" 
+                           class="nav-link {% if '/contacto/' in request.path %}active{% endif %}"
+                           aria-current="{% if '/contacto/' in request.path %}page{% else %}false{% endif %}">
+                            Contacto
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Iconos de usuario, carrito y búsqueda -->
+            <div class="header-actions d-flex align-items-center">
+                <!-- Barra de búsqueda -->
+                <div class="search-box me-3">
+                    <form action="{% url 'catalogo:buscar' %}" method="get" class="d-flex" role="search">
+                        <input type="text" name="q" class="form-control form-control-sm" placeholder="Buscar productos..." aria-label="Buscar productos">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary ms-1" aria-label="Buscar">
+                            <i class="bi bi-search" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Cuenta de usuario -->
+                <div class="dropdown me-3">
+                    <a class="nav-link p-0" href="#" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de usuario">
+                        <i class="bi bi-person fs-5" aria-hidden="true"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        {% if user.is_authenticated %}
+                            <li><a class="dropdown-item" href="{% url 'usuarios:perfil' %}">Mi Cuenta</a></li>
+                            <li><a class="dropdown-item" href="{% url 'pedidos:mis_pedidos' %}">Mis Pedidos</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'account_logout' %}">Cerrar Sesión</a></li>
+                        {% else %}
+                            <li><a class="dropdown-item" href="{% url 'account_login' %}">Iniciar Sesión</a></li>
+                            <li><a class="dropdown-item" href="{% url 'account_signup' %}">Registrarse</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Carrito -->
+                <a href="{% url 'carrito:ver_carrito' %}" class="position-relative me-3" aria-label="Ver carrito de compras">
+                    <i class="bi bi-cart3 fs-5" aria-hidden="true"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge">
+                        {% with total_items=carrito|length %}
+                            {% if carrito|length > 0 %}
+                                {{ total_items }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        {% endwith %}
+                        <span class="visually-hidden">productos en el carrito</span>
+                    </span>
+                </a>
+
+                <!-- WhatsApp -->
+                <a href="https://wa.me/5491234567890" class="text-success" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
+                    <i class="bi bi-whatsapp fs-5" aria-hidden="true"></i>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Barra superior con contacto -->
+        <div class="topbar bg-dark text-white py-1 d-none d-lg-flex justify-content-between align-items-center">
+            <div class="d-flex">
+                <span class="me-4"><i class="bi bi-truck me-1"></i> Envío el mismo día</span>
+                <span class="me-4"><i class="bi bi-credit-card me-1"></i> 3 cuotas sin interés</span>
+                <span><i class="bi bi-shield-check me-1"></i> Compra segura</span>
+            </div>
+            <div>
+                <a href="tel:+541112345678" class="text-white text-decoration-none me-3">
+                    <i class="bi bi-telephone me-1"></i> 11-1234-5678
+                </a>
+                <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" class="text-white text-decoration-none" aria-label="Contactar por WhatsApp">
+                    <i class="bi bi-whatsapp"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Announcement Bar -->
+    <div class="bg-light border-top py-2">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="me-3"><i class="bi bi-truck me-1"></i> Envío el mismo día</span>
+                    <span class="me-3"><i class="bi bi-credit-card me-1"></i> 3 cuotas sin interés</span>
+                    <span><i class="bi bi-shield-check me-1"></i> Compra segura</span>
+                </div>
+                <div class="d-none d-lg-block">
+                    <span class="me-3"><i class="bi bi-telephone me-1"></i> 11-1234-5678</span>
+                    <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark">
+                        <i class="bi bi-whatsapp me-1"></i> Envíanos un mensaje
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Add padding to account for fixed header -->
+<div class="header-spacer"></div>
