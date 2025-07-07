@@ -60,7 +60,7 @@
                 </div>
             </div>
             <div class="d-grid gap-2 mt-4">
-                <button type="submit" class="btn btn-success btn-lg">Ir a Pagar</button>
+                <button type="submit" class="btn btn-success btn-lg" id="submit-button" onclick="this.disabled=true; this.innerHTML='<span class=\'spinner-border spinner-border-sm\' role=\'status\' aria-hidden=\'true\'></span> Procesando...';">Ir a Pagar</button>
                 <a href="{% url 'carrito:cart_detail' %}" class="btn btn-outline-secondary">Volver al Carrito</a>
             </div>
         </form> <!-- Cierre del formulario principal -->

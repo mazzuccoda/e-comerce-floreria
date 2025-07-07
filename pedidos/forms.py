@@ -1,5 +1,5 @@
 from django import forms
-from .models import Pedido, Accesorio
+from .models import Pedido, Accesorio, MetodoEnvio
 from catalogo.models import Producto
 from django.utils import timezone
 from datetime import timedelta
@@ -35,9 +35,17 @@ class DedicatoriaForm(forms.Form):
     )
 
 class DatosEntregaForm(forms.ModelForm):
+    metodo_envio = forms.ModelChoiceField(
+        queryset=MetodoEnvio.objects.filter(activo=True).order_by('costo'),
+        widget=forms.RadioSelect,
+        label="Método de Envío",
+        required=True,
+        empty_label=None
+    )
+
     class Meta:
         model = Pedido
-        fields = ['nombre_comprador', 'telefono_comprador', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'instrucciones', 'regalo_anonimo']
+        fields = ['nombre_comprador', 'telefono_comprador', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'metodo_envio', 'instrucciones', 'regalo_anonimo']
         widgets = {
             'nombre_comprador': forms.TextInput(attrs={'class': 'form-control'}),
             'telefono_comprador': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 3815123456'}),

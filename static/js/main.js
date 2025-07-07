@@ -57,9 +57,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Smooth scrolling for anchor links
+    // Smooth scrolling for anchor links, avoiding conflicts with Bootstrap components
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
+            // Do not interfere with Bootstrap dropdowns or other components
+            if (this.hasAttribute('data-bs-toggle')) {
+                return;
+            }
+
             e.preventDefault();
             const targetId = this.getAttribute('href');
             if (targetId === '#') return;
@@ -67,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
                 window.scrollTo({
-                    top: targetElement.offsetTop - 100,
+                    top: targetElement.offsetTop - 100, // Adjust for fixed header
                     behavior: 'smooth'
                 });
             }
@@ -294,7 +299,8 @@ document.addEventListener('DOMContentLoaded', function() {
         newsletterForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const email = this.querySelector('input[type="email"]').value;
-            const submitButton = this.querySelector('button[type="submit"]');n            const originalText = submitButton.innerHTML;
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
             
             // Show loading state
             submitButton.disabled = true;

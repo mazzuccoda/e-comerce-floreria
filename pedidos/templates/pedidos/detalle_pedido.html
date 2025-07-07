@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle del Pedido #{{ pedido.id }} - Florería Cristina{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Detalle del Pedido #{{ pedido.id }}</h4>
+                        <a href="{% url 'pedidos:mis_pedidos' %}" class="btn btn-outline-secondary btn-sm">&#8592; Volver a Mis Pedidos</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <h5>Resumen</h5>
+                            <p><strong>Fecha:</strong> {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Estado del Pedido:</strong> <span class="badge bg-info text-dark">{{ pedido.get_estado_display }}</span></p>
+                            <p><strong>Estado del Pago:</strong> <span class="badge bg-success">{{ pedido.get_estado_pago_display }}</span></p>
+                        </div>
+                        <div class="col-md-8">
+                            <h5>Información de Entrega</h5>
+                            <p><strong>Destinatario:</strong> {{ pedido.nombre_destinatario }}</p>
+                            <p><strong>Dirección:</strong> {{ pedido.direccion_entrega }}, {{ pedido.localidad_entrega }}, {{ pedido.provincia_entrega }}</p>
+                            <p><strong>Fecha de Entrega:</strong> {{ pedido.fecha_entrega|date:"d/m/Y" }}</p>
+                            <p><strong>Franja Horaria:</strong> {{ pedido.get_franja_horaria_display }}</p>
+                            {% if pedido.dedicatoria %}
+                                <h5>Dedicatoria</h5>
+                                <p><em>"{{ pedido.dedicatoria }}"</em></p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h5>Artículos del Pedido</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-end">Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in pedido.items.all %}
+                                <tr>
+                                    <td>{{ item.producto.nombre }} (x{{ item.cantidad }})</td>
+                                    <td class="text-end">${{ item.precio|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% for accesorio_item in pedido.accesorios.all %}
+                                <tr>
+                                    <td>{{ accesorio_item.accesorio.nombre }} (x{{ accesorio_item.cantidad }})</td>
+                                    <td class="text-end">${{ accesorio_item.precio|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th class="text-end">Subtotal</th>
+                                    <th class="text-end">${{ pedido.subtotal|floatformat:2 }}</th>
+                                </tr>
+                                <tr>
+                                    <th class="text-end">Costo de Envío</th>
+                                    <th class="text-end">${{ pedido.costo_envio|floatformat:2 }}</th>
+                                </tr>
+                                <tr class="table-group-divider">
+                                    <th class="text-end fs-5">Total</th>
+                                    <th class="text-end fs-5">${{ pedido.total|floatformat:2 }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

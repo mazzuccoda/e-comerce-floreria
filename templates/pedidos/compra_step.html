@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Proceso de Compra - Florería Cristina{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/wizard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+
+            <div class="wizard-header text-center mb-5">
+                <h1>Proceso de Compra</h1>
+                <p class="lead">Sigue los pasos para completar tu pedido.</p>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-wizard mb-5">
+                {% for step_title in step_titles %}
+                    {% with forloop.counter0 as step_index %}
+                    <div class="progress-wizard-step {% if step_index == wizard.steps.step0 %}active{% elif step_index < wizard.steps.step0 %}completed{% endif %}">
+                        <div class="progress-wizard-dot"></div>
+                        <div class="progress-wizard-label">{{ step_title }}</div>
+                    </div>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <!-- Form Content -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="card-title h4 mb-4">Paso {{ wizard.steps.step1 }} de {{ wizard.steps.count }}: {{ step_titles|slice:wizard.steps.step0|first }}</h2>
+                    
+                    <form action="" method="post" class="wizard-form">
+                        {% csrf_token %}
+                        {{ wizard.management_form }}
+                        
+                        {% if wizard.form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ wizard.form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        {{ wizard.form.as_p }}
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if wizard.steps.prev %}
+                                    <button name="wizard_goto_step" type="submit" value="{{ wizard.steps.prev }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Paso Anterior</button>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary btn-lg">Siguiente <i class="bi bi-arrow-right ms-2"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

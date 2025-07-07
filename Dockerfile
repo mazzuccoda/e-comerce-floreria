@@ -105,16 +105,26 @@ COPY --chown=appuser:appuser requirements/ /app/requirements/
 
 # Install production dependencies as root
 USER root
-RUN pip install --no-cache-dir -r requirements/base.txt
+RUN pip install --no-cache-dir -r requirements/base.txt \
+    && apt-get update && apt-get install -y --no-install-recommends nodejs npm \
+    && npm install --omit=dev \
+    && mkdir -p /app/static/css /app/static/js /app/static/fonts \
+    && cp -r node_modules/bootstrap/dist/css/* /app/static/css/ \
+    && cp -r node_modules/bootstrap/dist/js/* /app/static/js/ \
+    && cp node_modules/bootstrap-icons/font/bootstrap-icons.css /app/static/css/ \
+    && sed -i 's|url("./fonts/|url("../fonts/|g' /app/static/css/bootstrap-icons.css \
+    && cp -r node_modules/bootstrap-icons/font/fonts/* /app/static/fonts/ \
+    && rm -rf node_modules /var/lib/apt/lists/*
 
 # Install local requirements if they exist
 RUN if [ -f requirements/local.txt ]; then pip install --no-cache-dir -r requirements/local.txt; fi
 
 # Collect static files
-RUN python manage.py collectstatic --noinput
-
 # Switch to non-root user
 USER appuser
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on
 EXPOSE 8000

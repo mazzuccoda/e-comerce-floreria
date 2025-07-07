@@ -49,7 +49,7 @@ class Cart:
         products = Producto.objects.filter(id__in=product_ids)
         cart = self.cart.copy()
         for product in products:
-            cart[str(product.id)]['product'] = product
+            cart[str(product.id)]['producto'] = product
         
         for item in cart.values():
             item['price'] = Decimal(item['price'])

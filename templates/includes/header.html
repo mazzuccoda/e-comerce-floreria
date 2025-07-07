@@ -1,3 +1,4 @@
+{% load static %}
 <header class="main-header fixed-top">
     <div class="container">
         <div class="header-content d-flex justify-content-between align-items-center py-3">
@@ -41,6 +42,15 @@
                                         <li><a href="#" class="dropdown-item">Orquídeas</a></li>
                                     </ul>
                                 </div>
+                                <div class="mega-menu-column">
+                                    <h3 class="mega-menu-title">Servicios</h3>
+                                    <ul class="mega-menu-list list-unstyled">
+                                        <li><a href="#" class="dropdown-item">Envío a Domicilio</a></li>
+                                        <li><a href="#" class="dropdown-item">Decoración de Eventos</a></li>
+                                        <li><a href="#" class="dropdown-item">Flores para Empresas</a></li>
+                                        <li><a href="#" class="dropdown-item">Servicio Corporativo</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </li>
@@ -78,17 +88,19 @@
                     <a class="nav-link p-0" href="#" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menú de usuario">
                         <i class="bi bi-person fs-5" aria-hidden="true"></i>
                     </a>
+                    {% if user.is_authenticated %}
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        {% if user.is_authenticated %}
-                            <li><a class="dropdown-item" href="{% url 'usuarios:perfil' %}">Mi Cuenta</a></li>
-                            <li><a class="dropdown-item" href="{% url 'pedidos:mis_pedidos' %}">Mis Pedidos</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'account_logout' %}">Cerrar Sesión</a></li>
-                        {% else %}
-                            <li><a class="dropdown-item" href="{% url 'account_login' %}">Iniciar Sesión</a></li>
-                            <li><a class="dropdown-item" href="{% url 'account_signup' %}">Registrarse</a></li>
-                        {% endif %}
+                        <li><a class="dropdown-item" href="{% url 'core:profile' %}">Mi Cuenta</a></li>
+                        <li><a class="dropdown-item" href="{% url 'pedidos:mis_pedidos' %}">Mis Pedidos</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'account_logout' %}">Cerrar Sesión</a></li>
                     </ul>
+                    {% else %}
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{% url 'account_login' %}">Iniciar Sesión</a></li>
+                        <li><a class="dropdown-item" href="{% url 'account_signup' %}">Registrarse</a></li>
+                    </ul>
+                    {% endif %}
                 </div>
 
                 <!-- Carrito -->
@@ -113,42 +125,10 @@
             </div>
         </div>
         
-        <!-- Barra superior con contacto -->
-        <div class="topbar bg-dark text-white py-1 d-none d-lg-flex justify-content-between align-items-center">
-            <div class="d-flex">
-                <span class="me-4"><i class="bi bi-truck me-1"></i> Envío el mismo día</span>
-                <span class="me-4"><i class="bi bi-credit-card me-1"></i> 3 cuotas sin interés</span>
-                <span><i class="bi bi-shield-check me-1"></i> Compra segura</span>
-            </div>
-            <div>
-                <a href="tel:+541112345678" class="text-white text-decoration-none me-3">
-                    <i class="bi bi-telephone me-1"></i> 11-1234-5678
-                </a>
-                <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" class="text-white text-decoration-none" aria-label="Contactar por WhatsApp">
-                    <i class="bi bi-whatsapp"></i>
-                </a>
-            </div>
-        </div>
+
     </div>
     
-    <!-- Announcement Bar -->
-    <div class="bg-light border-top py-2">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <span class="me-3"><i class="bi bi-truck me-1"></i> Envío el mismo día</span>
-                    <span class="me-3"><i class="bi bi-credit-card me-1"></i> 3 cuotas sin interés</span>
-                    <span><i class="bi bi-shield-check me-1"></i> Compra segura</span>
-                </div>
-                <div class="d-none d-lg-block">
-                    <span class="me-3"><i class="bi bi-telephone me-1"></i> 11-1234-5678</span>
-                    <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-dark">
-                        <i class="bi bi-whatsapp me-1"></i> Envíanos un mensaje
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+
 </header>
 
 <!-- Add padding to account for fixed header -->

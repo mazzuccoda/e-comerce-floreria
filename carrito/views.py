@@ -14,13 +14,13 @@ def cart_add(request, product_id):
         cart.add(product=product,
                  quantity=cd['quantity'],
                  update_quantity=cd['update'])
-    return redirect('carrito:cart_detail')
+    return redirect('carrito:ver_carrito')
 
 def cart_remove(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Producto, id=product_id)
     cart.remove(product)
-    return redirect('carrito:cart_detail')
+    return redirect('carrito:ver_carrito')
 
 def cart_detail(request):
     cart = Cart(request)

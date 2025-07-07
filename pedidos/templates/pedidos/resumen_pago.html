@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Resumen de Pedido #{{ pedido.id }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0">Resumen de tu Pedido #{{ pedido.id }}</h2>
+        </div>
+        <div class="card-body">
+          <h4 class="mb-3">Detalles del Pedido</h4>
+          
+          <!-- Producto principal -->
+          <div class="mb-4">
+            <h5>{{ pedido.items.first.producto.nombre }}</h5>
+            <p>Cantidad: {{ pedido.items.first.cantidad }}</p>
+            <p>Precio: ${{ pedido.items.first.producto.precio|intcomma }}</p>
+          </div>
+          
+          <!-- Accesorios -->
+          {% if pedido.accesorios.exists %}
+          <div class="mb-4">
+            <h5>Accesorios</h5>
+            <ul class="list-unstyled">
+              {% for accesorio in pedido.accesorios.all %}
+                <li>{{ accesorio.nombre }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          
+          <!-- Datos de entrega -->
+          <div class="mb-4">
+            <h5>Entrega</h5>
+            <p>Para: {{ pedido.nombre_destinatario }}</p>
+            <p>Dirección: {{ pedido.direccion }}</p>
+            <p>Fecha: {{ pedido.fecha_entrega|date:"d/m/Y" }} - {{ pedido.get_franja_horaria_display }}</p>
+          </div>
+          
+          <!-- Total -->
+          <div class="alert alert-info">
+            <h4 class="mb-0">Total: ${{ pedido.total|intcomma }}</h4>
+          </div>
+          
+          <!-- Botón de confirmación -->
+          <form method="post" action="{% url 'pedidos:procesar_pago' pedido.id %}">
+            {% csrf_token %}
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-credit-card me-2"></i> Confirmar y Pagar
+              </button>
+              <a href="{% url 'pedidos:compra' %}" class="btn btn-outline-secondary">
+                Volver a editar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

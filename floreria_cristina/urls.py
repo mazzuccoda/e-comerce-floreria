@@ -28,14 +28,15 @@ urlpatterns = [
     path('', include('core.urls', namespace='core')),
     
     # Catalogo
-    path('catalogo/', include(('catalogo.urls', 'catalogo'), namespace='catalogo')),
+    path('catalogo/', include('catalogo.urls', namespace='catalogo')),
     path('carrito/', include('carrito.urls', namespace='carrito')), 
     
     # Pedidos (flujo de compra)
-    path('pedidos/', include(('pedidos.urls', 'pedidos'), namespace='pedidos')),
+    path('pedidos/', include('pedidos.urls', namespace='pedidos')),
 
     # Authentication (allauth)
     path('accounts/', include('allauth.urls')),
+    path('accounts/', include('allauth.socialaccount.urls')),
     
     # Error pages
     path('404/', TemplateView.as_view(template_name='404.html'), name='404'),
@@ -45,6 +46,7 @@ urlpatterns = [
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     
     # Debug toolbar
     import debug_toolbar

@@ -29,7 +29,7 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
                 <h1 class="section-title mb-0">Nuestros Productos</h1>
                 <div style="min-width:180px;">
-                    <select class="form-select floral-select" id="sort">
+                    <select class="form-select floral-select" id="sort" aria-label="Ordenar productos">
                         <option value="">Ordenar por</option>
                         <option value="price_asc">Precio: Menor a mayor</option>
                         <option value="price_desc">Precio: Mayor a menor</option>
@@ -59,7 +59,7 @@
                                     <span class="fw-bold text-success">${{ product.precio }}</span>
                                     {% endif %}
                                 </div>
-                                <a href="{% url 'carrito:agregar' product.id %}" class="btn btn-sm btn-floral-cart rounded-circle me-2" title="Agregar al carrito">
+                                <a href="{% url 'carrito:cart_add' product.id %}" class="btn btn-sm btn-floral-cart rounded-circle me-2" title="Agregar al carrito">
                                     <i class="bi bi-cart-plus"></i>
                                 </a>
                             </div>

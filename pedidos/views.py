@@ -10,12 +10,18 @@ from .forms import (
     DedicatoriaForm, DatosEntregaForm, MetodoPagoForm,
     SeguimientoPedidoForm
 )
-from .models import Pedido, PedidoItem, PedidoAccesorio, Accesorio
-from .db_utils import execute_with_retry, ensure_connection, close_connection
+from .models import Pedido, PedidoItem, PedidoAccesorio, MetodoEnvio
 from catalogo.models import Producto
+from pedidos.models import Accesorio
+from catalogo.models import Producto
+from pedidos.models import Accesorio
+from .db_utils import execute_with_retry, ensure_connection, close_connection
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .emails import enviar_email_confirmacion_pedido
+import mercadopago
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 # Configuración de logging
 logger = logging.getLogger(__name__)
@@ -126,137 +132,129 @@ class CompraWizard(SessionWizardView):
         except Exception as e:
             logger.warning(f"Error al cerrar la conexión: {str(e)}")
 
-    def _save_pedido(self, data):
+    def _save_pedido(self, form_data, confirmado=False):
         """Función interna para guardar el pedido con manejo de errores."""
+        
+        # El total ya viene calculado desde el método `done`.
+        # Se asocia el cliente si está autenticado.
+        pedido_kwargs = {
+            'cliente': self.request.user if self.request.user.is_authenticated else None,
+            'anonimo': not self.request.user.is_authenticated,
+            'dedicatoria': form_data.get('dedicatoria', ''),
+            'nombre_destinatario': form_data.get('nombre_destinatario', ''),
+            'direccion': form_data.get('direccion', ''),
+            'telefono_destinatario': form_data.get('telefono_destinatario', ''),
+            'fecha_entrega': form_data.get('fecha_entrega'),
+            'franja_horaria': form_data.get('franja_horaria', ''),
+            'instrucciones': form_data.get('instrucciones', ''),
+            'regalo_anonimo': form_data.get('regalo_anonimo', False),
+            'medio_pago': form_data.get('medio_pago', 'efectivo'),
+            'metodo_envio_id': form_data.get('metodo_envio'), # Clave: Usar el ID del método de envío
+            'total': form_data['total'],
+            'confirmado': confirmado,
+            'estado': 'confirmado' if confirmado else 'pendiente'
+        }
+
         # Crear el pedido
-        pedido = Pedido(
-            dedicatoria=data['dedicatoria'],
-            nombre_destinatario=data['nombre_destinatario'],
-            direccion=data['direccion'],
-            telefono_destinatario=data['telefono_destinatario'],
-            fecha_entrega=data['fecha_entrega'],
-            franja_horaria=data['franja_horaria'],
-            instrucciones=data.get('instrucciones', ''),
-            regalo_anonimo=data.get('regalo_anonimo', False),
-            medio_pago=data['medio_pago'],
-            total=data['total'],
-            **({'cliente': self.request.user, 'anonimo': False} 
-               if self.request.user.is_authenticated 
-               else {'anonimo': True})
-        )
-        pedido.save()
+        pedido = Pedido.objects.create(**pedido_kwargs)
         
         # Obtener el producto
-        producto = Producto.objects.get(id=data['producto'], activo=True)
+        producto = Producto.objects.get(id=form_data['producto'], is_active=True)
         
         # Crear el ítem del pedido
         PedidoItem.objects.create(
             pedido=pedido,
             producto=producto,
-            cantidad=data.get('cantidad', 1)
+            cantidad=form_data.get('cantidad', 1)
         )
         
         # Procesar accesorios si los hay
-        accesorios = data.get('accesorios', [])
-        if accesorios:
-            # Obtener todos los accesorios activos en una sola consulta
-            accesorios_activos = {
-                str(a.id): a 
-                for a in Accesorio.objects.filter(
-                    id__in=accesorios, 
-                    activo=True
-                )
-            }
+        accesorio_ids = form_data.get('accesorios', [])
+        if accesorio_ids:
+            accesorios_activos = Accesorio.objects.filter(id__in=accesorio_ids, activo=True)
             
-            # Crear los accesorios del pedido en lote
             pedido_accesorios = [
-                PedidoAccesorio(
-                    pedido=pedido,
-                    accesorio=accesorio,
-                    cantidad=1
-                )
-                for accesorio_id, accesorio in accesorios_activos.items()
+                PedidoAccesorio(pedido=pedido, accesorio=acc, cantidad=1)
+                for acc in accesorios_activos
             ]
             
             if pedido_accesorios:
                 PedidoAccesorio.objects.bulk_create(pedido_accesorios)
             
-            # Registrar accesorios no encontrados
-            for accesorio_id in set(accesorios) - set(accesorios_activos.keys()):
-                logger.warning(f"Accesorio no encontrado o inactivo: {accesorio_id}")
+            # Opcional: Registrar accesorios no encontrados o inactivos
+            ids_activos = {str(acc.id) for acc in accesorios_activos}
+            ids_solicitados = {str(id) for id in accesorio_ids}
+            ids_no_encontrados = ids_solicitados - ids_activos
+            if ids_no_encontrados:
+                logger.warning(f"Pedido {pedido.id}: Accesorios no encontrados o inactivos: {', '.join(ids_no_encontrados)}")
         
-        logger.info(f"Pedido {pedido.id} creado exitosamente")
+        logger.info(f"Pedido {pedido.id} creado exitosamente en _save_pedido.")
         return pedido
 
+    def get(self, request, *args, **kwargs):
+        # Guardar datos temporales antes de cada paso
+        current_step = self.steps.current
+        if current_step in ['accesorios', 'dedicatoria', 'entrega']:
+            prev_step = self.steps.prev
+            if prev_step:
+                cleaned_data = self.get_cleaned_data_for_step(prev_step) or {}
+                request.session[f'temp_{prev_step}_data'] = cleaned_data
+        return super().get(request, *args, **kwargs)
+
     def done(self, form_list, **kwargs):
-        """Maneja la finalización exitosa del wizard de compra con manejo de errores robusto."""
+        # form_list contiene los formularios validados de cada paso.
+        # Se combinan los datos limpios en un solo diccionario.
+        form_data = {}
+        for form in form_list:
+            form_data.update(form.cleaned_data)
+
         try:
-            # Obtener y validar datos
-            data = self.serialize_wizard_data(self.get_all_cleaned_data())
-            logger.info("Iniciando proceso de guardado de pedido")
-            
-            # Validar datos mínimos requeridos
-            required_fields = [
-                'producto', 'nombre_destinatario', 'direccion', 
-                'telefono_destinatario', 'fecha_entrega', 
-                'franja_horaria', 'medio_pago', 'total'
-            ]
-            
-            for field in required_fields:
-                if field not in data or not data[field]:
-                    raise ValueError(f"Campo requerido faltante: {field}")
-            
-            # Usar execute_with_retry para manejar la operación de base de datos
-            pedido = execute_with_retry(
-                lambda: self._save_pedido(data),
-                max_retries=3,
-                initial_delay=1
-            )
-            
-            # Enviar correo de confirmación
-            enviar_email_confirmacion_pedido(pedido)
+            total = 0
 
-            # Enviar notificación por WhatsApp
-            enviar_whatsapp_confirmacion_pedido(pedido)
+            # 1. Validar y calcular costo del producto.
+            producto = form_data.get('producto')
+            cantidad = form_data.get('cantidad', 1)
+            if not producto or not producto.is_active:
+                raise ObjectDoesNotExist("El producto seleccionado no es válido o está inactivo.")
+            total += producto.precio * cantidad
 
-            # Limpiar el carrito después de una compra exitosa
-            if 'carrito' in self.request.session:
-                del self.request.session['carrito']
+            # 2. Validar y calcular costo de accesorios.
+            accesorios_activos = []
+            for accesorio in form_data.get('accesorios', []):
+                if accesorio.activo:
+                    total += accesorio.precio
+                    accesorios_activos.append(accesorio)
+
+            # 3. Validar y calcular costo del envío.
+            metodo_envio = form_data.get('metodo_envio')
+            if not metodo_envio or not metodo_envio.activo:
+                raise ObjectDoesNotExist("El método de envío seleccionado no es válido o está inactivo.")
+            total += metodo_envio.costo
             
-            messages.success(self.request, "¡Pedido realizado con éxito! Revisa tu correo para ver la confirmación.")
+            # 4. Preparar datos para guardar el pedido.
+            # El método _save_pedido parece esperar un diccionario con IDs.
+            save_data = {key: value for key, value in form_data.items()}
+            save_data['total'] = total
+            save_data['producto'] = producto.id
+            save_data['accesorios'] = [acc.id for acc in accesorios_activos]
+            save_data['metodo_envio'] = metodo_envio.id
 
-            # Limpiar la sesión del wizard
+            # 5. Guardar el pedido en la base de datos.
+            pedido = self._save_pedido(save_data, confirmado=True)
+            logger.info(f"Pedido #{pedido.id} creado exitosamente. Total: {total}")
+
+            # 6. Limpiar el almacenamiento del wizard y redirigir.
             self.storage.reset()
+            return redirect('pedidos:pago_exitoso', pedido_id=pedido.id)
 
-            # Redirigir a la página de confirmación
-            return redirect(reverse('pedidos:confirmacion_pedido', kwargs={'pedido_id': pedido.id}))
-            
-        except Exception as e:
-            logger.error(f"Error en el proceso de compra: {str(e)}", exc_info=True)
-            messages.error(
-                self.request,
-                f"Ocurrió un error al procesar tu pedido. Por favor intenta nuevamente. Error: {str(e)}"
-            )
-            return redirect('catalogo:inicio')
-            
         except ObjectDoesNotExist as e:
-            logger.error(f"Recurso no encontrado: {str(e)}", exc_info=True)
-            messages.error(
-                self.request,
-                "Uno o más productos de tu pedido ya no están disponibles. "
-                "Por favor, actualiza tu carrito e inténtalo de nuevo."
-            )
-            
+            logger.warning(f"Fallo al procesar la compra: {e}")
+            messages.error(self.request, "Uno de los ítems de tu pedido ya no está disponible. Por favor, intenta de nuevo.")
+            return redirect(reverse('pedidos:compra'))
         except Exception as e:
-            logger.error(f"Error inesperado: {str(e)}", exc_info=True)
-            messages.error(
-                self.request,
-                f"Ocurrió un error inesperado: {str(e)}. Por favor, inténtalo de nuevo."
-            )
-        
-        # En caso de error, limpiar la sesión del wizard y redirigir
-        self.storage.reset()
-        return redirect(reverse('pedidos:iniciar_compra'))
+            logger.error(f"Error inesperado al finalizar la compra: {e}", exc_info=True)
+            messages.error(self.request, "Ocurrió un error inesperado. Nuestro equipo ha sido notificado. Por favor, intenta más tarde.")
+            return redirect(reverse('core:home'))
 
 # Vista para mostrar el resumen final del pedido
 from django.shortcuts import get_object_or_404
@@ -336,18 +334,18 @@ def crear_pedido(request):
                         PedidoItem.objects.create(
                             pedido=pedido,
                             producto=item['producto'],
-                            cantidad=item['cantidad'],
+                            cantidad=item['quantity'],
                             precio=item['producto'].precio # Extraer precio del objeto producto
                         )
                     
-                    # Limpiar el carrito
-                    cart.clear()
-
                     # Guardar el ID del pedido en la sesión para el siguiente paso (pago)
                     request.session['pedido_id'] = pedido.id
+
+                    # Limpiar el carrito
+                    cart.clear()
                     messages.success(request, "Los datos de entrega se han guardado. Ahora, procede con el pago.")
                     # Redirigir a la página de pago (que crearemos después)
-                    return redirect(reverse('pedidos:procesar_pago')) # Asumimos que esta URL existirá
+                    return redirect(reverse('pedidos:pago_confirmado', args=[pedido.id])) # Redirigir a la página de confirmación
 
             except Exception as e:
                 logger.error(f"Error al crear el pedido: {e}", exc_info=True)
@@ -366,14 +364,111 @@ def crear_pedido(request):
 
 
 @login_required
-def procesar_pago(request):
-    pedido_id = request.session.get('pedido_id')
-    if not pedido_id:
-        messages.warning(request, "No hay un pedido en proceso de pago.")
-        return redirect('catalogo:productos')
+def procesar_pago(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Lógica de procesamiento de pago (simulada)
+    pedido.confirmado = True
+    pedido.estado = 'PAGADO'
+    pedido.save()
+    
+    # Enviar notificaciones
+    enviar_email_confirmacion_pedido(pedido)
+    enviar_whatsapp_confirmacion_pedido(pedido)
+    
+    return redirect('pedidos:pago_confirmado', pedido_id=pedido.id)
 
-    # Aquí irá la lógica de integración con Mercado Pago
-    # Por ahora, solo mostramos una página de confirmación temporal.
-    html = f"""    <h1>Revisando Pedido #{pedido_id}</h1>    <p>Próximamente, aquí se integrará el pago con Mercado Pago.</p>    """
-    return HttpResponse(html)
 
+def resumen_pago(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    
+    # Verificar que el pedido pertenece al usuario actual o es anónimo
+    if not pedido.anonimo and pedido.cliente != request.user:
+        raise PermissionDenied
+    
+    # Verificar que el pedido no esté ya confirmado
+    if pedido.confirmado:
+        return redirect('pedidos:pago_confirmado', pedido_id=pedido.id)
+    
+    return render(request, 'pedidos/resumen_pago.html', {'pedido': pedido})
+
+def pago_exitoso(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    return render(request, 'pedidos/pago_exitoso.html', {'pedido': pedido})
+
+def pago_fallido(request):
+    return render(request, 'pedidos/pago_fallido.html')
+
+def pago_pendiente(request):
+    pedido_id = request.session.get('last_order_id')
+    context = {'pedido': get_object_or_404(Pedido, id=pedido_id) if pedido_id else None}
+    return render(request, 'pedidos/pago_pendiente.html', context)
+
+def crear_preferencia_pago(request, pedido):
+    try:
+        if not settings.MERCADOPAGO['ACCESS_TOKEN']:
+            raise ValueError("Access Token de MercadoPago no configurado")
+
+        sdk = mercadopago.SDK(settings.MERCADOPAGO['ACCESS_TOKEN'])
+        
+        preference_data = {
+            "items": [{
+                "title": f"Pedido #{pedido.id}",
+                "quantity": 1,
+                "unit_price": float(pedido.total),
+                "currency_id": "ARS"
+            }],
+            "payer": {
+                "name": pedido.nombre_destinatario,
+                "email": pedido.cliente.email if pedido.cliente else "compra@floreriacristina.com",
+                "phone": {"number": pedido.telefono_comprador}
+            },
+            "back_urls": {
+                "success": request.build_absolute_uri(reverse('pedidos:pago_exitoso', args=[pedido.id])),
+                "failure": request.build_absolute_uri(reverse('pedidos:pago_fallido')),
+                "pending": request.build_absolute_uri(reverse('pedidos:pago_pendiente'))
+            },
+            "auto_return": "approved",
+            "notification_url": request.build_absolute_uri(reverse('pedidos:mercadopago_webhook')),
+            "external_reference": str(pedido.id)
+        }
+        
+        preference_response = sdk.preference().create(preference_data)
+        
+        if not preference_response or 'response' not in preference_response:
+            error_msg = preference_response.get('message', 'Respuesta inválida de MercadoPago')
+            logger.error(f"Error MercadoPago: {error_msg}")
+            return {'error': error_msg}
+            
+        return preference_response["response"]
+        
+    except Exception as e:
+        logger.error(f"Error al crear preferencia: {str(e)}", exc_info=True)
+        return {'error': f"Error interno: {str(e)}"}
+
+@login_required
+def detalle_pedido(request, pedido_id):
+    """Muestra el detalle de un pedido específico del usuario actual."""
+    pedido = get_object_or_404(Pedido, id=pedido_id, cliente=request.user)
+    return render(request, 'pedidos/detalle_pedido.html', {'pedido': pedido})
+
+@login_required
+def mis_pedidos(request):
+    """Muestra el historial de pedidos del usuario actual."""
+    pedidos = Pedido.objects.filter(cliente=request.user).order_by('-fecha_creacion')
+    return render(request, 'pedidos/mis_pedidos.html', {'pedidos': pedidos})
+
+@csrf_exempt
+def mercadopago_webhook(request):
+    if request.method == "POST":
+        payment_id = request.POST.get('data.id')
+        sdk = mercadopago.SDK(settings.MERCADOPAGO['ACCESS_TOKEN'])
+        payment_info = sdk.payment().get(payment_id)
+        
+        if payment_info['status'] == 200:
+            pedido_id = payment_info['response']['external_reference']
+            pedido = Pedido.objects.get(id=pedido_id)
+            pedido.estado_pago = payment_info['response']['status']
+            pedido.save()
+            
+    return HttpResponse(status=200)

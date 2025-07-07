@@ -5,13 +5,13 @@
 <form method="post">
     {% csrf_token %}
     {{ wizard.management_form }}
-
+    
     {% if form.non_field_errors %}
         <div class="alert alert-danger">{{ form.non_field_errors }}</div>
     {% endif %}
-
-    <p class="text-muted mb-4">Completa la información para que podamos entregar tu regalo.</p>
-
+    
+    <p class="mb-4">Por favor, completa los datos de entrega:</p>
+    
     {% for field in form.visible_fields %}
         <div class="mb-3">
             {{ field.label_tag }}
@@ -22,14 +22,5 @@
             {% endfor %}
         </div>
     {% endfor %}
-
-    <div class="d-flex justify-content-between mt-4">
-        {% if wizard.steps.prev %}
-            <button name="wizard_goto_step" type="submit" value="{{ wizard.steps.prev }}" class="btn btn-outline-secondary">← Anterior</button>
-        {% else %}
-            <span></span>
-        {% endif %}
-        <button type="submit" class="btn btn-primary">Siguiente →</button>
-    </div>
 </form>
 {% endblock %}

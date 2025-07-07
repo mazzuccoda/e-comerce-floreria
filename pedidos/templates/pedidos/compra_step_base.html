@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% load pedidos_extras %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/wizard.css' %}?v=1.0">
+{% endblock %}
+
 {% block title %}{{ wizard.steps.current|capfirst }} - Proceso de Compra{% endblock %}
 
 {% block content %}

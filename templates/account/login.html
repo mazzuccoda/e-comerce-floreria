@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account socialaccount %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}{% trans "Sign In" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="card-title text-center mb-4">{% trans "Sign In" %}</h2>
+
+                    {% get_providers as socialaccount_providers %}
+                    {% if socialaccount_providers %}
+                    <p class="text-center small text-muted">{% blocktrans %}Inicia sesión con tu red social preferida o regístrate <a href="{{ signup_url }}">aquí</a>.{% endblocktrans %}</p>
+                    <div class="socialaccount_ballot text-center mb-3">
+                        {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+                        <div class="my-3"><hr><span class="login-or-separator">{% trans 'or' %}</span></div>
+                    </div>
+                    {% include "socialaccount/snippets/login_extra.html" %}
+                    {% else %}
+                    <p class="text-center small text-muted">{% blocktrans %}Si aún no tienes una cuenta, por favor <a href="{{ signup_url }}">regístrate</a>.{% endblocktrans %}</p>
+                    {% endif %}
+
+                    <form class="login" method="POST" action="{% url 'account_login' %}">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        {% if redirect_field_value %}
+                        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                        {% endif %}
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-primary" type="submit">{% trans "Sign In" %}</button>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a class="button secondaryAction small" href="{% url 'account_reset_password' %}">{% trans "Forgot Password?" %}</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

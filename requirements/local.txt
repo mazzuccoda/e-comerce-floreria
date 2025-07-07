@@ -1,6 +1,6 @@
 # Development dependencies
--r base.txt
-ipdb==0.13.13
+
+# ipdb==0.13.13
 django-debug-toolbar==4.3.0
 django-extensions==3.2.3
 pytest==8.0.0

@@ -31,7 +31,19 @@ SECRET_KEY = 'django-insecure-iqrk-k9+a7=+pj^w=a^10*coqt=tqj1sf^&!s6$^li541g^(i+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'web',
+    'testserver',
+    *env.list('ALLOWED_HOSTS', default=[]),
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://web:8000',
+]
 
 
 # Application definition
@@ -59,6 +71,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'widget_tweaks',
     'compressor',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
     
     # Local apps
     'carrito.apps.CarritoConfig',
@@ -66,6 +80,29 @@ INSTALLED_APPS = [
     'catalogo.apps.CatalogoConfig',
     'pedidos',
 ]
+
+# ==============================================================================
+# AUTHENTICATION CONFIGURATION
+# ==============================================================================
+
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+# Django Allauth Configuration
+SITE_ID = 1
+LOGIN_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'optional' # Change to 'mandatory' in production
+ACCOUNT_SESSION_REMEMBER = True
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -112,7 +149,7 @@ CART_SESSION_ID = 'cart'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('POSTGRES_DB', default='floreria_cristina'),
+        'NAME': env('POSTGRES_DB', default='floreria_cristina_dev'),
         'USER': env('POSTGRES_USER', default='floradmin'),
         'PASSWORD': env('POSTGRES_PASSWORD', default='florpassword'),
         'HOST': 'db',
@@ -120,7 +157,7 @@ DATABASES = {
         'CONN_MAX_AGE': 0,  # Deshabilitar conexiones persistentes para el wizard
         'OPTIONS': {
             'connect_timeout': 30,
-            'application_name': 'floreria_cristina',
+            'application_name': 'floreria_cristina_dev',
             'options': '-c statement_timeout=30000',  # 30 segundos de timeout
         },
     }
@@ -181,6 +218,14 @@ TWILIO_ACCOUNT_SID = 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 TWILIO_AUTH_TOKEN = 'your_auth_token'
 TWILIO_WHATSAPP_NUMBER = '+14155238886' # El número de sandbox de Twilio o tu número comprado
 
+# Configuración Mercado Pago
+MERCADOPAGO = {
+    'ACCESS_TOKEN': os.getenv('MP_ACCESS_TOKEN', 'TEST-1234567890123456-123456-1234567890abcdef1234567890abcdef123456'),
+    'PUBLIC_KEY': os.getenv('MP_PUBLIC_KEY', 'TEST-12345678-1234-1234-1234-123456789012'),
+    'AUTO_RETURN': 'approved',
+    'SANDBOX': True
+}
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -214,10 +259,10 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 # Authentication
-AUTHENTICATION_BACKENDS = [
+AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
-]
+)
 
 # Allauth settings
 SITE_ID = 1
@@ -225,9 +270,11 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_USERNAME_REQUIRED = False
-LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/'  # Redirección post-login
+LOGIN_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 ACCOUNT_SESSION_REMEMBER = True
+ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Email settings (for development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -255,3 +302,17 @@ CELERY_TIMEZONE = 'America/Argentina/Buenos_Aires'
 
 # Celery Beat Configuration
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Configuración de autenticación social
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'}
+    },
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'FIELDS': ['id', 'email', 'name']
+    }
+}

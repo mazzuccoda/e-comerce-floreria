@@ -1,0 +1,10 @@
+{
+  "name": "e-comerce-assets",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Frontend assets for Floreria Cristina e-commerce",
+  "dependencies": {
+    "bootstrap": "^5.3.7",
+    "bootstrap-icons": "^1.11.3"
+  }
+}

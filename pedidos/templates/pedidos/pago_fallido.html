@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Pago Fallido</h2>
+    <p>El pago no pudo procesarse. Por favor intenta nuevamente.</p>
+    <a href="{% url 'pedidos:compra' %}" class="btn btn-primary">Volver a intentar</a>
+</div>
+{% endblock %}

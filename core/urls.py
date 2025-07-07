@@ -8,8 +8,8 @@ urlpatterns = [
     path('', views.home, name='home'),
     
     # Static Pages
-    path('sobre-nosotros/', views.about, name='about'),
-    path('contacto/', views.contact, name='contact'),
+    path('sobre-nosotros/', views.about, name='nosotros'),
+    path('contacto/', views.contact, name='contacto'),
     path('preguntas-frecuentes/', views.faq, name='faq'),
     path('envios/', views.shipping, name='shipping'),
     path('devoluciones/', views.returns, name='returns'),
