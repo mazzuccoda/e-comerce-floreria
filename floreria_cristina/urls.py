@@ -16,31 +16,39 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 
+# API URL patterns
+api_urlpatterns = [
+        path('catalogo/', include('catalogo.api_urls', namespace='catalogo-api')),
+        path('carrito/', include('carrito.api_urls', namespace='carrito-api')),
+        path('usuarios/', include('usuarios.api_urls')),
+        path('pedidos/', include('pedidos.api_urls', namespace='pedidos-api')),
+]
+
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
-    
-    # Core
+
+    # Core (páginas estáticas, etc.)
     path('', include('core.urls', namespace='core')),
-    
-    # Catalogo
-    path('catalogo/', include('catalogo.urls', namespace='catalogo')),
-    path('carrito/', include('carrito.urls', namespace='carrito')), 
-    
-    # Pedidos (flujo de compra)
-    path('pedidos/', include('pedidos.urls', namespace='pedidos')),
+
+    # Apps principales con sus vistas de plantillas
+
+
+
+
+    # API URLs
+    path('api/', include(api_urlpatterns)),
 
     # Authentication (allauth)
     path('accounts/', include('allauth.urls')),
     path('accounts/', include('allauth.socialaccount.urls')),
     
-    # Error pages
-    path('404/', TemplateView.as_view(template_name='404.html'), name='404'),
-    path('500/', TemplateView.as_view(template_name='500.html'), name='500'),
+
 ]
 
 # Serve media files in development

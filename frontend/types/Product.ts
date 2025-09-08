@@ -1,0 +1,36 @@
+export interface Categoria {
+  nombre: string;
+  slug: string;
+  descripcion: string;
+  imagen: string | null;
+}
+
+export interface ProductoImagen {
+  id: number;
+  imagen: string;
+  is_primary: boolean;
+}
+
+export interface Product {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcion: string;
+  descripcion_corta: string;
+  categoria: Categoria;
+  precio: string;
+  precio_descuento: string | null;
+  precio_original?: string;
+  porcentaje_descuento: number | null;
+  precio_final: string;
+  stock: number;
+  is_featured: boolean;
+  envio_gratis?: boolean;
+  imagen_principal: string;
+  imagenes: ProductoImagen[];
+  tipo_flor?: string;
+  ocasiones?: string[];
+  es_adicional?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

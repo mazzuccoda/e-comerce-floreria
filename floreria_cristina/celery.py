@@ -14,7 +14,16 @@ app.autodiscover_tasks()
 
 # Configuración específica para Celery Beat
 app.conf.beat_scheduler = 'django_celery_beat.schedulers:DatabaseScheduler'
-app.conf.beat_schedule = {}
+app.conf.beat_schedule = {
+    'procesar-notificaciones-pendientes': {
+        'task': 'notificaciones.tasks.procesar_notificaciones_pendientes',
+        'schedule': 300.0,  # Cada 5 minutos
+    },
+    'limpiar-notificaciones-antiguas': {
+        'task': 'notificaciones.tasks.limpiar_notificaciones_antiguas',
+        'schedule': 86400.0,  # Cada 24 horas
+    },
+}
 
 @app.task(bind=True)
 def debug_task(self):

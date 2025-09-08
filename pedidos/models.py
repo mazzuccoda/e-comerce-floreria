@@ -4,20 +4,13 @@ from catalogo.models import Producto  # Asume que tu modelo Producto está en la
 
 User = get_user_model()
 
-class Accesorio(models.Model):
-    nombre = models.CharField(max_length=80)
-    precio = models.DecimalField(max_digits=8, decimal_places=2)
-    imagen = models.ImageField(upload_to='accesorios/', null=True, blank=True)
-    activo = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.nombre
 
 ESTADOS = [
     ('recibido', 'Recibido'),
     ('preparando', 'Preparando'),
     ('en_camino', 'En camino'),
     ('entregado', 'Entregado'),
+    ('cancelado', 'Cancelado'),
 ]
 
 ESTADOS_PAGO = [
@@ -32,8 +25,11 @@ class Pedido(models.Model):
     telefono_comprador = models.CharField(max_length=20, help_text="Teléfono de quien realiza la compra para notificaciones (si es invitado)", blank=True, null=True)
     anonimo = models.BooleanField(default=False)
     dedicatoria = models.TextField()
+    email_comprador = models.EmailField(max_length=254, help_text="Email de quien realiza la compra (si es invitado)", blank=True, null=True)
     nombre_destinatario = models.CharField(max_length=100)
     direccion = models.CharField(max_length=255)
+    ciudad = models.CharField(max_length=100, blank=True, null=True)
+    codigo_postal = models.CharField(max_length=20, blank=True, null=True)
     telefono_destinatario = models.CharField(max_length=30)
     fecha_entrega = models.DateField()
     franja_horaria = models.CharField(max_length=20, choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)')])
@@ -55,6 +51,69 @@ class Pedido(models.Model):
 
     def __str__(self):
         return f"Pedido #{self.id} para {self.nombre_destinatario} ({self.get_estado_display()})"
+    
+    def confirmar_pedido(self):
+        """
+        Confirma el pedido y reduce el stock de los productos
+        También activa las notificaciones automáticas
+        """
+        if self.confirmado:
+            return False, "El pedido ya está confirmado"
+        
+        # Verificar stock disponible para todos los productos
+        for item in self.items.all():
+            if item.producto.stock < item.cantidad:
+                return False, f"Stock insuficiente para {item.producto.nombre}. Disponible: {item.producto.stock}, solicitado: {item.cantidad}"
+        
+        # Si hay stock suficiente, reducir stock y confirmar pedido
+        for item in self.items.all():
+            item.producto.stock -= item.cantidad
+            item.producto.save()
+        
+        self.confirmado = True
+        self.save()
+        
+        # Activar notificaciones si hay usuario registrado
+        if self.cliente:
+            try:
+                from notificaciones.tasks import notificar_pedido_confirmado
+                notificar_pedido_confirmado.delay(self.id, self.cliente.id)
+            except ImportError:
+                pass  # Notificaciones no disponibles
+        
+        return True, "Pedido confirmado exitosamente"
+    
+    def cancelar_pedido(self):
+        """
+        Cancela el pedido y restaura el stock de los productos
+        """
+        if not self.confirmado:
+            return False, "El pedido no está confirmado"
+        
+        # Restaurar stock
+        for item in self.items.all():
+            item.producto.stock += item.cantidad
+            item.producto.save()
+        
+        self.confirmado = False
+        self.estado = 'cancelado'
+        self.save()
+        return True, "Pedido cancelado y stock restaurado"
+    
+    def validar_stock_disponible(self):
+        """
+        Valida que hay stock suficiente para todos los productos del pedido
+        """
+        productos_sin_stock = []
+        for item in self.items.all():
+            if item.producto.stock < item.cantidad:
+                productos_sin_stock.append({
+                    'producto': item.producto.nombre,
+                    'solicitado': item.cantidad,
+                    'disponible': item.producto.stock
+                })
+        
+        return len(productos_sin_stock) == 0, productos_sin_stock
 
 class PedidoItem(models.Model):
     pedido = models.ForeignKey(Pedido, related_name='items', on_delete=models.CASCADE)
@@ -68,17 +127,6 @@ class PedidoItem(models.Model):
     def get_cost(self):
         return self.precio * self.cantidad
 
-class PedidoAccesorio(models.Model):
-    pedido = models.ForeignKey(Pedido, related_name='accesorios', on_delete=models.CASCADE)
-    accesorio = models.ForeignKey(Accesorio, on_delete=models.CASCADE)
-    precio = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    cantidad = models.PositiveIntegerField(default=1)
-
-    def __str__(self):
-        return f"{self.cantidad} x {self.accesorio.nombre}"
-
-    def get_cost(self):
-        return self.precio * self.cantidad
 
 class MetodoEnvio(models.Model):
     nombre = models.CharField(max_length=100, help_text="Nombre del método de envío, ej: 'Envío a domicilio CABA'")

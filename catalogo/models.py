@@ -6,6 +6,71 @@ from django.utils import timezone
 from django.conf import settings
 
 
+class TipoFlor(models.Model):
+    """Modelo para los tipos de flores"""
+    nombre = models.CharField(max_length=100, unique=True, verbose_name='Nombre')
+    descripcion = models.TextField(blank=True, null=True, verbose_name='Descripción')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+
+    class Meta:
+        verbose_name = 'Tipo de Flor'
+        verbose_name_plural = 'Tipos de Flores'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
+class Ocasion(models.Model):
+    """Modelo para las ocasiones"""
+    nombre = models.CharField(max_length=100, unique=True, verbose_name='Nombre')
+    descripcion = models.TextField(blank=True, null=True, verbose_name='Descripción')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+
+    class Meta:
+        verbose_name = 'Ocasión'
+        verbose_name_plural = 'Ocasiones'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
+class ZonaEntrega(models.Model):
+    """Modelo para las zonas de entrega"""
+    nombre = models.CharField(max_length=100, unique=True, verbose_name='Nombre')
+    descripcion = models.TextField(blank=True, null=True, verbose_name='Descripción')
+    costo_envio = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name='Costo de envío'
+    )
+    envio_gratis_desde = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+        verbose_name='Envío gratis desde'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+
+    class Meta:
+        verbose_name = 'Zona de Entrega'
+        verbose_name_plural = 'Zonas de Entrega'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class Categoria(models.Model):
     """Modelo para las categorías de productos"""
     nombre = models.CharField(max_length=100, unique=True, verbose_name='Nombre')
@@ -82,6 +147,23 @@ class Producto(models.Model):
     stock = models.PositiveIntegerField(default=0, verbose_name='Stock disponible')
     is_active = models.BooleanField(default=True, verbose_name='Activo')
     is_featured = models.BooleanField(default=False, verbose_name='Destacado')
+    # Nuevos campos para FloreriaPalermo
+    tipo_flor = models.ForeignKey(
+        TipoFlor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='productos',
+        verbose_name='Tipo de Flor'
+    )
+    ocasiones = models.ManyToManyField(
+        Ocasion,
+        blank=True,
+        related_name='productos',
+        verbose_name='Ocasiones'
+    )
+    envio_gratis = models.BooleanField(default=False, verbose_name='Envío Gratis')
+    es_adicional = models.BooleanField(default=False, verbose_name='Es Adicional')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
 
@@ -132,6 +214,12 @@ class Producto(models.Model):
             return first.imagen.url
         # Placeholder externo si no hay imagen
         return "https://via.placeholder.com/400x300?text=Sin+Imagen"
+    
+    @property
+    def precio_formateado(self):
+        """Devuelve el precio formateado en pesos argentinos"""
+        precio = self.get_precio_final
+        return f"$ {precio:,.0f}".replace(',', '.')
 
 
 class ProductoImagen(models.Model):

@@ -1,0 +1,355 @@
+.navbar {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(214, 51, 132, 0.1);
+  padding: 15px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: var(--shadow-soft);
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-rose);
+  text-decoration: none;
+  letter-spacing: -0.5px;
+  position: relative;
+}
+
+.logo::after {
+  content: '🌸';
+  position: absolute;
+  right: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  animation: gentle-float 3s ease-in-out infinite;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.navLink {
+  color: var(--charcoal);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 15px;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.navLink:hover {
+  color: var(--primary-rose);
+  background: rgba(214, 51, 132, 0.05);
+  transform: translateY(-2px);
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+}
+
+.cartButton {
+  color: var(--charcoal);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--primary-rose), var(--dusty-rose));
+  color: white;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-soft);
+}
+
+.cartButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+@keyframes gentle-float {
+  0%, 100% { transform: translateY(-50%) rotate(0deg); }
+  50% { transform: translateY(-60%) rotate(5deg); }
+}
+
+/* Dropdowns */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownButton {
+  background: none;
+  border: none;
+  color: var(--floreria-dark);
+  font-weight: 500;
+  font-size: 15px;
+  padding: 8px 16px;
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dropdownButton:hover {
+  color: var(--floreria-rose);
+  background: var(--floreria-pink);
+}
+
+.dropdownContent {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  min-width: 200px;
+  box-shadow: var(--shadow-hover);
+  border-radius: var(--border-radius-small);
+  z-index: 1000;
+  border: 1px solid var(--floreria-pink);
+  padding: 8px 0;
+  margin-top: 4px;
+}
+
+.dropdown:hover .dropdownContent {
+  display: block;
+}
+
+.dropdownLink {
+  display: block;
+  color: var(--floreria-dark);
+  text-decoration: none;
+  padding: 10px 16px;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.dropdownLink:hover {
+  background: var(--floreria-pink);
+  color: var(--floreria-rose);
+}
+
+.navLink.admin {
+  background: var(--gradient-accent);
+  color: var(--floreria-dark);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--border-radius-small);
+  box-shadow: var(--shadow-soft);
+}
+
+.navLink.admin:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+  background: var(--floreria-gold);
+}
+
+/* Sección de acciones */
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Autenticación */
+.authSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.authButton {
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--border-radius-small);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginButton {
+  background: transparent;
+  color: var(--color-text);
+  border: 2px solid var(--floreria-pink);
+}
+
+.loginButton:hover {
+  background: var(--floreria-pink);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.registerButton {
+  background: var(--gradient-primary);
+  color: var(--floreria-white);
+  box-shadow: var(--shadow-soft);
+}
+
+.registerButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Sección del carrito */
+.cartSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--floreria-cream);
+  border-radius: var(--border-radius-small);
+  border: 2px solid var(--floreria-gold);
+  transition: var(--transition);
+}
+
+.cartSection:hover {
+  background: var(--floreria-light-purple);
+  border-color: var(--floreria-purple);
+  transform: translateY(-2px);
+}
+
+.cartLink {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.cartLink:hover {
+  color: var(--color-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .navLinks {
+    gap: 20px;
+  }
+  
+  .navLink {
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbarContainer {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .logo {
+    font-size: 24px;
+  }
+  
+  .logo::after {
+    right: -25px;
+    font-size: 18px;
+  }
+  
+  .navLinks {
+    display: none; /* Ocultar en móvil, implementar menú hamburguesa después */
+  }
+  
+  .navActions {
+    gap: 12px;
+  }
+  
+  .authSection {
+    gap: 8px;
+  }
+  
+  .authButton {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .cartSection {
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbarContainer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .navActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .cartSection {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* Animaciones */
+@keyframes pulse {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+/* Estados especiales */
+.navbar.scrolled {
+  box-shadow: var(--shadow-hover);
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* Efectos de hover mejorados */
+.navLink,
+.authButton,
+.cartSection {
+  position: relative;
+}
+
+.navLink::after,
+.authButton::after,
+.cartSection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+  pointer-events: none;
+}
+
+.navLink:hover::after,
+.authButton:hover::after,
+.cartSection:hover::after {
+  left: 100%;
+}

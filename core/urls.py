@@ -5,7 +5,6 @@ app_name = 'core'
 
 urlpatterns = [
     # Home
-    path('', views.home, name='home'),
     
     # Static Pages
     path('sobre-nosotros/', views.about, name='nosotros'),

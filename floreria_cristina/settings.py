@@ -39,17 +39,85 @@ ALLOWED_HOSTS = [
     *env.list('ALLOWED_HOSTS', default=[]),
 ]
 
+# Configuración para funcionar detrás de un proxy inverso (Nginx)
+# Estas directivas le indican a Django que confíe en las cabeceras que Nginx le envía.
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# ==============================================================================
+# CORS CONFIGURATION
+# ==============================================================================
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:80',
+    'http://127.0.0.1:80',
+    'http://localhost',
+    'http://127.0.0.1',
+]
+
+# Permitir cookies y credenciales en peticiones CORS
+CORS_ALLOW_CREDENTIALS = True
+
+# Permitir todos los headers para desarrollo
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Si en el futuro necesitas que cualquier sitio pueda consultar tu API (no recomendado para producción sin autenticación)
+# podrías usar:
+# CORS_ORIGIN_ALLOW_ALL = True
+
+
+
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://web:8000',
+    'http://localhost',  # Permitir el origen público a través de Nginx
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]
+
+# Eximir APIs del carrito y usuarios del CSRF
+CSRF_EXEMPT_URLS = [
+    r'^/api/carrito/',
+    r'^/api/usuarios/',
+]
+
+# Deshabilitar CSRF para desarrollo (temporal)
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+
+# REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
 
 
 # Application definition
 
-INSTALLED_APPS = [
-    # Django core apps
+DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,28 +125,35 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
-    'django.contrib.humanize',
-    
-    # Celery beat must be before admin to avoid app_label issues
-    'django_celery_beat',
-    
-    # Third-party apps
-    'crispy_forms',
-    'crispy_bootstrap5',
+]
+
+THIRD_PARTY_APPS = [
+    'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'debug_toolbar',
-    'widget_tweaks',
     'compressor',
+    'debug_toolbar',
+    'django_celery_beat',
+]
+
+LOCAL_APPS = [
+    'core',
+    'catalogo',
+    'carrito',
+    'pedidos',
+    'usuarios',
+    'notificaciones',
+]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS + [
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'widget_tweaks',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.facebook',
-    
-    # Local apps
-    'carrito.apps.CarritoConfig',
-    'core.apps.CoreConfig',
-    'catalogo.apps.CatalogoConfig',
-    'pedidos',
 ]
 
 # ==============================================================================
@@ -105,16 +180,17 @@ ACCOUNT_SESSION_REMEMBER = True
 
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'floreria_cristina.csrf_middleware.CustomCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',  # Deshabilitado temporalmente
     'allauth.account.middleware.AccountMiddleware',
-    'floreria_cristina.middleware.ConnectionMiddleware',  # Nuestro middleware personalizado
+    # 'floreria_cristina.middleware.ConnectionMiddleware',  # Deshabilitado temporalmente
 ]
 
 ROOT_URLCONF = 'floreria_cristina.urls'
@@ -122,7 +198,7 @@ ROOT_URLCONF = 'floreria_cristina.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -130,7 +206,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                                'carrito.context_processors.cart',
+                'core.admin_context.admin_stats',
             ],
         },
     },
@@ -138,9 +214,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'floreria_cristina.wsgi.application'
 
+# Using default User model with profile extension
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Cart session ID
 CART_SESSION_ID = 'cart'
@@ -207,16 +284,27 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Email Backend Configuration (for development)
+# Email Backend Configuration
 # --------------------------------------------------------------------------
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'no-responder@floreriacristina.com'
+# Para desarrollo: mostrar emails en consola
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+
+# Para producción con Gmail/SMTP
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='no-responder@floreriacristina.com')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Configuracion de Twilio para WhatsApp
 # ATENCION: En producción, usar variables de entorno para estas credenciales.
-TWILIO_ACCOUNT_SID = 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-TWILIO_AUTH_TOKEN = 'your_auth_token'
-TWILIO_WHATSAPP_NUMBER = '+14155238886' # El número de sandbox de Twilio o tu número comprado
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID', default='ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='your_auth_token')
+TWILIO_WHATSAPP_NUMBER = env('TWILIO_WHATSAPP_NUMBER', default='+14155238886')  # Número de sandbox o comprado
+TWILIO_SMS_NUMBER = env('TWILIO_SMS_NUMBER', default='')  # Número para SMS
 
 # Configuración Mercado Pago
 MERCADOPAGO = {
@@ -289,8 +377,11 @@ INTERNAL_IPS = [
     '127.0.0.1',
 ]
 
-# Cart session ID
+# Configuración del carrito
 CART_SESSION_ID = 'carrito'
+
+# Serializer personalizado para sesiones que maneja Decimal
+SESSION_SERIALIZER = 'floreria_cristina.session_serializer.CustomJSONSerializer'
 
 # Celery Configuration
 CELERY_BROKER_URL = 'redis://redis:6379/0'

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pedido, PedidoItem, PedidoAccesorio, Accesorio
+from .models import Pedido, PedidoItem
 from .notificaciones import enviar_whatsapp_actualizacion_estado
 
 
@@ -10,11 +10,6 @@ class PedidoItemInline(admin.TabularInline):
     readonly_fields = ('producto', 'cantidad')
 
 
-class PedidoAccesorioInline(admin.TabularInline):
-    model = PedidoAccesorio
-    raw_id_fields = ['accesorio']
-    extra = 0
-    readonly_fields = ('accesorio', 'cantidad')
 
 
 @admin.register(Pedido)
@@ -24,7 +19,7 @@ class PedidoAdmin(admin.ModelAdmin):
     list_editable = ('estado',)
     search_fields = ('id', 'nombre_destinatario', 'cliente__username', 'cliente__email')
     date_hierarchy = 'creado'
-    inlines = [PedidoItemInline, PedidoAccesorioInline]
+    inlines = [PedidoItemInline]
     readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'instrucciones', 'regalo_anonimo', 'medio_pago')
 
     def save_model(self, request, obj, form, change):
@@ -45,8 +40,3 @@ class PedidoAdmin(admin.ModelAdmin):
         return False # No permitir crear pedidos desde el admin
 
 
-@admin.register(Accesorio)
-class AccesorioAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'precio', 'activo')
-    list_editable = ('precio', 'activo')
-    search_fields = ('nombre',)
