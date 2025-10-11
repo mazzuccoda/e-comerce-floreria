@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useCart } from '../../context/CartContext';
+import { useCartRobust } from '../../context/CartContextRobust';
 
 export default function Navbar() {
-  const { cart } = useCart();
+  const { cart } = useCartRobust();
   return (
     <nav className="navbar">
       <div className="navbar-container">

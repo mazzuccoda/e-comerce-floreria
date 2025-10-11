@@ -7,17 +7,20 @@ from .models import Carrito, CarritoItem
 class ProductoCarritoSerializer(serializers.ModelSerializer):
     """Serializer simplificado para productos en el carrito"""
     precio_final = serializers.SerializerMethodField()
-    imagen_principal = serializers.SerializerMethodField()
+    imagen = serializers.SerializerMethodField()
     
     class Meta:
         model = Producto
-        fields = ['id', 'nombre', 'slug', 'precio', 'precio_final', 'imagen_principal', 'stock']
+        fields = ['id', 'nombre', 'slug', 'precio', 'precio_final', 'imagen', 'stock']
     
     def get_precio_final(self, obj):
-        return obj.get_precio_final
+        return str(obj.get_precio_final)
     
-    def get_imagen_principal(self, obj):
-        return obj.get_primary_image_url
+    def get_imagen(self, obj):
+        # Obtener la primera imagen del producto si existe
+        if hasattr(obj, 'productoimagen_set') and obj.productoimagen_set.exists():
+            return obj.productoimagen_set.first().imagen.url
+        return None
 
 
 class CartItemSerializer(serializers.Serializer):

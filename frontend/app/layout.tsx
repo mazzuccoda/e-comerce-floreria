@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
-import Navbar from './components/Navbar';
-import { CartProvider } from '../context/CartContext';
-import { AuthProvider } from '../context/AuthContext';
+import './globals.css'
+
 import { Toaster } from 'react-hot-toast';
-import Footer from './components/Footer'; 
+import { AuthProvider } from '../context/AuthContext';
+import { CartProviderRobust } from '../context/CartContextRobust';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import CartDebugMonitor from './components/CartDebugMonitor'; 
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,9 +42,13 @@ export const metadata: Metadata = {
     images: ["https://floreria-cristina.com/images/floreria-cristina-og.jpg"],
     creator: "@floreria_cristina",
   },
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#e91e63",
   manifest: "/manifest.json",
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#e91e63',
 };
 
 export default function RootLayout({
@@ -54,7 +60,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${inter.className} bg-gray-50`}>
         <AuthProvider>
-          <CartProvider>
+          <CartProviderRobust>
             <div className="flex flex-col min-h-screen">
               <Navbar />
               <Toaster />
@@ -62,8 +68,9 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
+              <CartDebugMonitor />
             </div>
-          </CartProvider>
+          </CartProviderRobust>
         </AuthProvider>
       </body>
     </html>

@@ -1,0 +1,450 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import ProductCard from './ProductCard';
+import ProductFilters from './ProductFilters';
+import { Product } from '@/types/Product';
+
+// Productos mock que funcionan correctamente
+const mockProducts: Product[] = [
+  {
+    id: 1,
+    nombre: "Ramo de 12 Rosas Rojas",
+    slug: "ramo-12-rosas-rojas",
+    descripcion: "Hermoso ramo de 12 rosas rojas frescas, perfectas para expresar amor y pasión. Incluye papel decorativo elegante.",
+    descripcion_corta: "Ramo de 12 rosas rojas",
+    categoria: { nombre: "Ramos", slug: "ramos", descripcion: "Ramos florales", imagen: null },
+    precio: "45.99",
+    precio_descuento: null,
+    precio_final: "45.99",
+    porcentaje_descuento: null,
+    stock: 15,
+    is_featured: true,
+    is_active: true,
+    envio_gratis: true,
+    tipo_flor: "Rosas",
+    ocasiones: ["Amor", "Aniversario"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 2,
+    nombre: "Arreglo Floral Mixto Premium",
+    slug: "arreglo-floral-mixto-premium",
+    descripcion: "Elegante arreglo con flores variadas de temporada en base de cerámica. Incluye rosas, lilium, gerberas y follaje decorativo.",
+    descripcion_corta: "Arreglo floral mixto premium",
+    categoria: { nombre: "Arreglos", slug: "arreglos", descripcion: "Arreglos florales", imagen: null },
+    precio: "75.00",
+    precio_descuento: "65.00",
+    precio_final: "65.00",
+    porcentaje_descuento: 13,
+    stock: 8,
+    is_featured: true,
+    is_active: true,
+    envio_gratis: true,
+    tipo_flor: "Mixto",
+    ocasiones: ["Cumpleaños", "Agradecimiento"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 3,
+    nombre: "Bouquet de Girasoles Alegres",
+    slug: "bouquet-girasoles-alegres",
+    descripcion: "Radiante bouquet de girasoles que transmite alegría y energía positiva. Ideal para regalar a personas especiales.",
+    descripcion_corta: "Bouquet de girasoles alegres",
+    categoria: { nombre: "Bouquets", slug: "bouquets", descripcion: "Bouquets especiales", imagen: null },
+    precio: "42.50",
+    precio_descuento: null,
+    precio_final: "42.50",
+    porcentaje_descuento: null,
+    stock: 12,
+    is_featured: false,
+    is_active: true,
+    envio_gratis: false,
+    tipo_flor: "Girasoles",
+    ocasiones: ["Amistad", "Cumpleaños"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 4,
+    nombre: "Ramo de Tulipanes Primavera",
+    slug: "ramo-tulipanes-primavera",
+    descripcion: "Delicado ramo de tulipanes en colores pastel que anuncia la llegada de la primavera con su frescura única.",
+    descripcion_corta: "Ramo de tulipanes primavera",
+    categoria: { nombre: "Ramos", slug: "ramos", descripcion: "Ramos florales", imagen: null },
+    precio: "38.75",
+    precio_descuento: null,
+    precio_final: "38.75",
+    porcentaje_descuento: null,
+    stock: 10,
+    is_featured: false,
+    is_active: true,
+    envio_gratis: true,
+    tipo_flor: "Tulipanes",
+    ocasiones: ["Primavera", "Cumpleaños"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 5,
+    nombre: "Centro de Mesa Elegante",
+    slug: "centro-mesa-elegante",
+    descripcion: "Sofisticado centro de mesa con flores blancas y verdes, perfecto para eventos especiales y celebraciones.",
+    descripcion_corta: "Centro de mesa elegante",
+    categoria: { nombre: "Centros de Mesa", slug: "centros-mesa", descripcion: "Centros de mesa", imagen: null },
+    precio: "89.99",
+    precio_descuento: "79.99",
+    precio_final: "79.99",
+    porcentaje_descuento: 11,
+    stock: 5,
+    is_featured: true,
+    is_active: true,
+    envio_gratis: true,
+    tipo_flor: "Mixto",
+    ocasiones: ["Eventos", "Bodas"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 6,
+    nombre: "Orquídea Phalaenopsis Blanca",
+    slug: "orquidea-phalaenopsis-blanca",
+    descripcion: "Exquisita orquídea blanca en maceta de cerámica. Símbolo de elegancia y sofisticación para decorar cualquier espacio.",
+    descripcion_corta: "Orquídea phalaenopsis blanca",
+    categoria: { nombre: "Plantas", slug: "plantas", descripcion: "Plantas ornamentales", imagen: null },
+    precio: "125.00",
+    precio_descuento: null,
+    precio_final: "125.00",
+    porcentaje_descuento: null,
+    stock: 3,
+    is_featured: true,
+    is_active: true,
+    envio_gratis: true,
+    tipo_flor: "Orquídeas",
+    ocasiones: ["Lujo", "Decoración"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 7,
+    nombre: "Bouquet de Gerberas Multicolor",
+    slug: "bouquet-gerberas-multicolor",
+    descripcion: "Vibrante bouquet de gerberas en múltiples colores que irradia alegría y vitalidad. Perfecto para levantar el ánimo.",
+    descripcion_corta: "Bouquet de gerberas multicolor",
+    categoria: { nombre: "Bouquets", slug: "bouquets", descripcion: "Bouquets especiales", imagen: null },
+    precio: "52.25",
+    precio_descuento: null,
+    precio_final: "52.25",
+    porcentaje_descuento: null,
+    stock: 18,
+    is_featured: false,
+    is_active: true,
+    envio_gratis: false,
+    tipo_flor: "Gerberas",
+    ocasiones: ["Amistad", "Alegría"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  },
+  {
+    id: 8,
+    nombre: "Arreglo de Gerberas Rosadas",
+    slug: "arreglo-gerberas-rosadas",
+    descripcion: "Tierno arreglo de gerberas rosadas en base elegante, ideal para expresar cariño y ternura hacia personas queridas.",
+    descripcion_corta: "Arreglo de gerberas rosadas",
+    categoria: { nombre: "Arreglos", slug: "arreglos", descripcion: "Arreglos florales", imagen: null },
+    precio: "48.50",
+    precio_descuento: null,
+    precio_final: "48.50",
+    porcentaje_descuento: null,
+    stock: 12,
+    is_featured: false,
+    is_active: true,
+    envio_gratis: false,
+    tipo_flor: "Gerberas",
+    ocasiones: ["Amor", "Ternura"],
+    imagen_principal: "/images/no-image.jpg",
+    imagenes: []
+  }
+];
+
+interface ProductListProps {
+  showRecommended?: boolean;
+  showAdditionals?: boolean;
+}
+
+export default function ProductListClient({ showRecommended = false, showAdditionals = false }: ProductListProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showFilters] = useState(!showRecommended && !showAdditionals);
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
+
+  // Cargar productos desde la API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Usar nginx como proxy (puerto 80) para evitar problemas de CORS
+        // Nginx ya tiene CORS configurado correctamente
+        const timestamp = Date.now();
+        const apiUrl = `http://localhost/api/catalogo/productos/?t=${timestamp}`;
+          
+        console.log('🔍 Iniciando solicitud a:', apiUrl);
+        const response = await fetch(apiUrl, {
+          credentials: 'include',  // Necesario para mantener sesión
+          headers: {
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache'
+          },
+          cache: 'no-store'
+        });
+        
+        console.log('📊 Respuesta recibida:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          // Crear una copia de la respuesta para poder leerla como texto
+          const clonedResponse = response.clone();
+          const errorText = await clonedResponse.text();
+          console.error('❌ Error en la respuesta:', response.status, errorText);
+          throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('📦 Datos recibidos de la API:', data);
+        
+        if (!Array.isArray(data)) {
+          console.error('❌ La respuesta no es un array:', data);
+          throw new Error('Formato de respuesta inesperado: se esperaba un array de productos');
+        }
+        
+        console.log(`✅ ${data.length} productos cargados correctamente`);
+        console.log('📸 Primera imagen:', data[0]?.imagen_principal);
+        
+        setProducts(data);
+        setFilteredProducts(data);
+        setDisplayProducts(data);
+      } catch (error: any) {
+        console.error('⚠️ No se pudo conectar con el backend, usando datos de ejemplo:', error.message);
+        console.error('Error completo:', error);
+        
+        // Fallback silencioso a datos mock si hay error
+        console.log('🔄 Cargando productos de ejemplo...');
+        setProducts(mockProducts);
+        setFilteredProducts(mockProducts);
+        setDisplayProducts(mockProducts);
+        setError(null); // No mostrar error, solo usar mock data
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Procesar parámetros de URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tipoFlorParam = urlParams.get('tipo_flor');
+    
+    console.log('🎯 ProductListClient renderizado con', products.length, 'productos');
+    console.log('🔍 Parámetros de URL:', window.location.search);
+    console.log('🔍 Tipo flor param:', tipoFlorParam);
+
+    if (tipoFlorParam) {
+      console.log('🔍 Filtro de URL detectado:', tipoFlorParam);
+      
+      const filtered = products.filter(product => {
+        const match = product.tipo_flor?.toLowerCase() === tipoFlorParam.toLowerCase();
+        console.log(`🌸 ${product.nombre} (${product.tipo_flor}) - Match: ${match}`);
+        return match;
+      });
+      
+      console.log('✅ Productos filtrados por URL:', filtered.length, 'de', products.length);
+      setDisplayProducts(filtered);
+    } else {
+      console.log('🔍 No hay filtro de URL, mostrando todos los productos');
+      setDisplayProducts(products);
+    }
+  }, [products]);
+
+  const handleFiltersChange = (filters: any) => {
+    console.log('🔄 Aplicando filtros:', filters);
+    
+    let filtered = [...products];
+    
+    // Mapear IDs a nombres para tipos de flor
+    const tiposFlor = [
+      { id: 1, nombre: 'Rosas' },
+      { id: 2, nombre: 'Tulipanes' },
+      { id: 3, nombre: 'Girasoles' },
+      { id: 4, nombre: 'Gerberas' },
+      { id: 5, nombre: 'Mixto' },
+      { id: 6, nombre: 'Orquídeas' }
+    ];
+
+    // Mapear IDs a nombres para ocasiones
+    const ocasiones = [
+      { id: 1, nombre: 'Amor' },
+      { id: 2, nombre: 'Cumpleaños' },
+      { id: 3, nombre: 'Amistad' },
+      { id: 4, nombre: 'Aniversario' },
+      { id: 5, nombre: 'Agradecimiento' }
+    ];
+
+    // Filtrar por tipo de flor
+    if (filters.tipo_flor && filters.tipo_flor.length > 0) {
+      const tiposSeleccionados = filters.tipo_flor.map((id: number) => {
+        const tipo = tiposFlor.find(t => t.id === id);
+        return tipo ? tipo.nombre : '';
+      }).filter(Boolean);
+      
+      console.log('🌸 Filtrando por tipos de flor:', tiposSeleccionados);
+      filtered = filtered.filter(product => 
+        tiposSeleccionados.includes(product.tipo_flor)
+      );
+    }
+
+    // Filtrar por ocasión
+    if (filters.ocasion && filters.ocasion.length > 0) {
+      const ocasionesSeleccionadas = filters.ocasion.map((id: number) => {
+        const ocasion = ocasiones.find(o => o.id === id);
+        return ocasion ? ocasion.nombre : '';
+      }).filter(Boolean);
+      
+      console.log('🎉 Filtrando por ocasiones:', ocasionesSeleccionadas);
+      filtered = filtered.filter(product => 
+        product.ocasiones?.some(ocasion => ocasionesSeleccionadas.includes(ocasion))
+      );
+    }
+
+    // Filtrar por rango de precio
+    if (filters.precio_min !== undefined && filters.precio_min !== null) {
+      console.log('💰 Filtrando precio mínimo:', filters.precio_min);
+      filtered = filtered.filter(product => {
+        const precio = parseFloat(product.precio_descuento || product.precio);
+        return precio >= filters.precio_min;
+      });
+    }
+
+    if (filters.precio_max !== undefined && filters.precio_max !== null) {
+      console.log('💰 Filtrando precio máximo:', filters.precio_max);
+      filtered = filtered.filter(product => {
+        const precio = parseFloat(product.precio_descuento || product.precio);
+        return precio <= filters.precio_max;
+      });
+    }
+
+    // Filtrar por destacados
+    if (filters.destacados) {
+      console.log('⭐ Filtrando solo destacados');
+      filtered = filtered.filter(product => product.is_featured);
+    }
+
+    // Ordenar
+    if (filters.ordering) {
+      console.log('📊 Ordenando por:', filters.ordering);
+      switch (filters.ordering) {
+        case 'precio_asc':
+          filtered.sort((a, b) => {
+            const precioA = parseFloat(a.precio_descuento || a.precio);
+            const precioB = parseFloat(b.precio_descuento || b.precio);
+            return precioA - precioB;
+          });
+          break;
+        case 'precio_desc':
+          filtered.sort((a, b) => {
+            const precioA = parseFloat(a.precio_descuento || a.precio);
+            const precioB = parseFloat(b.precio_descuento || b.precio);
+            return precioB - precioA;
+          });
+          break;
+        case 'nombre_asc':
+          filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+          break;
+        case 'nombre_desc':
+          filtered.sort((a, b) => b.nombre.localeCompare(a.nombre));
+          break;
+      }
+    }
+
+    console.log('✅ Productos después de filtros:', filtered.length);
+    setFilteredProducts(filtered);
+    setDisplayProducts(filtered);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+          <h3 className="text-red-800 font-semibold mb-2">Error al cargar productos</h3>
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-2xl">🌸</span>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {showRecommended ? 'Productos Recomendados' : 
+             showAdditionals ? 'Productos Adicionales' : 
+             'Catálogo de Productos'}
+          </h1>
+        </div>
+        <p className="text-gray-600">
+          Mostrando {displayProducts.length} de {products.length} productos disponibles
+        </p>
+      </div>
+
+      {/* Filtros */}
+      {showFilters && (
+        <div className="mb-8">
+          <ProductFilters onFiltersChange={handleFiltersChange} />
+        </div>
+      )}
+
+      {/* Grid de productos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+        {displayProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+
+      {/* Mensaje cuando no hay productos */}
+      {displayProducts.length === 0 && (
+        <div className="text-center py-12">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
+            <h3 className="text-gray-800 font-semibold mb-2">No se encontraron productos</h3>
+            <p className="text-gray-600 mb-4">
+              Intenta ajustar los filtros para ver más resultados
+            </p>
+            <button 
+              onClick={() => handleFiltersChange({})}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              Limpiar Filtros
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

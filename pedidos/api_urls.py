@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 from .api_views import (
     CheckoutView,
     PedidoDetailView,
@@ -8,6 +9,7 @@ from .api_views import (
     StockStatusView,
     CheckoutSummaryView
 )
+from .simple_checkout import simple_checkout, test_cart
 from .payment_views import (
     CreatePaymentView,
     MercadoPagoWebhookView,
@@ -20,7 +22,9 @@ app_name = 'pedidos-api'
 
 urlpatterns = [
     # Checkout
-    path('checkout/', CheckoutView.as_view(), name='checkout'),
+    path('checkout/', csrf_exempt(CheckoutView.as_view()), name='checkout'),
+    path('simple-checkout/', simple_checkout, name='simple-checkout'),
+    path('test-cart/', test_cart, name='test-cart'),
     path('checkout/summary/', CheckoutSummaryView.as_view(), name='checkout-summary'),
     path('validate-stock/', ValidateStockView.as_view(), name='validate-stock'),
     path('stock-status/', StockStatusView.as_view(), name='stock-status'),

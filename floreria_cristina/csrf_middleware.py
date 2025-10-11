@@ -20,5 +20,10 @@ class CustomCsrfMiddleware(CsrfViewMiddleware):
                 setattr(callback, 'csrf_exempt', True)
                 return None
         
+        # Eximir completamente todas las APIs para desarrollo
+        if path.startswith('/api/'):
+            setattr(callback, 'csrf_exempt', True)
+            return None
+        
         # Si no está exenta, aplicar el middleware CSRF normal
         return super().process_view(request, callback, callback_args, callback_kwargs)

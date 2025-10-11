@@ -87,37 +87,67 @@ class Cart:
         """
         Añade un producto al carrito o actualiza su cantidad.
         """
-        if self.user and self.user.is_authenticated:
-            # Usuario registrado: usar base de datos
-            item, created = CarritoItem.objects.get_or_create(
-                carrito=self.carrito_db,
-                producto=product,
-                defaults={
-                    'cantidad': quantity,
-                    'precio_unitario': product.get_precio_final
-                }
-            )
-            
-            if not created:
-                if update_quantity:
-                    item.cantidad = quantity
-                else:
-                    item.cantidad += quantity
-                item.save()
-        else:
-            # Usuario anónimo: usar sesión
-            product_id = str(product.id)
-            if product_id not in self.cart:
-                self.cart[product_id] = {
-                    'quantity': 0, 
-                    'price': float(product.get_precio_final)
-                }
-            
-            if update_quantity:
-                self.cart[product_id]['quantity'] = quantity
+        try:
+            if not isinstance(quantity, int) or quantity < 1:
+                raise ValueError("La cantidad debe ser un número entero positivo")
+                
+            if self.user and self.user.is_authenticated:
+                # Usuario registrado: usar base de datos
+                item, created = CarritoItem.objects.get_or_create(
+                    carrito=self.carrito_db,
+                    producto=product,
+                    defaults={
+                        'cantidad': quantity,
+                        'precio_unitario': product.get_precio_final
+                    }
+                )
+                
+                if not created:
+                    if update_quantity:
+                        item.cantidad = quantity
+                    else:
+                        item.cantidad += quantity
+                    
+                    # Asegurarse de no exceder el stock
+                    if item.cantidad > product.stock:
+                        item.cantidad = product.stock
+                        
+                    item.save()
+                    
+                    # Si la cantidad es 0 o menos, eliminar el ítem
+                    if item.cantidad <= 0:
+                        item.delete()
+                        
             else:
-                self.cart[product_id]['quantity'] += quantity
-            self.save()
+                # Usuario anónimo: usar sesión
+                product_id = str(product.id)
+                
+                if product_id not in self.cart:
+                    self.cart[product_id] = {
+                        'quantity': 0, 
+                        'price': float(product.get_precio_final)
+                    }
+                
+                if update_quantity:
+                    self.cart[product_id]['quantity'] = quantity
+                else:
+                    self.cart[product_id]['quantity'] += quantity
+                
+                # Asegurarse de no exceder el stock
+                if self.cart[product_id]['quantity'] > product.stock:
+                    self.cart[product_id]['quantity'] = product.stock
+                
+                # Si la cantidad es 0 o menos, eliminar el ítem
+                if self.cart[product_id]['quantity'] <= 0:
+                    del self.cart[product_id]
+                
+                self.save()
+                
+            return True
+            
+        except Exception as e:
+            print(f"Error al agregar al carrito: {str(e)}")
+            return False
 
     def save(self):
         """Marcar la sesión como modificada"""
@@ -188,6 +218,13 @@ class Cart:
                         'total_price': price * quantity
                     }
 
+    def __contains__(self, product):
+        """Verifica si un producto ya está en el carrito"""
+        if self.user and self.user.is_authenticated:
+            return self.carrito_db.items.filter(producto=product).exists()
+        else:
+            return str(product.id) in self.cart
+
     def __len__(self):
         """Retorna el número de items en el carrito"""
         if self.user and self.user.is_authenticated:
@@ -195,6 +232,18 @@ class Cart:
         else:
             cart = self.session.get(settings.CART_SESSION_ID, {})
             return sum(item['quantity'] for item in cart.values())
+
+    def get_items(self):
+        """Obtiene todos los items del carrito con sus detalles"""
+        items = []
+        for item in self:
+            items.append({
+                'producto': item['producto'],
+                'quantity': item['quantity'],
+                'price': str(item['price']),
+                'total_price': str(item['total_price'])
+            })
+        return items
 
     def get_total_price(self):
         """

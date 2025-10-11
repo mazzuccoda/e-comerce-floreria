@@ -48,9 +48,18 @@ class Pedido(models.Model):
     regalo_anonimo = models.BooleanField(default=False)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     confirmado = models.BooleanField(default=False)
+    numero_pedido = models.CharField(max_length=20, unique=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.numero_pedido:
+            # Generar número de pedido único
+            import random
+            import string
+            self.numero_pedido = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Pedido #{self.id} para {self.nombre_destinatario} ({self.get_estado_display()})"
+        return f"Pedido #{self.numero_pedido or self.id} para {self.nombre_destinatario} ({self.get_estado_display()})"
     
     def confirmar_pedido(self):
         """
@@ -73,13 +82,53 @@ class Pedido(models.Model):
         self.confirmado = True
         self.save()
         
-        # Activar notificaciones si hay usuario registrado
-        if self.cliente:
-            try:
-                from notificaciones.tasks import notificar_pedido_confirmado
+        # Activar notificaciones para todos los pedidos
+        try:
+            from notificaciones.tasks import notificar_pedido_confirmado
+            from django.contrib.auth.models import User
+            
+            if self.cliente:
+                # Si hay cliente registrado, usar sus datos
                 notificar_pedido_confirmado.delay(self.id, self.cliente.id)
-            except ImportError:
-                pass  # Notificaciones no disponibles
+            elif self.email_comprador:
+                # Si es invitado pero tenemos email, crear notificación directa
+                from notificaciones.models import TipoNotificacion, CanalNotificacion, Notificacion
+                from notificaciones.services import notificacion_service
+                
+                # Crear usuario temporal para la notificación
+                admin_user = User.objects.filter(is_superuser=True).first()
+                if admin_user:
+                    contexto = {
+                        'pedido_id': self.id,
+                        'nombre': self.nombre_comprador or 'Cliente',
+                        'total': self.total,
+                        'fecha': self.creado.strftime('%d/%m/%Y'),
+                        'items_count': self.items.count()
+                    }
+                    
+                    print(f"Creando notificación para pedido {self.id} - email: {self.email_comprador}")
+                    
+                    # Crear notificación directamente
+                    try:
+                        notif = notificacion_service.crear_notificacion(
+                            usuario=admin_user,
+                            tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
+                            canal=CanalNotificacion.EMAIL,
+                            destinatario=self.email_comprador,
+                            contexto=contexto,
+                            pedido_id=self.id
+                        )
+                        
+                        # Enviar inmediatamente
+                        from notificaciones.tasks import enviar_notificacion_async
+                        enviar_notificacion_async.delay(notif.id)
+                        print(f"Notificación {notif.id} creada y enviada a {self.email_comprador}")
+                    except Exception as e:
+                        print(f"Error creando notificación: {str(e)}")
+        except ImportError:
+            print("Módulo de notificaciones no disponible")
+        except Exception as e:
+            print(f"Error en notificación: {str(e)}")
         
         return True, "Pedido confirmado exitosamente"
     

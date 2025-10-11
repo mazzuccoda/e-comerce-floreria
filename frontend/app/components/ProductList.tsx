@@ -1,23 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ProductCardSimple from './ProductCardSimple';
+import ProductFilters from './ProductFilters';
 import { Product } from '@/types/Product';
-import ProductCard from './ProductCard';
 import styles from './ProductList.module.css';
-
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window === 'undefined' ? 'http://web:8000' : 'http://localhost:8000');
-
-interface TipoFlor {
-  id: number;
-  nombre: string;
-  slug: string;
-}
-
-interface Ocasion {
-  id: number;
-  nombre: string;
-  slug: string;
-}
 
 interface ProductListProps {
   showRecommended?: boolean;
@@ -28,258 +15,224 @@ export default function ProductList({ showRecommended = false, showAdditionals =
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [nextUrl, setNextUrl] = useState<string | null>(null);
-  const [prevUrl, setPrevUrl] = useState<string | null>(null);
-  const [currentUrl, setCurrentUrl] = useState<string>(() => {
-    if (showRecommended) {
-      return `${API_URL}/api/catalogo/productos/recomendados/`;
-    } else if (showAdditionals) {
-      return `${API_URL}/api/catalogo/productos/adicionales/`;
-    }
-    return `${API_URL}/api/catalogo/productos/`;
-  });
-  
-  // Opciones para filtros
-  const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
-  const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
-  
-  // Filtros
-  const [tipoFlorFilter, setTipoFlorFilter] = useState<string>('');
-  const [ocasionFilter, setOcasionFilter] = useState<string>('');
-  const [priceMin, setPriceMin] = useState<string>('');
-  const [priceMax, setPriceMax] = useState<string>('');
-  const [sort, setSort] = useState<'precio' | '-precio' | 'nombre' | '-nombre'>('nombre');
-  const [showFeatured, setShowFeatured] = useState<boolean>(false);
-  const [showAdicionales, setShowAdicionales] = useState<boolean>(false);
+  const [filters, setFilters] = useState<any>({});
+  const [showFilters, setShowFilters] = useState(!showRecommended && !showAdditionals);
 
-  // Cargar opciones de filtros
-  useEffect(() => {
-    const loadFilterOptions = async () => {
-      try {
-        const [tiposResponse, ocasionesResponse] = await Promise.all([
-          fetch(`${API_URL}/api/catalogo/tipos-flor/`),
-          fetch(`${API_URL}/api/catalogo/ocasiones/`)
-        ]);
-        
-        if (tiposResponse.ok) {
-          const tiposData = await tiposResponse.json();
-          setTiposFlor(tiposData.results || tiposData);
-        }
-        
-        if (ocasionesResponse.ok) {
-          const ocasionesData = await ocasionesResponse.json();
-          setOcasiones(ocasionesData.results || ocasionesData);
-        }
-      } catch (error) {
-        console.error('Error loading filter options:', error);
-      }
-    };
+  console.log('🔥 ProductList initialized:', { showRecommended, showAdditionals, showFilters });
+
+  const getApiUrl = () => {
+    // Usar rutas relativas para que funcione con el proxy
+    let url = '/api/catalogo/productos/';
     
-    loadFilterOptions();
-  }, []);
-
-  // Construir URL con filtros
-  const buildFilteredUrl = () => {
+    // Aplicar filtros
     const params = new URLSearchParams();
     
-    if (tipoFlorFilter) params.append('tipo_flor__slug', tipoFlorFilter);
-    if (ocasionFilter) params.append('ocasiones__slug', ocasionFilter);
-    if (priceMin) params.append('precio__gte', priceMin);
-    if (priceMax) params.append('precio__lte', priceMax);
-    if (showFeatured) params.append('is_featured', 'true');
-    if (showAdicionales) params.append('es_adicional', 'true');
-    if (sort) params.append('ordering', sort);
+    if (filters.tipo_flor) params.append('tipo_flor', filters.tipo_flor);
+    if (filters.ocasion) params.append('ocasion', filters.ocasion);
+    if (filters.precio_min) params.append('precio_min', filters.precio_min);
+    if (filters.precio_max) params.append('precio_max', filters.precio_max);
+    if (filters.destacados) params.append('destacados', 'true');
+    if (filters.adicionales) params.append('adicionales', 'true');
+    if (filters.ordering) params.append('ordering', filters.ordering);
     
     const queryString = params.toString();
-    return `${API_URL}/api/catalogo/productos/${queryString ? `?${queryString}` : ''}`;
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+    
+    return url;
   };
 
-  // Aplicar filtros
-  const applyFilters = () => {
-    const newUrl = buildFilteredUrl();
-    setCurrentUrl(newUrl);
+  const testBackendConnection = async () => {
+    const testUrl = '/api/catalogo/productos/';
+    console.log('🔍 Probando conexión con el backend en:', testUrl);
+    
+    try {
+      // Hacer una petición simple al backend
+      const testResponse = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      });
+      
+      console.log('🔍 Estado de la prueba de conexión:', testResponse.status);
+      console.log('🔍 Headers de la respuesta:', [...testResponse.headers.entries()]);
+      
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log('✅ Prueba de conexión exitosa. Datos recibidos:', testData);
+        return true;
+      } else {
+        const errorText = await testResponse.text();
+        console.error('❌ Error en la prueba de conexión:', testResponse.status, errorText);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error en la prueba de conexión:', error);
+      return false;
+    }
+  };
+
+  const loadProducts = async () => {
+    console.log('🔍 Iniciando carga de productos...');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Primero probamos la conexión con el backend
+      const connectionOk = await testBackendConnection();
+      if (!connectionOk) {
+        setError('No se pudo conectar con el servidor. Verifica tu conexión y recarga la página.');
+        return;
+      }
+
+      // Si la conexión es exitosa, proceder con la carga de productos
+      const backendUrl = getApiUrl() || '/api/catalogo/productos/';
+      console.log('🔗 Solicitando productos a:', backendUrl);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
+      
+      try {
+        const response = await fetch(backendUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('📝 Estado de la respuesta:', response.status);
+        console.log('📦 Cabeceras de la respuesta:', [...response.headers.entries()]);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Error en la respuesta:', response.status, errorText);
+          throw new Error(`Error ${response.status}: ${errorText || 'Error desconocido'}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Datos recibidos del servidor:', data);
+        
+        if (!data || (!data.results && !Array.isArray(data))) {
+          console.error('❌ Formato de respuesta inesperado:', data);
+          throw new Error('Formato de respuesta inesperado del servidor');
+        }
+        
+        const productos = data.results || data;
+        
+        if (!productos || !Array.isArray(productos)) {
+          console.error('❌ Formato de respuesta inesperado:', data);
+          setError('Error al cargar los productos: formato de respuesta inesperado');
+          return;
+        }
+
+        console.log('📊 Productos recibidos del servidor:', productos);
+        
+        // Mostrar el estado de is_active de los primeros productos para depuración
+        if (productos.length > 0) {
+          console.log('🔍 Estado is_active de los primeros productos:');
+          productos.slice(0, 3).forEach((p: Product, i: number) => {
+            console.log(`  Producto ${i + 1}: ${p.nombre} - is_active: ${p.is_active}, stock: ${p.stock}`);
+          });
+        }
+
+        // Filtrar productos con stock y activos
+        const productosFiltrados = productos.filter((p: Product) => {
+          const isActive = p.is_active !== false; // Asegurarse de que is_active no sea false
+          const hasStock = p.stock > 0;
+          console.log(`🔍 Filtrado - ${p.nombre}: is_active=${p.is_active}, stock=${p.stock} => ${isActive && hasStock ? 'INCLUIDO' : 'EXCLUIDO'}`);
+          return isActive && hasStock;
+        });
+        
+        if (productosFiltrados.length === 0) {
+          console.log('ℹ️ No hay productos activos con stock disponible');
+          console.log('ℹ️ Productos recibidos:', productos);
+          setError('No hay productos disponibles en este momento');
+          return;
+        }
+
+        console.log(`✅ ${productosFiltrados.length} de ${productos.length} productos cargados correctamente`);
+        setProducts(productosFiltrados);
+        
+      } catch (error: any) {
+        console.error('❌ Error al cargar productos:', error);
+        setError(`Error al cargar productos: ${error.message || 'Error desconocido'}`);
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Error inesperado:', error);
+      setError(`Error inesperado: ${error.message || 'Por favor, intente nuevamente más tarde'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const response = await fetch(currentUrl);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        const items: Product[] = data.results || data;
-        setProducts(items);
-        // Paginación DRF
-        setNextUrl(data.next || null);
-        setPrevUrl(data.previous || null);
-      } catch (e: any) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    }
+    console.log('🚀 useEffect triggered, loading mock data...');
+    loadProducts();
+  }, []);
 
-    setLoading(true);
-    fetchProducts();
-  }, [currentUrl]);
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
+  };
 
   if (loading) {
-    // skeletons
     return (
-      <div className={styles.skeletonGrid}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className={styles.skeletonCard}>
-            <div className={styles.skeletonImage} />
-            <div className={styles.skeletonText} />
-            <div className={styles.skeletonPrice} />
-          </div>
-        ))}
+      <div className={styles.loading}>
+        <div className={styles.spinner}></div>
+        <p>Cargando productos...</p>
       </div>
     );
   }
 
   if (error) {
-    return <p className="text-center text-red-500">Error al cargar los productos: {error}</p>;
+    return (
+      <div className={styles.error}>
+        <p>❌ {error}</p>
+        <button onClick={loadProducts} className={styles.retryBtn}>
+          🔄 Reintentar
+        </button>
+      </div>
+    );
   }
 
-  const handleReset = () => {
-    setTipoFlorFilter('');
-    setOcasionFilter('');
-    setPriceMin('');
-    setPriceMax('');
-    setSort('nombre');
-    setShowFeatured(false);
-    setShowAdicionales(false);
-    setCurrentUrl(`${API_URL}/api/catalogo/productos/`);
-  };
-
+  console.log('Rendering ProductList, showFilters:', showFilters);
+  
   return (
-    <>
-      <div className="product-list-toolbar">
-        <div className="product-list-filters">
-          {/* Filtro por tipo de flor */}
-          <select
-            className="filter-select"
-            value={tipoFlorFilter}
-            onChange={(e) => setTipoFlorFilter(e.target.value)}
-            aria-label="Filtrar por tipo de flor"
-          >
-            <option value="">Todos los tipos</option>
-            {tiposFlor.map((tipo) => (
-              <option key={tipo.id} value={tipo.slug}>
-                {tipo.nombre}
-              </option>
-            ))}
-          </select>
-
-          {/* Filtro por ocasión */}
-          <select
-            className="filter-select"
-            value={ocasionFilter}
-            onChange={(e) => setOcasionFilter(e.target.value)}
-            aria-label="Filtrar por ocasión"
-          >
-            <option value="">Todas las ocasiones</option>
-            {ocasiones.map((ocasion) => (
-              <option key={ocasion.id} value={ocasion.slug}>
-                {ocasion.nombre}
-              </option>
-            ))}
-          </select>
-
-          {/* Filtros de precio */}
-          <input
-            className="filter-input"
-            type="number"
-            placeholder="Precio mín"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-          />
-          <input
-            className="filter-input"
-            type="number"
-            placeholder="Precio máx"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-          />
-
-          {/* Ordenamiento */}
-          <select
-            className="filter-select"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as any)}
-            aria-label="Ordenar por"
-          >
-            <option value="nombre">Nombre (A-Z)</option>
-            <option value="-nombre">Nombre (Z-A)</option>
-            <option value="precio">Precio (menor a mayor)</option>
-            <option value="-precio">Precio (mayor a menor)</option>
-            <option value="-created_at">Más recientes</option>
-          </select>
-
-          {/* Checkboxes para destacados y adicionales */}
-          <label className="filter-checkbox">
-            <input
-              type="checkbox"
-              checked={showFeatured}
-              onChange={(e) => setShowFeatured(e.target.checked)}
+    <div className={styles.productList}>
+      {showFilters && (
+        <div className={styles.debugFilters}>
+          <h3>FILTROS DEBUG</h3>
+          <div style={{ background: '#ffeb3b', padding: '10px', margin: '10px 0' }}>
+            <p>🔥 COMPONENTE PRODUCTFILTERS DEBERÍA APARECER AQUÍ:</p>
+            <ProductFilters 
+              onFiltersChange={handleFiltersChange}
+              className={styles.filters}
             />
-            Solo recomendados
-          </label>
-
-          <label className="filter-checkbox">
-            <input
-              type="checkbox"
-              checked={showAdicionales}
-              onChange={(e) => setShowAdicionales(e.target.checked)}
-            />
-            Solo adicionales
-          </label>
-
-          <button className="filter-button" onClick={applyFilters}>
-            Aplicar Filtros
-          </button>
-          <button className="filter-button secondary" onClick={handleReset}>
-            Limpiar
-          </button>
-        </div>
-        <div className="product-list-pagination">
-          <button
-            className="pagination-button"
-            disabled={!prevUrl}
-            onClick={() => prevUrl && setCurrentUrl(prevUrl)}
-          >Anterior</button>
-          <button
-            className="pagination-button"
-            disabled={!nextUrl}
-            onClick={() => nextUrl && setCurrentUrl(nextUrl)}
-          >Siguiente</button>
-        </div>
-      </div>
-
-      {products.length === 0 ? (
-        <div className="empty-state">No hay productos que coincidan con los filtros aplicados.</div>
-      ) : (
-        <div className="product-grid">
-          {products.map((product: Product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          </div>
         </div>
       )}
-
-      <div className="product-list-pagination">
-        <button
-          className="pagination-button"
-          disabled={!prevUrl}
-          onClick={() => prevUrl && setCurrentUrl(prevUrl)}
-        >Anterior</button>
-        <button
-          className="pagination-button"
-          disabled={!nextUrl}
-          onClick={() => nextUrl && setCurrentUrl(nextUrl)}
-        >Siguiente</button>
+      
+      <div className={styles.productsGrid}>
+        {products.length > 0 ? (
+          products.map((product) => (
+            <ProductCardSimple key={product.id} product={product} />
+          ))
+        ) : (
+          <div className={styles.noProducts}>
+            <p>🌸 No se encontraron productos</p>
+            <p>Intenta ajustar los filtros de búsqueda</p>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }

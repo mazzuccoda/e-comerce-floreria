@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
 from django.conf import settings
 from django.conf.urls.static import static
+from pedidos.simple_views import simple_checkout, simple_cart_test
 from django.views.generic import TemplateView
 
 # API URL patterns
@@ -38,8 +38,9 @@ urlpatterns = [
 
     # Apps principales con sus vistas de plantillas
 
-
-
+    # Simple checkout endpoints (sin CSRF)
+    path('direct-checkout/', simple_checkout, name='simple-checkout'),
+    path('test-cart/', simple_cart_test, name='simple-cart-test'),
 
     # API URLs
     path('api/', include(api_urlpatterns)),
@@ -61,3 +62,9 @@ if settings.DEBUG:
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),
     ] + urlpatterns
+
+    # Development fallbacks: expose cart endpoints without /api prefix
+    # Esto permite que llamadas legacy a /carrito/simple funcionen en dev
+    urlpatterns += [
+        path('carrito/', include(('carrito.api_urls', 'carrito'), namespace='carrito-api-direct')),
+    ]

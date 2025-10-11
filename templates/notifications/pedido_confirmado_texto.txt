@@ -1,0 +1,17 @@
+¡Gracias por tu pedido en Florería Cristina!
+
+Hola {{ nombre }},
+
+Tu pedido #{{ pedido_id }} ha sido confirmado y estamos trabajando en él.
+
+Detalles del pedido:
+- Fecha: {{ fecha }}
+- Productos: {{ items_count }}
+- Total: ${{ total }}
+
+Te notificaremos cuando tu pedido esté en camino. Si tienes alguna pregunta, contáctanos al (123) 456-7890.
+
+Para ver tu pedido, visita: http://localhost:3000/pedidos/{{ pedido_id }}
+
+Florería Cristina
+Calle Principal 123, Buenos Aires, Argentina

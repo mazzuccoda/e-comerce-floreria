@@ -1,183 +1,336 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useCart } from '../../context/CartContext';
-import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import StockAlert from '../components/StockAlert';
-import './cart.css';
+
+interface CartItem {
+  producto: {
+    id: number;
+    nombre: string;
+    precio: string;
+    imagen_principal?: string;
+  };
+  quantity: number;
+  price: string;
+  total_price: string;
+}
+
+interface Cart {
+  items: CartItem[];
+  total_price: string;
+  total_items: number;
+  is_empty: boolean;
+}
+
+// Función auxiliar para obtener la URL base de la API
+const getApiBaseUrl = (): string => {
+  // En el navegador, usar la URL actual
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // En SSR, usar la variable de entorno o la URL del contenedor
+  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://web:8000';
+};
 
 const CartPage = () => {
-  const { cart, loading, updateQuantity, removeFromCart, clearCart } = useCart();
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updatingItem, setUpdatingItem] = useState<number | null>(null);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS'
-    }).format(price);
+  const fetchCart = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const apiBaseUrl = getApiBaseUrl();
+      console.log('📡 Conectando con API en:', `${apiBaseUrl}/api/carrito/simple/`);
+        
+      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setCart(data);
+    } catch (err: any) {
+      console.error('❌ Error fetching cart:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const updateQuantity = async (productId: number, newQuantity: number) => {
+    if (newQuantity < 1) return;
+    
+    setUpdatingItem(productId);
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+      console.log('📡 Enviando actualización a:', `${apiBaseUrl}/api/carrito/simple/update/`);
+        
+      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/update/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          quantity: newQuantity
+        })
+      });
+
+      if (response.ok) {
+        await fetchCart();
+      } else {
+        console.error('Error en respuesta:', response.status, response.statusText);
+      }
+    } catch (err) {
+      console.error('Error updating quantity:', err);
+    } finally {
+      setUpdatingItem(null);
+    }
+  };
+
+  const removeItem = async (productId: number) => {
+    setUpdatingItem(productId);
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+      console.log('📡 Eliminando producto:', `${apiBaseUrl}/api/carrito/simple/remove/`);
+        
+      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/remove/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify({ product_id: productId })
+      });
+
+      if (response.ok) {
+        await fetchCart();
+      } else {
+        console.error('Error en respuesta:', response.status, response.statusText);
+      }
+    } catch (err) {
+      console.error('Error removing item:', err);
+    } finally {
+      setUpdatingItem(null);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+      console.log('📡 Vaciando carrito:', `${apiBaseUrl}/api/carrito/simple/clear/`);
+        
+      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/clear/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      if (response.ok) {
+        await fetchCart();
+      } else {
+        console.error('Error en respuesta:', response.status, response.statusText);
+      }
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCart();
+  }, []);
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-300 border-t-pink-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando tu carrito...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Error de Conexión</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button 
+            onClick={fetchCart}
+            className="bg-pink-600 text-white px-6 py-3 rounded-lg hover:bg-pink-700 transition"
+          >
+            Reintentar
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="cart-page">
-      <div className="cart-header">
-        <h1 className="cart-title">🛒 Tu Carrito</h1>
-        {!cart.is_empty && (
-          <button
-            onClick={clearCart}
-            className="clear-cart-btn"
-          >
-            🗑️ Vaciar carrito
-          </button>
-        )}
-      </div>
-
-      {/* Alerta de stock */}
-      {!cart.is_empty && <StockAlert />}
-
-      {cart.is_empty ? (
-        <div className="empty-cart">
-          <div className="empty-cart-icon">🛒</div>
-          <h2 className="empty-cart-title">Tu carrito está vacío</h2>
-          <p className="empty-cart-text">¡Descubre nuestros hermosos arreglos florales!</p>
-          <Link href="/productos" className="shop-now-btn">
-            🌸 Ver productos
-          </Link>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">🛒 Tu Carrito</h1>
+          <p className="text-gray-600">
+            {cart?.total_items || 0} {cart?.total_items === 1 ? 'producto' : 'productos'} en tu carrito
+          </p>
         </div>
-      ) : (
-        <div className="cart-content">
-          {/* Lista de productos */}
-          <div className="cart-items-section">
-            <div className="cart-items-header">
-              <h2 className="items-title">
-                🌺 Productos ({cart.total_items} {cart.total_items === 1 ? 'item' : 'items'})
-              </h2>
-            </div>
-              
-            <div className="cart-items-list">
-              {cart.items.map((item) => (
-                <div key={item.producto.id} className="cart-item">
-                  <div className="item-content">
-                    {/* Imagen del producto */}
-                    <div className="item-image">
-                      <Image
-                        src={item.producto.imagen_principal || 'https://via.placeholder.com/120x120/f0f0f0/666666?text=🌸'}
+
+        {cart?.is_empty ? (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <div className="text-8xl mb-6">🌸</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">Tu carrito está vacío</h2>
+            <p className="text-gray-600 mb-8">¡Descubre nuestros hermosos arreglos florales!</p>
+            <Link 
+              href="/" 
+              className="inline-block bg-pink-600 text-white px-8 py-3 rounded-lg hover:bg-pink-700 transition font-medium"
+            >
+              Ver Productos
+            </Link>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="lg:col-span-2 space-y-4">
+              {cart?.items?.map((item) => (
+                <div key={item.producto.id} className="bg-white rounded-lg shadow-sm p-6 flex gap-6">
+                  {/* Product Image */}
+                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                    {item.producto.imagen_principal ? (
+                      <img 
+                        src={item.producto.imagen_principal}
                         alt={item.producto.nombre}
-                        width={120}
-                        height={120}
-                        className="product-img"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://via.placeholder.com/120x120/f0f0f0/666666?text=🌸';
-                        }}
+                        className="w-full h-full object-cover"
                       />
-                    </div>
-
-                    {/* Información del producto */}
-                    <div className="item-info">
-                      <h3 className="item-name">{item.producto.nombre}</h3>
-                      <p className="item-description">{item.producto.descripcion}</p>
-                      <div className="item-price">{formatPrice(item.price)} c/u</div>
-                      <div className="item-stock">📦 Stock: {item.producto.stock}</div>
-                    </div>
-
-                    {/* Controles */}
-                    <div className="item-controls">
-                      <div className="item-total">{formatPrice(item.total_price)}</div>
-                      
-                      <div className="quantity-controls">
-                        <button
-                          onClick={() => updateQuantity(item.producto.id, item.quantity - 1)}
-                          disabled={loading}
-                          className="qty-btn qty-minus"
-                          title="Reducir cantidad"
-                        >
-                          −
-                        </button>
-                        
-                        <span className="qty-display">{item.quantity}</span>
-                        
-                        <button
-                          onClick={() => updateQuantity(item.producto.id, item.quantity + 1)}
-                          disabled={loading || item.quantity >= item.producto.stock}
-                          className="qty-btn qty-plus"
-                          title="Aumentar cantidad"
-                        >
-                          +
-                        </button>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        🌸
                       </div>
+                    )}
+                  </div>
 
+                  {/* Product Info */}
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-800 mb-1">{item.producto.nombre}</h3>
+                    <p className="text-pink-600 font-medium">${item.price}</p>
+                    
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-3 mt-4">
                       <button
-                        onClick={() => removeFromCart(item.producto.id)}
-                        disabled={loading}
-                        className="remove-btn"
-                        title="Eliminar producto"
+                        onClick={() => updateQuantity(item.producto.id, item.quantity - 1)}
+                        disabled={updatingItem === item.producto.id || item.quantity <= 1}
+                        className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                       >
-                        🗑️
+                        −
+                      </button>
+                      <span className="w-12 text-center font-medium">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.producto.id, item.quantity + 1)}
+                        disabled={updatingItem === item.producto.id}
+                        className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => removeItem(item.producto.id)}
+                        disabled={updatingItem === item.producto.id}
+                        className="ml-auto text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Eliminar
                       </button>
                     </div>
+                  </div>
+
+                  {/* Item Total */}
+                  <div className="text-right">
+                    <p className="font-bold text-gray-800">${item.total_price}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Resumen del pedido */}
-          <div className="cart-summary">
-            <div className="summary-card">
-              <h2 className="summary-title">💰 Resumen del pedido</h2>
-              
-              <div className="summary-details">
-                <div className="summary-row">
-                  <span>Subtotal ({cart.total_items} items)</span>
-                  <span>{formatPrice(cart.total_price)}</span>
-                </div>
+            {/* Order Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+                <h2 className="text-xl font-bold text-gray-800 mb-6">Resumen del Pedido</h2>
                 
-                <div className="summary-row">
-                  <span>🚚 Envío</span>
-                  <span className="free-shipping">Gratis</span>
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Subtotal ({cart?.total_items} {cart?.total_items === 1 ? 'producto' : 'productos'})</span>
+                    <span>${cart?.total_price}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Envío</span>
+                    <span className="text-green-600">A calcular</span>
+                  </div>
+                  <div className="border-t pt-3 flex justify-between font-bold text-lg">
+                    <span>Total</span>
+                    <span className="text-pink-600">${cart?.total_price}</span>
+                  </div>
                 </div>
-                
-                <div className="summary-total">
-                  <span>Total</span>
-                  <span>{formatPrice(cart.total_price)}</span>
-                </div>
-              </div>
 
-              <div className="summary-actions">
-                <Link href="/checkout" className="checkout-btn">
-                  💳 Finalizar compra
+                <Link
+                  href="/checkout"
+                  className="block w-full bg-pink-600 text-white text-center py-3 rounded-lg hover:bg-pink-700 transition font-medium mb-3"
+                >
+                  Proceder al Checkout
                 </Link>
-                
-                <Link href="/productos" className="continue-btn">
-                  🌸 Continuar comprando
-                </Link>
-              </div>
 
-              <div className="summary-benefits">
-                <div className="benefit-item">
-                  ✅ Envío gratuito en CABA
-                </div>
-                <div className="benefit-item">
-                  ✅ Flores frescas garantizadas
-                </div>
-                <div className="benefit-item">
-                  ✅ Pago seguro con Mercado Pago
+                <Link
+                  href="/"
+                  className="block w-full border border-gray-300 text-gray-700 text-center py-3 rounded-lg hover:bg-gray-50 transition font-medium"
+                >
+                  Seguir Comprando
+                </Link>
+
+                {/* Trust Badges */}
+                <div className="mt-6 pt-6 border-t space-y-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <span>✓</span>
+                    <span>Entrega garantizada</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>✓</span>
+                    <span>Flores frescas del día</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>✓</span>
+                    <span>Pago seguro</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

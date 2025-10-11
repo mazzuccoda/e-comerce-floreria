@@ -25,6 +25,7 @@ export interface Product {
   precio_final: string;
   stock: number;
   is_featured: boolean;
+  is_active: boolean;
   envio_gratis?: boolean;
   imagen_principal: string;
   imagenes: ProductoImagen[];

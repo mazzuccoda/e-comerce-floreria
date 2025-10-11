@@ -1,4 +1,4 @@
-import ProductList from './components/ProductList';
+import ProductListFinal from './components/ProductListFinal';
 
 export default function Home() {
   return (
@@ -34,13 +34,13 @@ export default function Home() {
       <section className="section">
         <h2 className="section-title">RECOMENDADOS</h2>
         <p className="section-subtitle">Las flores más vendidas en Buenos Aires</p>
-        <ProductList showRecommended={true} />
+        <ProductListFinal showRecommended={true} />
       </section>
 
       <section className="section">
         <h2 className="section-title">AGREGÁ ADICIONALES A TU RAMO</h2>
         <p className="section-subtitle">Sumalos dentro de tu compra para completar tu regalo</p>
-        <ProductList showAdditionals={true} />
+        <ProductListFinal showAdditionals={true} />
       </section>
     </div>
   );

@@ -1,68 +1,68 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
 
-interface PaymentResult {
-  pedido_id: number;
-  numero_pedido: string;
-  payment_id: string;
-  status: string;
+interface PedidoData {
+  id: number;
+  nombre_comprador: string;
+  nombre_destinatario: string;
   total: number;
+  estado: string;
+  creado: string;
 }
 
 const PaymentSuccessPage = () => {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
+  const pedidoId = searchParams.get('pedido');
+  const [pedidoData, setPedidoData] = useState<PedidoData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const processPaymentResult = async () => {
-      const paymentId = searchParams.get('payment_id');
-      const status = searchParams.get('status');
-      const merchantOrderId = searchParams.get('merchant_order_id');
-
-      if (!paymentId || !status) {
-        toast.error('Información de pago incompleta');
-        router.push('/');
+    const fetchPedidoData = async () => {
+      if (!pedidoId) {
+        setError('No se encontró el ID del pedido');
+        setLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pedidos/pago-exitoso/`, {
-          method: 'POST',
+        // Usar nginx como proxy para mantener consistencia con el resto de la app
+        const apiUrl = `http://localhost/api/pedidos/${pedidoId}/`;
+        
+        console.log('🔄 Intentando cargar datos del pedido desde:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          credentials: 'include',  // Importante para mantener la sesión
           headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            payment_id: paymentId,
-            status: status,
-            merchant_order_id: merchantOrderId,
-          }),
+            'Accept': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
         });
-
+        
+        console.log('📡 Estado de respuesta:', response.status);
+        
         if (response.ok) {
-          const result = await response.json();
-          setPaymentResult(result);
-          toast.success('¡Pago procesado exitosamente!');
+          const data = await response.json();
+          console.log('✅ Datos del pedido cargados:', data);
+          setPedidoData(data);
         } else {
-          throw new Error('Error al procesar el pago');
+          const errorText = await response.text().catch(() => '');
+          console.error('❌ Error al cargar el pedido:', response.status, errorText);
+          setError(`No se pudo cargar la información del pedido (${response.status})`);
         }
-      } catch (error) {
-        console.error('Error processing payment:', error);
-        toast.error('Error al procesar el resultado del pago');
-        router.push('/');
+      } catch (err) {
+        console.error('❌ Error de conexión:', err);
+        setError('Error de conexión al servidor');
       } finally {
         setLoading(false);
       }
     };
 
-    processPaymentResult();
-  }, [searchParams, router]);
+    fetchPedidoData();
+  }, [pedidoId]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -73,143 +73,204 @@ const PaymentSuccessPage = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-64">
-          <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-2xl font-light text-gray-900">Cargando información del pedido...</h2>
+          <p className="text-gray-600 mt-2">Por favor espera un momento</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto text-center">
-        {/* Icono de éxito */}
-        <div className="mb-8">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">¡Pago Exitoso!</h1>
-          <p className="text-gray-600">Tu pedido ha sido confirmado y está siendo procesado</p>
+          <h2 className="text-2xl font-light text-gray-900 mb-2">Error</h2>
+          <p className="text-gray-600">{error}</p>
+          <Link href="/" className="mt-4 inline-block px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors">
+            Volver al inicio
+          </Link>
         </div>
+      </div>
+    );
+  }
 
-        {/* Información del pedido */}
-        {paymentResult && (
-          <div className="bg-white rounded-lg shadow-sm border p-8 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Detalles del Pedido</h2>
+  // Si no hay datos del pedido pero no hay error, mostrar mensaje genérico de éxito
+  if (!pedidoData && !error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30">
+        <div className="container mx-auto px-6 py-16 max-w-4xl">
+          <div className="text-center">
+            {/* Icono de éxito */}
+            <div className="mb-12">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mb-8 shadow-2xl shadow-green-500/25">
+                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h1 className="text-5xl font-extralight text-gray-900 mb-6 tracking-tight">
+                🎉 ¡Pedido Confirmado! 🎉
+              </h1>
+              <p className="text-xl text-gray-600 font-light max-w-2xl mx-auto leading-relaxed">
+                Tu pedido ha sido procesado exitosamente. Gracias por tu compra.
+              </p>
+            </div>
             
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Número de pedido:</span>
-                <span className="font-medium">#{paymentResult.numero_pedido}</span>
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-gray-100 mb-8">
+              <h3 className="text-xl font-medium mb-4">Pedido #{pedidoId}</h3>
+              <p className="mb-4">
+                Hemos recibido tu pedido correctamente. Recibirás un correo electrónico con los detalles pronto.
+              </p>
+            </div>
+            
+            {/* Botones de acción */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/"
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-md transition-all font-medium"
+              >
+                🏠 Volver al inicio
+              </Link>
+              
+              <Link
+                href="/productos"
+                className="px-6 py-3 bg-white border border-gray-200 text-gray-900 rounded-lg hover:bg-gray-50 transition-all font-medium"
+              >
+                🛍️ Seguir comprando
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Sabemos que pedidoData no es null aquí porque ya verificamos arriba
+  // Si llegó aquí, significa que tenemos datos del pedido
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30">
+      <div className="container mx-auto px-6 py-16 max-w-4xl">
+        <div className="text-center">
+          {/* Icono de éxito Premium */}
+          <div className="mb-12">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mb-8 shadow-2xl shadow-green-500/25 animate-pulse">
+              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-5xl font-extralight text-gray-900 mb-6 tracking-tight">
+              🎉 ¡Pedido Confirmado! 🎉
+            </h1>
+            <p className="text-xl text-gray-600 font-light max-w-2xl mx-auto leading-relaxed">
+              Tu pedido ha sido procesado exitosamente y está siendo preparado con amor
+            </p>
+          </div>
+
+          {/* Información del pedido Premium */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 shadow-2xl shadow-gray-900/5 border border-white/20 mb-12">
+            <div className="flex items-center mb-10">
+              <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mr-5 shadow-lg shadow-green-500/25"></div>
+              <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">Detalles del Pedido</h2>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="flex justify-between items-center py-4 border-b border-gray-200">
+                <span className="text-lg text-gray-600 font-light">Número de pedido:</span>
+                <span className="text-lg font-medium text-gray-900">#{pedidoData?.id || pedidoId || 'N/A'}</span>
               </div>
               
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">ID de pago:</span>
-                <span className="font-medium">{paymentResult.payment_id}</span>
+              <div className="flex justify-between items-center py-4 border-b border-gray-200">
+                <span className="text-lg text-gray-600 font-light">Comprador:</span>
+                <span className="text-lg font-medium text-gray-900">{pedidoData?.nombre_comprador || 'N/A'}</span>
               </div>
               
-              <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Estado:</span>
-                <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                  Aprobado
+              <div className="flex justify-between items-center py-4 border-b border-gray-200">
+                <span className="text-lg text-gray-600 font-light">Destinatario:</span>
+                <span className="text-lg font-medium text-gray-900">{pedidoData?.nombre_destinatario || 'N/A'}</span>
+              </div>
+              
+              <div className="flex justify-between items-center py-4 border-b border-gray-200">
+                <span className="text-lg text-gray-600 font-light">Estado:</span>
+                <span className="inline-block px-6 py-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 rounded-full text-lg font-medium shadow-lg shadow-green-500/10">
+                  ✅ {pedidoData?.estado || 'Confirmado'}
                 </span>
               </div>
               
-              <div className="flex justify-between items-center py-2 text-lg font-semibold">
-                <span>Total pagado:</span>
-                <span>{formatPrice(paymentResult.total)}</span>
+              <div className="flex justify-between items-center py-4 text-2xl font-light">
+                <span className="text-gray-900">Total:</span>
+                <span className="text-green-600 font-medium">${(pedidoData?.total || 0).toLocaleString()}</span>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Próximos pasos */}
-        <div className="bg-blue-50 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">¿Qué sigue ahora?</h3>
-          
-          <div className="space-y-3 text-left">
-            <div className="flex items-start">
-              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">
-                1
-              </div>
-              <div>
-                <p className="font-medium text-blue-900">Confirmación por email</p>
-                <p className="text-blue-700 text-sm">Recibirás un email con todos los detalles de tu pedido</p>
-              </div>
+          {/* Próximos pasos Premium */}
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 shadow-2xl shadow-gray-900/5 border border-white/20 mb-12">
+            <div className="flex items-center mb-10">
+              <div className="w-4 h-4 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mr-5 shadow-lg shadow-blue-500/25"></div>
+              <h3 className="text-3xl font-extralight text-gray-900 tracking-wide">¿Qué sigue ahora?</h3>
             </div>
             
-            <div className="flex items-start">
-              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">
-                2
+            <div className="space-y-8">
+              <div className="flex items-start">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center text-lg font-medium mr-6 shadow-xl shadow-blue-500/25">
+                  1
+                </div>
+                <div>
+                  <p className="text-xl font-medium text-gray-900 mb-2">Confirmación por email</p>
+                  <p className="text-gray-600 font-light">Recibirás un email con todos los detalles de tu pedido</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-blue-900">Preparación del pedido</p>
-                <p className="text-blue-700 text-sm">Nuestro equipo comenzará a preparar tu arreglo floral</p>
+              
+              <div className="flex items-start">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center text-lg font-medium mr-6 shadow-xl shadow-purple-500/25">
+                  2
+                </div>
+                <div>
+                  <p className="text-xl font-medium text-gray-900 mb-2">Preparación del pedido</p>
+                  <p className="text-gray-600 font-light">Nuestro equipo comenzará a preparar tu arreglo floral con amor</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3 mt-0.5">
-                3
-              </div>
-              <div>
-                <p className="font-medium text-blue-900">Entrega</p>
-                <p className="text-blue-700 text-sm">Te contactaremos para coordinar la entrega en la fecha seleccionada</p>
+              
+              <div className="flex items-start">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-lg font-medium mr-6 shadow-xl shadow-green-500/25">
+                  3
+                </div>
+                <div>
+                  <p className="text-xl font-medium text-gray-900 mb-2">Entrega</p>
+                  <p className="text-gray-600 font-light">Te contactaremos para coordinar la entrega en la fecha seleccionada</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Información de contacto */}
-        <div className="bg-gray-50 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">¿Necesitas ayuda?</h3>
-          <p className="text-gray-600 mb-4">
-            Si tienes alguna pregunta sobre tu pedido, no dudes en contactarnos
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* Botones de acción Premium */}
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link
-              href="/contacto"
-              className="inline-flex items-center justify-center px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+              href="/"
+              className="group bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 text-white py-6 px-12 rounded-3xl hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 font-light text-xl tracking-wide transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Contactar por email
+              <div className="flex items-center justify-center space-x-3">
+                <span>🏠 Volver al inicio</span>
+              </div>
             </Link>
             
-            <a
-              href="https://wa.me/5491123456789"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            <Link
+              href="/productos"
+              className="group bg-white/60 backdrop-blur-sm text-gray-900 py-6 px-12 rounded-3xl hover:shadow-2xl hover:shadow-gray-900/5 border border-white/20 transition-all duration-500 font-light text-xl tracking-wide transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.785"/>
-              </svg>
-              WhatsApp
-            </a>
+              <div className="flex items-center justify-center space-x-3">
+                <span>🛍️ Seguir comprando</span>
+              </div>
+            </Link>
           </div>
-        </div>
-
-        {/* Botones de acción */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/productos"
-            className="inline-block px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Seguir comprando
-          </Link>
-          
-          <Link
-            href="/"
-            className="inline-block px-8 py-3 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-          >
-            Volver al inicio
-          </Link>
         </div>
       </div>
     </div>

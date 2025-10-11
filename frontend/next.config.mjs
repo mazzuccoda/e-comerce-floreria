@@ -1,14 +1,45 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
+    // Select backend target: env BACKEND_URL > web:8000 (Docker default)
+    const backendUrl = process.env.BACKEND_URL || 'http://web:8000';
+    console.log('🔧 Using backend URL (rewrites):', backendUrl);
+    
     return [
+      // Rutas específicas con trailing slash
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        source: '/api/catalogo/productos/',
+        destination: `${backendUrl}/api/catalogo/productos/`,
+      },
+      {
+        source: '/api/carrito/simple/',
+        destination: `${backendUrl}/api/carrito/simple/`,
+      },
+      // Evita que las URLs con ID numérico entren en bucle de redirecciones
+      {
+        source: '/api/catalogo/productos/:id(\\d+)/',
+        destination: `${backendUrl}/api/catalogo/productos/:id/`,
+      },
+      // Rutas generales
+      {
+        source: '/api/carrito/:path*',
+        destination: `${backendUrl}/api/carrito/:path*`,
+      },
+      {
+        source: '/api/catalogo/:path*',
+        destination: `${backendUrl}/api/catalogo/:path*`,
       },
       {
         source: '/media/:path*',
-        destination: 'http://localhost:8000/media/:path*',
+        destination: `${backendUrl}/media/:path*`,
+      },
+      {
+        source: '/api/usuarios/:path*',
+        destination: `${backendUrl}/api/usuarios/:path*`,
+      },
+      {
+        source: '/api/pedidos/:path*',
+        destination: `${backendUrl}/api/pedidos/:path*`,
       },
     ];
   },
@@ -18,39 +49,18 @@ const nextConfig = {
   generateEtags: true,
   trailingSlash: false,
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
-        // Permite al optimizador de Next.js obtener las imágenes directamente
-        // desde el servicio de backend de Django a través de la red interna de Docker.
-        protocol: 'http',
-        hostname: 'web',
-        port: '8000',
-        pathname: '/media/**',
-      },
-      {
-        // Permite al navegador del cliente solicitar imágenes a través de localhost,
-        // que es como accede al backend expuesto por Docker.
         protocol: 'http',
         hostname: 'localhost',
         port: '8000',
         pathname: '/media/**',
       },
       {
-        // Permite imágenes de localhost sin puerto (a través de Nginx)
-        protocol: 'http',
-        hostname: 'localhost',
-        pathname: '/media/**',
-      },
-      {
-        // Permite imágenes de placeholder
         protocol: 'https',
         hostname: 'via.placeholder.com',
         pathname: '/**',
-      },
-      {
-        // Permite cualquier imagen externa para desarrollo
-        protocol: 'https',
-        hostname: '**',
       },
     ],
   },

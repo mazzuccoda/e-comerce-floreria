@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 from .models import Pedido, MetodoEnvio
 from .serializers import (
@@ -92,6 +94,7 @@ class StockStatusView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class CheckoutView(APIView):
     """
     Vista principal para procesar el checkout

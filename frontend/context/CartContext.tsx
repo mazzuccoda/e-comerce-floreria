@@ -31,17 +31,8 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
 }
 
-// API base URL - Configuración dinámica para Docker
-const getApiUrl = () => {
-  if (typeof window === 'undefined') {
-    // Server-side: usar URL interna de Docker
-    return 'http://web:8000/api';
-  } else {
-    // Client-side: usar puerto directo del backend
-    return 'http://localhost:8000/api';
-  }
-};
-
+// API base URL - siempre mismo origen y proxy de Next.js
+const getApiUrl = () => '/api';
 const API_URL = getApiUrl();
 
 // Creamos el contexto con un valor por defecto
@@ -75,37 +66,90 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return await response.json();
   };
 
-  // Función para hacer peticiones a la API
-  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-    const apiUrl = getApiUrl(); // Obtener URL dinámica en cada llamada
-    const response = await fetch(`${apiUrl}${endpoint}`, {
-      credentials: 'include', // Para incluir cookies de sesión
-      mode: 'cors', // Modo CORS explícito
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
+  // Función helper para hacer llamadas a la API
+  const apiCall = async (endpoint: string, options: any = {}) => {
+    const apiUrl = getApiUrl(); // Prefijo relativo para evitar CORS
+    
+    try {
+      console.log(`🔄 API Call: ${apiUrl}${endpoint}`);
+      
+      const response = await fetch(`${apiUrl}${endpoint}`, {
+        credentials: 'include', // Para incluir cookies de sesión
+        headers: {
+          'Accept': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      console.log(`📡 Response status: ${response.status} for ${endpoint}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ API Error: ${response.status} - ${errorText}`);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || `HTTP error! status: ${response.status}` };
+        }
+        
+        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`✅ API Success for ${endpoint}:`, data);
+      return data;
+    } catch (error) {
+      console.error(`🚨 Network/Parse Error for ${endpoint}:`, error);
+      throw error;
     }
-
-    return response.json();
   };
 
   // Cargar carrito desde el servidor
   const refreshCart = async () => {
+    // Evitar múltiples llamadas simultáneas
+    if (loading) {
+      console.log('🔄 RefreshCart ya en progreso, saltando...');
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await apiCall('/carrito/');
-      setCart(data);
+      console.log('🔄 Iniciando refreshCart...');
+      
+      // Agregar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      const data = await apiCall(`/carrito/simple/?t=${timestamp}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      console.log('📦 Datos recibidos del servidor:', data);
+      
+      // Verificar que los datos sean válidos antes de actualizar
+      if (data && typeof data === 'object') {
+        setCart(data);
+        console.log('✅ Carrito actualizado en estado:', data);
+      } else {
+        console.warn('⚠️ Datos inválidos recibidos del servidor:', data);
+        throw new Error('Datos inválidos del servidor');
+      }
     } catch (error) {
-      console.error('Error loading cart:', error);
-      toast.error('Error al cargar el carrito');
+      console.error('❌ Error loading cart:', error);
+      // Solo establecer carrito vacío si realmente hay un error
+      const emptyCart = {
+        items: [],
+        total_price: 0,
+        total_items: 0,
+        is_empty: true
+      };
+      console.log('🔄 Estableciendo carrito vacío por error:', emptyCart);
+      setCart(emptyCart);
     } finally {
       setLoading(false);
     }
@@ -115,12 +159,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = async (product: Product, quantity: number = 1) => {
     try {
       setLoading(true);
+      console.log('🛒 Agregando producto al carrito:', { product: product.nombre, quantity });
       const data = await apiCall('/carrito/simple/add/', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ product_id: product.id, quantity }),
       });
       
+      console.log('📦 Respuesta del servidor al agregar:', data);
       setCart(data.cart);
+      console.log('✅ Estado del carrito actualizado:', data.cart);
       toast.success(`${product.nombre} agregado al carrito`);
       console.log('✅ Producto agregado al carrito:', data.message);
     } catch (err) {
@@ -136,33 +186,39 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const removeFromCart = async (productId: number) => {
     try {
       setLoading(true);
+      console.log('🗑️ Eliminando producto del carrito:', productId);
+      console.log('🔍 Estado actual del carrito:', cart);
       
       // Eliminar localmente del estado primero
       const updatedItems = cart.items.filter(item => item.producto.id !== productId);
       const newTotalPrice = updatedItems.reduce((sum, item) => sum + parseFloat(item.total_price.toString()), 0);
       
-      setCart({
+      const newCart = {
         items: updatedItems,
-        total_price: newTotalPrice.toFixed(2),
+        total_price: parseFloat(newTotalPrice.toFixed(2)),
         total_items: updatedItems.length,
         is_empty: updatedItems.length === 0
-      });
+      };
+      
+      console.log('📦 Nuevo estado del carrito después de eliminar:', newCart);
+      setCart(newCart);
       
       toast.success('Producto eliminado del carrito');
       
       // Intentar sincronizar con el servidor en segundo plano
       try {
-        await apiCall('/carrito/simple/add/', {
+        const syncData = await apiCall('/carrito/simple/add/', {
           method: 'POST',
           body: JSON.stringify({ product_id: productId, quantity: 0 }),
         });
+        console.log('🔄 Sincronización con servidor exitosa:', syncData);
       } catch (syncError) {
-        console.warn('Error sincronizando con servidor:', syncError);
+        console.warn('⚠️ Error sincronizando con servidor:', syncError);
         // No mostrar error al usuario, la eliminación local ya funcionó
       }
       
     } catch (error: any) {
-      console.error('Error removing from cart:', error);
+      console.error('❌ Error removing from cart:', error);
       toast.error('Error al eliminar del carrito');
     } finally {
       setLoading(false);
@@ -173,15 +229,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateQuantity = async (productId: number, newQuantity: number) => {
     try {
       setLoading(true);
+      console.log('🔄 Actualizando cantidad:', { productId, newQuantity });
+      console.log('🔍 Estado actual del carrito:', cart);
+      
       const response = await apiCall('/carrito/update/', {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           product_id: productId,
           quantity: newQuantity
         })
       });
 
+      console.log('📦 Respuesta del servidor al actualizar:', response);
       setCart(response.cart);
+      console.log('✅ Estado del carrito actualizado:', response.cart);
       
       if (newQuantity === 0) {
         toast.success('Producto eliminado del carrito');
@@ -189,7 +253,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         toast.success('Cantidad actualizada');
       }
     } catch (error: any) {
-      console.error('Error updating quantity:', error);
+      console.error('❌ Error updating quantity:', error);
       toast.error(error.message || 'Error al actualizar cantidad');
     } finally {
       setLoading(false);
@@ -216,6 +280,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Cargar carrito al montar el componente
   useEffect(() => {
+    console.log('🚀 CartProvider montado, iniciando carga inicial del carrito...');
     refreshCart();
   }, []);
 

@@ -48,21 +48,19 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # CORS CONFIGURATION
 # ==============================================================================
 
+# Configuración de CORS para desarrollo
+# Usar origins específicos para permitir credentials
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:80',
-    'http://127.0.0.1:80',
     'http://localhost',
-    'http://127.0.0.1',
 ]
+CORS_ALLOW_CREDENTIALS = True  # Habilitado para mantener sesiones
 
-# Permitir cookies y credenciales en peticiones CORS
-CORS_ALLOW_CREDENTIALS = True
+# Permitir todas las rutas de la API
+CORS_URLS_REGEX = r'^/api/.*$'
 
-# Permitir todos los headers para desarrollo
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_HEADERS = [
+# Cabeceras permitidas
+CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
     'authorization',
@@ -72,6 +70,25 @@ CORS_ALLOWED_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-http-method-override',
+    'cache-control',  # Agregado para permitir control de caché
+    'pragma',  # Agregado para compatibilidad con caché
+]
+
+# Métodos HTTP permitidos
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Exponer cabeceras personalizadas
+CORS_EXPOSE_HEADERS = [
+    'Content-Type',
+    'X-CSRFToken',
 ]
 
 # Si en el futuro necesitas que cualquier sitio pueda consultar tu API (no recomendado para producción sin autenticación)
@@ -91,20 +108,31 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Eximir APIs del carrito y usuarios del CSRF
 CSRF_EXEMPT_URLS = [
-    r'^/api/carrito/',
-    r'^/api/usuarios/',
+    r'^/api/carrito/.*',
+    r'^/api/usuarios/.*',
+    r'^/api/pedidos/.*',
+    r'^/api/catalogo/.*',
 ]
 
-# Deshabilitar CSRF para desarrollo (temporal)
+# Deshabilitar CSRF completamente para desarrollo
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = False
+# Configuración de sesiones para desarrollo
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_SAVE_EVERY_REQUEST = True
 
 # REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'UNAUTHENTICATED_USER': None,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -175,22 +203,19 @@ ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'optional' # Change to 'mandatory' in production
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory' 
 ACCOUNT_SESSION_REMEMBER = True
 
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'floreria_cristina.csrf_middleware.CustomCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'debug_toolbar.middleware.DebugToolbarMiddleware',  # Deshabilitado temporalmente
     'allauth.account.middleware.AccountMiddleware',
-    # 'floreria_cristina.middleware.ConnectionMiddleware',  # Deshabilitado temporalmente
 ]
 
 ROOT_URLCONF = 'floreria_cristina.urls'

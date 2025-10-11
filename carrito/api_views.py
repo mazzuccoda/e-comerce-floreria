@@ -46,14 +46,23 @@ class AddToCartView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        serializer = AddToCartSerializer(data=request.data)
-        
-        if serializer.is_valid():
+        try:
+            serializer = AddToCartSerializer(data=request.data)
+            
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
             product_id = serializer.validated_data['product_id']
             quantity = serializer.validated_data['quantity']
             
             # Obtener el producto
-            producto = get_object_or_404(Producto, id=product_id, is_active=True)
+            try:
+                producto = Producto.objects.get(id=product_id, is_active=True)
+            except Producto.DoesNotExist:
+                return Response(
+                    {'error': 'Producto no encontrado o no disponible'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
             # Verificar stock disponible
             cart = Cart(request)
@@ -68,27 +77,54 @@ class AddToCartView(APIView):
             total_requested = current_quantity + quantity
             if total_requested > producto.stock:
                 return Response({
-                    'error': f'Stock insuficiente. Disponible: {producto.stock}, en carrito: {current_quantity}'
+                    'error': 'Stock insuficiente',
+                    'available': producto.stock,
+                    'in_cart': current_quantity,
+                    'requested': quantity
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Agregar al carrito
-            cart.add(producto, quantity)
-            
-            # Retornar estado actualizado del carrito
-            cart_data = {
-                'items': cart.get_items(),
-                'total_price': cart.get_total_price(),
-                'total_items': len(cart),
-                'is_empty': cart.is_empty
-            }
-            
-            cart_serializer = CartSerializer(cart_data)
+            try:
+                # Agregar al carrito
+                cart.add(producto, quantity)
+                
+                # Obtener el carrito actualizado
+                items = []
+                for item in cart:
+                    items.append({
+                        'producto': item['producto'],
+                        'quantity': item['quantity'],
+                        'price': str(item['price']),
+                        'total_price': str(item['total_price'])
+                    })
+                
+                # Calcular totales
+                total_price = sum(float(item['total_price']) for item in items)
+                total_items = sum(item['quantity'] for item in items)
+                
+                # Retornar estado actualizado del carrito
+                cart_data = {
+                    'items': items,
+                    'total_price': str(total_price),
+                    'total_items': total_items,
+                    'is_empty': len(items) == 0
+                }
+                
+                cart_serializer = CartSerializer(cart_data)
+                return Response({
+                    'success': True,
+                    'message': 'Producto agregado al carrito',
+                    'cart': cart_serializer.data
+                }, status=status.HTTP_200_OK)
+                
+            except Exception as e:
+                return Response({
+                    'error': f'Error al agregar al carrito: {str(e)}'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
             return Response({
-                'message': 'Producto agregado al carrito',
-                'cart': cart_serializer.data
-            }, status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                'error': f'Error en el servidor: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

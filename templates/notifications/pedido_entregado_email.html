@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Entregado - Florería Cristina</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .order-details {
+            background-color: #f0fdf4;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #10b981;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px 0;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eaeaea;
+        }
+        h1 {
+            color: #10b981;
+            margin-top: 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #10b981;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+            margin-top: 15px;
+        }
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .details-row:last-child {
+            border-bottom: none;
+        }
+        .highlight {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .success-icon {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .review-section {
+            background-color: #fffbeb;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🌸 Florería Cristina</div>
+        </div>
+        
+        <div class="content">
+            <h1>¡Tu Pedido Ha Sido Entregado!</h1>
+            
+            <div class="success-icon">✅</div>
+            
+            <p>Hola {{ nombre }},</p>
+            
+            <p>¡Excelentes noticias! Tu pedido ha sido entregado exitosamente.</p>
+            
+            <div class="order-details">
+                <div class="details-row">
+                    <strong>Número de Pedido:</strong> 
+                    <span class="highlight">#{{ pedido_id }}</span>
+                </div>
+                <div class="details-row">
+                    <strong>Estado:</strong> 
+                    <span class="highlight">{{ estado }}</span>
+                </div>
+                <div class="details-row">
+                    <strong>Fecha de entrega:</strong> 
+                    <span>{{ fecha }}</span>
+                </div>
+            </div>
+            
+            <div class="review-section">
+                <h3>¿Qué te pareció tu experiencia?</h3>
+                <p>Nos encantaría conocer tu opinión. Tu retroalimentación nos ayuda a mejorar nuestro servicio.</p>
+                <a href="http://localhost:3000/pedidos/{{ pedido_id }}/review" class="button">Dejar una reseña</a>
+            </div>
+            
+            <p>Gracias por confiar en Florería Cristina. ¡Esperamos que disfrutes tus flores!</p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 Florería Cristina. Todos los derechos reservados.</p>
+            <p>Calle Principal 123, Buenos Aires, Argentina</p>
+            <p>Si prefieres no recibir estos correos, puedes <a href="http://localhost:3000/perfil">modificar tu configuración de notificaciones</a>.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,10 +1,9 @@
-import ProductList from '@/app/components/ProductList';
+import ProductListFinal from '../components/ProductListFinal';
 
 export default function ProductosPage() {
   return (
-    <div className="container">
-      <h1 className="main-title">Todos los Productos</h1>
-      <ProductList />
+    <div className="w-full">
+      <ProductListFinal />
     </div>
   );
 }
