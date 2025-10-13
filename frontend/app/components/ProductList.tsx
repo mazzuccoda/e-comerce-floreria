@@ -59,7 +59,7 @@ export default function ProductList({ showRecommended = false, showAdditionals =
       });
       
       console.log('🔍 Estado de la prueba de conexión:', testResponse.status);
-      console.log('🔍 Headers de la respuesta:', [...testResponse.headers.entries()]);
+      console.log('🔍 Headers de la respuesta:', Array.from(testResponse.headers.entries()));
       
       if (testResponse.ok) {
         const testData = await testResponse.json();
@@ -110,7 +110,7 @@ export default function ProductList({ showRecommended = false, showAdditionals =
         clearTimeout(timeoutId);
         
         console.log('📝 Estado de la respuesta:', response.status);
-        console.log('📦 Cabeceras de la respuesta:', [...response.headers.entries()]);
+        console.log('📦 Cabeceras de la respuesta:', Array.from(response.headers.entries()));
         
         if (!response.ok) {
           const errorText = await response.text();
