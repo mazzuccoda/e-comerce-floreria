@@ -122,3 +122,5 @@ EXPOSE 8000
 
 # Command to run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "floreria_cristina.wsgi:application"]
+# de prueba
+CMD ["sh", "-c", "python manage.py migrate && gunicorn floreria_cristina.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3"]
