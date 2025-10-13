@@ -110,24 +110,20 @@ RUN pip install --no-cache-dir -r requirements/base.txt
 # Install local requirements if they exist
 RUN if [ -f requirements/local.txt ]; then pip install --no-cache-dir -r requirements/local.txt; fi
 
-# Collect static files
-# Switch to non-root user
-USER appuser
-
-# Collect static files
+# Collect static files as root (avoid permission issues)
+USER root
 RUN python manage.py collectstatic --noinput
 
 # Expose the port the app runs on (Railway sets PORT dynamically)
 EXPOSE 8000
 
-# Copy startup scripts
-COPY --chown=appuser:appuser start_railway.py /app/
-COPY --chown=appuser:appuser healthcheck.py /app/
-
-# Make startup script executable
-USER root
-RUN chmod +x /app/start_railway.py
-USER appuser
-
-# Command to run the application
-CMD ["python", "/app/start_railway.py"]
+# Stay as root for now to debug (we'll fix permissions later)
+# Command: Run migrations then start Gunicorn
+CMD python manage.py migrate --noinput && \
+    gunicorn floreria_cristina.wsgi:application \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --workers 2 \
+    --timeout 120 \
+    --log-level info \
+    --access-logfile - \
+    --error-logfile -
