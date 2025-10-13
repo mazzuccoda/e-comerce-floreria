@@ -185,7 +185,7 @@ export default function CartDebugPage() {
                 <div className="flex-grow">
                   <div className="font-medium">{item.producto.nombre}</div>
                   <div className="text-sm text-gray-500">
-                    ${parseFloat(item.price).toFixed(2)} × {item.quantity} = ${parseFloat(item.total_price).toFixed(2)}
+                    ${Number(item.price).toFixed(2)} × {item.quantity} = ${Number(item.total_price).toFixed(2)}
                   </div>
                 </div>
               </div>
