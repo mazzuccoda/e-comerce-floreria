@@ -1,29 +1,50 @@
-# Base image
-FROM node:20-alpine
-
-# Install dependencies para desarrollo
+# Stage 1: Dependencies
+FROM node:18-alpine AS deps
 RUN apk add --no-cache libc6-compat
-
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Copy app source
+# Stage 2: Builder
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Asegurarse de que el directorio .next existe y tiene permisos
-RUN mkdir -p /app/.next && chmod -R 777 /app/.next
+# Set build-time environment variable
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-# Set environment variables
-ENV NODE_ENV=development
+# Build Next.js app
+RUN npm run build
 
-# Expose port
+# Stage 3: Production runner
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy necessary files from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+# Expose port (Railway will provide PORT env var)
 EXPOSE 3000
 
-# Start development server
-CMD ["npm", "run", "dev"]
+ENV PORT 3000
+
+# Start Next.js
+CMD ["node", "server.js"]

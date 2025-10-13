@@ -17,7 +17,7 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   images: {
-    domains: ['localhost', 'web', '127.0.0.1', 'images.unsplash.com'],
+    domains: ['localhost', 'web', '127.0.0.1', 'images.unsplash.com', 'e-comerce-floreria-production.up.railway.app'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -25,11 +25,18 @@ const nextConfig = {
         port: '8000',
         pathname: '/media/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'e-comerce-floreria-production.up.railway.app',
+        pathname: '/media/**',
+      },
     ],
   },
   async rewrites() {
-    // Select backend target: env BACKEND_URL > web:8000 (Docker default)
-    const backendUrl = process.env.BACKEND_URL || 'http://web:8000';
+    // Usar la URL del backend desde variable de entorno
+    // En Railway: BACKEND_URL=https://e-comerce-floreria-production.up.railway.app
+    // En Docker local: BACKEND_URL=http://web:8000
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     console.log('🔧 Using backend URL (rewrites):', backendUrl);
     
     return [
