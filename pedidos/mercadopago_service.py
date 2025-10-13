@@ -20,17 +20,27 @@ class MercadoPagoService:
         Crear preferencia de pago en Mercado Pago
         """
         try:
-            # URLs de retorno
-            base_url = request.build_absolute_uri('/')[:-1]
+            # URLs de retorno (usar localhost:3000 para el frontend de Next.js)
+            base_url = "http://localhost:3000"
             
             # Items del pedido
             items = []
             for item in pedido.items.all():
+                # Obtener la URL completa de la imagen
+                picture_url = None
+                try:
+                    image_url = item.producto.get_primary_image_url
+                    # Solo incluir si no es un placeholder
+                    if image_url and not image_url.startswith('https://via.placeholder.com'):
+                        picture_url = f"http://localhost{image_url}"
+                except Exception as e:
+                    print(f"⚠️ No se pudo obtener imagen para producto {item.producto.id}: {e}")
+                
                 items.append({
                     "id": str(item.producto.id),
-                    "title": item.producto.nombre,
-                    "description": item.producto.descripcion_corta or item.producto.descripcion[:100],
-                    "picture_url": item.producto.get_primary_image_url,
+                    "title": item.producto.nombre[:100],  # MercadoPago limita a 256 caracteres
+                    "description": (item.producto.descripcion_corta or item.producto.descripcion)[:100],
+                    "picture_url": picture_url,
                     "category_id": "flowers",
                     "quantity": item.cantidad,
                     "currency_id": "ARS",
@@ -55,14 +65,17 @@ class MercadoPagoService:
                 "email": pedido.email_comprador,
                 "phone": {
                     "number": pedido.telefono_comprador
-                },
-                "address": {
-                    "street_name": pedido.direccion,
-                    "zip_code": pedido.codigo_postal or ""
                 }
             }
             
-            # Configuración de la preferencia
+            # Solo agregar dirección si hay código postal
+            if pedido.codigo_postal:
+                payer["address"] = {
+                    "street_name": pedido.direccion,
+                    "zip_code": pedido.codigo_postal
+                }
+            
+            # Configuración de la preferencia (sin auto_return para evitar conflictos)
             preference_data = {
                 "items": items,
                 "payer": payer,
@@ -72,23 +85,21 @@ class MercadoPagoService:
                     "installments": 12
                 },
                 "back_urls": {
-                    "success": f"{base_url}/checkout/success/{pedido.id}/",
-                    "failure": f"{base_url}/checkout/failure/{pedido.id}/",
-                    "pending": f"{base_url}/checkout/pending/{pedido.id}/"
+                    "success": f"{base_url}/checkout/success",
+                    "failure": f"{base_url}/checkout/failure",
+                    "pending": f"{base_url}/checkout/pending"
                 },
-                "auto_return": "approved",
                 "external_reference": str(pedido.id),
-                "notification_url": f"{base_url}/api/pedidos/webhook/mercadopago/",
-                "statement_descriptor": "FLORERIA CRISTINA",
-                "expires": True,
-                "expiration_date_from": None,
-                "expiration_date_to": None
+                "statement_descriptor": "FLORERIA CRISTINA"
             }
             
             # Crear preferencia
+            print(f"📤 Enviando preferencia a MercadoPago: {preference_data}")
             preference_response = self.sdk.preference().create(preference_data)
+            print(f"📥 Respuesta de MercadoPago: {preference_response}")
             
             if preference_response["status"] == 201:
+                print(f"✅ Preferencia creada exitosamente")
                 return {
                     'success': True,
                     'preference_id': preference_response["response"]["id"],
@@ -96,10 +107,12 @@ class MercadoPagoService:
                     'sandbox_init_point': preference_response["response"]["sandbox_init_point"]
                 }
             else:
+                print(f"❌ Error creating MP preference: {preference_response}")
                 logger.error(f"Error creating MP preference: {preference_response}")
+                error_message = preference_response.get('response', {}).get('message', 'Error al crear preferencia de pago')
                 return {
                     'success': False,
-                    'error': 'Error al crear preferencia de pago'
+                    'error': error_message
                 }
                 
         except Exception as e:

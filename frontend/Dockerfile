@@ -1,30 +1,29 @@
-# 1. Base image
-FROM node:20-alpine AS base
+# Base image
+FROM node:20-alpine
 
-# 2. Create a non-root user and group
-RUN apk add --no-cache su-exec && \
-    addgroup -g 1001 -S nextjs && \
-    adduser -S nextjs -u 1001
+# Install dependencies para desarrollo
+RUN apk add --no-cache libc6-compat
 
-# 3. Set working directory
+# Set working directory
 WORKDIR /app
 
-# 4. Install dependencies
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# 5. Copy app source
+# Copy app source
 COPY . .
 
-# 6. Change ownership to the non-root user
-RUN chown -R nextjs:nextjs /app
+# Asegurarse de que el directorio .next existe y tiene permisos
+RUN mkdir -p /app/.next && chmod -R 777 /app/.next
 
-# 7. Switch to the non-root user
-USER nextjs
-
-# 8. Set environment variables
+# Set environment variables
 ENV NODE_ENV=development
 
-# 9. Expose port and define command
+# Expose port
 EXPOSE 3000
+
+# Start development server
 CMD ["npm", "run", "dev"]

@@ -39,7 +39,7 @@ class PedidoReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pedido
         fields = [
-            'id', 'nombre_comprador', 'email_comprador', 'telefono_comprador',
+            'id', 'numero_pedido', 'nombre_comprador', 'email_comprador', 'telefono_comprador',
             'nombre_destinatario', 'direccion', 'ciudad', 'codigo_postal',
             'telefono_destinatario', 'fecha_entrega', 'franja_horaria',
             'dedicatoria', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre',

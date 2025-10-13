@@ -12,6 +12,7 @@ services:
       python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
+      - media_data:/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -66,7 +67,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./frontend:/app
-      - next_data:/app/.next
+      - /app/node_modules
+      - /app/.next
     ports:
       - "3000:3000"
     networks:
@@ -96,7 +98,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
-      - ./media:/app/media # Montar la carpeta de medios para que Nginx pueda servirla
+      - media_data:/app/media # Montar la carpeta de medios para que Nginx pueda servirla
       - ./staticfiles:/app/staticfiles # Montar la carpeta de archivos estáticos para que Nginx pueda servirla
       - ./frontend/public:/app/frontend/public # Montar imágenes públicas del frontend
     depends_on:
@@ -111,4 +113,4 @@ networks:
 
 volumes:
   postgres_data:
-  next_data:
+  media_data:
