@@ -75,7 +75,7 @@ class MercadoPagoService:
                     "zip_code": pedido.codigo_postal
                 }
             
-            # Configuración de la preferencia (sin auto_return para evitar conflictos)
+            # Configuración de la preferencia (sin back_urls por restricciones de localhost)
             preference_data = {
                 "items": items,
                 "payer": payer,
@@ -83,11 +83,6 @@ class MercadoPagoService:
                     "excluded_payment_methods": [],
                     "excluded_payment_types": [],
                     "installments": 12
-                },
-                "back_urls": {
-                    "success": f"{base_url}/checkout/success",
-                    "failure": f"{base_url}/checkout/failure",
-                    "pending": f"{base_url}/checkout/pending"
                 },
                 "external_reference": str(pedido.id),
                 "statement_descriptor": "FLORERIA CRISTINA"

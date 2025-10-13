@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 import environ
+import dj_database_url
 
 # Initialize environment variables
 env = environ.Env()
@@ -26,38 +27,39 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-iqrk-k9+a7=+pj^w=a^10*coqt=tqj1sf^&!s6$^li541g^(i+'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-iqrk-k9+a7=+pj^w=a^10*coqt=tqj1sf^&!s6$^li541g^(i+')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
+
+# Railway detection
+RAILWAY_ENVIRONMENT = env('RAILWAY_ENVIRONMENT', default=None)
+IS_RAILWAY = RAILWAY_ENVIRONMENT is not None
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'web',
     'testserver',
+    '.railway.app',  # Permitir todos los subdominios de Railway
     *env.list('ALLOWED_HOSTS', default=[]),
 ]
 
 # Configuración para funcionar detrás de un proxy inverso (Nginx)
 # Estas directivas le indican a Django que confíe en las cabeceras que Nginx le envía.
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
 # ==============================================================================
 # CORS CONFIGURATION
 # ==============================================================================
 
-# Configuración de CORS para desarrollo
-# Usar origins específicos para permitir credentials
+# Configuración CORS para Docker con Nginx
+# Orígenes permitidos específicos (requerido cuando usamos credentials)
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
     'http://localhost',
+    'http://localhost:3000',
+    'http://localhost:80',
 ]
-CORS_ALLOW_CREDENTIALS = True  # Habilitado para mantener sesiones
-
-# Permitir todas las rutas de la API
-CORS_URLS_REGEX = r'^/api/.*$'
+CORS_ALLOW_CREDENTIALS = True  # Permitir cookies y sesiones
 
 # Cabeceras permitidas
 CORS_ALLOW_HEADERS = [
@@ -104,6 +106,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost',  # Permitir el origen público a través de Nginx
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'https://*.railway.app',  # Railway domains
+    *env.list('CSRF_TRUSTED_ORIGINS', default=[]),
 ]
 
 # Eximir APIs del carrito y usuarios del CSRF
@@ -209,6 +213,7 @@ ACCOUNT_SESSION_REMEMBER = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise para archivos estáticos en Railway
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -247,29 +252,41 @@ WSGI_APPLICATION = 'floreria_cristina.wsgi.application'
 # Cart session ID
 CART_SESSION_ID = 'cart'
 
-# Configuración de la base de datos con opciones mejoradas
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('POSTGRES_DB', default='floreria_cristina_dev'),
-        'USER': env('POSTGRES_USER', default='floradmin'),
-        'PASSWORD': env('POSTGRES_PASSWORD', default='florpassword'),
-        'HOST': 'db',
-        'PORT': '5432',
-        'CONN_MAX_AGE': 0,  # Deshabilitar conexiones persistentes para el wizard
-        'OPTIONS': {
-            'connect_timeout': 30,
-            'application_name': 'floreria_cristina_dev',
-            'options': '-c statement_timeout=30000',  # 30 segundos de timeout
-        },
+# Configuración de la base de datos
+# Railway proporciona DATABASE_URL automáticamente
+if IS_RAILWAY:
+    # En Railway, usar DATABASE_URL
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=env('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True
+        )
     }
-}
+else:
+    # Configuración local (Docker o desarrollo)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env('POSTGRES_DB', default='floreria_cristina_dev'),
+            'USER': env('POSTGRES_USER', default='floradmin'),
+            'PASSWORD': env('POSTGRES_PASSWORD', default='florpassword'),
+            'HOST': env('POSTGRES_HOST', default='db'),  # 'db' en Docker, 'localhost' fuera de Docker
+            'PORT': '5432',
+            'CONN_MAX_AGE': 0,  # Deshabilitar conexiones persistentes para el wizard
+            'OPTIONS': {
+                'connect_timeout': 30,
+                'application_name': 'floreria_cristina_dev',
+                'options': '-c statement_timeout=30000',  # 30 segundos de timeout
+            },
+        }
+    }
 
 # Deshabilitar el pool de conexiones para el wizard
 DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 
 # Configuración para cerrar conexiones inactivas
-django_db_logger_use_database = 'default'
 
 # Configuración de conexiones persistentes
 if not DEBUG:
@@ -432,3 +449,39 @@ SOCIALACCOUNT_PROVIDERS = {
         'FIELDS': ['id', 'email', 'name']
     }
 }
+
+# ==============================================================================
+# WHITENOISE CONFIGURATION (Para archivos estáticos en Railway)
+# ==============================================================================
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# ==============================================================================
+# SECURITY SETTINGS (Para producción en Railway)
+# ==============================================================================
+if IS_RAILWAY or not DEBUG:
+    # HTTPS/SSL
+    SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Otros headers de seguridad
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # Proxy headers (Railway usa proxy)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True
