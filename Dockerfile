@@ -120,14 +120,14 @@ RUN python manage.py collectstatic --noinput
 # Expose the port the app runs on (Railway sets PORT dynamically)
 EXPOSE 8000
 
-# Copy startup script
-COPY --chown=appuser:appuser railway_start.sh /app/
+# Copy startup scripts
+COPY --chown=appuser:appuser start_railway.py /app/
 COPY --chown=appuser:appuser healthcheck.py /app/
 
 # Make startup script executable
 USER root
-RUN chmod +x /app/railway_start.sh
+RUN chmod +x /app/start_railway.py
 USER appuser
 
 # Command to run the application
-CMD ["/app/railway_start.sh"]
+CMD ["python", "/app/start_railway.py"]
