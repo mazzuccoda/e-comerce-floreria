@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 
 export default function TestFiltersPage() {
-  const [tiposFlor, setTiposFlor] = useState([]);
-  const [ocasiones, setOcasiones] = useState([]);
+  const [tiposFlor, setTiposFlor] = useState<any[]>([]);
+  const [ocasiones, setOcasiones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
