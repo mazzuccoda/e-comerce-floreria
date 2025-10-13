@@ -41,7 +41,7 @@ export default function TestFiltersPage() {
 
       } catch (err) {
         console.error('💥 Error general:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'Error desconocido');
       } finally {
         setLoading(false);
       }
