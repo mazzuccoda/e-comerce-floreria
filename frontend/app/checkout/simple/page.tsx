@@ -39,7 +39,7 @@ export default function SimpleCheckout() {
         alert(`Error: ${result.error || 'Unknown error'}`);
       }
     } catch (error) {
-      alert(`Connection error: ${error.message}`);
+      alert(`Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
