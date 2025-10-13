@@ -6,7 +6,7 @@ export default function TestFiltersPage() {
   const [tiposFlor, setTiposFlor] = useState([]);
   const [ocasiones, setOcasiones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
