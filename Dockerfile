@@ -117,8 +117,17 @@ USER appuser
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Expose the port the app runs on
+# Expose the port the app runs on (Railway sets PORT dynamically)
 EXPOSE 8000
 
+# Copy startup script
+COPY --chown=appuser:appuser railway_start.sh /app/
+COPY --chown=appuser:appuser healthcheck.py /app/
+
+# Make startup script executable
+USER root
+RUN chmod +x /app/railway_start.sh
+USER appuser
+
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "floreria_cristina.wsgi:application"]
+CMD ["/app/railway_start.sh"]
