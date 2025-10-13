@@ -261,7 +261,7 @@ if IS_RAILWAY:
         'default': dj_database_url.config(
             conn_max_age=600,
             conn_health_checks=True,
-            ssl_require=True
+            ssl_require=False  # Railway usa conexiones internas sin SSL
         )
     }
 else:
@@ -426,8 +426,18 @@ CART_SESSION_ID = 'carrito'
 SESSION_SERIALIZER = 'floreria_cristina.session_serializer.CustomJSONSerializer'
 
 # Celery Configuration
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+if IS_RAILWAY:
+    # En Railway, Celery es opcional o usa una URL diferente
+    CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+    # Deshabilitar tareas automáticas si Redis no está disponible
+    CELERY_TASK_ALWAYS_EAGER = not env.bool('CELERY_ENABLED', default=False)
+else:
+    # Configuración local (Docker)
+    CELERY_BROKER_URL = 'redis://redis:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+    CELERY_TASK_ALWAYS_EAGER = False
+
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
