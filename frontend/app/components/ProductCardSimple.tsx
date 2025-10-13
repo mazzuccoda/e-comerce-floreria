@@ -215,7 +215,7 @@ export default function ProductCardSimple({ product }: ProductCardProps) {
           <div className="text-yellow-700">• Botón forzado a habilitado</div>
           <div className="text-yellow-700">• Stock: {product.stock}</div>
           <div className="text-yellow-700">• is_active: {String(product.is_active)}</div>
-          <div className="mt-1 text-yellow-600 text-xs">Revisa la consola para más detalles (F12 > Consola)</div>
+          <div className="mt-1 text-yellow-600 text-xs">Revisa la consola para más detalles (F12 {'->'} Consola)</div>
         </div>
       </div>
     </div>
