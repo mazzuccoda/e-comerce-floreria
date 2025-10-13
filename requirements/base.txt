@@ -56,3 +56,4 @@ paypalrestsdk==1.13.1
 pip-tools==7.3.0
 tox==4.11.3
 django-formtools>=2.4
+dj-database-url==2.2.0
