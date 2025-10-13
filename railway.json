@@ -5,7 +5,7 @@
     "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput"
   },
   "deploy": {
-    "startCommand": "python manage.py migrate && gunicorn floreria_cristina.wsgi:application --bind 0.0.0.0:$PORT",
+    "startCommand": "python manage.py migrate && gunicorn floreria_cristina.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level debug --access-logfile - --error-logfile -",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
