@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Florería Cristina - Inicio{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg shadow-xl p-12 mb-12 text-white">
+        <h1 class="text-5xl font-bold mb-4">Bienvenido a Florería Cristina</h1>
+        <p class="text-xl mb-6">Las flores más frescas y hermosas para cada ocasión especial</p>
+        <a href="{% url 'catalogo:lista' %}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300">
+            Ver Catálogo
+        </a>
+    </div>
+
+    <!-- Featured Categories -->
+    {% if featured_categories %}
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Nuestras Categorías</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for categoria in featured_categories %}
+            <a href="{% url 'catalogo:lista' %}?categoria={{ categoria.id }}" class="block bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 overflow-hidden">
+                {% if categoria.imagen %}
+                <img src="{{ categoria.imagen.url }}" alt="{{ categoria.nombre }}" class="w-full h-48 object-cover">
+                {% else %}
+                <div class="w-full h-48 bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
+                    <span class="text-white text-4xl">🌸</span>
+                </div>
+                {% endif %}
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold text-gray-800">{{ categoria.nombre }}</h3>
+                    <p class="text-gray-600 text-sm mt-2">{{ categoria.descripcion|truncatewords:15 }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Featured Products -->
+    {% if featured_products %}
+    <section class="mb-12">
+        <h2 class="text-3xl font-bold mb-6 text-gray-800">Productos Destacados</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for producto in featured_products %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-xl transition duration-300 overflow-hidden">
+                <a href="{% url 'catalogo:detalle' producto.slug %}">
+                    {% if producto.imagen_principal %}
+                    <img src="{{ producto.imagen_principal.url }}" alt="{{ producto.nombre }}" class="w-full h-64 object-cover">
+                    {% else %}
+                    <div class="w-full h-64 bg-gradient-to-br from-pink-300 to-purple-400 flex items-center justify-center">
+                        <span class="text-white text-5xl">💐</span>
+                    </div>
+                    {% endif %}
+                </a>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                        <a href="{% url 'catalogo:detalle' producto.slug %}" class="hover:text-purple-600">
+                            {{ producto.nombre }}
+                        </a>
+                    </h3>
+                    <p class="text-gray-600 text-sm mb-4">{{ producto.descripcion_corta|truncatewords:10 }}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-2xl font-bold text-purple-600">${{ producto.precio }}</span>
+                        <a href="{% url 'catalogo:detalle' producto.slug %}" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-300">
+                            Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Call to Action -->
+    <div class="bg-purple-100 rounded-lg p-8 text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-4">¿Necesitas ayuda para elegir?</h2>
+        <p class="text-gray-600 mb-6">Nuestro equipo está listo para asesorarte y crear el arreglo perfecto</p>
+        <a href="{% url 'core:contacto' %}" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition duration-300">
+            Contáctanos
+        </a>
+    </div>
+</div>
+{% endblock %}
