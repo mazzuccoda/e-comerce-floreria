@@ -1,0 +1,115 @@
+===========================================
+VARIABLES DE ENTORNO PARA RAILWAY
+===========================================
+
+INSTRUCCIONES:
+1. Ve a tu servicio backend en Railway
+2. Settings → Variables
+3. Copia y pega TODAS estas variables (excepto las marcadas como AUTOMÁTICAS)
+
+===========================================
+
+# ========================================
+# DJANGO CORE (OBLIGATORIAS)
+# ========================================
+
+SECRET_KEY
+VALOR: Ve a https://djecrety.ir/ y genera una nueva clave, luego pégala aquí
+
+DEBUG
+VALOR: False
+
+ALLOWED_HOSTS
+VALOR: *.railway.app
+
+# ========================================
+# RAILWAY (AUTOMÁTICA - NO AGREGAR)
+# ========================================
+
+# Railway agrega esto automáticamente cuando creas el servicio:
+# RAILWAY_ENVIRONMENT=production
+
+# ========================================
+# EMAIL SMTP (Gmail)
+# ========================================
+
+EMAIL_BACKEND
+VALOR: django.core.mail.backends.smtp.EmailBackend
+
+EMAIL_HOST
+VALOR: smtp.gmail.com
+
+EMAIL_PORT
+VALOR: 587
+
+EMAIL_USE_TLS
+VALOR: True
+
+EMAIL_HOST_USER
+VALOR: mazzucoda@gmail.com
+
+EMAIL_HOST_PASSWORD
+VALOR: hrmm pliq wubv qhxy
+
+DEFAULT_FROM_EMAIL
+VALOR: Floreria Cristina <mazzucoda@gmail.com>
+
+# ========================================
+# MERCADOPAGO (PRODUCCIÓN)
+# ========================================
+
+MP_PUBLIC_KEY
+VALOR: APP_USR-b26d49ff-1026-418d-9dc1-04a6088c3151
+
+MP_ACCESS_TOKEN
+VALOR: APP_USR-3512363478106661-101217-8c574b4c06a425a68262d8733d001c5f-2535754045
+
+# ========================================
+# POSTGRESQL (AUTOMÁTICA - NO AGREGAR)
+# ========================================
+
+# Railway proporciona DATABASE_URL automáticamente cuando conectas PostgreSQL
+# NO necesitas agregarla manualmente
+# Ejemplo del formato (Railway lo crea):
+# DATABASE_URL=postgresql://postgres:MSYSVuTPprzTIHoMfbmTVYdxrUQqidAa@postgres.railway.internal:5432/railway
+
+# ========================================
+# OPCIONALES (Agregar después del primer deploy)
+# ========================================
+
+# Después de obtener la URL de tu app, agrega:
+
+# CSRF_TRUSTED_ORIGINS
+# VALOR: https://tu-app-url.railway.app
+
+# Si tienes frontend separado:
+# CORS_ALLOWED_ORIGINS
+# VALOR: https://tu-frontend.railway.app
+
+===========================================
+RESUMEN - VARIABLES QUE DEBES AGREGAR:
+===========================================
+
+✅ SECRET_KEY (genera una nueva)
+✅ DEBUG=False
+✅ ALLOWED_HOSTS=*.railway.app
+✅ EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+✅ EMAIL_HOST=smtp.gmail.com
+✅ EMAIL_PORT=587
+✅ EMAIL_USE_TLS=True
+✅ EMAIL_HOST_USER=mazzucoda@gmail.com
+✅ EMAIL_HOST_PASSWORD=hrmm pliq wubv qhxy
+✅ DEFAULT_FROM_EMAIL=Floreria Cristina <mazzucoda@gmail.com>
+✅ MP_PUBLIC_KEY=APP_USR-b26d49ff-1026-418d-9dc1-04a6088c3151
+✅ MP_ACCESS_TOKEN=APP_USR-3512363478106661-101217-8c574b4c06a425a68262d8733d001c5f-2535754045
+
+❌ NO AGREGAR (Railway las crea automáticamente):
+   - RAILWAY_ENVIRONMENT
+   - DATABASE_URL
+   - PORT
+
+===========================================
+
+TOTAL DE VARIABLES A AGREGAR MANUALMENTE: 11
+
+===========================================
