@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface PedidoData {
   id: number;
