@@ -256,9 +256,9 @@ CART_SESSION_ID = 'cart'
 # Railway proporciona DATABASE_URL automáticamente
 if IS_RAILWAY:
     # En Railway, usar DATABASE_URL
+    # dj_database_url.config() buscará DATABASE_URL del entorno automáticamente
     DATABASES = {
         'default': dj_database_url.config(
-            default=env('DATABASE_URL'),
             conn_max_age=600,
             conn_health_checks=True,
             ssl_require=True
