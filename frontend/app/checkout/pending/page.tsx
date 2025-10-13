@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
+export const dynamic = 'force-dynamic';
+
 const PaymentPendingPage = () => {
   const searchParams = useSearchParams();
   const router = useRouter();

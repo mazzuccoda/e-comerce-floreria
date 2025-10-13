@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 
+export const dynamic = 'force-dynamic';
+
 export default function TestCheckout() {
   const [testMessage, setTestMessage] = useState('Inicial');
   const { cart, clearCart } = useCart();

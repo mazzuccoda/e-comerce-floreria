@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 interface PedidoData {
   id: number;
   nombre_comprador: string;
