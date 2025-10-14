@@ -162,8 +162,8 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    'cloudinary_storage',
-    'cloudinary',
+    # 'cloudinary_storage',  # Disabled for Railway - using Whitenoise instead
+    # 'cloudinary',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
