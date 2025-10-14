@@ -393,15 +393,11 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': env('CLOUDINARY_API_SECRET', default='xWX_oc_i0E5B-50CxlfkX8C09lk'),
 }
 
-# Media files - Usando Cloudinary en producción
-if IS_RAILWAY:
-    # En producción (Railway), usar Cloudinary
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-    MEDIA_URL = '/media/'
-else:
-    # En desarrollo, usar almacenamiento local
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Media files configuration
+# Note: Storage backends are configured in STORAGES setting below (Django 4.2+)
+# DEFAULT_FILE_STORAGE is deprecated and conflicts with STORAGES
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
