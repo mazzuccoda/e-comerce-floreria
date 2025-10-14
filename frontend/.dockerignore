@@ -11,3 +11,5 @@ yarn-error.log*
 
 # Local env files
 .env*.local
+
+# Railway cache invalidation timestamp: 2025-10-14T07:32:00
