@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from pedidos.simple_views import simple_checkout, simple_cart_test
+from pedidos.simple_views import simple_checkout, simple_cart_test, simple_mis_pedidos, simple_pedido_detalle, simple_create_payment
 from django.views.generic import TemplateView
 
 # API URL patterns
@@ -41,6 +41,9 @@ urlpatterns = [
     # Simple checkout endpoints (sin CSRF)
     path('direct-checkout/', simple_checkout, name='simple-checkout'),
     path('test-cart/', simple_cart_test, name='simple-cart-test'),
+    path('api/pedidos/simple/mis-pedidos/', simple_mis_pedidos, name='simple-mis-pedidos'),
+    path('api/pedidos/simple/<int:pedido_id>/', simple_pedido_detalle, name='simple-pedido-detalle'),
+    path('api/pedidos/simple/<int:pedido_id>/payment/', simple_create_payment, name='simple-create-payment'),
 
     # API URLs
     path('api/', include(api_urlpatterns)),
@@ -68,3 +71,7 @@ if settings.DEBUG:
     urlpatterns += [
         path('carrito/', include(('carrito.api_urls', 'carrito'), namespace='carrito-api-direct')),
     ]
+else:
+    # In production (Railway), also serve media files
+    # Note: For large-scale production, use a CDN or cloud storage (S3, Cloudinary, etc.)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
