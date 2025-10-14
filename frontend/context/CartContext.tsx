@@ -31,8 +31,15 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
 }
 
-// API base URL - siempre mismo origen y proxy de Next.js
-const getApiUrl = () => '/api';
+// API base URL - Railway production vs local development
+const getApiUrl = () => {
+  // Check if running in Railway production
+  if (typeof window !== 'undefined' && window.location.hostname.includes('railway.app')) {
+    return 'https://e-comerce-floreria-production.up.railway.app/api';
+  }
+  // Local development or other environments
+  return '/api';
+};
 const API_URL = getApiUrl();
 
 // Creamos el contexto con un valor por defecto
