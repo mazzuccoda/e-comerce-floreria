@@ -31,23 +31,8 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
 }
 
-// API base URL - Railway production vs local development
-const getApiUrl = () => {
-  // Use environment variable if set (Railway production)
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (apiUrl) {
-    return `${apiUrl}/api`;
-  }
-  
-  // Fallback: Check if running in browser on Railway
-  if (typeof window !== 'undefined' && window.location.hostname.includes('railway.app')) {
-    return 'https://e-comerce-floreria-production.up.railway.app/api';
-  }
-  
-  // Local development or other environments
-  return '/api';
-};
-const API_URL = getApiUrl();
+// API base URL - Hardcoded for Railway to avoid cache issues
+const API_URL = 'https://e-comerce-floreria-production.up.railway.app/api';
 
 // Creamos el contexto con un valor por defecto
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -64,8 +49,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Función para obtener el carrito actual
   const fetchCart = async (): Promise<CartData> => {
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/carrito/`, {
+    const response = await fetch(`${API_URL}/carrito/`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -82,12 +66,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Función helper para hacer llamadas a la API
   const apiCall = async (endpoint: string, options: any = {}) => {
-    const apiUrl = getApiUrl(); // Prefijo relativo para evitar CORS
-    
     try {
-      console.log(`🔄 API Call: ${apiUrl}${endpoint}`);
+      console.log(`🔄 API Call: ${API_URL}${endpoint}`);
       
-      const response = await fetch(`${apiUrl}${endpoint}`, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         credentials: 'include', // Para incluir cookies de sesión
         headers: {
           'Accept': 'application/json',
