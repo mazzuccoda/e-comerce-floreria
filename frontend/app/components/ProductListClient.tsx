@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
@@ -257,32 +257,37 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     fetchProducts();
   }, []);
 
-  // Procesar parámetros de URL
+  // Procesar parámetros de URL (filtros desde navbar)
   useEffect(() => {
+    if (products.length === 0) return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     const tipoFlorParam = urlParams.get('tipo_flor');
+    const ocasionParam = urlParams.get('ocasion');
     
-    console.log('🎯 ProductListClient renderizado con', products.length, 'productos');
-    console.log('🔍 Parámetros de URL:', window.location.search);
-    console.log('🔍 Tipo flor param:', tipoFlorParam);
+    console.log('🎯 ProductListClient con', products.length, 'productos');
+    console.log('🔍 Params URL - tipo_flor:', tipoFlorParam, 'ocasion:', ocasionParam);
 
+    let filtered = [...products];
+
+    // Filtrar por tipo de flor (ID)
     if (tipoFlorParam) {
-      console.log('🔍 Filtro de URL detectado:', tipoFlorParam);
-      
-      const filtered = products.filter(product => {
-        // Manejar tipo_flor solo como objeto TipoFlor
-        const tipoFlorNombre = product.tipo_flor?.nombre?.toLowerCase() || '';
-        const match = tipoFlorNombre === tipoFlorParam.toLowerCase();
-        console.log(`🌸 ${product.nombre} (${tipoFlorNombre}) - Match: ${match}`);
-        return match;
-      });
-      
-      console.log('✅ Productos filtrados por URL:', filtered.length, 'de', products.length);
-      setDisplayProducts(filtered);
-    } else {
-      console.log('🔍 No hay filtro de URL, mostrando todos los productos');
-      setDisplayProducts(products);
+      const tipoFlorId = parseInt(tipoFlorParam);
+      filtered = filtered.filter(product => product.tipo_flor?.id === tipoFlorId);
+      console.log(`🌸 Filtrado por tipo_flor ID ${tipoFlorId}:`, filtered.length, 'productos');
     }
+
+    // Filtrar por ocasión (ID)
+    if (ocasionParam) {
+      const ocasionId = parseInt(ocasionParam);
+      filtered = filtered.filter(product => 
+        Array.isArray(product.ocasiones) && 
+        product.ocasiones.some((o: any) => o.id === ocasionId)
+      );
+      console.log(`🎉 Filtrado por ocasión ID ${ocasionId}:`, filtered.length, 'productos');
+    }
+    
+    setDisplayProducts(filtered);
   }, [products]);
 
   const handleFiltersChange = (filters: any) => {
