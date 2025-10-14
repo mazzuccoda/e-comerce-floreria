@@ -357,7 +357,7 @@ MERCADOPAGO = {
     'ACCESS_TOKEN': os.getenv('MP_ACCESS_TOKEN', 'TEST-1234567890123456-123456-1234567890abcdef1234567890abcdef123456'),
     'PUBLIC_KEY': os.getenv('MP_PUBLIC_KEY', 'TEST-12345678-1234-1234-1234-123456789012'),
     'AUTO_RETURN': 'approved',
-    'SANDBOX': True
+    'SANDBOX': os.getenv('MP_SANDBOX_MODE', 'false').lower() == 'true'  # false by default for production
 }
 
 # Static files (CSS, JavaScript, Images)

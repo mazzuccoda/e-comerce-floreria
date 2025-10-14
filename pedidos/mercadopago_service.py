@@ -3,6 +3,7 @@ from django.conf import settings
 from django.urls import reverse
 from decimal import Decimal
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,8 @@ class MercadoPagoService:
         Crear preferencia de pago en Mercado Pago
         """
         try:
-            # URLs de retorno (usar localhost:3000 para el frontend de Next.js)
-            base_url = "http://localhost:3000"
+            # URLs de retorno - usar la URL del frontend en Railway
+            base_url = os.getenv('FRONTEND_URL', 'https://frontend-production-0b0b.up.railway.app')
             
             # Items del pedido
             items = []
@@ -30,9 +31,15 @@ class MercadoPagoService:
                 picture_url = None
                 try:
                     image_url = item.producto.get_primary_image_url
-                    # Solo incluir si no es un placeholder
+                    # Solo incluir si no es un placeholder y si es una URL completa
                     if image_url and not image_url.startswith('https://via.placeholder.com'):
-                        picture_url = f"http://localhost{image_url}"
+                        # Si la imagen ya es una URL completa (Cloudinary), usarla directamente
+                        if image_url.startswith('http'):
+                            picture_url = image_url
+                        else:
+                            # Si es una ruta relativa, construir URL completa
+                            backend_url = os.getenv('BACKEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+                            picture_url = f"{backend_url}{image_url}"
                 except Exception as e:
                     print(f"⚠️ No se pudo obtener imagen para producto {item.producto.id}: {e}")
                 
