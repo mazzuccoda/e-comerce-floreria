@@ -58,7 +58,8 @@ const PedidoDetallePage: React.FC = () => {
       
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost/api/pedidos/simple/${pedidoId}/`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+        const response = await fetch(`${apiUrl}/pedidos/simple/${pedidoId}/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Accept': 'application/json',
@@ -89,7 +90,7 @@ const PedidoDetallePage: React.FC = () => {
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -100,7 +101,7 @@ const PedidoDetallePage: React.FC = () => {
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
           {error || 'Pedido no encontrado'}
         </div>
-        <Link href="/mis-pedidos" className="text-pink-600 hover:underline">
+        <Link href="/mis-pedidos" className="text-green-700 hover:underline">
           ← Volver a Mis Pedidos
         </Link>
       </div>
@@ -114,7 +115,7 @@ const PedidoDetallePage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-4">
-        <Link href="/mis-pedidos" className="text-pink-600 hover:underline flex items-center gap-2">
+        <Link href="/mis-pedidos" className="text-green-700 hover:underline flex items-center gap-2">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -175,7 +176,7 @@ const PedidoDetallePage: React.FC = () => {
         {pedido.dedicatoria && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-3">Dedicatoria</h3>
-            <div className="bg-pink-50 p-4 rounded-lg border border-pink-100">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
               <p className="italic">{pedido.dedicatoria}</p>
             </div>
           </div>
@@ -229,7 +230,7 @@ const PedidoDetallePage: React.FC = () => {
           </div>
           <div className="flex justify-between items-center text-xl font-bold mt-4 pt-4 border-t">
             <span>Total:</span>
-            <span className="text-pink-600">${parseFloat(pedido.total).toFixed(2)}</span>
+            <span className="text-green-700">${parseFloat(pedido.total).toFixed(2)}</span>
           </div>
         </div>
       </div>

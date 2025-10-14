@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -31,8 +31,9 @@ const PaymentSuccessPage = () => {
       }
 
       try {
-        // Usar nginx como proxy para mantener consistencia con el resto de la app
-        const apiUrl = `http://localhost/api/pedidos/${pedidoId}/`;
+        // Usar API URL desde variable de entorno
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+        const apiUrl = `${baseUrl}/pedidos/${pedidoId}/`;
         
         console.log('🔄 Intentando cargar datos del pedido desde:', apiUrl);
         

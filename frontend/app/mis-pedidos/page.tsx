@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -36,7 +36,8 @@ const MisPedidosPage: React.FC = () => {
       
       try {
         setLoading(true);
-        const response = await fetch('http://localhost/api/pedidos/simple/mis-pedidos/', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+        const response = await fetch(`${apiUrl}/pedidos/simple/mis-pedidos/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Accept': 'application/json',
