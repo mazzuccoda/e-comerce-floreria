@@ -20,8 +20,11 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-container">
         <Link href="/" className="navbar-logo">
-          <span className="flower-icon">🌸</span>
-          FLORERIA CRISTINA
+          <img 
+            src="https://res.cloudinary.com/dmxc6odsi/image/upload/v1760465112/Logo_Crsitina_t6ofnz.png" 
+            alt="Florería Cristina" 
+            className="logo-image"
+          />
         </Link>
         
         <ul className="navbar-nav">
@@ -65,7 +68,7 @@ export default function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="text-gray-700 hover:text-pink-600 font-medium transition-colors flex items-center gap-2"
+                className="text-gray-700 hover:text-green-700 font-medium transition-colors flex items-center gap-2"
               >
                 👤 {user.first_name || user.username}
                 <span className="text-xs">▼</span>
@@ -99,7 +102,7 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <Link href="/login" className="text-gray-700 hover:text-pink-600 font-medium transition-colors">
+            <Link href="/login" className="text-gray-700 hover:text-green-700 font-medium transition-colors">
               👤 Iniciar sesión
             </Link>
           )}

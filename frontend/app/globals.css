@@ -16,9 +16,12 @@
 
 /* ===== CSS VARIABLES ===== */
 :root {
-  /* Florería Palermo Colors - Exactos del sitio */
-  --primary-green: #4a7c59;
-  --accent-gold: #d4af37;
+  /* Florería Cristina Colors - Tonos Verdes */
+  --primary-green: #2d6a4f;
+  --secondary-green: #40916c;
+  --light-green: #52b788;
+  --dark-green: #1b4332;
+  --accent-green: #74c69d;
   --background-white: #ffffff;
   --background-light: #f8f8f8;
   --text-black: #333333;
@@ -80,12 +83,18 @@ a {
   font-weight: normal;
   color: #000000;
   text-decoration: none;
-  padding: 0 15px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   height: 100%;
   border-right: 1px solid #dddddd;
   white-space: nowrap;
+}
+
+.logo-image {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
 }
 
 .flower-icon {
@@ -191,7 +200,7 @@ a {
 }
 
 .cart-count {
-  background: #ff6600;
+  background: var(--secondary-green);
   color: white;
   border-radius: 8px;
   padding: 1px 4px;
@@ -355,7 +364,7 @@ a {
   position: absolute;
   top: 6px;
   left: 6px;
-  background: #4a7c59;
+  background: var(--primary-green);
   color: white;
   padding: 2px 5px;
   font-size: 8px;
@@ -381,9 +390,9 @@ a {
 }
 
 .add-to-cart-btn:hover {
-  background: #4a7c59;
+  background: var(--primary-green);
   color: white;
-  border-color: #4a7c59;
+  border-color: var(--primary-green);
 }
 
 /* ===== PRODUCT LIST FILTERS FLORERÍA PALERMO EXACTO ===== */
@@ -430,7 +439,7 @@ a {
 
 .filter-select:focus {
   outline: none;
-  border-color: #4a7c59;
+  border-color: var(--primary-green);
 }
 
 .search-input {
@@ -445,7 +454,7 @@ a {
 
 .search-input:focus {
   outline: none;
-  border-color: #4a7c59;
+  border-color: var(--primary-green);
 }
 
 .search-input::placeholder {
@@ -472,14 +481,14 @@ a {
 }
 
 .pagination-btn:hover {
-  background: #4a7c59;
+  background: var(--primary-green);
   color: white;
-  border-color: #4a7c59;
+  border-color: var(--primary-green);
 }
 
 .pagination-btn.active {
-  background: #4a7c59;
-  border-color: #4a7c59;
+  background: var(--primary-green);
+  border-color: var(--primary-green);
   color: white;
 }
 
