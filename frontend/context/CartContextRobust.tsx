@@ -70,18 +70,13 @@ class RobustApiClient {
     if (finalEndpoint.startsWith('http://') || finalEndpoint.startsWith('https://')) {
       // Ya es una URL completa, no hacer nada
     } else if (finalEndpoint.startsWith('/api/')) {
-      // Convertir a URL absoluta
+      // Convertir a URL absoluta (baseUrl ya contiene /api)
       finalEndpoint = `${API_CONFIG.baseUrl}${finalEndpoint.replace('/api', '')}`;
-    } else if (finalEndpoint.startsWith('/carrito/') || finalEndpoint.startsWith('carrito/')) {
-      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
-    } else if (finalEndpoint.startsWith('/catalogo/') || finalEndpoint.startsWith('catalogo/')) {
-      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
-    } else if (finalEndpoint.startsWith('/usuarios/') || finalEndpoint.startsWith('usuarios/')) {
-      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
-    } else if (finalEndpoint.startsWith('/pedidos/') || finalEndpoint.startsWith('pedidos/')) {
-      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
     } else {
-      finalEndpoint = `${API_CONFIG.baseUrl}${finalEndpoint}`;
+      // Para cualquier otro endpoint relativo, concatenarlo directamente
+      // Asegurar que no haya doble barra
+      const cleanEndpoint = finalEndpoint.replace(/^\/+/, '');
+      finalEndpoint = `${API_CONFIG.baseUrl}/${cleanEndpoint}`;
     }
 
     const url = finalEndpoint;
