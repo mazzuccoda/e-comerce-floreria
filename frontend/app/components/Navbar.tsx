@@ -5,11 +5,40 @@ import { useCartRobust } from '../../context/CartContextRobust';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useEffect } from 'react';
 
+interface TipoFlor {
+  id: number;
+  nombre: string;
+}
+
+interface Ocasion {
+  id: number;
+  nombre: string;
+}
+
 export default function Navbar() {
   const { cart } = useCartRobust();
   const { user, logout, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
+  const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
+  
+  // Cargar tipos de flor y ocasiones desde la API
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+    
+    // Cargar tipos de flor
+    fetch(`${apiUrl}/catalogo/tipos-flor/`)
+      .then(res => res.json())
+      .then(data => setTiposFlor(data))
+      .catch(err => console.error('Error cargando tipos de flor:', err));
+    
+    // Cargar ocasiones
+    fetch(`${apiUrl}/catalogo/ocasiones/`)
+      .then(res => res.json())
+      .then(data => setOcasiones(data))
+      .catch(err => console.error('Error cargando ocasiones:', err));
+  }, []);
   
   // Solo renderizar el contador del carrito en el cliente
   useEffect(() => {
@@ -31,27 +60,39 @@ export default function Navbar() {
           <li className="navbar-item dropdown">
             <span className="navbar-link">Tipo de flor</span>
             <div className="dropdown-content">
-              <Link href="/productos?tipo_flor=rosas" className="dropdown-item">Rosas</Link>
-              <Link href="/productos?tipo_flor=gerberas" className="dropdown-item">Gerberas</Link>
-              <Link href="/productos?tipo_flor=astromelias" className="dropdown-item">Astromelias</Link>
-              <Link href="/productos?tipo_flor=lilium" className="dropdown-item">Lilium</Link>
-              <Link href="/productos?tipo_flor=girasoles" className="dropdown-item">Girasoles</Link>
+              {tiposFlor.length > 0 ? (
+                tiposFlor.map(tipo => (
+                  <Link 
+                    key={tipo.id} 
+                    href={`/productos?tipo_flor=${tipo.id}`} 
+                    className="dropdown-item"
+                  >
+                    {tipo.nombre}
+                  </Link>
+                ))
+              ) : (
+                <span className="dropdown-item">Cargando...</span>
+              )}
             </div>
           </li>
           
           <li className="navbar-item dropdown">
             <span className="navbar-link">Ocasiones</span>
             <div className="dropdown-content">
-              <Link href="/productos?ocasion=cumpleanos" className="dropdown-item">Cumpleaños</Link>
-              <Link href="/productos?ocasion=aniversario" className="dropdown-item">Aniversario</Link>
-              <Link href="/productos?ocasion=enamorados" className="dropdown-item">Enamorados</Link>
-              <Link href="/productos?ocasion=agradecimiento" className="dropdown-item">Agradecimiento</Link>
-              <Link href="/productos?ocasion=maternidad" className="dropdown-item">Maternidad</Link>
+              {ocasiones.length > 0 ? (
+                ocasiones.map(ocasion => (
+                  <Link 
+                    key={ocasion.id} 
+                    href={`/productos?ocasion=${ocasion.id}`} 
+                    className="dropdown-item"
+                  >
+                    {ocasion.nombre}
+                  </Link>
+                ))
+              ) : (
+                <span className="dropdown-item">Cargando...</span>
+              )}
             </div>
-          </li>
-          
-          <li className="navbar-item">
-            <Link href="/zonas" className="navbar-link">Zonas</Link>
           </li>
           
           <li className="navbar-item">
