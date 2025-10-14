@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useCartRobust } from '@/context/CartContextRobust';
 
+// API URL configuration
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+
 // Interfaces para carrito directo
 interface CartItem {
   producto: {
@@ -41,41 +44,30 @@ const MultiStepCheckoutPage = () => {
         setIsLoading(true);
         console.log('🔄 Checkout - Cargando carrito directamente del API...');
         
-        // Probar ambos endpoints para asegurar que obtengamos datos
-        const endpoints = [
-          'http://localhost/api/carrito/simple/',
-          'http://localhost:8000/api/carrito/simple/'
-        ];
+        const endpoint = `${API_URL}/carrito/simple/`;
+        console.log('📡 Fetch URL:', endpoint);
+        
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+        
+        console.log(`📡 ${endpoint} - Status:`, response.status, response.statusText);
         
         let successData = null;
         
-        // Intentar cada endpoint hasta que uno funcione
-        for (const endpoint of endpoints) {
-          try {
-            const response = await fetch(endpoint, {
-              method: 'GET',
-              credentials: 'include',
-              headers: {
-                'Accept': 'application/json',
-              }
-            });
-            
-            console.log(`📡 ${endpoint} - Status:`, response.status, response.statusText);
-            
-            if (response.ok) {
-              const data = await response.json();
-              console.log(`✅ ${endpoint} - Datos:`, data);
-              
-              if (data && Array.isArray(data.items) && data.items.length > 0) {
-                successData = data;
-                console.log(`🎉 ${endpoint} - ¡Encontrados ${data.items.length} productos!`);
-                break;
-              } else {
-                console.log(`⚠️ ${endpoint} - Carrito vacío o inválido`)
-              }
-            }
-          } catch (err) {
-            console.error(`❌ ${endpoint} - Error:`, err);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`✅ ${endpoint} - Datos:`, data);
+          
+          if (data && Array.isArray(data.items)) {
+            successData = data;
+            console.log(`🎉 ${endpoint} - ¡Encontrados ${data.items.length} productos!`);
+          } else {
+            console.log(`⚠️ ${endpoint} - Carrito vacío o inválido`)
           }
         }
         
