@@ -433,7 +433,7 @@ const MultiStepCheckoutPage = () => {
         if (formData.metodoPago === 'mercadopago') {
           try {
             console.log('💳 Creando preferencia de MercadoPago...');
-            const paymentResponse = await fetch(`http://localhost/api/pedidos/simple/${result.pedido_id}/payment/`, {
+            const paymentResponse = await fetch(`${apiBaseUrl}/api/pedidos/simple/${result.pedido_id}/payment/`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
