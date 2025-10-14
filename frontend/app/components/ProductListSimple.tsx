@@ -33,7 +33,7 @@ export default function ProductListSimple({ showRecommended = false, showAdditio
       is_active: true,
       is_featured: true,
       envio_gratis: true,
-      tipo_flor: "Rosas",
+      tipo_flor: { id: 1, nombre: "Rosas", descripcion: "Flores tipo rosas", is_active: true },
       ocasiones: ["Amor"],
       imagen_principal: "/images/rosas-rojas.jpg",
       imagenes: []
@@ -53,7 +53,7 @@ export default function ProductListSimple({ showRecommended = false, showAdditio
       is_active: true,
       is_featured: false,
       envio_gratis: true,
-      tipo_flor: "Tulipanes",
+      tipo_flor: { id: 4, nombre: "Tulipanes", descripcion: "Flores tulipanes", is_active: true },
       ocasiones: ["Cumpleaños"],
       imagen_principal: "/images/tulipanes-amarillos.jpg",
       imagenes: []
@@ -73,7 +73,7 @@ export default function ProductListSimple({ showRecommended = false, showAdditio
       is_active: true,
       is_featured: true,
       envio_gratis: false,
-      tipo_flor: "Girasoles",
+      tipo_flor: { id: 3, nombre: "Girasoles", descripcion: "Flores girasoles", is_active: true },
       ocasiones: ["Amistad"],
       imagen_principal: "/images/girasoles.jpg",
       imagenes: []
