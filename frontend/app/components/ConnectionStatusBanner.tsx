@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 
+// API base URL - Use environment variable or fallback to production URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+
 export default function ConnectionStatusBanner() {
   const [isOffline, setIsOffline] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -12,7 +15,7 @@ export default function ConnectionStatusBanner() {
       setIsChecking(true);
       try {
         // Intenta acceder a la API para verificar conectividad
-        const response = await fetch('http://localhost:8000/api/catalogo/productos/', {
+        const response = await fetch(`${API_URL}/catalogo/productos/`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',

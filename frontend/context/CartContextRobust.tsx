@@ -32,10 +32,11 @@ interface CartContextType {
   retryConnection: () => Promise<void>;
 }
 
-// API Configuration
-// Usar nginx como proxy en Docker (puerto 80)
+// API Configuration - Use environment variable or fallback to production URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+
 const API_CONFIG = {
-  baseUrl: 'http://localhost/api',
+  baseUrl: API_URL,
   timeout: 10000,  // Aumentado a 10 segundos
   retryAttempts: 3,  // 3 intentos
   retryDelay: 1000,  // 1 segundo entre reintentos
@@ -62,23 +63,23 @@ class RobustApiClient {
   }
 
   async request(endpoint: string, options: RequestInit = {}): Promise<any> {
-    // Construir URL completa usando nginx como proxy
+    // Construir URL completa usando la configuración
     let finalEndpoint = endpoint;
     
-    // Usar nginx como proxy (puerto 80)
-    if (finalEndpoint.startsWith('http://')) {
+    // Normalizar endpoint
+    if (finalEndpoint.startsWith('http://') || finalEndpoint.startsWith('https://')) {
       // Ya es una URL completa, no hacer nada
     } else if (finalEndpoint.startsWith('/api/')) {
-      // Convertir a URL absoluta con nginx
-      finalEndpoint = `http://localhost${finalEndpoint}`;
+      // Convertir a URL absoluta
+      finalEndpoint = `${API_CONFIG.baseUrl}${finalEndpoint.replace('/api', '')}`;
     } else if (finalEndpoint.startsWith('/carrito/') || finalEndpoint.startsWith('carrito/')) {
-      finalEndpoint = 'http://localhost/api/' + finalEndpoint.replace(/^\/?/, '');
+      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
     } else if (finalEndpoint.startsWith('/catalogo/') || finalEndpoint.startsWith('catalogo/')) {
-      finalEndpoint = 'http://localhost/api/' + finalEndpoint.replace(/^\/?/, '');
+      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
     } else if (finalEndpoint.startsWith('/usuarios/') || finalEndpoint.startsWith('usuarios/')) {
-      finalEndpoint = 'http://localhost/api/' + finalEndpoint.replace(/^\/?/, '');
+      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
     } else if (finalEndpoint.startsWith('/pedidos/') || finalEndpoint.startsWith('pedidos/')) {
-      finalEndpoint = 'http://localhost/api/' + finalEndpoint.replace(/^\/?/, '');
+      finalEndpoint = API_CONFIG.baseUrl + '/' + finalEndpoint.replace(/^\/?/, '');
     } else {
       finalEndpoint = `${API_CONFIG.baseUrl}${finalEndpoint}`;
     }

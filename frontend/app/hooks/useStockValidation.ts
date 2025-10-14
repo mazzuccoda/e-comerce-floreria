@@ -16,8 +16,8 @@ interface StockStatus {
   total_items: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-const API_URL = `${API_BASE_URL}/api`;
+// API base URL - Use environment variable or fallback to production URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
 export const useStockValidation = () => {
   const [stockStatus, setStockStatus] = useState<StockStatus | null>(null);
