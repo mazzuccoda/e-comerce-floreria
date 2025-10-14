@@ -16,6 +16,19 @@ def simple_checkout(request):
         from .serializers import CheckoutSerializer, PedidoReadSerializer
         from carrito.cart import Cart
         
+        # Verificar si hay token de autenticación
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        if auth_header and auth_header.startswith('Token '):
+            token_key = auth_header.split(' ')[1]
+            try:
+                token = Token.objects.get(key=token_key)
+                request.user = token.user
+                print(f"✅ Usuario autenticado: {request.user.username} (ID: {request.user.id})")
+            except Token.DoesNotExist:
+                print("⚠️ Token inválido, procesando como usuario anónimo")
+        else:
+            print("⚠️ No se encontró token, procesando como usuario anónimo")
+        
         data = json.loads(request.body)
         cart = Cart(request)
         
@@ -26,6 +39,7 @@ def simple_checkout(request):
             serializer = CheckoutSerializer(data=data, context={'request': request})
             if serializer.is_valid():
                 pedido = serializer.save()
+                print(f"📦 Pedido creado: #{pedido.numero_pedido}, cliente_id={pedido.cliente_id}")
                 return JsonResponse({
                     'success': True,
                     'pedido_id': pedido.id,
@@ -35,6 +49,8 @@ def simple_checkout(request):
                 return JsonResponse({'error': serializer.errors}, status=400)
                 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
 
