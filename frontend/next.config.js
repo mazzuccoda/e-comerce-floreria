@@ -38,7 +38,7 @@ const nextConfig = {
     // Usar la URL del backend desde variable de entorno
     // En Railway: NEXT_PUBLIC_API_URL=https://e-comerce-floreria-production.up.railway.app
     // En Docker local: BACKEND_URL=http://web:8000
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || 'https://e-comerce-floreria-production.up.railway.app';
     console.log('🔧 Using backend URL (rewrites):', backendUrl);
     
     return [
