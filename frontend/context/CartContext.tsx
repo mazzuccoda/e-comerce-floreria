@@ -31,8 +31,8 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
 }
 
-// API base URL - Hardcoded for Railway to avoid cache issues
-const API_URL = 'https://e-comerce-floreria-production.up.railway.app/api';
+// API base URL - Always use relative URL, Next.js rewrites handle the backend routing
+const API_URL = '/api';
 
 // Creamos el contexto con un valor por defecto
 const CartContext = createContext<CartContextType | undefined>(undefined);
