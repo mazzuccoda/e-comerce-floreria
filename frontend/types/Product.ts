@@ -12,6 +12,13 @@ export interface TipoFlor {
   is_active: boolean;
 }
 
+export interface Ocasion {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  is_active: boolean;
+}
+
 export interface ProductoImagen {
   id: number;
   imagen: string;
@@ -37,7 +44,7 @@ export interface Product {
   imagen_principal: string;
   imagenes: ProductoImagen[];
   tipo_flor?: TipoFlor;
-  ocasiones?: string[];
+  ocasiones?: Ocasion[];
   es_adicional?: boolean;
   created_at?: string;
   updated_at?: string;

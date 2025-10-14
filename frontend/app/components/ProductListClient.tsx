@@ -267,24 +267,37 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     
     console.log('🎯 ProductListClient con', products.length, 'productos');
     console.log('🔍 Params URL - tipo_flor:', tipoFlorParam, 'ocasion:', ocasionParam);
+    console.log('📦 Primer producto estructura:', products[0]);
 
     let filtered = [...products];
 
     // Filtrar por tipo de flor (ID)
     if (tipoFlorParam) {
       const tipoFlorId = parseInt(tipoFlorParam);
-      filtered = filtered.filter(product => product.tipo_flor?.id === tipoFlorId);
-      console.log(`🌸 Filtrado por tipo_flor ID ${tipoFlorId}:`, filtered.length, 'productos');
+      console.log('🔍 Buscando tipo_flor ID:', tipoFlorId);
+      
+      filtered = filtered.filter(product => {
+        const match = product.tipo_flor?.id === tipoFlorId;
+        console.log(`  - ${product.nombre}: tipo_flor=${JSON.stringify(product.tipo_flor)}, match=${match}`);
+        return match;
+      });
+      
+      console.log(`🌸 Filtrado por tipo_flor ID ${tipoFlorId}:`, filtered.length, 'de', products.length, 'productos');
     }
 
     // Filtrar por ocasión (ID)
     if (ocasionParam) {
       const ocasionId = parseInt(ocasionParam);
-      filtered = filtered.filter(product => 
-        Array.isArray(product.ocasiones) && 
-        product.ocasiones.some((o: any) => o.id === ocasionId)
-      );
-      console.log(`🎉 Filtrado por ocasión ID ${ocasionId}:`, filtered.length, 'productos');
+      console.log('🔍 Buscando ocasión ID:', ocasionId);
+      
+      filtered = filtered.filter(product => {
+        const match = Array.isArray(product.ocasiones) && 
+                      product.ocasiones.some((o: any) => o.id === ocasionId);
+        console.log(`  - ${product.nombre}: ocasiones=${JSON.stringify(product.ocasiones)}, match=${match}`);
+        return match;
+      });
+      
+      console.log(`🎉 Filtrado por ocasión ID ${ocasionId}:`, filtered.length, 'de', products.length, 'productos');
     }
     
     setDisplayProducts(filtered);
