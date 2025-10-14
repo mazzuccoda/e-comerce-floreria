@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
@@ -296,7 +296,7 @@ const CheckoutFinalPage = () => {
               {/* Método de envío Premium */}
               <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 shadow-2xl shadow-gray-900/5 border border-white/20 hover:shadow-3xl transition-all duration-500">
                 <div className="flex items-center mb-10">
-                  <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full mr-5 shadow-lg shadow-purple-500/25"></div>
+                  <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-green-700 rounded-full mr-5 shadow-lg shadow-green-500/25"></div>
                   <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">Método de envío</h2>
                 </div>
                 <div className="space-y-6">

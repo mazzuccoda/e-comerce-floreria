@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
@@ -116,7 +116,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                   errors.first_name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Tu nombre"
@@ -137,7 +137,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                   errors.last_name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Tu apellido"
@@ -159,7 +159,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                 errors.username ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Elige un nombre de usuario"
@@ -180,7 +180,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                 errors.email ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="tu@email.com"
@@ -201,7 +201,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="telefono"
               value={formData.telefono}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600"
               placeholder="11 1234-5678"
               disabled={loading}
             />
@@ -217,7 +217,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="ciudad"
               value={formData.ciudad}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600"
               placeholder="Buenos Aires"
               disabled={loading}
             />
@@ -233,7 +233,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Mínimo 8 caracteres"
@@ -254,7 +254,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="password_confirm"
               value={formData.password_confirm}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                 errors.password_confirm ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Repite tu contraseña"
@@ -272,7 +272,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               name="recibir_ofertas"
               checked={formData.recibir_ofertas}
               onChange={handleChange}
-              className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+              className="h-4 w-4 text-green-700 focus:ring-green-600 border-gray-300 rounded"
               disabled={loading}
             />
             <label htmlFor="recibir_ofertas" className="ml-2 block text-sm text-gray-700">
@@ -283,7 +283,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-green-700 text-white py-2 px-4 rounded-md hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </button>
@@ -295,7 +295,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess, onSwitchToLogin 
               ¿Ya tienes cuenta?{' '}
               <button
                 onClick={onSwitchToLogin}
-                className="text-pink-600 hover:text-pink-700 font-medium"
+                className="text-green-700 hover:text-pink-700 font-medium"
               >
                 Inicia sesión aquí
               </button>

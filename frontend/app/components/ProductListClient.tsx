@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
@@ -394,7 +394,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -18,7 +18,7 @@ const FavoritosPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -46,7 +46,7 @@ const FavoritosPage: React.FC = () => {
           </p>
           <button
             onClick={() => router.push('/productos')}
-            className="bg-pink-600 text-white px-6 py-3 rounded-md hover:bg-pink-700 transition-colors"
+            className="bg-green-700 text-white px-6 py-3 rounded-md hover:bg-green-800 transition-colors"
           >
             Explorar Productos
           </button>

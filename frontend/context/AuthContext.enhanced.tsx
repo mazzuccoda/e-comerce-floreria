@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { jwtDecode } from 'jwt-decode';
 
@@ -75,13 +75,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   // Función para obtener URL de API dinámica
-  const getApiUrl = useCallback(() => {
+  const getApiUrl = useMemo(() => {
     if (typeof window === 'undefined') {
       // Server-side: usar URL interna de Docker
       return 'http://web:8000/api';
     } else {
-      // Client-side: usar Nginx como proxy
-      return 'http://localhost/api';
+      // Client-side: usar variable de entorno o Railway
+      return process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
     }
   }, []);
 

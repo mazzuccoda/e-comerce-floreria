@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
@@ -36,10 +36,10 @@ const UserMenu: React.FC = () => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 text-gray-700 hover:text-pink-600 focus:outline-none"
+        className="flex items-center space-x-2 text-gray-700 hover:text-green-700 focus:outline-none"
       >
-        <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-          <span className="text-pink-600 font-medium text-sm">
+        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+          <span className="text-green-700 font-medium text-sm">
             {user.first_name ? user.first_name.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
           </span>
         </div>

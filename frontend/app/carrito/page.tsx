@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -180,7 +180,7 @@ const CartPage = () => {
           <p className="text-gray-600 mb-6">{error}</p>
           <button 
             onClick={fetchCart}
-            className="bg-pink-600 text-white px-6 py-3 rounded-lg hover:bg-pink-700 transition"
+            className="bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 transition"
           >
             Reintentar
           </button>
@@ -207,7 +207,7 @@ const CartPage = () => {
             <p className="text-gray-600 mb-8">¡Descubre nuestros hermosos arreglos florales!</p>
             <Link 
               href="/" 
-              className="inline-block bg-pink-600 text-white px-8 py-3 rounded-lg hover:bg-pink-700 transition font-medium"
+              className="inline-block bg-green-700 text-white px-8 py-3 rounded-lg hover:bg-green-800 transition font-medium"
             >
               Ver Productos
             </Link>
@@ -236,7 +236,7 @@ const CartPage = () => {
                   {/* Product Info */}
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-800 mb-1">{item.producto.nombre}</h3>
-                    <p className="text-pink-600 font-medium">${item.price}</p>
+                    <p className="text-green-700 font-medium">${item.price}</p>
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-3 mt-4">
@@ -289,13 +289,13 @@ const CartPage = () => {
                   </div>
                   <div className="border-t pt-3 flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-pink-600">${cart?.total_price}</span>
+                    <span className="text-green-700">${cart?.total_price}</span>
                   </div>
                 </div>
 
                 <Link
                   href="/checkout"
-                  className="block w-full bg-pink-600 text-white text-center py-3 rounded-lg hover:bg-pink-700 transition font-medium mb-3"
+                  className="block w-full bg-green-700 text-white text-center py-3 rounded-lg hover:bg-green-800 transition font-medium mb-3"
                 >
                   Proceder al Checkout
                 </Link>

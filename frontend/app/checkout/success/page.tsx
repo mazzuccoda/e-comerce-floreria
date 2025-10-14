@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -232,7 +232,7 @@ const PaymentSuccessPage = () => {
               </div>
               
               <div className="flex items-start">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center text-lg font-medium mr-6 shadow-xl shadow-purple-500/25">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-full flex items-center justify-center text-lg font-medium mr-6 shadow-xl shadow-green-500/25">
                   2
                 </div>
                 <div>

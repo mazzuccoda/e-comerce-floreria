@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 
@@ -178,7 +178,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 required
                 value={formData.nombre}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
                 placeholder="Ej: Ramo de Rosas Rojas"
               />
             </div>
@@ -194,7 +194,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 id="sku"
                 value={formData.sku}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
                 placeholder="Se generará automáticamente si se deja vacío"
               />
             </div>
@@ -213,7 +213,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 step="0.01"
                 value={formData.precio}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
                 placeholder="25000.00"
               />
             </div>
@@ -231,7 +231,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 min="0"
                 value={formData.stock}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
                 placeholder="10"
               />
             </div>
@@ -247,7 +247,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 required
                 value={formData.categoria}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
               >
                 <option value="">Seleccionar categoría</option>
                 {categories.map((category) => (
@@ -269,7 +269,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 required
                 value={formData.tipo}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
               >
                 <option value="">Seleccionar tipo</option>
                 {tiposFlor.map((tipo) => (
@@ -294,7 +294,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 step="0.01"
                 value={formData.porcentaje_descuento}
                 onChange={handleInputChange}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
                 placeholder="0"
               />
             </div>
@@ -311,7 +311,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
               id="descripcion_corta"
               value={formData.descripcion_corta}
               onChange={handleInputChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
               placeholder="Breve descripción del producto"
             />
           </div>
@@ -327,7 +327,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
               rows={4}
               value={formData.descripcion}
               onChange={handleInputChange}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 sm:text-sm"
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-600 focus:border-green-600 sm:text-sm"
               placeholder="Descripción detallada del producto..."
             />
           </div>
@@ -341,7 +341,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-700 focus:ring-green-600 border-gray-300 rounded"
               />
               <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
                 Producto activo
@@ -355,7 +355,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
                 type="checkbox"
                 checked={formData.is_featured}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-700 focus:ring-green-600 border-gray-300 rounded"
               />
               <label htmlFor="is_featured" className="ml-2 block text-sm text-gray-900">
                 Producto destacado
@@ -368,7 +368,7 @@ export default function AddProductForm({ onProductAdded }: AddProductFormProps) 
             <button
               type="submit"
               disabled={loading}
-              className="bg-pink-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-green-700 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

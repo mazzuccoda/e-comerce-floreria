@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
@@ -84,7 +84,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                 errors.username ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Ingresa tu usuario o email"
@@ -105,7 +105,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                 errors.password ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="Ingresa tu contraseña"
@@ -119,7 +119,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-green-700 text-white py-2 px-4 rounded-md hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
@@ -131,7 +131,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
               ¿No tienes cuenta?{' '}
               <button
                 onClick={onSwitchToRegister}
-                className="text-pink-600 hover:text-pink-700 font-medium"
+                className="text-green-700 hover:text-pink-700 font-medium"
               >
                 Regístrate aquí
               </button>
@@ -142,7 +142,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
         <div className="mt-4 text-center">
           <a
             href="#"
-            className="text-sm text-pink-600 hover:text-pink-700"
+            className="text-sm text-green-700 hover:text-pink-700"
           >
             ¿Olvidaste tu contraseña?
           </a>

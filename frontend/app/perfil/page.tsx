@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -46,7 +46,7 @@ const PerfilPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -129,7 +129,7 @@ const PerfilPage: React.FC = () => {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-pink-600 text-white px-4 py-2 rounded-md hover:bg-pink-700 transition-colors"
+              className="bg-green-700 text-white px-4 py-2 rounded-md hover:bg-green-800 transition-colors"
             >
               Editar Perfil
             </button>
@@ -151,7 +151,7 @@ const PerfilPage: React.FC = () => {
                   value={formData.first_name}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                     !isEditing ? 'bg-gray-50' : ''
                   } ${errors.first_name ? 'border-red-500' : 'border-gray-300'}`}
                 />
@@ -171,7 +171,7 @@ const PerfilPage: React.FC = () => {
                   value={formData.last_name}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                     !isEditing ? 'bg-gray-50' : ''
                   } ${errors.last_name ? 'border-red-500' : 'border-gray-300'}`}
                 />
@@ -192,7 +192,7 @@ const PerfilPage: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                   !isEditing ? 'bg-gray-50' : ''
                 } ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
               />
@@ -212,7 +212,7 @@ const PerfilPage: React.FC = () => {
                 value={formData.telefono}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                   !isEditing ? 'bg-gray-50' : 'border-gray-300'
                 }`}
               />
@@ -229,7 +229,7 @@ const PerfilPage: React.FC = () => {
                 value={formData.direccion}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                   !isEditing ? 'bg-gray-50' : 'border-gray-300'
                 }`}
               />
@@ -247,7 +247,7 @@ const PerfilPage: React.FC = () => {
                   value={formData.ciudad}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                     !isEditing ? 'bg-gray-50' : 'border-gray-300'
                   }`}
                 />
@@ -264,7 +264,7 @@ const PerfilPage: React.FC = () => {
                   value={formData.codigo_postal}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 ${
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 ${
                     !isEditing ? 'bg-gray-50' : 'border-gray-300'
                   }`}
                 />
@@ -279,7 +279,7 @@ const PerfilPage: React.FC = () => {
                 checked={formData.recibir_ofertas}
                 onChange={handleChange}
                 disabled={!isEditing}
-                className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 rounded"
+                className="h-4 w-4 text-green-700 focus:ring-green-600 border-gray-300 rounded"
               />
               <label htmlFor="recibir_ofertas" className="ml-2 block text-sm text-gray-700">
                 Recibir ofertas y novedades por email
@@ -330,7 +330,7 @@ const PerfilPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-800 disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Guardando...' : 'Guardar Cambios'}
               </button>

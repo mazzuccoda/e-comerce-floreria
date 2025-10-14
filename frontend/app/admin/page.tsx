@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando dashboard...</p>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function AdminDashboard() {
             </div>
             <button
               onClick={() => router.push('/')}
-              className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors"
+              className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
             >
               Ver Tienda
             </button>
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('products')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'products'
-                  ? 'border-pink-500 text-pink-600'
+                  ? 'border-green-600 text-green-700'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('categories')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'categories'
-                  ? 'border-pink-500 text-pink-600'
+                  ? 'border-green-600 text-green-700'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveTab('add-product')}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'add-product'
-                  ? 'border-pink-500 text-pink-600'
+                  ? 'border-green-600 text-green-700'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -193,8 +193,8 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <div className="h-10 w-10 bg-pink-100 rounded-full flex items-center justify-center">
-                          <span className="text-pink-600 font-medium">
+                        <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <span className="text-green-700 font-medium">
                             {product.nombre.charAt(0)}
                           </span>
                         </div>

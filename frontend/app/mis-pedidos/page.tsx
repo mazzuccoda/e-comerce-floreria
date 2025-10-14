@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -67,7 +67,7 @@ const MisPedidosPage: React.FC = () => {
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -102,7 +102,7 @@ const MisPedidosPage: React.FC = () => {
             </p>
             <button
               onClick={() => router.push('/productos')}
-              className="bg-pink-600 text-white px-6 py-3 rounded-md hover:bg-pink-700 transition-colors"
+              className="bg-green-700 text-white px-6 py-3 rounded-md hover:bg-green-800 transition-colors"
             >
               Explorar Productos
             </button>
@@ -150,7 +150,7 @@ const MisPedidosPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between text-lg font-bold mt-4 pt-4 border-t">
                     <span>Total:</span>
-                    <span className="text-pink-600">${pedido.total}</span>
+                    <span className="text-green-700">${pedido.total}</span>
                   </div>
                 </div>
                 

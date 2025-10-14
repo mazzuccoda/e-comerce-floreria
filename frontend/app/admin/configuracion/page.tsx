@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -118,7 +118,7 @@ export default function ConfiguracionPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
       </div>
     );
   }
@@ -156,7 +156,7 @@ export default function ConfiguracionPage() {
                     />
                     <label 
                       htmlFor={item.id}
-                      className="block h-6 overflow-hidden bg-gray-300 rounded-full cursor-pointer peer-checked:bg-pink-600"
+                      className="block h-6 overflow-hidden bg-gray-300 rounded-full cursor-pointer peer-checked:bg-green-700"
                     >
                       <span className="absolute inset-0 w-6 h-6 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out peer-checked:translate-x-4"></span>
                     </label>
@@ -208,7 +208,7 @@ export default function ConfiguracionPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded transition ${saving ? 'opacity-75 cursor-not-allowed' : ''}`}
+            className={`px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded transition ${saving ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             {saving ? 'Guardando...' : 'Guardar configuración'}
           </button>

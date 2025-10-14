@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -152,7 +152,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <button 
           onClick={handleAddToCart}
           disabled={addingToCart || product.stock <= 0}
-          className="w-full bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 text-sm"
+          className="w-full bg-green-700 hover:bg-green-800 disabled:bg-gray-400 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 text-sm"
         >
           {addingToCart ? (
             <span>⏳ Agregando...</span>

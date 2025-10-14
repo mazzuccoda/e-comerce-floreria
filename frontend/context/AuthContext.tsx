@@ -67,8 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Server-side: usar URL interna de Docker
       return 'http://web:8000/api';
     } else {
-      // Client-side: usar Nginx como proxy
-      return 'http://localhost/api';
+      // Client-side: usar variable de entorno o Railway
+      return process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
     }
   };
 
