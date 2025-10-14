@@ -2,9 +2,20 @@ from rest_framework import serializers
 from .models import Producto, Categoria, TipoFlor, Ocasion, ZonaEntrega, ProductoImagen
 
 class ProductoImagenSerializer(serializers.ModelSerializer):
+    imagen = serializers.SerializerMethodField()
+    
     class Meta:
         model = ProductoImagen
         fields = ['id', 'imagen', 'is_primary', 'orden']
+    
+    def get_imagen(self, obj):
+        """Convert relative image URLs to absolute URLs"""
+        if obj.imagen:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.imagen.url)
+            return obj.imagen.url
+        return None
 
 class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -70,8 +81,9 @@ class ProductoSerializer(serializers.ModelSerializer):
         if not url:
             return '/images/no-image.jpg'
 
-        # Si la URL es relativa de Django (/media/...), retornar como está y dejar que el frontend la consuma vía rewrite
-        if isinstance(url, str) and (url.startswith('/media/') or url.startswith('/images/')):
-            return url
+        # Convert relative URLs to absolute URLs for Railway deployment
+        request = self.context.get('request')
+        if request and isinstance(url, str) and (url.startswith('/media/') or url.startswith('/images/')):
+            return request.build_absolute_uri(url)
 
         return url
