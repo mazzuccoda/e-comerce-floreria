@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { jwtDecode } from 'jwt-decode';
 
@@ -74,16 +74,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tokenData, setTokenData] = useState<TokenData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Función para obtener URL de API dinámica
-  const getApiUrl = useMemo(() => {
-    if (typeof window === 'undefined') {
-      // Server-side: usar URL interna de Docker
-      return 'http://web:8000/api';
-    } else {
-      // Client-side: usar variable de entorno o Railway
-      return process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-    }
-  }, []);
+  // URL de API dinámica
+  const getApiUrl: string = typeof window === 'undefined'
+    ? 'http://web:8000/api'
+    : (process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api');
 
   // Función para verificar si el token está expirado
   const isTokenExpired = useCallback((token: string): boolean => {
@@ -104,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!tokenData?.refresh_token) return false;
 
     try {
-      const apiUrl = getApiUrl();
+      const apiUrl = getApiUrl;
       const response = await fetch(`${apiUrl}/usuarios/simple/token/refresh/`, {
         method: 'POST',
         credentials: 'include',
@@ -138,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error al refrescar token:', error);
       return false;
     }
-  }, [tokenData, getApiUrl]);
+  }, [tokenData]);
 
   // Función para obtener CSRF token
   const getCsrfToken = useCallback(() => {
@@ -162,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const apiUrl = getApiUrl();
+    const apiUrl = getApiUrl;
     const response = await fetch(`${apiUrl}${endpoint}`, {
       credentials: 'include',
       mode: 'cors',
@@ -182,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return response.json();
-  }, [tokenData, isTokenExpired, refreshToken, getApiUrl, getCsrfToken]);
+  }, [tokenData, isTokenExpired, refreshToken, getCsrfToken]);
 
   // Cargar datos de autenticación al inicializar
   useEffect(() => {
@@ -230,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      const data = await fetch(`${getApiUrl()}/usuarios/simple/login/`, {
+      const data = await fetch(`${getApiUrl}/usuarios/simple/login/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -277,7 +271,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
       setLoading(true);
-      const data = await fetch(`${getApiUrl()}/usuarios/simple/registro/`, {
+      const data = await fetch(`${getApiUrl}/usuarios/simple/registro/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -324,7 +318,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     try {
       if (tokenData) {
-        await fetch(`${getApiUrl()}/usuarios/simple/logout/`, {
+        await fetch(`${getApiUrl}/usuarios/simple/logout/`, {
           method: 'POST',
           credentials: 'include',
           headers: {
