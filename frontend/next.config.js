@@ -17,7 +17,6 @@ const nextConfig = {
       },
     ];
   },
-  output: 'standalone',
   reactStrictMode: true,
   images: {
     domains: ['localhost', 'web', '127.0.0.1', 'images.unsplash.com', 'e-comerce-floreria-production.up.railway.app'],
