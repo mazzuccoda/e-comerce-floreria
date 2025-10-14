@@ -24,12 +24,8 @@ interface Cart {
 
 // Función auxiliar para obtener la URL base de la API
 const getApiBaseUrl = (): string => {
-  // En el navegador, usar la URL actual
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  // En SSR, usar la variable de entorno o la URL del contenedor
-  return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://web:8000';
+  // Usar variable de entorno (incluye /api al final)
+  return process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 };
 
 const CartPage = () => {
@@ -44,9 +40,9 @@ const CartPage = () => {
       setError(null);
       
       const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Conectando con API en:', `${apiBaseUrl}/api/carrito/simple/`);
+      console.log('📡 Conectando con API en:', `${apiBaseUrl}/carrito/simple/`);
         
-      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/`, {
+      const response = await fetch(`${apiBaseUrl}/carrito/simple/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -78,9 +74,9 @@ const CartPage = () => {
     setUpdatingItem(productId);
     try {
       const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Enviando actualización a:', `${apiBaseUrl}/api/carrito/simple/update/`);
+      console.log('📡 Enviando actualización a:', `${apiBaseUrl}/carrito/simple/update/`);
         
-      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/update/`, {
+      const response = await fetch(`${apiBaseUrl}/carrito/simple/update/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -110,9 +106,9 @@ const CartPage = () => {
     setUpdatingItem(productId);
     try {
       const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Eliminando producto:', `${apiBaseUrl}/api/carrito/simple/remove/`);
+      console.log('📡 Eliminando producto:', `${apiBaseUrl}/carrito/simple/remove/`);
         
-      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/remove/`, {
+      const response = await fetch(`${apiBaseUrl}/carrito/simple/remove/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -138,9 +134,9 @@ const CartPage = () => {
   const clearCart = async () => {
     try {
       const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Vaciando carrito:', `${apiBaseUrl}/api/carrito/simple/clear/`);
+      console.log('📡 Vaciando carrito:', `${apiBaseUrl}/carrito/simple/clear/`);
         
-      const response = await fetch(`${apiBaseUrl}/api/carrito/simple/clear/`, {
+      const response = await fetch(`${apiBaseUrl}/carrito/simple/clear/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
