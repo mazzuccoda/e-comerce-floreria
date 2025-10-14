@@ -22,7 +22,7 @@ const mockProducts: Product[] = [
     is_featured: true,
     is_active: true,
     envio_gratis: true,
-    tipo_flor: "Rosas",
+    tipo_flor: { id: 1, nombre: "Rosas", descripcion: "Flores tipo rosas", is_active: true },
     ocasiones: ["Amor", "Aniversario"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -42,7 +42,7 @@ const mockProducts: Product[] = [
     is_featured: true,
     is_active: true,
     envio_gratis: true,
-    tipo_flor: "Mixto",
+    tipo_flor: { id: 2, nombre: "Mixto", descripcion: "Flores mixtas", is_active: true },
     ocasiones: ["Cumpleaños", "Agradecimiento"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -62,7 +62,7 @@ const mockProducts: Product[] = [
     is_featured: false,
     is_active: true,
     envio_gratis: false,
-    tipo_flor: "Girasoles",
+    tipo_flor: { id: 3, nombre: "Girasoles", descripcion: "Flores girasoles", is_active: true },
     ocasiones: ["Amistad", "Cumpleaños"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -82,7 +82,7 @@ const mockProducts: Product[] = [
     is_featured: false,
     is_active: true,
     envio_gratis: true,
-    tipo_flor: "Tulipanes",
+    tipo_flor: { id: 4, nombre: "Tulipanes", descripcion: "Flores tulipanes", is_active: true },
     ocasiones: ["Primavera", "Cumpleaños"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -102,7 +102,7 @@ const mockProducts: Product[] = [
     is_featured: true,
     is_active: true,
     envio_gratis: true,
-    tipo_flor: "Mixto",
+    tipo_flor: { id: 2, nombre: "Mixto", descripcion: "Flores mixtas", is_active: true },
     ocasiones: ["Eventos", "Bodas"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -122,7 +122,7 @@ const mockProducts: Product[] = [
     is_featured: true,
     is_active: true,
     envio_gratis: true,
-    tipo_flor: "Orquídeas",
+    tipo_flor: { id: 5, nombre: "Orquídeas", descripcion: "Flores orquídeas", is_active: true },
     ocasiones: ["Lujo", "Decoración"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -142,7 +142,7 @@ const mockProducts: Product[] = [
     is_featured: false,
     is_active: true,
     envio_gratis: false,
-    tipo_flor: "Gerberas",
+    tipo_flor: { id: 6, nombre: "Gerberas", descripcion: "Flores gerberas", is_active: true },
     ocasiones: ["Amistad", "Alegría"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -162,7 +162,7 @@ const mockProducts: Product[] = [
     is_featured: false,
     is_active: true,
     envio_gratis: false,
-    tipo_flor: "Gerberas",
+    tipo_flor: { id: 6, nombre: "Gerberas", descripcion: "Flores gerberas", is_active: true },
     ocasiones: ["Amor", "Ternura"],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
@@ -270,15 +270,8 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       console.log('🔍 Filtro de URL detectado:', tipoFlorParam);
       
       const filtered = products.filter(product => {
-        // Manejar tipo_flor como string o como objeto
-        let tipoFlorNombre = '';
-        if (typeof product.tipo_flor === 'string') {
-          tipoFlorNombre = product.tipo_flor.toLowerCase();
-        } else if (product.tipo_flor && typeof product.tipo_flor === 'object') {
-          // Type assertion para objeto con nombre
-          const tipoFlor = product.tipo_flor as any;
-          tipoFlorNombre = tipoFlor.nombre?.toLowerCase() || '';
-        }
+        // Manejar tipo_flor solo como objeto TipoFlor
+        const tipoFlorNombre = product.tipo_flor?.nombre?.toLowerCase() || '';
         const match = tipoFlorNombre === tipoFlorParam.toLowerCase();
         console.log(`🌸 ${product.nombre} (${tipoFlorNombre}) - Match: ${match}`);
         return match;
