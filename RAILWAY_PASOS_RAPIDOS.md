@@ -186,23 +186,10 @@ Accede a tu app desplegada:
 - Verifica que `requirements.txt` esté en la raíz del repo
 - Haz un nuevo deploy: **Deployments → "Redeploy"**
 
-### Error: "Static files not loading"
-**Solución:**
-- Ejecuta: `python manage.py collectstatic --noinput`
-- Verifica que `whitenoise` esté instalado
-- Verifica que `STATIC_ROOT` esté configurado
-
 ### Error: "Database connection error"
 **Solución:**
-- Verifica que PostgreSQL esté corriendo en Railway
 - Verifica que `DATABASE_URL` esté correcta
 - Asegúrate que ambos servicios estén en el mismo proyecto
-
----
-
-## 📊 Próximos Pasos (Opcional)
-
-### 1. Dominio Personalizado
 - Settings → Domains → "Add Custom Domain"
 - Configura los DNS según las instrucciones de Railway
 

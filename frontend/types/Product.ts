@@ -5,6 +5,13 @@ export interface Categoria {
   imagen: string | null;
 }
 
+export interface TipoFlor {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  is_active: boolean;
+}
+
 export interface ProductoImagen {
   id: number;
   imagen: string;
@@ -29,7 +36,7 @@ export interface Product {
   envio_gratis?: boolean;
   imagen_principal: string;
   imagenes: ProductoImagen[];
-  tipo_flor?: string;
+  tipo_flor?: TipoFlor;
   ocasiones?: string[];
   es_adicional?: boolean;
   created_at?: string;

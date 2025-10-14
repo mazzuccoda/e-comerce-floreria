@@ -1,6 +1,6 @@
 {
-  "app\\components\\ProductListFinal.tsx -> ./ProductListClient": {
-    "id": "app\\components\\ProductListFinal.tsx -> ./ProductListClient",
+  "app/components/ProductListFinal.tsx -> ./ProductListClient": {
+    "id": "app/components/ProductListFinal.tsx -> ./ProductListClient",
     "files": [
       "static/css/_app-pages-browser_app_components_ProductListClient_tsx.css",
       "static/chunks/_app-pages-browser_app_components_ProductListClient_tsx.js"

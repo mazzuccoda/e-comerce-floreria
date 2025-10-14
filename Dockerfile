@@ -119,4 +119,5 @@ EXPOSE 8000
 
 # Stay as root for now to debug (we'll fix permissions later)
 # Command: Run migrations then start Gunicorn (exec format with shell)
-CMD ["/bin/sh", "-c", "echo 'Starting migrations...' && python manage.py migrate --noinput && echo 'Starting Gunicorn on port $PORT...' && exec gunicorn floreria_cristina.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --log-level info --access-logfile - --error-logfile -"]
+# Added --capture-output and --enable-stdio-inheritance for better logging
+CMD ["/bin/sh", "-c", "echo 'Starting migrations...' && python manage.py migrate --noinput && echo 'Starting Gunicorn on port $PORT...' && exec gunicorn floreria_cristina.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --log-level debug --access-logfile - --error-logfile - --capture-output --enable-stdio-inheritance"]

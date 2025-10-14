@@ -31,8 +31,8 @@ interface CartContextType {
   refreshCart: () => Promise<void>;
 }
 
-// API base URL - Always use relative URL, Next.js rewrites handle the backend routing
-const API_URL = '/api';
+// API base URL - Use environment variable or fallback to production URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
 // Creamos el contexto con un valor por defecto
 const CartContext = createContext<CartContextType | undefined>(undefined);

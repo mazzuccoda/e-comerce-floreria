@@ -30,12 +30,17 @@ def simple_registro(request):
         # Parsear datos JSON
         data = json.loads(request.body.decode('utf-8'))
         
+        # Log para debugging
+        print(f"📝 Datos recibidos en registro: {data}")
+        
         # Validar campos requeridos
         required_fields = ['username', 'email', 'password', 'password_confirm']
         for field in required_fields:
             if not data.get(field):
+                error_msg = f'El campo {field} es requerido'
+                print(f"❌ Error de validación: {error_msg}")
                 return JsonResponse({
-                    'error': f'El campo {field} es requerido'
+                    'error': error_msg
                 }, status=400)
         
         # Validar que las contraseñas coincidan
@@ -127,8 +132,16 @@ def simple_login(request):
                 'error': 'Usuario y contraseña son requeridos'
             }, status=400)
         
-        # Autenticar usuario
+        # Intentar autenticar por username primero
         user = authenticate(username=username, password=password)
+        
+        # Si falla, intentar buscar por email
+        if user is None:
+            try:
+                user_obj = User.objects.get(email=username)
+                user = authenticate(username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                pass
         
         if user is None:
             return JsonResponse({

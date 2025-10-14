@@ -411,7 +411,7 @@ const MultiStepCheckoutPage = () => {
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
           instrucciones: formData.instrucciones || "",
           regalo_anonimo: false,
-          medio_pago: "transferencia"
+          medio_pago: formData.metodoPago
         }),
       });
 
@@ -437,8 +437,37 @@ const MultiStepCheckoutPage = () => {
       if (response.ok) {
         alert(`🎉 ¡Pedido #${result.numero_pedido} creado exitosamente! ID: ${result.pedido_id}`);
         
-        // Redirigir a página de éxito (el carrito se limpia automáticamente en el backend)
-        window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
+        // Si el método de pago es MercadoPago, crear preferencia y redirigir
+        if (formData.metodoPago === 'mercadopago') {
+          try {
+            console.log('💳 Creando preferencia de MercadoPago...');
+            const paymentResponse = await fetch(`http://localhost/api/pedidos/simple/${result.pedido_id}/payment/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+            });
+            
+            const paymentResult = await paymentResponse.json();
+            console.log('💳 Respuesta de pago:', paymentResult);
+            
+            if (paymentResult.success) {
+              console.log('✅ Preferencia creada, redirigiendo a MercadoPago...');
+              // Redirigir a MercadoPago
+              window.location.href = paymentResult.init_point;
+            } else {
+              alert(`❌ Error al crear el pago: ${paymentResult.error || 'Error desconocido'}`);
+              console.error('Error de pago:', paymentResult);
+            }
+          } catch (error) {
+            console.error('Error creating payment preference:', error);
+            alert('❌ Error al procesar el pago. Pedido creado pero pago pendiente.');
+          }
+        } else {
+          // Para otros métodos de pago, redirigir a página de éxito
+          window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
+        }
       } else {
         console.error('❌ ERROR COMPLETO:', result);
       }
@@ -640,7 +669,9 @@ const MultiStepCheckoutPage = () => {
                   placeholder="Apellido" 
                 />
                 <div className="flex flex-col">
+                  <label htmlFor="email" className="sr-only">Email</label>
                   <input 
+                    id="email"
                     name="email"
                     type="email"
                     value={formData.email}
@@ -648,19 +679,29 @@ const MultiStepCheckoutPage = () => {
                     className={`p-4 rounded-xl ${formErrors.email ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
                     placeholder="Email" 
                     disabled={formData.envioAnonimo}
+                    aria-required="true"
+                    aria-invalid="false"
+                    {...(formErrors.email && { 'aria-invalid': 'true' })}
+                    aria-describedby={formErrors.email ? "email-error" : undefined}
                   />
-                  {formErrors.email && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.email}</span>}
+                  {formErrors.email && <span id="email-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.email}</span>}
                 </div>
                 <div className="flex flex-col">
+                  <label htmlFor="telefono" className="sr-only">Teléfono</label>
                   <input 
+                    id="telefono"
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl ${formErrors.telefono ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
                     placeholder="Teléfono (solo números, mínimo 7 dígitos)" 
                     disabled={formData.envioAnonimo}
+                    aria-required="true"
+                    aria-invalid="false"
+                    {...(formErrors.telefono && { 'aria-invalid': 'true' })}
+                    aria-describedby={formErrors.telefono ? "telefono-error" : undefined}
                   />
-                  {formErrors.telefono && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.telefono}</span>}
+                  {formErrors.telefono && <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.telefono}</span>}
                 </div>
               </div>
               <div className="mt-4">

@@ -1,0 +1,68 @@
+'use client';
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../context/AuthContext.enhanced';
+import LoadingScreen from '../ui/LoadingScreen';
+
+interface WithAuthProps {
+  adminRequired?: boolean;
+  redirectUrl?: string;
+}
+
+/**
+ * High Order Component (HOC) para proteger rutas que requieren autenticación
+ * @param WrappedComponent El componente que se va a proteger
+ * @param options Opciones de configuración
+ * @returns Un componente protegido que verifica la autenticación
+ */
+export function withAuth<P extends object>(
+  WrappedComponent: React.ComponentType<P>, 
+  options: WithAuthProps = {}
+) {
+  const { adminRequired = false, redirectUrl = '/login' } = options;
+
+  const WithAuthComponent: React.FC<P> = (props) => {
+    const { isAuthenticated, user, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+      // Solo redirigir si no está cargando y no está autenticado
+      if (!loading && !isAuthenticated) {
+        router.replace(`${redirectUrl}?redirect=${window.location.pathname}`);
+        return;
+      }
+
+      // Verificar si se requiere ser admin
+      if (
+        !loading && 
+        adminRequired && 
+        (!user?.is_staff && !user?.is_superuser)
+      ) {
+        router.replace('/');
+      }
+    }, [loading, isAuthenticated, router, user, adminRequired, redirectUrl]);
+
+    // Mostrar pantalla de carga mientras se verifica la autenticación
+    if (loading || !isAuthenticated) {
+      return <LoadingScreen message="Verificando autenticación..." />;
+    }
+
+    // Si adminRequired es true y el usuario no es admin, no renderizar nada
+    if (adminRequired && (!user?.is_staff && !user?.is_superuser)) {
+      return <LoadingScreen message="Acceso restringido" />;
+    }
+
+    // Si está autenticado, renderizar el componente
+    return <WrappedComponent {...props} />;
+  };
+
+  // Asignar displayName para debugging
+  WithAuthComponent.displayName = `withAuth(${
+    WrappedComponent.displayName || WrappedComponent.name || 'Component'
+  })`;
+
+  return WithAuthComponent;
+}
+
+export default withAuth;

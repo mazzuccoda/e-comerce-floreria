@@ -33,7 +33,7 @@ interface CartContextType {
 }
 
 // API Configuration
-// Usar nginx (puerto 80) como proxy para evitar problemas de CORS
+// Usar nginx como proxy en Docker (puerto 80)
 const API_CONFIG = {
   baseUrl: 'http://localhost/api',
   timeout: 10000,  // Aumentado a 10 segundos
@@ -65,9 +65,9 @@ class RobustApiClient {
     // Construir URL completa usando nginx como proxy
     let finalEndpoint = endpoint;
     
-    // Si ya es una URL completa con http://localhost, usarla directamente
-    if (finalEndpoint.startsWith('http://localhost/api/')) {
-      // Ya está bien formada
+    // Usar nginx como proxy (puerto 80)
+    if (finalEndpoint.startsWith('http://')) {
+      // Ya es una URL completa, no hacer nada
     } else if (finalEndpoint.startsWith('/api/')) {
       // Convertir a URL absoluta con nginx
       finalEndpoint = `http://localhost${finalEndpoint}`;
@@ -129,7 +129,7 @@ class RobustApiClient {
           ...options,
           method,
           signal: controller.signal,
-          credentials: 'include',  // Necesario para mantener sesión
+          credentials: 'include',  // Incluir credenciales con Nginx
           headers: {
             ...baseHeaders,
             ...(options.headers || {})
@@ -198,41 +198,21 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Intentar cargar el carrito desde localStorage para persistencia incluso tras cerrar navegador
   const getInitialCart = (): CartData => {
+    // IMPORTANTE: Solo ejecutar en el cliente para evitar error de hidratación
     if (typeof window !== 'undefined') {
-      // Intentar cargar primero de sessionStorage (para compatibilidad)
-      const sessionStored = sessionStorage.getItem('cart_data');
-      if (sessionStored) {
-        try {
-          console.log('🔍 Encontrado carrito en sessionStorage (legacy)');
-          const parsed = JSON.parse(sessionStored);
-          // Migrar a localStorage
-          try {
-            localStorage.setItem('cart_data', sessionStored);
-            console.log('💾 Migrado carrito de sessionStorage a localStorage');
-          } catch (e) {
-            console.error('❌ Error migrando a localStorage:', e);
-          }
-          return parsed;
-        } catch (e) {
-          console.error('❌ Error parsing session stored cart:', e);
-        }
-      }
-      
-      // Intentar cargar desde localStorage
-      const localStored = localStorage.getItem('cart_data');
-      console.log('🔍 Intentando cargar carrito desde localStorage');
-      if (localStored) {
-        try {
-          const parsed = JSON.parse(localStored);
+      try {
+        const stored = localStorage.getItem('cart_data');
+        if (stored) {
+          const parsed = JSON.parse(stored);
           console.log('✅ Carrito cargado desde localStorage:', parsed);
           return parsed;
-        } catch (e) {
-          console.error('❌ Error parsing localStorage cart:', e);
         }
-      } else {
-        console.log('⚠️ No se encontró carrito en localStorage');
+      } catch (error) {
+        console.error('❌ Error cargando carrito:', error);
       }
     }
+    
+    // Retornar carrito vacío por defecto
     return {
       items: [],
       total_price: 0,
@@ -241,7 +221,8 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   };
 
-  const [cart, setCart] = useState<CartData>(getInitialCart());
+  // Usar lazy initialization para evitar error de hidratación
+  const [cart, setCart] = useState<CartData>(() => getInitialCart());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const apiClient = useRef(RobustApiClient.getInstance());

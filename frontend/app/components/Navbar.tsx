@@ -2,9 +2,20 @@
 
 import Link from 'next/link';
 import { useCartRobust } from '../../context/CartContextRobust';
+import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect } from 'react';
 
 export default function Navbar() {
   const { cart } = useCartRobust();
+  const { user, logout, isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Solo renderizar el contador del carrito en el cliente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -49,9 +60,53 @@ export default function Navbar() {
           </li>
         </ul>
 
-        <Link href="/carrito" className="cart-button">
-          🛒 Carrito <span className="cart-count">{cart?.items?.length || 0}</span>
-        </Link>
+        <div className="flex items-center gap-3">
+          {mounted && isAuthenticated && user ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="text-gray-700 hover:text-pink-600 font-medium transition-colors flex items-center gap-2"
+              >
+                👤 {user.first_name || user.username}
+                <span className="text-xs">▼</span>
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                  <Link
+                    href="/perfil"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Mi Perfil
+                  </Link>
+                  <Link
+                    href="/mis-pedidos"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Mis Pedidos
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setShowUserMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link href="/login" className="text-gray-700 hover:text-pink-600 font-medium transition-colors">
+              👤 Iniciar sesión
+            </Link>
+          )}
+          <Link href="/carrito" className="cart-button" suppressHydrationWarning>
+            🛒 Carrito <span className="cart-count" suppressHydrationWarning>{mounted ? (cart?.items?.length || 0) : 0}</span>
+          </Link>
+        </div>
       </div>
     </nav>
   );

@@ -43,6 +43,10 @@ export const metadata: Metadata = {
     creator: "@floreria_cristina",
   },
   manifest: "/manifest.json",
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export const viewport = {

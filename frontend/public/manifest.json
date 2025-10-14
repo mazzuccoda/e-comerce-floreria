@@ -1,0 +1,16 @@
+{
+  "name": "Florería Cristina",
+  "short_name": "Florería",
+  "description": "Florería y vivero especializado en ramos de flores frescas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e91e63",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
