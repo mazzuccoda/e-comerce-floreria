@@ -14,7 +14,17 @@ class MercadoPagoService:
     """
     
     def __init__(self):
-        self.sdk = mercadopago.SDK(settings.MERCADOPAGO['ACCESS_TOKEN'])
+        access_token = settings.MERCADOPAGO['ACCESS_TOKEN']
+        # Log para debugging (solo mostrar primeros y últimos caracteres)
+        if access_token:
+            token_preview = f"{access_token[:15]}...{access_token[-10:]}" if len(access_token) > 25 else "TOKEN_TOO_SHORT"
+            logger.info(f"🔑 Inicializando MercadoPago SDK con token: {token_preview}")
+            logger.info(f"🔑 Token length: {len(access_token)}")
+            logger.info(f"🔑 Token type: {'TEST' if access_token.startswith('TEST-') else 'PRODUCTION' if access_token.startswith('APP_USR-') else 'UNKNOWN'}")
+        else:
+            logger.error("❌ ACCESS_TOKEN is None or empty!")
+        
+        self.sdk = mercadopago.SDK(access_token)
     
     def create_preference(self, pedido, request):
         """
@@ -96,9 +106,15 @@ class MercadoPagoService:
             }
             
             # Crear preferencia
-            print(f"📤 Enviando preferencia a MercadoPago: {preference_data}")
+            logger.info(f"📤 Enviando preferencia a MercadoPago para pedido #{pedido.id}")
+            logger.info(f"📦 Items count: {len(items)}")
+            logger.info(f"💰 Total amount: {sum(item['unit_price'] * item['quantity'] for item in items)}")
+            
             preference_response = self.sdk.preference().create(preference_data)
-            print(f"📥 Respuesta de MercadoPago: {preference_response}")
+            
+            logger.info(f"📥 MercadoPago Response Status: {preference_response.get('status')}")
+            if preference_response.get("status") != 201:
+                logger.error(f"❌ MercadoPago Error Response: {preference_response}")
             
             if preference_response["status"] == 201:
                 print(f"✅ Preferencia creada exitosamente")
