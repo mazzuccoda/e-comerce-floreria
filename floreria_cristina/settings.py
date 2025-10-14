@@ -162,8 +162,8 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
-    # 'cloudinary_storage',  # Disabled for Railway - using Whitenoise instead
-    # 'cloudinary',
+    'cloudinary_storage',  # Re-enabled for Railway with Cloudinary
+    'cloudinary',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -480,7 +480,7 @@ SOCIALACCOUNT_PROVIDERS = {
 # ==============================================================================
 STORAGES = {
     "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",  # Use Cloudinary for media files
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
