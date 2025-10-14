@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
 import ProductFilters from './ProductFilters';
 import { Product } from '@/types/Product';
@@ -182,21 +182,32 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   const [showFilters] = useState(!showRecommended && !showAdditionals);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
 
-  // Cargar productos desde la API
+  // Prevenir múltiples llamadas a la API
+  const fetchedRef = useRef(false);
+
+  // Cargar productos desde la API - UNA SOLA VEZ
   useEffect(() => {
+    // Prevenir múltiples llamadas
+    if (fetchedRef.current) {
+      console.log('⏭️ Ya se cargaron los productos, saltando...');
+      return;
+    }
+    
+    fetchedRef.current = true;
+    
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Usar nginx como proxy (puerto 80) para evitar problemas de CORS
-        // Nginx ya tiene CORS configurado correctamente
+        // Usar backend de Railway en producción
         const timestamp = Date.now();
-        const apiUrl = `http://localhost/api/catalogo/productos/?t=${timestamp}`;
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://e-comerce-floreria-production.up.railway.app';
+        const apiUrl = `${backendUrl}/api/catalogo/productos/?t=${timestamp}`;
           
         console.log('🔍 Iniciando solicitud a:', apiUrl);
         const response = await fetch(apiUrl, {
-          credentials: 'include',  // Necesario para mantener sesión
+          credentials: 'omit',  // Omitir credenciales para evitar CORS sin Nginx
           headers: {
             'Accept': 'application/json',
             'Cache-Control': 'no-cache, no-store',
@@ -230,15 +241,14 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         setFilteredProducts(data);
         setDisplayProducts(data);
       } catch (error: any) {
-        console.error('⚠️ No se pudo conectar con el backend, usando datos de ejemplo:', error.message);
+        console.error('❌ Error cargando productos:', error.message);
         console.error('Error completo:', error);
         
-        // Fallback silencioso a datos mock si hay error
-        console.log('🔄 Cargando productos de ejemplo...');
-        setProducts(mockProducts);
-        setFilteredProducts(mockProducts);
-        setDisplayProducts(mockProducts);
-        setError(null); // No mostrar error, solo usar mock data
+        // NO usar productos mock - mostrar error real
+        setError(`Error al cargar productos: ${error.message}. Por favor, verifica que el servidor esté funcionando.`);
+        setProducts([]);
+        setFilteredProducts([]);
+        setDisplayProducts([]);
       } finally {
         setLoading(false);
       }
@@ -260,8 +270,9 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       console.log('🔍 Filtro de URL detectado:', tipoFlorParam);
       
       const filtered = products.filter(product => {
-        const match = product.tipo_flor?.toLowerCase() === tipoFlorParam.toLowerCase();
-        console.log(`🌸 ${product.nombre} (${product.tipo_flor}) - Match: ${match}`);
+        const tipoFlorNombre = product.tipo_flor?.nombre?.toLowerCase() || '';
+        const match = tipoFlorNombre === tipoFlorParam.toLowerCase();
+        console.log(`🌸 ${product.nombre} (${product.tipo_flor?.nombre}) - Match: ${match}`);
         return match;
       });
       
@@ -378,6 +389,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     setDisplayProducts(filtered);
   };
 
+  // Indicador de carga
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -387,11 +399,27 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   }
 
   if (error) {
+    // Verificar si es un mensaje de modo sin conexión
+    const isOfflineMode = error.includes('MODO SIN CONEXIÓN');
+    
     return (
-      <div className="text-center py-12">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
-          <h3 className="text-red-800 font-semibold mb-2">Error al cargar productos</h3>
-          <p className="text-red-600">{error}</p>
+      <div className="text-center py-6 mb-4">
+        <div className={`${isOfflineMode ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'} border rounded-lg p-6 max-w-2xl mx-auto shadow-sm`}>
+          {isOfflineMode ? (
+            <>
+              <div className="flex items-center mb-2">
+                <span className="text-2xl mr-2">⚠️</span>
+                <h3 className="text-amber-800 font-semibold">Modo Sin Conexión</h3>
+              </div>
+              <p className="text-amber-700 mb-2">No se pudo establecer conexión con el servidor.</p>
+              <p className="text-amber-600">Mostrando productos de demostración sin precios ni imágenes reales.</p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-red-800 font-semibold mb-2">Error al cargar productos</h3>
+              <p className="text-red-600">{error}</p>
+            </>
+          )}
         </div>
       </div>
     );
