@@ -21,7 +21,7 @@ const mockProducts: Product[] = [
     is_active: true,
     is_featured: true,
     envio_gratis: true,
-    tipo_flor: "Rosas",
+    tipo_flor: { id: 1, nombre: "Rosas", descripcion: "Flores tipo rosas", is_active: true },
     ocasiones: ["Amor", "San Valentín"],
     imagen_principal: "/images/rosas-rojas.jpg",
     imagenes: []
@@ -35,13 +35,13 @@ const mockProducts: Product[] = [
     categoria: { nombre: "Arreglos", slug: "arreglos", descripcion: "Arreglos florales", imagen: null },
     precio: "65.00",
     precio_descuento: null,
-    porcentaje_descuento: 0,
+    porcentaje_descuento: null,
     precio_final: "65.00",
     stock: 15,
     is_active: true,
     is_featured: false,
     envio_gratis: false,
-    tipo_flor: "Mixto",
+    tipo_flor: { id: 2, nombre: "Mixto", descripcion: "Flores mixtas", is_active: true },
     ocasiones: ["Cumpleaños", "Felicitaciones"],
     imagen_principal: "/images/arreglo-mixto.jpg",
     imagenes: []
@@ -61,7 +61,7 @@ const mockProducts: Product[] = [
     is_active: true,
     is_featured: true,
     envio_gratis: false,
-    tipo_flor: "Girasoles",
+    tipo_flor: { id: 3, nombre: "Girasoles", descripcion: "Flores girasoles", is_active: true },
     ocasiones: ["Amistad"],
     imagen_principal: "/images/girasoles.jpg",
     imagenes: []
