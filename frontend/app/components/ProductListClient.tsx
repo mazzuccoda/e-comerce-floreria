@@ -23,7 +23,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: true,
     tipo_flor: { id: 1, nombre: "Rosas", descripcion: "Flores tipo rosas", is_active: true },
-    ocasiones: ["Amor", "Aniversario"],
+    ocasiones: [
+      { id: 1, nombre: "Amor", descripcion: "", is_active: true },
+      { id: 4, nombre: "Aniversario", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -43,7 +46,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: true,
     tipo_flor: { id: 2, nombre: "Mixto", descripcion: "Flores mixtas", is_active: true },
-    ocasiones: ["Cumpleaños", "Agradecimiento"],
+    ocasiones: [
+      { id: 2, nombre: "Cumpleaños", descripcion: "", is_active: true },
+      { id: 5, nombre: "Agradecimiento", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -63,7 +69,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: false,
     tipo_flor: { id: 3, nombre: "Girasoles", descripcion: "Flores girasoles", is_active: true },
-    ocasiones: ["Amistad", "Cumpleaños"],
+    ocasiones: [
+      { id: 3, nombre: "Amistad", descripcion: "", is_active: true },
+      { id: 2, nombre: "Cumpleaños", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -83,7 +92,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: true,
     tipo_flor: { id: 4, nombre: "Tulipanes", descripcion: "Flores tulipanes", is_active: true },
-    ocasiones: ["Primavera", "Cumpleaños"],
+    ocasiones: [
+      { id: 6, nombre: "Primavera", descripcion: "", is_active: true },
+      { id: 2, nombre: "Cumpleaños", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -103,7 +115,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: true,
     tipo_flor: { id: 2, nombre: "Mixto", descripcion: "Flores mixtas", is_active: true },
-    ocasiones: ["Eventos", "Bodas"],
+    ocasiones: [
+      { id: 7, nombre: "Eventos", descripcion: "", is_active: true },
+      { id: 8, nombre: "Bodas", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -123,7 +138,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: true,
     tipo_flor: { id: 5, nombre: "Orquídeas", descripcion: "Flores orquídeas", is_active: true },
-    ocasiones: ["Lujo", "Decoración"],
+    ocasiones: [
+      { id: 9, nombre: "Lujo", descripcion: "", is_active: true },
+      { id: 10, nombre: "Decoración", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -143,7 +161,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: false,
     tipo_flor: { id: 6, nombre: "Gerberas", descripcion: "Flores gerberas", is_active: true },
-    ocasiones: ["Amistad", "Alegría"],
+    ocasiones: [
+      { id: 3, nombre: "Amistad", descripcion: "", is_active: true },
+      { id: 11, nombre: "Alegría", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   },
@@ -163,7 +184,10 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: false,
     tipo_flor: { id: 6, nombre: "Gerberas", descripcion: "Flores gerberas", is_active: true },
-    ocasiones: ["Amor", "Ternura"],
+    ocasiones: [
+      { id: 1, nombre: "Amor", descripcion: "", is_active: true },
+      { id: 12, nombre: "Ternura", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   }
