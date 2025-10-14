@@ -17,10 +17,14 @@ from .payment_views import (
     PaymentFailureView,
     PaymentPendingView
 )
+from .views_debug import test_mercadopago_view
 
 app_name = 'pedidos-api'
 
 urlpatterns = [
+    # Debug - ELIMINAR EN PRODUCCIÓN
+    path('test-mercadopago/', test_mercadopago_view, name='test-mercadopago'),
+    
     # Checkout
     path('checkout/', csrf_exempt(CheckoutView.as_view()), name='checkout'),
     path('simple-checkout/', simple_checkout, name='simple-checkout'),
