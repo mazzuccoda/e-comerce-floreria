@@ -7,7 +7,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { CartProviderRobust } from '../context/CartContextRobust';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import CartDebugMonitor from './components/CartDebugMonitor'; 
+// import CartDebugMonitor from './components/CartDebugMonitor'; // Disabled for production 
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -72,7 +72,7 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
-              <CartDebugMonitor />
+              {/* <CartDebugMonitor /> */}
             </div>
           </CartProviderRobust>
         </AuthProvider>
