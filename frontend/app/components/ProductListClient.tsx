@@ -270,9 +270,15 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       console.log('🔍 Filtro de URL detectado:', tipoFlorParam);
       
       const filtered = products.filter(product => {
-        const tipoFlorNombre = product.tipo_flor?.nombre?.toLowerCase() || '';
+        // Manejar tipo_flor como string o como objeto
+        let tipoFlorNombre = '';
+        if (typeof product.tipo_flor === 'string') {
+          tipoFlorNombre = product.tipo_flor.toLowerCase();
+        } else if (product.tipo_flor && typeof product.tipo_flor === 'object' && 'nombre' in product.tipo_flor) {
+          tipoFlorNombre = product.tipo_flor.nombre?.toLowerCase() || '';
+        }
         const match = tipoFlorNombre === tipoFlorParam.toLowerCase();
-        console.log(`🌸 ${product.nombre} (${product.tipo_flor?.nombre}) - Match: ${match}`);
+        console.log(`🌸 ${product.nombre} (${tipoFlorNombre}) - Match: ${match}`);
         return match;
       });
       
