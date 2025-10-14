@@ -160,6 +160,8 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    'cloudinary_storage',
+    'cloudinary',
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -380,9 +382,24 @@ COMPRESS_PRECOMPILERS = (
     ('text/x-scss', 'django_libsass.SassCompiler'),
 )
 
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# ==============================================================================
+# CLOUDINARY CONFIGURATION
+# ==============================================================================
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default='dmxc6odsi'),
+    'API_KEY': env('CLOUDINARY_API_KEY', default='854653671796364'),
+    'API_SECRET': env('CLOUDINARY_API_SECRET', default='xWX_oc_i0E5B-50CxlfkX8C09lk'),
+}
+
+# Media files - Usando Cloudinary en producción
+if IS_RAILWAY:
+    # En producción (Railway), usar Cloudinary
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = '/media/'
+else:
+    # En desarrollo, usar almacenamiento local
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'

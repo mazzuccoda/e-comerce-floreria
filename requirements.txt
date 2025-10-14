@@ -36,6 +36,8 @@ mercadopago==2.3.0
 
 # Storage
 django-storages[boto3]==1.14.0
+cloudinary==1.36.0
+django-cloudinary-storage==0.3.0
 
 # Frontend
 django-compressor==4.4.0
