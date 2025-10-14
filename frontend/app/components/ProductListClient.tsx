@@ -274,8 +274,10 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         let tipoFlorNombre = '';
         if (typeof product.tipo_flor === 'string') {
           tipoFlorNombre = product.tipo_flor.toLowerCase();
-        } else if (product.tipo_flor && typeof product.tipo_flor === 'object' && 'nombre' in product.tipo_flor) {
-          tipoFlorNombre = product.tipo_flor.nombre?.toLowerCase() || '';
+        } else if (product.tipo_flor && typeof product.tipo_flor === 'object') {
+          // Type assertion para objeto con nombre
+          const tipoFlor = product.tipo_flor as any;
+          tipoFlorNombre = tipoFlor.nombre?.toLowerCase() || '';
         }
         const match = tipoFlorNombre === tipoFlorParam.toLowerCase();
         console.log(`🌸 ${product.nombre} (${tipoFlorNombre}) - Match: ${match}`);
