@@ -328,7 +328,7 @@ const MultiStepCheckoutPage = () => {
       
       // Verificar carrito primero usando API existente
       console.log('📡 Haciendo request a carrito...');
-      const cartResponse = await fetch('http://localhost:8000/api/carrito/', {
+      const cartResponse = await fetch(`${API_URL}/carrito/`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -361,7 +361,7 @@ const MultiStepCheckoutPage = () => {
       const fechaEntrega = tomorrow.toISOString().split('T')[0];
       
       // Determinar la URL base de la API correctamente para evitar problemas CORS
-      const apiBaseUrl = 'http://localhost:8000';
+      const apiBaseUrl = API_URL.replace('/api', '');  // Remove /api suffix for pedidos endpoint
       
       // Mostrar detalles para debugging
       console.log('👀 Valores del formulario:', {
