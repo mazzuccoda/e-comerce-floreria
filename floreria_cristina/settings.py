@@ -52,12 +52,14 @@ USE_X_FORWARDED_HOST = True
 # CORS CONFIGURATION
 # ==============================================================================
 
-# Configuración CORS para Docker con Nginx
+# Configuración CORS para Docker con Nginx y Railway
 # Orígenes permitidos específicos (requerido cuando usamos credentials)
 CORS_ALLOWED_ORIGINS = [
     'http://localhost',
     'http://localhost:3000',
     'http://localhost:80',
+    'https://frontend-production-7249.up.railway.app',  # Frontend en Railway
+    *env.list('CORS_ALLOWED_ORIGINS', default=[]),  # Permitir configurar desde env
 ]
 CORS_ALLOW_CREDENTIALS = True  # Permitir cookies y sesiones
 
