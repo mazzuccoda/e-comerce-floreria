@@ -33,10 +33,17 @@ interface CartContextType {
 
 // API base URL - Railway production vs local development
 const getApiUrl = () => {
-  // Check if running in Railway production
+  // Use environment variable if set (Railway production)
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (apiUrl) {
+    return `${apiUrl}/api`;
+  }
+  
+  // Fallback: Check if running in browser on Railway
   if (typeof window !== 'undefined' && window.location.hostname.includes('railway.app')) {
     return 'https://e-comerce-floreria-production.up.railway.app/api';
   }
+  
   // Local development or other environments
   return '/api';
 };
