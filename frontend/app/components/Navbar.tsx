@@ -29,17 +29,25 @@ export default function Navbar() {
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
     
+    console.log('🌸 Navbar: Cargando tipos de flor y ocasiones desde:', apiUrl);
+    
     // Cargar tipos de flor
     fetch(`${apiUrl}/catalogo/tipos-flor/`)
       .then(res => res.json())
-      .then(data => setTiposFlor(data))
-      .catch(err => console.error('Error cargando tipos de flor:', err));
+      .then(data => {
+        console.log('✅ Tipos de flor cargados:', data.length);
+        setTiposFlor(data);
+      })
+      .catch(err => console.error('❌ Error cargando tipos de flor:', err));
     
     // Cargar ocasiones
     fetch(`${apiUrl}/catalogo/ocasiones/`)
       .then(res => res.json())
-      .then(data => setOcasiones(data))
-      .catch(err => console.error('Error cargando ocasiones:', err));
+      .then(data => {
+        console.log('✅ Ocasiones cargadas:', data.length);
+        setOcasiones(data);
+      })
+      .catch(err => console.error('❌ Error cargando ocasiones:', err));
   }, []);
   
   // Solo renderizar el contador del carrito en el cliente
@@ -61,7 +69,10 @@ export default function Navbar() {
         <ul className="navbar-nav">
           <li 
             className="navbar-item dropdown"
-            onMouseEnter={() => setShowTiposFlor(true)}
+            onMouseEnter={() => {
+              console.log('🖱️ Mouse sobre Tipo de flor, tipos disponibles:', tiposFlor.length);
+              setShowTiposFlor(true);
+            }}
             onMouseLeave={() => setShowTiposFlor(false)}
           >
             <span className="navbar-link">Tipo de flor</span>
