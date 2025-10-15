@@ -360,7 +360,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       
       console.log('🌸 Filtrando por tipos de flor:', tiposSeleccionados);
       filtered = filtered.filter(product => 
-        tiposSeleccionados.includes(product.tipo_flor)
+        tiposSeleccionados.includes(product.tipo_flor?.nombre)
       );
     }
 
