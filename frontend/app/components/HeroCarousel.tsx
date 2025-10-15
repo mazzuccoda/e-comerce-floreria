@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 
 interface Slide {
   id: number;
@@ -84,13 +83,11 @@ export default function HeroCarousel() {
         >
           {/* Imagen de fondo */}
           <div className="relative w-full h-full">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={slide.image}
               alt={slide.title}
-              fill
-              className="object-cover"
-              priority={index === 0}
-              quality={90}
+              className="w-full h-full object-cover"
             />
             {/* Overlay oscuro para mejorar legibilidad del texto */}
             <div className="absolute inset-0 bg-black/30" />
