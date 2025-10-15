@@ -373,7 +373,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       
       console.log('🎉 Filtrando por ocasiones:', ocasionesSeleccionadas);
       filtered = filtered.filter(product => 
-        product.ocasiones?.some(ocasion => ocasionesSeleccionadas.includes(ocasion))
+        product.ocasiones?.some(ocasion => ocasionesSeleccionadas.includes(ocasion.nombre))
       );
     }
 
