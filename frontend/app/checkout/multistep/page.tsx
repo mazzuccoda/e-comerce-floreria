@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCartRobust } from '@/context/CartContextRobust';
+import { useAuth } from '@/context/AuthContext';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -27,6 +28,7 @@ interface DirectCart {
 }
 
 const MultiStepCheckoutPage = () => {
+  const { token } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [directCart, setDirectCart] = useState<DirectCart>({
     items: [],
@@ -374,13 +376,20 @@ const MultiStepCheckoutPage = () => {
       
       console.log('🔗 URL de la API:', `${apiBaseUrl}/api/pedidos/simple-checkout/`);
         
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      
+      // Agregar token si el usuario está autenticado
+      if (token) {
+        headers['Authorization'] = `Token ${token}`;
+      }
+      
       const response = await fetch(`${apiBaseUrl}/api/pedidos/simple-checkout/`, {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           // Datos del comprador - obligatorios
           nombre_comprador: formData.nombre ? formData.nombre.trim() : "Cliente Web",
