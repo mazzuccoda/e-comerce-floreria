@@ -1,9 +1,9 @@
-import ProductListFinal from '../components/ProductListFinal';
+import ProductListClient from '../components/ProductListClient';
 
 export default function ProductosPage() {
   return (
     <div className="w-full">
-      <ProductListFinal />
+      <ProductListClient showFilters={true} />
     </div>
   );
 }

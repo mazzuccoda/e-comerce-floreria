@@ -197,14 +197,15 @@ const mockProducts: Product[] = [
 interface ProductListProps {
   showRecommended?: boolean;
   showAdditionals?: boolean;
+  showFilters?: boolean;
 }
 
-export default function ProductListClient({ showRecommended = false, showAdditionals = false }: ProductListProps) {
+export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFilters: showFiltersProp }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showFilters] = useState(!showRecommended && !showAdditionals);
+  const showFilters = showFiltersProp !== undefined ? showFiltersProp : (!showRecommended && !showAdditionals);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
 
   // Prevenir múltiples llamadas a la API
