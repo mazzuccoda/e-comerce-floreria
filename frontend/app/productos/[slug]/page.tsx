@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product } from '@/types/Product';
 import Image from 'next/image';
 import { useCartRobust } from '@/context/CartContextRobust';
@@ -9,13 +9,13 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 interface ProductPageParams {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default function ProductPage({ params }: ProductPageParams) {
-  const { slug } = params;
+  const [slug, setSlug] = React.useState<string>('');
   const [product, setProduct] = useState<Product | null>(null); 
   const { addToCart, loading: cartLoading } = useCartRobust();
   const [loading, setLoading] = useState(true);
@@ -59,25 +59,35 @@ export default function ProductPage({ params }: ProductPageParams) {
     }
   };
 
+  // Resolver params Promise
   useEffect(() => {
-    if (slug) {
-      const fetchProduct = async () => {
-        try {
-          const res = await fetch(`/api/productos/${slug}/`);
-          if (!res.ok) {
-            throw new Error('Producto no encontrado');
-          }
-          const data = await res.json();
-          setProduct(data);
-        } catch (err: any) {
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
-      };
+    const resolveParams = async () => {
+      const resolvedParams = await params;
+      setSlug(resolvedParams.slug);
+    };
+    resolveParams();
+  }, [params]);
 
-      fetchProduct();
-    }
+  // Fetch product cuando tenemos el slug
+  useEffect(() => {
+    if (!slug) return;
+    
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`/api/productos/${slug}/`);
+        if (!res.ok) {
+          throw new Error('Producto no encontrado');
+        }
+        const data = await res.json();
+        setProduct(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
   }, [slug]);
 
   if (loading) {

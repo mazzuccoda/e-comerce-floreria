@@ -7,9 +7,10 @@ const BACKEND_URL = process.env.NODE_ENV === 'production'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const { id } = params;
     
     const backendUrl = `${BACKEND_URL}/api/catalogo/productos/${id}/`;
