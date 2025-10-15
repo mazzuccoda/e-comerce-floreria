@@ -19,7 +19,7 @@ interface Ocasion {
 
 export default function Navbar() {
   const router = useRouter();
-  const { items } = useCartRobust();
+  const { cart } = useCartRobust();
   const { isAuthenticated, user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
