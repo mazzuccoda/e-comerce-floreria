@@ -307,3 +307,145 @@ def simple_cart_test(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def simple_checkout_with_items(request):
+    """
+    Vista de checkout que recibe los items directamente en el body,
+    sin depender del carrito en sesión.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Solo POST permitido'}, status=405)
+    
+    try:
+        from .models import Pedido, PedidoItem, MetodoEnvio
+        from catalogo.models import Producto
+        from decimal import Decimal
+        
+        print("=" * 80)
+        print("🚀 CHECKOUT CON ITEMS DIRECTOS")
+        print("=" * 80)
+        
+        # Verificar autenticación
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        if auth_header and auth_header.startswith('Token '):
+            token_key = auth_header.split(' ')[1]
+            try:
+                token = Token.objects.get(key=token_key)
+                request.user = token.user
+                print(f"✅ Usuario autenticado: {request.user.username}")
+            except Token.DoesNotExist:
+                print("⚠️ Token inválido")
+        
+        data = json.loads(request.body)
+        
+        # Validar que vengan los items
+        items_data = data.get('items', [])
+        if not items_data:
+            return JsonResponse({
+                'error': 'No se enviaron items en el pedido',
+                'details': 'Debes incluir un array "items" con los productos'
+            }, status=400)
+        
+        print(f"📦 Items recibidos: {len(items_data)}")
+        
+        # Validar datos requeridos
+        required_fields = [
+            'nombre_comprador', 'email_comprador', 'telefono_comprador',
+            'nombre_destinatario', 'telefono_destinatario', 'direccion',
+            'fecha_entrega', 'franja_horaria', 'metodo_envio_id'
+        ]
+        
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        if missing_fields:
+            return JsonResponse({
+                'error': 'Faltan campos requeridos',
+                'details': missing_fields
+            }, status=400)
+        
+        with transaction.atomic():
+            # Obtener método de envío
+            try:
+                metodo_envio = MetodoEnvio.objects.get(id=data['metodo_envio_id'])
+            except MetodoEnvio.DoesNotExist:
+                return JsonResponse({
+                    'error': f'Método de envío {data["metodo_envio_id"]} no encontrado'
+                }, status=400)
+            
+            # Crear pedido
+            pedido = Pedido.objects.create(
+                nombre_comprador=data['nombre_comprador'],
+                email_comprador=data['email_comprador'],
+                telefono_comprador=data['telefono_comprador'],
+                nombre_destinatario=data['nombre_destinatario'],
+                telefono_destinatario=data['telefono_destinatario'],
+                direccion=data['direccion'],
+                ciudad=data.get('ciudad', 'Buenos Aires'),
+                codigo_postal=data.get('codigo_postal', ''),
+                fecha_entrega=data['fecha_entrega'],
+                franja_horaria=data['franja_horaria'],
+                metodo_envio=metodo_envio,
+                dedicatoria=data.get('dedicatoria', ''),
+                instrucciones=data.get('instrucciones', ''),
+                regalo_anonimo=data.get('regalo_anonimo', False),
+                medio_pago=data.get('medio_pago', 'mercadopago'),
+                cliente=request.user if request.user.is_authenticated else None,
+                anonimo=not request.user.is_authenticated
+            )
+            
+            print(f"✅ Pedido creado: #{pedido.numero_pedido}")
+            
+            # Crear items del pedido
+            total_productos = Decimal('0.00')
+            for item_data in items_data:
+                try:
+                    producto = Producto.objects.get(id=item_data['producto_id'])
+                    cantidad = int(item_data['cantidad'])
+                    
+                    # Verificar stock
+                    if producto.stock < cantidad:
+                        raise Exception(f"Stock insuficiente para {producto.nombre}")
+                    
+                    # Crear item
+                    PedidoItem.objects.create(
+                        pedido=pedido,
+                        producto=producto,
+                        cantidad=cantidad,
+                        precio=producto.get_precio_final
+                    )
+                    
+                    # Reducir stock
+                    producto.stock -= cantidad
+                    producto.save()
+                    
+                    total_productos += producto.get_precio_final * cantidad
+                    print(f"  ✅ Item agregado: {producto.nombre} x{cantidad}")
+                    
+                except Producto.DoesNotExist:
+                    pedido.delete()
+                    return JsonResponse({
+                        'error': f'Producto {item_data.get("producto_id")} no encontrado'
+                    }, status=400)
+                except Exception as e:
+                    pedido.delete()
+                    return JsonResponse({'error': str(e)}, status=400)
+            
+            # Calcular total
+            pedido.total = total_productos + metodo_envio.costo
+            pedido.save()
+            
+            print(f"💰 Total del pedido: ${pedido.total}")
+            
+            return JsonResponse({
+                'success': True,
+                'pedido_id': pedido.id,
+                'numero_pedido': pedido.numero_pedido,
+                'total': str(pedido.total)
+            })
+            
+    except Exception as e:
+        import traceback
+        print("❌ ERROR EN CHECKOUT CON ITEMS:")
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)

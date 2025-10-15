@@ -374,7 +374,14 @@ const MultiStepCheckoutPage = () => {
         direccion: formData.direccion
       });
       
-      console.log('🔗 URL de la API:', `${apiBaseUrl}/api/pedidos/simple-checkout/`);
+      // Preparar items del carrito para enviar
+      const items = cartData.items.map((item: any) => ({
+        producto_id: item.producto.id,
+        cantidad: item.quantity
+      }));
+      
+      console.log('📦 Items a enviar:', items);
+      console.log('🔗 URL de la API:', `${apiBaseUrl}/api/pedidos/checkout-with-items/`);
         
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -386,7 +393,7 @@ const MultiStepCheckoutPage = () => {
         headers['Authorization'] = `Token ${token}`;
       }
       
-      const response = await fetch(`${apiBaseUrl}/api/pedidos/simple-checkout/`, {
+      const response = await fetch(`${apiBaseUrl}/api/pedidos/checkout-with-items/`, {
         method: 'POST',
         credentials: 'include',
         headers,
@@ -412,7 +419,10 @@ const MultiStepCheckoutPage = () => {
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
           instrucciones: formData.instrucciones || "",
           regalo_anonimo: false,
-          medio_pago: formData.metodoPago
+          medio_pago: formData.metodoPago,
+          
+          // ITEMS DEL CARRITO - NUEVO
+          items: items
         }),
       });
 

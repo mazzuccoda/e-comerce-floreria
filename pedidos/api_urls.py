@@ -10,6 +10,7 @@ from .api_views import (
     CheckoutSummaryView
 )
 from .simple_checkout import simple_checkout, test_cart
+from .simple_views import simple_checkout_with_items
 from .payment_views import (
     CreatePaymentView,
     MercadoPagoWebhookView,
@@ -28,6 +29,7 @@ urlpatterns = [
     # Checkout
     path('checkout/', csrf_exempt(CheckoutView.as_view()), name='checkout'),
     path('simple-checkout/', simple_checkout, name='simple-checkout'),
+    path('checkout-with-items/', simple_checkout_with_items, name='checkout-with-items'),
     path('test-cart/', test_cart, name='test-cart'),
     path('checkout/summary/', CheckoutSummaryView.as_view(), name='checkout-summary'),
     path('validate-stock/', ValidateStockView.as_view(), name='validate-stock'),
