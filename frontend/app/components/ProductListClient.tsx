@@ -254,6 +254,8 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         
         const data = await response.json();
         console.log('📦 Datos recibidos de la API:', data);
+        console.log('📊 Cantidad de productos:', Array.isArray(data) ? data.length : 'No es array');
+        console.log('🔢 IDs de productos:', Array.isArray(data) ? data.map(p => p.id) : 'N/A');
         
         if (!Array.isArray(data)) {
           console.error('❌ La respuesta no es un array:', data);
