@@ -6,6 +6,7 @@ import json
 from .models import Pedido, MetodoEnvio
 from .serializers import CheckoutSerializer, PedidoReadSerializer
 from carrito.cart import Cart
+from rest_framework.authtoken.models import Token
 
 
 @csrf_exempt
@@ -27,6 +28,20 @@ def simple_checkout(request):
         })
     
     try:
+        # Autenticar usuario por token si está presente
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        if auth_header and auth_header.startswith('Token '):
+            token_key = auth_header.split(' ')[1]
+            try:
+                token = Token.objects.get(key=token_key)
+                request.user = token.user
+                print(f"✅ Usuario autenticado: {token.user.username} (ID: {token.user.id})")
+            except Token.DoesNotExist:
+                print("❌ Token inválido")
+                pass  # Continuar como usuario anónimo
+        else:
+            print("⚠️ No hay token de autenticación")
+        
         with transaction.atomic():
             # Obtener datos del request con codificación UTF-8
             body_unicode = request.body.decode('utf-8')
