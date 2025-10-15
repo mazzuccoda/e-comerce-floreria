@@ -37,7 +37,7 @@ const MisPedidosPage: React.FC = () => {
       try {
         setLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-        const response = await fetch(`${apiUrl}/pedidos/simple/mis-pedidos/`, {
+        const response = await fetch(`${apiUrl}/pedidos/mis-pedidos/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Accept': 'application/json',
