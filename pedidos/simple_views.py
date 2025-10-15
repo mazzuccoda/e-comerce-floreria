@@ -16,6 +16,10 @@ def simple_checkout(request):
         from .serializers import CheckoutSerializer, PedidoReadSerializer
         from carrito.cart import Cart
         
+        print("=" * 80)
+        print("🚀 INICIANDO SIMPLE CHECKOUT")
+        print("=" * 80)
+        
         # Verificar si hay token de autenticación
         auth_header = request.META.get('HTTP_AUTHORIZATION')
         if auth_header and auth_header.startswith('Token '):
@@ -29,11 +33,42 @@ def simple_checkout(request):
         else:
             print("⚠️ No se encontró token, procesando como usuario anónimo")
         
+        # Debug de sesión
+        print(f"📋 Session key: {request.session.session_key}")
+        print(f"📋 Session data: {dict(request.session)}")
+        print(f"📋 Cookies: {request.COOKIES}")
+        
         data = json.loads(request.body)
         cart = Cart(request)
         
+        # Debug detallado del carrito
+        print(f"🛒 Carrito is_empty: {cart.is_empty}")
+        print(f"🛒 Carrito len: {len(cart)}")
+        print(f"🛒 Usuario autenticado: {request.user.is_authenticated if hasattr(request.user, 'is_authenticated') else False}")
+        
+        if hasattr(request.user, 'is_authenticated') and request.user.is_authenticated:
+            print(f"🛒 Items en BD: {cart.carrito_db.items.count() if hasattr(cart, 'carrito_db') else 0}")
+        else:
+            print(f"🛒 Items en sesión: {cart.cart if hasattr(cart, 'cart') else {}}")
+        
+        # Obtener items del carrito
+        cart_items = list(cart)
+        print(f"🛒 Items obtenidos: {len(cart_items)}")
+        for item in cart_items:
+            print(f"  - {item['producto'].nombre}: {item['quantity']} x ${item['price']}")
+        
         if cart.is_empty:
-            return JsonResponse({'error': 'Carrito vacío'}, status=400)
+            print("❌ CARRITO VACÍO - Rechazando pedido")
+            return JsonResponse({
+                'error': 'El carrito esta vacio',
+                'details': {
+                    'session_key': request.session.session_key,
+                    'user_authenticated': request.user.is_authenticated if hasattr(request.user, 'is_authenticated') else False,
+                    'cart_length': len(cart)
+                }
+            }, status=400)
+        
+        print("✅ Carrito válido, procediendo con el pedido...")
         
         with transaction.atomic():
             serializer = CheckoutSerializer(data=data, context={'request': request})
@@ -46,10 +81,12 @@ def simple_checkout(request):
                     'numero_pedido': pedido.numero_pedido
                 })
             else:
+                print(f"❌ Error de validación: {serializer.errors}")
                 return JsonResponse({'error': serializer.errors}, status=400)
                 
     except Exception as e:
         import traceback
+        print("❌ EXCEPCIÓN EN SIMPLE CHECKOUT:")
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
