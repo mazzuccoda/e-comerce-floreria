@@ -1,5 +1,6 @@
 import ProductListFinal from './components/ProductListFinal';
 import HeroCarousel from './components/HeroCarousel';
+import AdicionalesSection from './components/AdicionalesSection';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
@@ -58,11 +59,8 @@ export default function Home() {
         <ProductListFinal showRecommended={true} />
       </section>
 
-      <section className="section">
-        <h2 className="section-title">AGREGÁ ADICIONALES A TU RAMO</h2>
-        <p className="section-subtitle">Sumalos dentro de tu compra para completar tu regalo</p>
-        <ProductListFinal showAdditionals={true} />
-      </section>
+      {/* Sección de adicionales con diseño especial */}
+      <AdicionalesSection />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCartRobust } from '@/context/CartContextRobust';
 import { useAuth } from '@/context/AuthContext';
+import ExtrasSelector from '@/app/components/ExtrasSelector';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -38,6 +39,7 @@ const MultiStepCheckoutPage = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
 
   // Carga directa del carrito desde el API, sin depender del contexto
   useEffect(() => {
@@ -861,75 +863,10 @@ const MultiStepCheckoutPage = () => {
           )}
 
           {currentStep === 4 && (
-            <div>
-              <h2 className="text-2xl font-light mb-6">🎁 Extras Especiales</h2>
-              
-              {/* Tarjeta Personalizada */}
-              <div className="bg-white/30 rounded-xl p-6 mb-6">
-                <label className="flex items-start cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    name="tarjetaPersonalizada"
-                    checked={formData.tarjetaPersonalizada}
-                    onChange={handleInputChange}
-                    className="mr-4 mt-1" 
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-lg">📝 Tarjeta Personalizada</span>
-                      <span className="text-green-600 font-semibold">+$5.000</span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3">
-                      Agrega una tarjeta especial con tu mensaje personalizado
-                    </p>
-                    {formData.tarjetaPersonalizada && (
-                      <textarea 
-                        name="textoTarjeta"
-                        value={formData.textoTarjeta}
-                        onChange={handleInputChange}
-                        className="w-full p-3 rounded-lg bg-white/70 border-0 h-20" 
-                        placeholder="Escribe tu mensaje para la tarjeta personalizada..."
-                      ></textarea>
-                    )}
-                  </div>
-                </label>
-              </div>
-
-              {/* Oso de Peluche */}
-              <div className="bg-white/30 rounded-xl p-6">
-                <label className="flex items-start cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    name="osoDePerluche"
-                    checked={formData.osoDePerluche}
-                    onChange={handleInputChange}
-                    className="mr-4 mt-1" 
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-lg">🧸 Oso de Peluche</span>
-                      <span className="text-green-600 font-semibold">+$15.000</span>
-                    </div>
-                    <p className="text-gray-600 text-sm mb-3">
-                      Acompaña tu regalo con un tierno oso de peluche
-                    </p>
-                    {formData.osoDePerluche && (
-                      <select 
-                        name="tipoOso"
-                        value={formData.tipoOso}
-                        onChange={handleInputChange}
-                        className="w-full p-3 rounded-lg bg-white/70 border-0"
-                      >
-                        <option value="clasico">🤎 Oso Clásico Marrón</option>
-                        <option value="blanco">🤍 Oso Blanco Suave</option>
-                        <option value="rosa">💗 Oso Rosa Romántico</option>
-                        <option value="gigante">🧸 Oso Gigante (50cm)</option>
-                      </select>
-                    )}
-                  </div>
-                </label>
-              </div>
-            </div>
+            <ExtrasSelector
+              selectedExtras={selectedExtras}
+              onExtrasChange={setSelectedExtras}
+            />
           )}
 
           {currentStep === 5 && (
