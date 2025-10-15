@@ -501,6 +501,11 @@ const MultiStepCheckoutPage = () => {
               direccion: formData.direccion,
               ciudad: formData.ciudad
             },
+            dedicatoria: {
+              mensaje: formData.mensaje,
+              firmadoComo: formData.firmadoComo,
+              incluirTarjeta: formData.incluirTarjeta
+            },
             fecha_entrega: fechaEntrega,
             medio_pago: formData.metodoPago
           };
