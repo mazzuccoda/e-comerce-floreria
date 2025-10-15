@@ -20,7 +20,7 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = ProductoSerializer
     permission_classes = [AllowAny]
-    lookup_field = 'slug'  # Usar slug en lugar de ID para las URLs
+    lookup_field = 'id'  # Usar ID para las URLs (cambiado de 'slug' a 'id')
     
     def get_queryset(self):
         queryset = super().get_queryset()
