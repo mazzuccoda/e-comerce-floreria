@@ -32,11 +32,17 @@ const MisPedidosPage: React.FC = () => {
   // Cargar pedidos
   useEffect(() => {
     const fetchPedidos = async () => {
-      if (!token) return;
+      if (!token) {
+        console.log('❌ No hay token, no se pueden cargar pedidos');
+        return;
+      }
       
       try {
         setLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+        console.log('🔍 Cargando pedidos desde:', `${apiUrl}/pedidos/mis-pedidos/`);
+        console.log('🔑 Token:', token ? `${token.substring(0, 10)}...` : 'No hay token');
+        
         const response = await fetch(`${apiUrl}/pedidos/mis-pedidos/`, {
           headers: {
             'Authorization': `Token ${token}`,
@@ -45,15 +51,19 @@ const MisPedidosPage: React.FC = () => {
           credentials: 'include',
         });
 
+        console.log('📡 Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ Pedidos recibidos:', data);
           setPedidos(data.pedidos || []);
         } else {
           const errorData = await response.json();
+          console.error('❌ Error del servidor:', errorData);
           setError(errorData.error || 'Error al cargar pedidos');
         }
       } catch (err) {
-        console.error('Error cargando pedidos:', err);
+        console.error('❌ Error cargando pedidos:', err);
         setError('Error de conexión');
       } finally {
         setLoading(false);
@@ -61,7 +71,10 @@ const MisPedidosPage: React.FC = () => {
     };
 
     if (isAuthenticated && token) {
+      console.log('✅ Usuario autenticado, cargando pedidos...');
       fetchPedidos();
+    } else {
+      console.log('❌ Usuario no autenticado o sin token');
     }
   }, [isAuthenticated, token]);
 
