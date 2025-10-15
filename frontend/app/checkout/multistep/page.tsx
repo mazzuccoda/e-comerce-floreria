@@ -418,6 +418,7 @@ const MultiStepCheckoutPage = () => {
 
       const result = await response.json();
       console.log('📋 Respuesta del servidor:', result);
+      console.log('📋 Respuesta completa (JSON):', JSON.stringify(result, null, 2));
       
       // Mostrar detalles específicos del error si existen
       if (result.details) {
@@ -435,6 +436,13 @@ const MultiStepCheckoutPage = () => {
         alert(`❌ Error de validación:\n${mensajeErrores}`);
       }
 
+      if (!response.ok) {
+        // Si hay error, mostrar el mensaje
+        const errorMsg = result.error || result.message || 'Error desconocido';
+        alert(`❌ Error al crear pedido:\n${errorMsg}\n\nDetalles: ${JSON.stringify(result.details || {}, null, 2)}`);
+        return;
+      }
+      
       if (response.ok) {
         alert(`🎉 ¡Pedido #${result.numero_pedido} creado exitosamente! ID: ${result.pedido_id}`);
         
