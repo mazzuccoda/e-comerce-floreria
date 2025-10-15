@@ -32,7 +32,7 @@ class MercadoPagoService:
         """
         try:
             # URLs de retorno - usar la URL del frontend en Railway
-            base_url = os.getenv('FRONTEND_URL', 'https://frontend-production-0b0b.up.railway.app')
+            base_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
             
             # Items del pedido
             items = []

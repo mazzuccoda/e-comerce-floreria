@@ -58,7 +58,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost',
     'http://localhost:3000',
     'http://localhost:80',
-    'https://frontend-production-0b0b.up.railway.app',  # Frontend en Railway (ACTUALIZADO)
+    'https://floreriayviverocristian.up.railway.app',  # Frontend en Railway (ACTUALIZADO)
+    'https://frontend-production-0b0b.up.railway.app',  # Frontend antiguo (mantener por compatibilidad)
     'https://frontend-production-7249.up.railway.app',  # Frontend antiguo (mantener por compatibilidad)
     *env.list('CORS_ALLOWED_ORIGINS', default=[]),  # Permitir configurar desde env
 ]
