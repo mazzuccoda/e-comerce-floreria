@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProductCard from './ProductCard';
 import ProductFilters from './ProductFilters';
 import { Product } from '@/types/Product';
@@ -324,8 +325,56 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       console.log(`🎉 Filtrado por ocasión ID ${ocasionId}:`, filtered.length, 'de', products.length, 'productos');
     }
     
+    console.log('💾 ACTUALIZANDO displayProducts a:', filtered.length, 'productos');
     setDisplayProducts(filtered);
+    setFilteredProducts(filtered);
+  // Agregar searchParams como dependencia para detectar cambios en URL
   }, [products]);
+
+  // Detectar cambios en URL y re-filtrar
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (products.length === 0) return;
+    
+    const tipoFlorParam = searchParams.get('tipo_flor');
+    const ocasionParam = searchParams.get('ocasion');
+    
+    console.log('🔄 URL CAMBIÓ - Re-filtrando...');
+    console.log('🔍 Nuevos params - tipo_flor:', tipoFlorParam, 'ocasion:', ocasionParam);
+
+    let filtered = [...products];
+
+    // Filtrar por tipo de flor (ID)
+    if (tipoFlorParam) {
+      const tipoFlorId = parseInt(tipoFlorParam);
+      console.log('🔍 Buscando tipo_flor ID:', tipoFlorId);
+      
+      filtered = filtered.filter(product => {
+        const match = product.tipo_flor?.id === tipoFlorId;
+        return match;
+      });
+      
+      console.log(`🌸 Filtrado por tipo_flor ID ${tipoFlorId}:`, filtered.length, 'de', products.length, 'productos');
+    }
+
+    // Filtrar por ocasión (ID)
+    if (ocasionParam) {
+      const ocasionId = parseInt(ocasionParam);
+      console.log('🔍 Buscando ocasión ID:', ocasionId);
+      
+      filtered = filtered.filter(product => {
+        const match = Array.isArray(product.ocasiones) && 
+                      product.ocasiones.some((o: any) => o.id === ocasionId);
+        return match;
+      });
+      
+      console.log(`🎉 Filtrado por ocasión ID ${ocasionId}:`, filtered.length, 'de', products.length, 'productos');
+    }
+    
+    console.log('💾 ACTUALIZANDO displayProducts a:', filtered.length, 'productos');
+    setDisplayProducts(filtered);
+    setFilteredProducts(filtered);
+  }, [searchParams, products]);
 
   const handleFiltersChange = (filters: any) => {
     console.log('🔄 Aplicando filtros:', filters);
@@ -492,8 +541,8 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         </div>
       )}
 
-      {/* Grid de productos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
+      {/* Grid de productos mejorado */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-8 px-2">
         {displayProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
