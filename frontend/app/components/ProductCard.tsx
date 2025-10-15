@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Product } from '@/types/Product';
 
 interface ProductCardProps {
@@ -9,6 +9,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter();
 
   // Función para obtener URL de imagen memoizada para evitar recálculos
   const imageUrl = useMemo(() => {
@@ -56,8 +57,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   // Generar slug del producto para la URL
   const productSlug = product.id.toString();
 
+  const handleClick = () => {
+    console.log('🔗 Click en ProductCard, navegando a:', `/productos/${productSlug}`);
+    router.push(`/productos/${productSlug}`);
+  };
+
   return (
-    <Link href={`/productos/${productSlug}`} className="block">
+    <div 
+      onClick={handleClick}
+      className="block cursor-pointer"
+    >
       <div className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200 transform hover:-translate-y-2 cursor-pointer">
         <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
           {/* Badge de envío gratis */}
@@ -123,7 +132,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
