@@ -56,6 +56,8 @@ const MisPedidosPage: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           console.log('✅ Pedidos recibidos:', data);
+          console.log('📦 Array de pedidos:', data.pedidos);
+          console.log('📊 Cantidad de pedidos:', data.pedidos?.length || 0);
           setPedidos(data.pedidos || []);
         } else {
           const errorData = await response.json();
