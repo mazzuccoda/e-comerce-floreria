@@ -484,6 +484,29 @@ const MultiStepCheckoutPage = () => {
             alert('❌ Error al procesar el pago. Pedido creado pero pago pendiente.');
           }
         } else {
+          // Guardar datos del pedido en localStorage para mostrar en la página de éxito
+          const pedidoData = {
+            pedido_id: result.pedido_id,
+            numero_pedido: result.numero_pedido,
+            total: result.total,
+            items: cartData.items,
+            comprador: {
+              nombre: formData.nombre,
+              email: formData.email,
+              telefono: formData.telefono
+            },
+            destinatario: {
+              nombre: formData.nombreDestinatario,
+              telefono: formData.telefonoDestinatario,
+              direccion: formData.direccion,
+              ciudad: formData.ciudad
+            },
+            fecha_entrega: fechaEntrega,
+            medio_pago: formData.metodoPago
+          };
+          
+          localStorage.setItem('ultimo_pedido', JSON.stringify(pedidoData));
+          
           // Para otros métodos de pago, redirigir a página de éxito
           window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
         }
