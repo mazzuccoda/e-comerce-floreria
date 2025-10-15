@@ -57,22 +57,58 @@ const PaymentSuccessPage = () => {
     }
   }, []);
 
-  // Función para generar mensaje de WhatsApp
+  // Función para generar mensaje de WhatsApp completo
   const generateWhatsAppMessage = () => {
     if (!pedidoData) return '';
 
+    // Formatear productos con subtotales
     const productosTexto = pedidoData.items
-      .map((item) => `- ${item.producto.nombre} x${item.quantity} ($${item.price})`)
-      .join('\n');
+      .map((item) => {
+        const subtotal = (item.price * item.quantity).toFixed(2);
+        return `• ${item.producto.nombre}\n  Cantidad: ${item.quantity} | Precio: $${item.price} | Subtotal: $${subtotal}`;
+      })
+      .join('\n\n');
+
+    // Formatear método de pago
+    const metodoPagoTexto = {
+      'mercadopago': 'Mercado Pago',
+      'paypal': 'PayPal',
+      'transferencia': 'Transferencia Bancaria',
+      'efectivo': 'Efectivo'
+    }[pedidoData.medio_pago] || pedidoData.medio_pago;
 
     return encodeURIComponent(
       `¡Hola! Necesito asistencia con mi pedido:\n\n` +
-      `📋 *Pedido #${pedidoData.numero_pedido}*\n\n` +
-      `*Productos:*\n${productosTexto}\n\n` +
-      `*Destinatario:* ${pedidoData.destinatario.nombre}\n` +
-      `*Dirección:* ${pedidoData.destinatario.direccion}, ${pedidoData.destinatario.ciudad}\n` +
-      `*Fecha de entrega:* ${pedidoData.fecha_entrega}\n\n` +
-      `¿Podrían ayudarme?`
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📋 *PEDIDO #${pedidoData.numero_pedido}*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      
+      `🛍️ *PRODUCTOS COMPRADOS:*\n` +
+      `${productosTexto}\n\n` +
+      `💰 *TOTAL: $${pedidoData.total}*\n\n` +
+      
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `👤 *DATOS DEL REMITENTE:*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Nombre: ${pedidoData.comprador.nombre}\n` +
+      `Email: ${pedidoData.comprador.email}\n` +
+      `Teléfono: ${pedidoData.comprador.telefono}\n\n` +
+      
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📦 *DATOS DE ENTREGA:*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Destinatario: ${pedidoData.destinatario.nombre}\n` +
+      `Teléfono: ${pedidoData.destinatario.telefono}\n` +
+      `Dirección: ${pedidoData.destinatario.direccion}\n` +
+      `Ciudad: ${pedidoData.destinatario.ciudad}\n` +
+      `📅 Fecha de entrega: ${pedidoData.fecha_entrega}\n\n` +
+      
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💳 *FORMA DE PAGO:*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `${metodoPagoTexto}\n\n` +
+      
+      `¿Podrían ayudarme con este pedido? 🙏`
     );
   };
 
