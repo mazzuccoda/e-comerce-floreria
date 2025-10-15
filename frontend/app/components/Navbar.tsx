@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartRobust } from '../../context/CartContextRobust';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useEffect } from 'react';
@@ -17,14 +18,15 @@ interface Ocasion {
 }
 
 export default function Navbar() {
-  const { cart } = useCartRobust();
-  const { user, logout, isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { items } = useCartRobust();
+  const { isAuthenticated, user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showTiposFlor, setShowTiposFlor] = useState(false);
-  const [showOcasiones, setShowOcasiones] = useState(false);
   const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
   const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
+  const [showOcasiones, setShowOcasiones] = useState(false);
+  const [showTiposFlor, setShowTiposFlor] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   
   // Cargar tipos de flor y ocasiones desde la API
   useEffect(() => {
@@ -73,13 +75,14 @@ export default function Navbar() {
             <div className={styles.dropdownContent}>
               {tiposFlor.length > 0 ? (
                 tiposFlor.map(tipo => (
-                  <Link 
+                  <a 
                     key={tipo.id} 
-                    href={`/productos?tipo_flor=${tipo.id}`} 
+                    onClick={() => router.push(`/productos?tipo_flor=${tipo.id}`)}
                     className={styles.dropdownLink}
+                    style={{cursor: 'pointer'}}
                   >
                     {tipo.nombre}
-                  </Link>
+                  </a>
                 ))
               ) : (
                 <span className={styles.dropdownLink}>Cargando...</span>
@@ -92,13 +95,14 @@ export default function Navbar() {
             <div className={styles.dropdownContent}>
               {ocasiones.length > 0 ? (
                 ocasiones.map(ocasion => (
-                  <Link 
+                  <a 
                     key={ocasion.id} 
-                    href={`/productos?ocasion=${ocasion.id}`} 
+                    onClick={() => router.push(`/productos?ocasion=${ocasion.id}`)}
                     className={styles.dropdownLink}
+                    style={{cursor: 'pointer'}}
                   >
                     {ocasion.nombre}
-                  </Link>
+                  </a>
                 ))
               ) : (
                 <span className={styles.dropdownLink}>Cargando...</span>

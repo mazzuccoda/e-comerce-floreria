@@ -1,4 +1,4 @@
-// File: /app/app/checkout/multistep/page.tsx
+// File: C:\Users\dmazzucco\OneDrive - SA San Miguel A.G.I.C.I. y F\Escritorio\Daniel Mazuzzcco Personal\e-comerce\frontend\app\checkout\multistep\page.tsx
 import * as entry from '../../../../../app/checkout/multistep/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
