@@ -74,13 +74,22 @@ export default function ProductPage({ params }: ProductPageParams) {
     
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/productos/${slug}/`);
+        // Llamar directamente al backend en lugar de usar API route
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+        const backendUrl = `${apiUrl}/catalogo/productos/${slug}/`;
+        
+        console.log('🔍 Fetching product from:', backendUrl);
+        
+        const res = await fetch(backendUrl);
         if (!res.ok) {
+          console.error('❌ Error fetching product:', res.status);
           throw new Error('Producto no encontrado');
         }
         const data = await res.json();
+        console.log('✅ Product loaded:', data.nombre);
         setProduct(data);
       } catch (err: any) {
+        console.error('💥 Error:', err);
         setError(err.message);
       } finally {
         setLoading(false);
