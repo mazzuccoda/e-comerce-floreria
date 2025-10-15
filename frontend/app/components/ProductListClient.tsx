@@ -207,19 +207,17 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   const [error, setError] = useState<string | null>(null);
   const showFilters = showFiltersProp !== undefined ? showFiltersProp : (!showRecommended && !showAdditionals);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
+  
+  // Hook para detectar cambios en URL
+  const searchParams = useSearchParams();
 
   // Prevenir múltiples llamadas a la API
   const fetchedRef = useRef(false);
 
-  // Cargar productos desde la API - UNA SOLA VEZ
+  // Cargar productos desde la API - Se recarga cuando cambian los filtros
   useEffect(() => {
-    // Prevenir múltiples llamadas
-    if (fetchedRef.current) {
-      console.log('⏭️ Ya se cargaron los productos, saltando...');
-      return;
-    }
-    
-    fetchedRef.current = true;
+    // Resetear el flag cuando cambien los parámetros
+    fetchedRef.current = false;
     
     const fetchProducts = async () => {
       try {
@@ -229,9 +227,22 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         // Usar backend de Railway en producción
         const timestamp = Date.now();
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://e-comerce-floreria-production.up.railway.app';
-        const apiUrl = `${backendUrl}/api/catalogo/productos/?t=${timestamp}`;
+        
+        // Construir URL con parámetros de filtro desde la URL actual
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryParams = new URLSearchParams();
+        queryParams.set('t', timestamp.toString());
+        
+        // Agregar filtros si existen
+        const tipoFlor = urlParams.get('tipo_flor');
+        const ocasion = urlParams.get('ocasion');
+        if (tipoFlor) queryParams.set('tipo_flor', tipoFlor);
+        if (ocasion) queryParams.set('ocasion', ocasion);
+        
+        const apiUrl = `${backendUrl}/api/catalogo/productos/?${queryParams.toString()}`;
           
         console.log('🔍 Iniciando solicitud a:', apiUrl);
+        console.log('🎯 Filtros aplicados:', { tipo_flor: tipoFlor, ocasion });
         const response = await fetch(apiUrl, {
           credentials: 'omit',  // Omitir credenciales para evitar CORS sin Nginx
           headers: {
@@ -283,7 +294,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     };
 
     fetchProducts();
-  }, []);
+  }, [searchParams]); // Recargar cuando cambien los parámetros de búsqueda
 
   // Procesar parámetros de URL (filtros desde navbar)
   useEffect(() => {
@@ -334,8 +345,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   // Agregar searchParams como dependencia para detectar cambios en URL
   }, [products]);
 
-  // Detectar cambios en URL y re-filtrar
-  const searchParams = useSearchParams();
+  // Detectar cambios en URL y re-filtrar (ESTE USEEFFECT YA NO ES NECESARIO - EL FILTRADO LO HACE EL BACKEND)
   useEffect(() => {
     console.log('🌐 URL completa:', window.location.href);
     console.log('📋 SearchParams toString:', searchParams.toString());
