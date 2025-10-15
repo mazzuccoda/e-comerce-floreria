@@ -24,7 +24,9 @@ const mockProducts: Product[] = [
       is_featured: true,
       envio_gratis: true,
       tipo_flor: { id: 1, nombre: "Rosas", descripcion: "Flores tipo rosas", is_active: true },
-      ocasiones: ["Amor"],
+      ocasiones: [
+        { id: 1, nombre: "Amor", descripcion: "", is_active: true }
+      ],
       imagen_principal: "/images/rosas-rojas.jpg",
       imagenes: []
     },
@@ -44,7 +46,9 @@ const mockProducts: Product[] = [
       is_featured: false,
       envio_gratis: true,
       tipo_flor: { id: 4, nombre: "Tulipanes", descripcion: "Flores tulipanes", is_active: true },
-      ocasiones: ["Cumpleaños"],
+      ocasiones: [
+        { id: 2, nombre: "Cumpleaños", descripcion: "", is_active: true }
+      ],
       imagen_principal: "/images/tulipanes-amarillos.jpg",
       imagenes: []
     },
@@ -64,7 +68,9 @@ const mockProducts: Product[] = [
       is_featured: true,
       envio_gratis: false,
       tipo_flor: { id: 3, nombre: "Girasoles", descripcion: "Flores girasoles", is_active: true },
-      ocasiones: ["Amistad"],
+      ocasiones: [
+        { id: 3, nombre: "Amistad", descripcion: "", is_active: true }
+      ],
       imagen_principal: "/images/girasoles.jpg",
       imagenes: []
     }
