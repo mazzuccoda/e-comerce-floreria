@@ -20,6 +20,8 @@ export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showTiposFlor, setShowTiposFlor] = useState(false);
+  const [showOcasiones, setShowOcasiones] = useState(false);
   const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
   const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
   
@@ -57,42 +59,56 @@ export default function Navbar() {
         </Link>
         
         <ul className="navbar-nav">
-          <li className="navbar-item dropdown">
+          <li 
+            className="navbar-item dropdown"
+            onMouseEnter={() => setShowTiposFlor(true)}
+            onMouseLeave={() => setShowTiposFlor(false)}
+          >
             <span className="navbar-link">Tipo de flor</span>
-            <div className="dropdown-content">
-              {tiposFlor.length > 0 ? (
-                tiposFlor.map(tipo => (
-                  <Link 
-                    key={tipo.id} 
-                    href={`/productos?tipo_flor=${tipo.id}`} 
-                    className="dropdown-item"
-                  >
-                    {tipo.nombre}
-                  </Link>
-                ))
-              ) : (
-                <span className="dropdown-item">Cargando...</span>
-              )}
-            </div>
+            {showTiposFlor && (
+              <div className="dropdown-content" style={{display: 'block'}}>
+                {tiposFlor.length > 0 ? (
+                  tiposFlor.map(tipo => (
+                    <Link 
+                      key={tipo.id} 
+                      href={`/productos?tipo_flor=${tipo.id}`} 
+                      className="dropdown-item"
+                      onClick={() => setShowTiposFlor(false)}
+                    >
+                      {tipo.nombre}
+                    </Link>
+                  ))
+                ) : (
+                  <span className="dropdown-item">Cargando...</span>
+                )}
+              </div>
+            )}
           </li>
           
-          <li className="navbar-item dropdown">
+          <li 
+            className="navbar-item dropdown"
+            onMouseEnter={() => setShowOcasiones(true)}
+            onMouseLeave={() => setShowOcasiones(false)}
+          >
             <span className="navbar-link">Ocasiones</span>
-            <div className="dropdown-content">
-              {ocasiones.length > 0 ? (
-                ocasiones.map(ocasion => (
-                  <Link 
-                    key={ocasion.id} 
-                    href={`/productos?ocasion=${ocasion.id}`} 
-                    className="dropdown-item"
-                  >
-                    {ocasion.nombre}
-                  </Link>
-                ))
-              ) : (
-                <span className="dropdown-item">Cargando...</span>
-              )}
-            </div>
+            {showOcasiones && (
+              <div className="dropdown-content" style={{display: 'block'}}>
+                {ocasiones.length > 0 ? (
+                  ocasiones.map(ocasion => (
+                    <Link 
+                      key={ocasion.id} 
+                      href={`/productos?ocasion=${ocasion.id}`} 
+                      className="dropdown-item"
+                      onClick={() => setShowOcasiones(false)}
+                    >
+                      {ocasion.nombre}
+                    </Link>
+                  ))
+                ) : (
+                  <span className="dropdown-item">Cargando...</span>
+                )}
+              </div>
+            )}
           </li>
           
           <li className="navbar-item">
