@@ -74,13 +74,11 @@ export default function ProductPage({ params }: ProductPageParams) {
     
     const fetchProduct = async () => {
       try {
-        // Llamar directamente al backend en lugar de usar API route
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-        const backendUrl = `${apiUrl}/catalogo/productos/${slug}/`;
+        // Llamar directamente al backend - URL hardcodeada para evitar problemas
+        const backendUrl = `https://e-comerce-floreria-production.up.railway.app/api/catalogo/productos/${slug}/`;
         
         console.log('🔍 Fetching product from:', backendUrl);
-        console.log('🌐 Environment:', process.env.NODE_ENV);
-        console.log('🔑 API URL configured:', process.env.NEXT_PUBLIC_API_URL);
+        console.log('📝 Slug:', slug);
         
         const res = await fetch(backendUrl, {
           method: 'GET',
