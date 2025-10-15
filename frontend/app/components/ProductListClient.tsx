@@ -211,13 +211,8 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   // Hook para detectar cambios en URL
   const searchParams = useSearchParams();
 
-  // Prevenir múltiples llamadas a la API
-  const fetchedRef = useRef(false);
-
   // Cargar productos desde la API - Se recarga cuando cambian los filtros
   useEffect(() => {
-    // Resetear el flag cuando cambien los parámetros
-    fetchedRef.current = false;
     
     const fetchProducts = async () => {
       try {
