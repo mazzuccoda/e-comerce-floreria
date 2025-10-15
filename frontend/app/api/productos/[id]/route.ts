@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Usar localhost para desarrollo local
+// Usar URL correcta según el entorno
 const BACKEND_URL = process.env.NODE_ENV === 'production' 
-  ? 'http://web:8000' 
+  ? (process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'https://e-comerce-floreria-production.up.railway.app')
   : 'http://localhost:8000';
 
 export async function GET(
