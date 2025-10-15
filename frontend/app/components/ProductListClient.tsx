@@ -334,7 +334,13 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   // Detectar cambios en URL y re-filtrar
   const searchParams = useSearchParams();
   useEffect(() => {
-    if (products.length === 0) return;
+    console.log('🌐 URL completa:', window.location.href);
+    console.log('📋 SearchParams toString:', searchParams.toString());
+    
+    if (products.length === 0) {
+      console.log('⏸️ No hay productos aún, esperando...');
+      return;
+    }
     
     const tipoFlorParam = searchParams.get('tipo_flor');
     const ocasionParam = searchParams.get('ocasion');
