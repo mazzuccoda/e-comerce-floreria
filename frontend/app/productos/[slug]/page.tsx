@@ -79,18 +79,33 @@ export default function ProductPage({ params }: ProductPageParams) {
         const backendUrl = `${apiUrl}/catalogo/productos/${slug}/`;
         
         console.log('🔍 Fetching product from:', backendUrl);
+        console.log('🌐 Environment:', process.env.NODE_ENV);
+        console.log('🔑 API URL configured:', process.env.NEXT_PUBLIC_API_URL);
         
-        const res = await fetch(backendUrl);
+        const res = await fetch(backendUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          // No enviar credentials para evitar problemas CORS
+          credentials: 'omit',
+        });
+        
+        console.log('📊 Response status:', res.status, res.statusText);
+        
         if (!res.ok) {
-          console.error('❌ Error fetching product:', res.status);
-          throw new Error('Producto no encontrado');
+          const errorText = await res.text();
+          console.error('❌ Error response:', errorText);
+          throw new Error(`Producto no encontrado (${res.status})`);
         }
+        
         const data = await res.json();
         console.log('✅ Product loaded:', data.nombre);
         setProduct(data);
       } catch (err: any) {
-        console.error('💥 Error:', err);
-        setError(err.message);
+        console.error('💥 Error completo:', err);
+        setError(err.message || 'Error al cargar el producto');
       } finally {
         setLoading(false);
       }
