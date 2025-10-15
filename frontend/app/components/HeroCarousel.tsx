@@ -14,7 +14,7 @@ interface Slide {
 const slides: Slide[] = [
   {
     id: 1,
-    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1729036987/Carrucel_1_xqwjxf.jpg',
+    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567953/Carrucel_1.png',
     title: 'FLORERÍA CRISTINA',
     subtitle: 'Ramos de flores Naturales',
     buttonText: 'Ver Productos',
@@ -22,7 +22,7 @@ const slides: Slide[] = [
   },
   {
     id: 2,
-    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1729036987/Carrucel_2_vqcvlz.jpg',
+    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567952/Imagen26_aeywu7.png',
     title: 'Entrega a domicilios',
     subtitle: 'Yerba Buena y alrededores',
     buttonText: 'Comprar Ahora',
@@ -30,7 +30,7 @@ const slides: Slide[] = [
   },
   {
     id: 3,
-    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1729036987/Carrucel_3_ydmjbp.jpg',
+    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567952/Imagen17_ozu8fo.png',
     title: 'Tenemos el ramo que buscas',
     subtitle: 'Diseños únicos para cada ocasión',
     buttonText: 'Explorar',
