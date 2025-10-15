@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 interface PedidoItem {
   producto: {
