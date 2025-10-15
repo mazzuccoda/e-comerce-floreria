@@ -19,7 +19,7 @@ const nextConfig = {
   },
   reactStrictMode: true,
   images: {
-    domains: ['localhost', 'web', '127.0.0.1', 'images.unsplash.com', 'e-comerce-floreria-production.up.railway.app'],
+    domains: ['localhost', 'web', '127.0.0.1', 'images.unsplash.com', 'e-comerce-floreria-production.up.railway.app', 'res.cloudinary.com'],
     remotePatterns: [
       {
         protocol: 'http',
@@ -31,6 +31,11 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'e-comerce-floreria-production.up.railway.app',
         pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/dmxc6odsi/**',
       },
     ],
   },

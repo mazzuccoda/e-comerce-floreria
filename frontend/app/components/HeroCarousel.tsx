@@ -17,22 +17,22 @@ const slides: Slide[] = [
     id: 1,
     image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1729036987/Carrucel_1_xqwjxf.jpg',
     title: 'FLORERÍA CRISTINA',
-    subtitle: 'Ramos de flores a domicilio',
+    subtitle: 'Ramos de flores Naturales',
     buttonText: 'Ver Productos',
     buttonLink: '/productos'
   },
   {
     id: 2,
     image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1729036987/Carrucel_2_vqcvlz.jpg',
-    title: 'Envíos gratis en Tucumán',
-    subtitle: 'Las flores más frescas para tus momentos especiales',
+    title: 'Entrega a domicilios',
+    subtitle: 'Yerba Buena y alrededores',
     buttonText: 'Comprar Ahora',
     buttonLink: '/productos'
   },
   {
     id: 3,
     image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1729036987/Carrucel_3_ydmjbp.jpg',
-    title: 'Arreglos Florales',
+    title: 'Tenemos el ramo que buscas',
     subtitle: 'Diseños únicos para cada ocasión',
     buttonText: 'Explorar',
     buttonLink: '/productos'
