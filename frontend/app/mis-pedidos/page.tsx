@@ -40,10 +40,10 @@ const MisPedidosPage: React.FC = () => {
       try {
         setLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-        console.log('🔍 Cargando pedidos desde:', `${apiUrl}/pedidos/mis-pedidos/`);
+        console.log('🔍 Cargando pedidos desde:', `${apiUrl}/pedidos/simple/mis-pedidos/`);
         console.log('🔑 Token:', token ? `${token.substring(0, 10)}...` : 'No hay token');
         
-        const response = await fetch(`${apiUrl}/pedidos/mis-pedidos/`, {
+        const response = await fetch(`${apiUrl}/pedidos/simple/mis-pedidos/`, {
           headers: {
             'Authorization': `Token ${token}`,
             'Accept': 'application/json',
