@@ -59,7 +59,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleClick = () => {
     console.log('🔗 Click en ProductCard, navegando a:', `/productos/${productSlug}`);
-    router.push(`/productos/${productSlug}`);
+    window.location.href = `/productos/${productSlug}`;
   };
 
   return (

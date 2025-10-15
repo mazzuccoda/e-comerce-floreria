@@ -77,7 +77,7 @@ export default function Navbar() {
                 tiposFlor.map(tipo => (
                   <a 
                     key={tipo.id} 
-                    onClick={() => router.push(`/productos?tipo_flor=${tipo.id}`)}
+                    onClick={() => window.location.href = `/productos?tipo_flor=${tipo.id}`}
                     className={styles.dropdownLink}
                     style={{cursor: 'pointer'}}
                   >
@@ -97,7 +97,7 @@ export default function Navbar() {
                 ocasiones.map(ocasion => (
                   <a 
                     key={ocasion.id} 
-                    onClick={() => router.push(`/productos?ocasion=${ocasion.id}`)}
+                    onClick={() => window.location.href = `/productos?ocasion=${ocasion.id}`}
                     className={styles.dropdownLink}
                     style={{cursor: 'pointer'}}
                   >
