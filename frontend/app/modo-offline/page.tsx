@@ -23,7 +23,11 @@ const mockProducts: Product[] = [
     is_active: true,
     envio_gratis: true,
     tipo_flor: { id: 1, nombre: "Rosas", descripcion: "Flores tipo rosas", is_active: true },
-    ocasiones: ["Amor", "Aniversario", "Cumpleaños"],
+    ocasiones: [
+      { id: 1, nombre: "Amor", descripcion: "", is_active: true },
+      { id: 4, nombre: "Aniversario", descripcion: "", is_active: true },
+      { id: 2, nombre: "Cumpleaños", descripcion: "", is_active: true }
+    ],
     imagen_principal: "/images/no-image.jpg",
     imagenes: []
   }
