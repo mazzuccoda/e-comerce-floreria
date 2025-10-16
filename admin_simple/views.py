@@ -25,7 +25,7 @@ def dashboard(request):
     try:
         # Estadísticas
         total_productos = Producto.objects.count()
-        productos_activos = Producto.objects.filter(disponible=True).count()
+        productos_activos = Producto.objects.filter(is_active=True).count()
         productos_stock_bajo = Producto.objects.filter(stock__lt=5, stock__gt=0).count()
         productos_sin_stock = Producto.objects.filter(stock=0).count()
         
@@ -65,9 +65,9 @@ def productos_list(request):
     
     # Aplicar filtros
     if filtro == 'activos':
-        productos = productos.filter(disponible=True)
+        productos = productos.filter(is_active=True)
     elif filtro == 'inactivos':
-        productos = productos.filter(disponible=False)
+        productos = productos.filter(is_active=False)
     elif filtro == 'stock_bajo':
         productos = productos.filter(stock__lt=5, stock__gt=0)
     elif filtro == 'sin_stock':
@@ -134,7 +134,7 @@ def producto_edit(request, pk):
             producto.descripcion = request.POST.get('descripcion', '')
             producto.precio = float(request.POST.get('precio', 0))
             producto.stock = int(request.POST.get('stock', 0))
-            producto.disponible = request.POST.get('disponible') == 'on'
+            producto.is_active = request.POST.get('is_active') == 'on'
             
             # Validaciones
             if producto.precio <= 0:
@@ -174,15 +174,15 @@ def producto_toggle(request, pk):
     """
     try:
         producto = get_object_or_404(Producto, pk=pk)
-        producto.disponible = not producto.disponible
+        producto.is_active = not producto.is_active
         producto.save()
         
-        logger.info(f'Producto {producto.id} disponibilidad cambiada a {producto.disponible} por {request.user.username}')
+        logger.info(f'Producto {producto.id} disponibilidad cambiada a {producto.is_active} por {request.user.username}')
         
         return JsonResponse({
             'success': True,
-            'disponible': producto.disponible,
-            'message': f'Producto {"activado" if producto.disponible else "desactivado"}'
+            'is_active': producto.is_active,
+            'message': f'Producto {"activado" if producto.is_active else "desactivado"}'
         })
     except Exception as e:
         logger.error(f'Error toggling producto {pk}: {str(e)}')

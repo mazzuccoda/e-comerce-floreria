@@ -104,11 +104,11 @@
                 <div class="mb-6">
                     <div class="flex items-center">
                         <input type="checkbox" 
-                               id="disponible" 
-                               name="disponible" 
-                               {% if producto.disponible %}checked{% endif %}
+                               id="is_active" 
+                               name="is_active" 
+                               {% if producto.is_active %}checked{% endif %}
                                class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                        <label for="disponible" class="ml-3 block text-sm font-medium text-gray-700">
+                        <label for="is_active" class="ml-3 block text-sm font-medium text-gray-700">
                             <i class="fas fa-eye"></i> Producto visible en la tienda
                         </label>
                     </div>

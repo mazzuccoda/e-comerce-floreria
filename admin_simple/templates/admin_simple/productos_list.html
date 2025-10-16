@@ -168,7 +168,7 @@
                             <input type="checkbox" 
                                    class="disponible-toggle" 
                                    data-producto-id="{{ producto.id }}"
-                                   {% if producto.disponible %}checked{% endif %}>
+                                   {% if producto.is_active %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </td>
