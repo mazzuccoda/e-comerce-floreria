@@ -33,10 +33,27 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
   const [productos, setProductos] = useState<ProductoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [csrfToken, setCsrfToken] = useState<string>('');
 
   useEffect(() => {
     const fetchAdicionales = async () => {
       try {
+        // Primero obtener el token CSRF
+        const csrfResponse = await fetch(`${API_URL}/carrito/`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (csrfResponse.ok) {
+          // Intentar obtener el token de las cookies
+          const token = getCookie('csrftoken');
+          if (token) {
+            console.log('🔑 CSRF Token obtenido de cookies');
+            setCsrfToken(token);
+          }
+        }
+        
+        // Luego cargar los productos adicionales
         const response = await fetch(`${API_URL}/catalogo/productos/adicionales/`, {
           credentials: 'include',
         });
@@ -65,13 +82,14 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
       if (isCurrentlySelected) {
         // Quitar del carrito
         console.log('🗑️ Quitando extra del carrito:', productoId);
-        const csrfToken = getCookie('csrftoken');
+        const token = csrfToken || getCookie('csrftoken') || '';
+        console.log('🔑 Usando CSRF Token:', token ? 'Sí' : 'No');
         const response = await fetch(`${API_URL}/carrito/remove/`, {
           method: 'DELETE',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken || '',
+            'X-CSRFToken': token,
           },
           body: JSON.stringify({ producto_id: productoId })
         });
@@ -85,14 +103,14 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
       } else {
         // Agregar al carrito
         console.log('➕ Agregando extra al carrito:', productoId);
-        const csrfToken = getCookie('csrftoken');
-        console.log('🔑 CSRF Token:', csrfToken ? 'Encontrado' : 'No encontrado');
+        const token = csrfToken || getCookie('csrftoken') || '';
+        console.log('🔑 CSRF Token:', token ? `Encontrado (${token.substring(0, 10)}...)` : 'No encontrado');
         const response = await fetch(`${API_URL}/carrito/add/`, {
           method: 'POST',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken || '',
+            'X-CSRFToken': token,
           },
           body: JSON.stringify({ 
             producto_id: productoId,
