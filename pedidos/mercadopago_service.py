@@ -92,12 +92,11 @@ class MercadoPagoService:
                     "zip_code": pedido.codigo_postal
                 }
             
-            # URLs de retorno
+            # URLs de retorno - DEBEN pasar por el backend primero
             from django.conf import settings
-            # Usar variable de entorno FRONTEND_URL o la URL por defecto del frontend en Railway
-            frontend_url = os.getenv('FRONTEND_URL') or getattr(settings, 'FRONTEND_URL', None) or 'https://e-comerce-floreria-production.up.railway.app'
+            backend_url = os.getenv('BACKEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
             
-            logger.info(f"🌐 Frontend URL para MercadoPago: {frontend_url}")
+            logger.info(f"🌐 Backend URL para MercadoPago: {backend_url}")
             
             # Configuración de la preferencia
             preference_data = {
@@ -109,13 +108,14 @@ class MercadoPagoService:
                     "installments": 12
                 },
                 "back_urls": {
-                    "success": f"{frontend_url}/checkout/success?pedido={pedido.id}&payment=success",
-                    "failure": f"{frontend_url}/checkout/success?pedido={pedido.id}&payment=failure",
-                    "pending": f"{frontend_url}/checkout/success?pedido={pedido.id}&payment=pending"
+                    "success": f"{backend_url}/api/pedidos/{pedido.id}/payment/success/",
+                    "failure": f"{backend_url}/api/pedidos/{pedido.id}/payment/failure/",
+                    "pending": f"{backend_url}/api/pedidos/{pedido.id}/payment/pending/"
                 },
                 "auto_return": "approved",
                 "external_reference": str(pedido.id),
-                "statement_descriptor": "FLORERIA CRISTINA"
+                "statement_descriptor": "FLORERIA CRISTINA",
+                "notification_url": f"{backend_url}/api/pedidos/webhook/mercadopago/"
             }
             
             # Crear preferencia
