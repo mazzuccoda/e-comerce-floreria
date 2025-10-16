@@ -407,17 +407,13 @@ def simple_checkout_with_items(request):
                     if producto.stock < cantidad:
                         raise Exception(f"Stock insuficiente para {producto.nombre}")
                     
-                    # Crear item
+                    # Crear item (NO reducir stock aquí, lo hará confirmar_pedido)
                     PedidoItem.objects.create(
                         pedido=pedido,
                         producto=producto,
                         cantidad=cantidad,
                         precio=producto.get_precio_final
                     )
-                    
-                    # Reducir stock
-                    producto.stock -= cantidad
-                    producto.save()
                     
                     total_productos += producto.get_precio_final * cantidad
                     print(f"  ✅ Item agregado: {producto.nombre} x{cantidad}")
@@ -436,6 +432,14 @@ def simple_checkout_with_items(request):
             pedido.save()
             
             print(f"💰 Total del pedido: ${pedido.total}")
+            
+            # Confirmar pedido (esto reduce stock y envía notificaciones)
+            print("📧 Confirmando pedido y enviando notificaciones...")
+            success, message = pedido.confirmar_pedido()
+            if success:
+                print(f"✅ {message}")
+            else:
+                print(f"⚠️ {message}")
             
             return JsonResponse({
                 'success': True,
