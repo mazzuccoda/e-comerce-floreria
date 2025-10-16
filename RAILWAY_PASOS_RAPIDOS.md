@@ -45,6 +45,9 @@ EMAIL_HOST_USER=mazzucoda@gmail.com
 EMAIL_HOST_PASSWORD=hrmm pliq wubv qhxy
 DEFAULT_FROM_EMAIL=Floreria Cristina <mazzucoda@gmail.com>
 
+# Frontend URL (IMPORTANTE para redirecciones de pago)
+FRONTEND_URL=https://floreriayviverocristian.up.railway.app
+
 # MercadoPago (PRODUCCIÓN)
 MP_PUBLIC_KEY=APP_USR-b26d49ff-1026-418d-9dc1-04a6088c3151
 MP_ACCESS_TOKEN=APP_USR-3512363478106661-101217-8c574b4c06a425a68262d8733d001c5f-2535754045
