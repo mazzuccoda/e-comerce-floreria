@@ -3,32 +3,52 @@
 {% block title %}Productos - Admin Simple{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-    <h2 class="text-3xl font-bold text-gray-900">Productos</h2>
-    <p class="text-gray-600 mt-2">Gestiona precios, stock y disponibilidad</p>
+<div class="mb-8 flex items-center justify-between">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-900 flex items-center">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-2 mr-3">
+                <i class="fas fa-box text-white text-2xl"></i>
+            </div>
+            Productos
+        </h2>
+        <p class="text-gray-600 mt-2 ml-14">Gestiona precios, stock y disponibilidad</p>
+    </div>
+    <div class="text-right">
+        <p class="text-sm text-gray-500">Total de productos</p>
+        <p class="text-3xl font-bold text-green-600">{{ page_obj.paginator.count }}</p>
+    </div>
 </div>
 
 <!-- Filters and Search -->
-<div class="card mb-6">
+<div class="card mb-6 bg-gradient-to-br from-white to-gray-50">
+    <div class="flex items-center mb-4">
+        <div class="bg-blue-500 rounded-lg p-2">
+            <i class="fas fa-filter text-white"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 ml-3">Filtros y Búsqueda</h3>
+    </div>
     <form method="get" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Search -->
             <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-search"></i> Buscar
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-search text-green-600"></i> Buscar Producto
                 </label>
-                <input type="text" name="buscar" value="{{ buscar_actual }}" 
-                       placeholder="Nombre del producto..." 
-                       class="input-field">
+                <div class="relative">
+                    <input type="text" name="buscar" value="{{ buscar_actual }}" 
+                           placeholder="Escribe el nombre del producto..." 
+                           class="input-field pl-10">
+                    <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                </div>
             </div>
 
             <!-- Category Filter -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-tag"></i> Categoría
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-tag text-purple-600"></i> Categoría
                 </label>
-                <select name="categoria" class="input-field">
-                    <option value="">Todas</option>
+                <select name="categoria" class="input-field bg-white">
+                    <option value="">📦 Todas las categorías</option>
                     {% for categoria in categorias %}
                     <option value="{{ categoria.id }}" {% if categoria_actual|stringformat:"s" == categoria.id|stringformat:"s" %}selected{% endif %}>
                         {{ categoria.nombre }}
@@ -39,10 +59,10 @@
 
             <!-- Order -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-sort"></i> Ordenar por
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-sort text-orange-600"></i> Ordenar por
                 </label>
-                <select name="orden" class="input-field">
+                <select name="orden" class="input-field bg-white">
                     <option value="nombre" {% if orden_actual == 'nombre' %}selected{% endif %}>Nombre (A-Z)</option>
                     <option value="-nombre" {% if orden_actual == '-nombre' %}selected{% endif %}>Nombre (Z-A)</option>
                     <option value="precio" {% if orden_actual == 'precio' %}selected{% endif %}>Precio (menor)</option>
@@ -54,30 +74,37 @@
         </div>
 
         <!-- Filter Buttons -->
-        <div class="flex flex-wrap gap-2">
-            <a href="?filtro=todos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-               class="px-4 py-2 rounded-lg {% if filtro_actual == 'todos' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                Todos
-            </a>
-            <a href="?filtro=activos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-               class="px-4 py-2 rounded-lg {% if filtro_actual == 'activos' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                <i class="fas fa-check-circle"></i> Activos
-            </a>
-            <a href="?filtro=inactivos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-               class="px-4 py-2 rounded-lg {% if filtro_actual == 'inactivos' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                <i class="fas fa-eye-slash"></i> Inactivos
-            </a>
-            <a href="?filtro=stock_bajo{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-               class="px-4 py-2 rounded-lg {% if filtro_actual == 'stock_bajo' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                <i class="fas fa-exclamation-triangle"></i> Stock Bajo
-            </a>
-            <a href="?filtro=sin_stock{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-               class="px-4 py-2 rounded-lg {% if filtro_actual == 'sin_stock' %}bg-green-600 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                <i class="fas fa-times-circle"></i> Sin Stock
-            </a>
-            <button type="submit" class="btn-primary ml-auto">
-                <i class="fas fa-filter"></i> Aplicar Filtros
-            </button>
+        <div class="border-t pt-4 mt-4">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-sm font-semibold text-gray-700">
+                    <i class="fas fa-sliders-h text-indigo-600"></i> Filtros Rápidos
+                </p>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="?filtro=todos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
+                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'todos' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-green-500{% endif %}">
+                    <i class="fas fa-th-large"></i> Todos
+                </a>
+                <a href="?filtro=activos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
+                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'activos' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-green-500{% endif %}">
+                    <i class="fas fa-check-circle text-green-600"></i> Activos
+                </a>
+                <a href="?filtro=inactivos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
+                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'inactivos' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-red-500{% endif %}">
+                    <i class="fas fa-eye-slash text-red-600"></i> Inactivos
+                </a>
+                <a href="?filtro=stock_bajo{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
+                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'stock_bajo' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-yellow-500{% endif %}">
+                    <i class="fas fa-exclamation-triangle text-yellow-600"></i> Stock Bajo
+                </a>
+                <a href="?filtro=sin_stock{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
+                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'sin_stock' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-red-500{% endif %}">
+                    <i class="fas fa-times-circle text-red-600"></i> Sin Stock
+                </a>
+            </div>
         </div>
     </form>
 </div>
