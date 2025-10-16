@@ -218,7 +218,15 @@ const MultiStepCheckoutPage = () => {
         break;
       
       case 'fecha':
-        error = formData.metodoEnvio === 'programado' && !value ? 'Selecciona una fecha para el envío programado' : '';
+        if (formData.metodoEnvio === 'programado' && !value) {
+          error = 'Selecciona una fecha para el envío programado';
+        }
+        break;
+      
+      case 'franjaHoraria':
+        if (formData.metodoEnvio === 'programado' && !value) {
+          error = 'Selecciona una franja horaria';
+        }
         break;
       
       case 'aceptaTerminos':
@@ -263,6 +271,7 @@ const MultiStepCheckoutPage = () => {
         console.log('🚚 Validando datos de envío');
         if (formData.metodoEnvio === 'programado') {
           errors.fecha = validateField('fecha', formData.fecha);
+          errors.franjaHoraria = validateField('franjaHoraria', formData.franjaHoraria);
         }
         break;
       
@@ -1040,35 +1049,113 @@ const MultiStepCheckoutPage = () => {
               
               {/* Opciones adicionales para Envío Programado */}
               {formData.metodoEnvio === 'programado' && (
-                <div className="mt-6 space-y-4 bg-blue-50/50 p-6 rounded-xl border border-blue-100">
-                  <h3 className="font-medium text-lg mb-4">Selecciona fecha y franja horaria</h3>
+                <div className="mt-6 space-y-4 bg-gradient-to-br from-blue-50 to-blue-100/50 p-6 rounded-xl border-2 border-blue-200 shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-blue-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 className="font-semibold text-lg text-blue-900">Selecciona fecha y franja horaria</h3>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col">
-                      <label className="text-sm font-medium text-gray-700 mb-2">Fecha de entrega</label>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                        📅 Fecha de entrega
+                        <span className="text-red-500">*</span>
+                      </label>
                       <input 
                         type="date" 
                         name="fecha"
                         value={formData.fecha}
                         onChange={handleInputChange}
-                        min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
-                        className={`p-4 rounded-xl bg-white border-2 ${formErrors.fecha ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                        min={(() => {
+                          const now = new Date();
+                          const currentHour = now.getHours();
+                          // Si son más de las 17:00, la fecha mínima es mañana
+                          if (currentHour >= 17) {
+                            const tomorrow = new Date(now.getTime() + 86400000);
+                            return tomorrow.toISOString().split('T')[0];
+                          }
+                          // Si son menos de las 17:00, puede ser hoy
+                          return now.toISOString().split('T')[0];
+                        })()}
+                        required
+                        className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
+                          formErrors.fecha 
+                            ? 'border-red-400 bg-red-50 focus:border-red-500' 
+                            : 'border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                        }`}
                       />
-                      {formErrors.fecha && <span className="text-red-600 text-sm mt-1">{formErrors.fecha}</span>}
+                      {formErrors.fecha && (
+                        <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                          </svg>
+                          {formErrors.fecha}
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-col">
-                      <label className="text-sm font-medium text-gray-700 mb-2">Franja horaria</label>
+                      <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                        ⏰ Franja horaria
+                        <span className="text-red-500">*</span>
+                      </label>
                       <select 
                         name="franjaHoraria"
                         value={formData.franjaHoraria || ''}
                         onChange={handleInputChange}
                         title="Selecciona la franja horaria de entrega"
-                        className="p-4 rounded-xl bg-white border-2 border-gray-200"
+                        required
+                        className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
+                          formErrors.franjaHoraria 
+                            ? 'border-red-400 bg-red-50 focus:border-red-500' 
+                            : 'border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                        }`}
                       >
                         <option value="">Selecciona una franja</option>
                         <option value="manana">🌅 Mañana (9:00 a 12:00)</option>
                         <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
                       </select>
+                      {formErrors.franjaHoraria && (
+                        <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                          </svg>
+                          {formErrors.franjaHoraria}
+                        </span>
+                      )}
                     </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="p-3 bg-blue-100 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800 flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="16" x2="12" y2="12"/>
+                          <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span>El envío programado se realizará en la fecha y franja horaria seleccionada. Asegúrate de que haya alguien disponible para recibir el pedido.</span>
+                      </p>
+                    </div>
+                    {(() => {
+                      const currentHour = new Date().getHours();
+                      if (currentHour >= 17) {
+                        return (
+                          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                            <p className="text-sm text-amber-800 flex items-start gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                              </svg>
+                              <span>Son más de las 17:00 hs. Los envíos programados están disponibles a partir de mañana.</span>
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
               )}
