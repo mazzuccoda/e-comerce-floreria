@@ -94,7 +94,10 @@ class MercadoPagoService:
             
             # URLs de retorno
             from django.conf import settings
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://floreriaviverocristian.up.railway.app')
+            # Usar variable de entorno FRONTEND_URL o la URL por defecto del frontend en Railway
+            frontend_url = os.getenv('FRONTEND_URL') or getattr(settings, 'FRONTEND_URL', None) or 'https://e-comerce-floreria-production.up.railway.app'
+            
+            logger.info(f"🌐 Frontend URL para MercadoPago: {frontend_url}")
             
             # Configuración de la preferencia
             preference_data = {
