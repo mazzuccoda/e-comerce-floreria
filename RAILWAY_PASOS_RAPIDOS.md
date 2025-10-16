@@ -36,13 +36,13 @@ ALLOWED_HOSTS=*.railway.app
 # Railway Detection (Railway la agrega automáticamente)
 RAILWAY_ENVIRONMENT=production
 
-# Email
+# Email Configuration
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=mazzucoda@gmail.com
-EMAIL_HOST_PASSWORD=hrmm pliq wubv qhxy
+EMAIL_HOST_PASSWORD=giqe alnn tctq kqqj
 DEFAULT_FROM_EMAIL=Floreria Cristina <mazzucoda@gmail.com>
 
 # Frontend URL (IMPORTANTE para redirecciones de pago)
