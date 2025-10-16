@@ -132,8 +132,18 @@ def producto_edit(request, pk):
             producto.nombre = request.POST.get('nombre')
             producto.descripcion_corta = request.POST.get('descripcion_corta', '')
             producto.descripcion = request.POST.get('descripcion', '')
-            producto.precio = float(request.POST.get('precio', 0))
-            producto.stock = int(request.POST.get('stock', 0))
+            
+            # Limpiar y convertir precio (remover comas y puntos de miles)
+            precio_str = request.POST.get('precio', '0')
+            # Remover puntos de miles y reemplazar coma decimal por punto
+            precio_str = precio_str.replace('.', '').replace(',', '.')
+            producto.precio = float(precio_str)
+            
+            # Limpiar y convertir stock
+            stock_str = request.POST.get('stock', '0')
+            stock_str = stock_str.replace('.', '').replace(',', '')
+            producto.stock = int(stock_str)
+            
             producto.is_active = request.POST.get('is_active') == 'on'
             
             # Validaciones
@@ -152,7 +162,7 @@ def producto_edit(request, pk):
             return redirect('admin_simple:productos-list')
             
         except ValueError as e:
-            messages.error(request, f'Error en los datos: {str(e)}')
+            messages.error(request, f'Error en los datos: {str(e)}. Verifica que precio y stock sean números válidos.')
             logger.error(f'Error actualizando producto {pk}: {str(e)}')
         except Exception as e:
             messages.error(request, f'Error inesperado: {str(e)}')
@@ -205,14 +215,18 @@ def producto_update_field(request, pk):
         value = request.POST.get('value')
         
         if field == 'precio':
-            producto.precio = float(value)
+            # Limpiar valor: remover puntos de miles y reemplazar coma por punto
+            value_clean = value.replace('.', '').replace(',', '.')
+            producto.precio = float(value_clean)
             if producto.precio <= 0:
                 return JsonResponse({
                     'success': False,
                     'error': 'El precio debe ser mayor a 0'
                 }, status=400)
         elif field == 'stock':
-            producto.stock = int(value)
+            # Limpiar valor: remover separadores
+            value_clean = value.replace('.', '').replace(',', '')
+            producto.stock = int(value_clean)
             if producto.stock < 0:
                 return JsonResponse({
                     'success': False,
@@ -231,7 +245,7 @@ def producto_update_field(request, pk):
             'success': True,
             'message': f'{field.capitalize()} actualizado correctamente'
         })
-    except ValueError:
+    except ValueError as e:
         return JsonResponse({
             'success': False,
             'error': 'Valor no válido'
