@@ -897,7 +897,10 @@ const MultiStepCheckoutPage = () => {
               onExtrasChange={(extras) => {
                 setSelectedExtras(extras);
                 // Recargar el carrito después de agregar/quitar extras
-                reloadCart();
+                // Esperar un poco para que el backend procese
+                setTimeout(() => {
+                  reloadCart();
+                }, 1000);
               }}
             />
           )}

@@ -87,10 +87,13 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
         });
         
         if (response.ok) {
-          console.log('✅ Extra agregado al carrito');
+          const data = await response.json();
+          console.log('✅ Extra agregado al carrito:', data);
           onExtrasChange([...selectedExtras, productoId]);
         } else {
-          console.error('❌ Error agregando extra al carrito');
+          const errorData = await response.text();
+          console.error('❌ Error agregando extra al carrito:', response.status, errorData);
+          alert('Error al agregar el producto al carrito. Por favor, intenta de nuevo.');
         }
       }
     } catch (error) {
