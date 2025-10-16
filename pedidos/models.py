@@ -96,51 +96,75 @@ class Pedido(models.Model):
         
         # Activar notificaciones para todos los pedidos
         try:
-            from notificaciones.tasks import notificar_pedido_confirmado
+            from notificaciones.services import notificacion_service
+            from notificaciones.models import TipoNotificacion, CanalNotificacion
             from django.contrib.auth.models import User
+            import logging
+            
+            logger = logging.getLogger(__name__)
+            logger.info(f"🔔 Iniciando notificación para pedido {self.id}")
+            
+            # Determinar usuario y email
+            usuario = None
+            email_destino = None
+            nombre_destino = 'Cliente'
             
             if self.cliente:
-                # Si hay cliente registrado, usar sus datos
-                notificar_pedido_confirmado.delay(self.id, self.cliente.id)
+                # Cliente registrado
+                usuario = self.cliente
+                email_destino = self.cliente.email
+                nombre_destino = self.cliente.first_name or self.cliente.username
+                logger.info(f"📧 Cliente registrado: {email_destino}")
             elif self.email_comprador:
-                # Si es invitado pero tenemos email, crear notificación directa
-                from notificaciones.models import TipoNotificacion, CanalNotificacion, Notificacion
-                from notificaciones.services import notificacion_service
+                # Cliente invitado - usar admin como usuario temporal
+                usuario = User.objects.filter(is_superuser=True).first()
+                email_destino = self.email_comprador
+                nombre_destino = self.nombre_comprador or 'Cliente'
+                logger.info(f"📧 Cliente invitado: {email_destino}")
+            
+            if usuario and email_destino:
+                # Preparar contexto
+                contexto = {
+                    'pedido_id': self.id,
+                    'nombre': nombre_destino,
+                    'total': str(self.total),
+                    'fecha': self.creado.strftime('%d/%m/%Y'),
+                    'items_count': self.items.count(),
+                    'tipo_envio': self.get_tipo_envio_display() if self.tipo_envio else 'No especificado'
+                }
                 
-                # Crear usuario temporal para la notificación
-                admin_user = User.objects.filter(is_superuser=True).first()
-                if admin_user:
-                    contexto = {
-                        'pedido_id': self.id,
-                        'nombre': self.nombre_comprador or 'Cliente',
-                        'total': self.total,
-                        'fecha': self.creado.strftime('%d/%m/%Y'),
-                        'items_count': self.items.count()
-                    }
+                logger.info(f"📝 Contexto preparado: {contexto}")
+                
+                # Crear y enviar notificación inmediatamente
+                try:
+                    notif = notificacion_service.crear_notificacion(
+                        usuario=usuario,
+                        tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
+                        canal=CanalNotificacion.EMAIL,
+                        destinatario=email_destino,
+                        contexto=contexto,
+                        pedido_id=self.id
+                    )
                     
-                    print(f"Creando notificación para pedido {self.id} - email: {self.email_comprador}")
+                    logger.info(f"✅ Notificación {notif.id} creada")
                     
-                    # Crear notificación directamente
-                    try:
-                        notif = notificacion_service.crear_notificacion(
-                            usuario=admin_user,
-                            tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
-                            canal=CanalNotificacion.EMAIL,
-                            destinatario=self.email_comprador,
-                            contexto=contexto,
-                            pedido_id=self.id
-                        )
+                    # Enviar inmediatamente (sin Celery)
+                    success = notificacion_service.enviar_notificacion(notif)
+                    
+                    if success:
+                        logger.info(f"✅ Email enviado exitosamente a {email_destino}")
+                    else:
+                        logger.error(f"❌ Error enviando email a {email_destino}")
                         
-                        # Enviar inmediatamente
-                        from notificaciones.tasks import enviar_notificacion_async
-                        enviar_notificacion_async.delay(notif.id)
-                        print(f"Notificación {notif.id} creada y enviada a {self.email_comprador}")
-                    except Exception as e:
-                        print(f"Error creando notificación: {str(e)}")
-        except ImportError:
-            print("Módulo de notificaciones no disponible")
+                except Exception as e:
+                    logger.error(f"❌ Error creando/enviando notificación: {str(e)}", exc_info=True)
+            else:
+                logger.warning(f"⚠️ No se pudo determinar usuario o email para pedido {self.id}")
+                
+        except ImportError as e:
+            logger.error(f"❌ Módulo de notificaciones no disponible: {str(e)}")
         except Exception as e:
-            print(f"Error en notificación: {str(e)}")
+            logger.error(f"❌ Error general en notificación: {str(e)}", exc_info=True)
         
         return True, "Pedido confirmado exitosamente"
     
