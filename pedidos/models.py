@@ -97,12 +97,47 @@ class Pedido(models.Model):
         # Activar notificaciones para todos los pedidos
         try:
             from notificaciones.services import notificacion_service
-            from notificaciones.models import TipoNotificacion, CanalNotificacion
+            from notificaciones.models import TipoNotificacion, CanalNotificacion, PlantillaNotificacion
             from django.contrib.auth.models import User
             import logging
             
             logger = logging.getLogger(__name__)
             logger.info(f"🔔 Iniciando notificación para pedido {self.id}")
+            
+            # Verificar y crear plantillas si no existen
+            plantilla_existe = PlantillaNotificacion.objects.filter(
+                tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
+                canal=CanalNotificacion.EMAIL
+            ).exists()
+            
+            if not plantilla_existe:
+                logger.warning("⚠️ Plantilla de email no existe, creándola...")
+                PlantillaNotificacion.objects.create(
+                    tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
+                    canal=CanalNotificacion.EMAIL,
+                    asunto='✅ Pedido #{pedido_id} Confirmado - Florería Cristina',
+                    mensaje='''¡Hola {nombre}!
+
+Tu pedido #{pedido_id} ha sido confirmado exitosamente.
+
+📋 Detalles del pedido:
+• Número de pedido: #{pedido_id}
+• Total: ${total}
+• Fecha: {fecha}
+• Cantidad de productos: {items_count}
+• Tipo de envío: {tipo_envio}
+
+📦 ¿Qué sigue?
+Te notificaremos cuando tu pedido esté en camino.
+
+💐 ¡Gracias por elegir Florería Cristina!
+
+Saludos,
+El equipo de Florería Cristina
+🌸 Hacemos que cada momento sea especial 🌸''',
+                    activa=True
+                )
+                logger.info("✅ Plantilla de email creada")
             
             # Determinar usuario y email
             usuario = None
