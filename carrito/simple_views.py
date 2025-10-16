@@ -306,3 +306,35 @@ def simple_remove_from_cart(request):
         return JsonResponse({'error': 'JSON inválido'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST", "OPTIONS"])
+def simple_clear_cart(request):
+    """Vista simple para limpiar completamente el carrito"""
+    if request.method == 'OPTIONS':
+        return JsonResponse({})
+    
+    try:
+        # Limpiar el carrito
+        cart = Cart(request)
+        cart.clear()
+        
+        # Guardar la sesión explícitamente
+        request.session.save()
+        
+        # Retornar carrito vacío
+        cart_data = {
+            'items': [],
+            'total_price': '0',
+            'total_items': 0,
+            'is_empty': True
+        }
+        
+        return JsonResponse({
+            'message': 'Carrito limpiado exitosamente',
+            'cart': cart_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

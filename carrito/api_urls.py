@@ -13,6 +13,8 @@ urlpatterns = [
     path('simple/update/', simple_views.simple_update_cart, name='simple-update-cart'),
     path('simple/remove', simple_views.simple_remove_from_cart, name='simple-remove-from-cart-no-slash'),
     path('simple/remove/', simple_views.simple_remove_from_cart, name='simple-remove-from-cart'),
+    path('simple/clear', simple_views.simple_clear_cart, name='simple-clear-cart-no-slash'),
+    path('simple/clear/', simple_views.simple_clear_cart, name='simple-clear-cart'),
     
     # API endpoints originales
     path('', api_views.CartDetailView.as_view(), name='cart-detail'),
