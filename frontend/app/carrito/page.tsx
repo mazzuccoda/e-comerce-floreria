@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -190,12 +190,12 @@ const CartPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="container mx-auto px-3 sm:px-4 max-w-6xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">🛒 Tu Carrito</h1>
-          <p className="text-gray-600">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">🛒 Tu Carrito</h1>
+          <p className="text-sm sm:text-base text-gray-600">
             {cart?.total_items || 0} {cart?.total_items === 1 ? 'producto' : 'productos'} en tu carrito
           </p>
         </div>
@@ -213,60 +213,66 @@ const CartPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
               {cart?.items?.map((item) => (
-                <div key={item.producto.id} className="bg-white rounded-lg shadow-sm p-6 flex gap-6">
-                  {/* Product Image */}
-                  <div className="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
-                    {item.producto.imagen_principal ? (
-                      <img 
-                        src={item.producto.imagen_principal}
-                        alt={item.producto.nombre}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        🌸
-                      </div>
-                    )}
-                  </div>
+                <div key={item.producto.id} className="bg-white rounded-lg shadow-sm p-3 sm:p-6 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                  {/* Mobile: Horizontal layout */}
+                  <div className="flex gap-3 sm:contents">
+                    {/* Product Image */}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                      {item.producto.imagen_principal ? (
+                        <img 
+                          src={item.producto.imagen_principal}
+                          alt={item.producto.nombre}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">
+                          🌸
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Product Info */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 mb-1">{item.producto.nombre}</h3>
-                    <p className="text-green-700 font-medium">${item.price}</p>
+                    {/* Product Info */}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-800 mb-1 text-sm sm:text-base">{item.producto.nombre}</h3>
+                      <p className="text-green-700 font-medium text-sm sm:text-base">${item.price}</p>
+                      {/* Mobile: Show total here */}
+                      <p className="font-bold text-gray-800 mt-1 sm:hidden text-sm">Total: ${item.total_price}</p>
                     
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-3 mt-4">
-                      <button
-                        onClick={() => updateQuantity(item.producto.id, item.quantity - 1)}
-                        disabled={updatingItem === item.producto.id || item.quantity <= 1}
-                        className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                      >
-                        −
-                      </button>
-                      <span className="w-12 text-center font-medium">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.producto.id, item.quantity + 1)}
-                        disabled={updatingItem === item.producto.id}
-                        className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                      >
-                        +
-                      </button>
-                      <button
-                        onClick={() => removeItem(item.producto.id)}
-                        disabled={updatingItem === item.producto.id}
-                        className="ml-auto text-red-600 hover:text-red-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Eliminar
-                      </button>
                     </div>
                   </div>
 
-                  {/* Item Total */}
-                  <div className="text-right">
+                  {/* Quantity Controls - Full width on mobile */}
+                  <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4 sm:ml-0">
+                    <button
+                      onClick={() => updateQuantity(item.producto.id, item.quantity - 1)}
+                      disabled={updatingItem === item.producto.id || item.quantity <= 1}
+                      className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center text-lg"
+                    >
+                      −
+                    </button>
+                    <span className="w-10 sm:w-12 text-center font-medium text-sm sm:text-base">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.producto.id, item.quantity + 1)}
+                      disabled={updatingItem === item.producto.id}
+                      className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center text-lg"
+                    >
+                      +
+                    </button>
+                    <button
+                      onClick={() => removeItem(item.producto.id)}
+                      disabled={updatingItem === item.producto.id}
+                      className="ml-auto text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+
+                  {/* Item Total - Desktop only */}
+                  <div className="hidden sm:block text-right">
                     <p className="font-bold text-gray-800">${item.total_price}</p>
                   </div>
                 </div>
@@ -275,19 +281,19 @@ const CartPage = () => {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">Resumen del Pedido</h2>
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 lg:sticky lg:top-4">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">Resumen del Pedido</h2>
                 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6 text-sm sm:text-base">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({cart?.total_items} {cart?.total_items === 1 ? 'producto' : 'productos'})</span>
-                    <span>${cart?.total_price}</span>
+                    <span className="font-medium">${cart?.total_price}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Envío</span>
-                    <span className="text-green-600">A calcular</span>
+                    <span className="text-green-600 font-medium">A calcular</span>
                   </div>
-                  <div className="border-t pt-3 flex justify-between font-bold text-lg">
+                  <div className="border-t pt-2 sm:pt-3 flex justify-between font-bold text-base sm:text-lg">
                     <span>Total</span>
                     <span className="text-green-700">${cart?.total_price}</span>
                   </div>
@@ -295,30 +301,30 @@ const CartPage = () => {
 
                 <Link
                   href="/checkout"
-                  className="block w-full bg-green-700 text-white text-center py-3 rounded-lg hover:bg-green-800 transition font-medium mb-3"
+                  className="block w-full bg-green-700 text-white text-center py-2.5 sm:py-3 rounded-lg hover:bg-green-800 transition font-medium mb-2 sm:mb-3 text-sm sm:text-base"
                 >
                   Proceder al Checkout
                 </Link>
 
                 <Link
                   href="/"
-                  className="block w-full border border-gray-300 text-gray-700 text-center py-3 rounded-lg hover:bg-gray-50 transition font-medium"
+                  className="block w-full border border-gray-300 text-gray-700 text-center py-2.5 sm:py-3 rounded-lg hover:bg-gray-50 transition font-medium text-sm sm:text-base"
                 >
                   Seguir Comprando
                 </Link>
 
                 {/* Trust Badges */}
-                <div className="mt-6 pt-6 border-t space-y-3 text-sm text-gray-600">
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-600">
                   <div className="flex items-center gap-2">
-                    <span>✓</span>
+                    <span className="text-green-600">✓</span>
                     <span>Entrega garantizada</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>✓</span>
+                    <span className="text-green-600">✓</span>
                     <span>Flores frescas del día</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>✓</span>
+                    <span className="text-green-600">✓</span>
                     <span>Pago seguro</span>
                   </div>
                 </div>
