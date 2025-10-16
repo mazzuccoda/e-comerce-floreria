@@ -336,12 +336,26 @@ const MultiStepCheckoutPage = () => {
     }
   };
 
-  // Calcular total con extras
+  // Calcular costo de envío
+  const getShippingCost = () => {
+    switch(formData.metodoEnvio) {
+      case 'retiro':
+        return 0;
+      case 'express':
+        return 10000;
+      case 'programado':
+        return 5000;
+      default:
+        return 0;
+    }
+  };
+
+  // Calcular total con extras y envío
   const calculateTotal = () => {
     let total = directCart.total_price || 0;
     if (formData.tarjetaPersonalizada) total += 5000;
     if (formData.osoDePerluche) total += 15000;
-    if (formData.metodoEnvio === 'programado') total += 5000;
+    total += getShippingCost();
     return total;
   };
 
@@ -1284,57 +1298,42 @@ const MultiStepCheckoutPage = () => {
             </div>
           )}
           
-          {/* Extras */}
-          {formData.tarjetaPersonalizada && (
-            <div className="flex justify-between items-center text-sm">
-              <span>📝 Tarjeta Personalizada</span>
-              <span>+$5.000</span>
-            </div>
-          )}
-          {formData.osoDePerluche && (
-            <div className="flex justify-between items-center text-sm">
-              <span>🧸 Oso de Peluche</span>
-              <span>+$15.000</span>
-            </div>
-          )}
-          {formData.metodoEnvio === 'programado' && (
-            <div className="flex justify-between items-center text-sm">
-              <span>🚚 Envío Programado</span>
-              <span>+$5.000</span>
-            </div>
-          )}
-          
           {/* Subtotal y extras */}
           <div className="border-t border-gray-100 pt-4 mt-4 space-y-2">
             <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span>
-              <span>${directCart.total_price.toFixed(2)}</span>
+              <span>Subtotal productos</span>
+              <span>${directCart.total_price.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             
             {formData.tarjetaPersonalizada && (
-              <div className="flex justify-between text-gray-600">
-                <span>Tarjeta personalizada</span>
-                <span>$5,000.00</span>
+              <div className="flex justify-between text-gray-600 text-sm">
+                <span>📝 Tarjeta personalizada</span>
+                <span>$5.000,00</span>
               </div>
             )}
             
             {formData.osoDePerluche && (
-              <div className="flex justify-between text-gray-600">
-                <span>Oso de peluche</span>
-                <span>$15,000.00</span>
+              <div className="flex justify-between text-gray-600 text-sm">
+                <span>🧸 Oso de peluche</span>
+                <span>$15.000,00</span>
               </div>
             )}
             
-            {formData.metodoEnvio === 'programado' && (
-              <div className="flex justify-between text-gray-600">
-                <span>Envío programado</span>
-                <span>$5,000.00</span>
-              </div>
-            )}
+            {/* Costo de envío dinámico */}
+            <div className="flex justify-between text-gray-600 text-sm">
+              <span>
+                {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
+                {formData.metodoEnvio === 'express' && '⚡ Envío Express'}
+                {formData.metodoEnvio === 'programado' && '📅 Envío Programado'}
+              </span>
+              <span className={getShippingCost() === 0 ? 'text-green-600 font-medium' : ''}>
+                {getShippingCost() === 0 ? 'Gratis' : `$${getShippingCost().toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              </span>
+            </div>
             
-            <div className="flex justify-between font-semibold text-lg text-green-700 pt-2 border-t border-dashed border-gray-100">
+            <div className="flex justify-between font-semibold text-lg text-green-700 pt-2 border-t border-dashed border-gray-200">
               <span>Total</span>
-              <span>${calculateTotal().toFixed(2)}</span>
+              <span>${calculateTotal().toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>
