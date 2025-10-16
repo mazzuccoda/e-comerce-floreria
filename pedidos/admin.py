@@ -14,13 +14,14 @@ class PedidoItemInline(admin.TabularInline):
 
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombre_destinatario', 'fecha_entrega', 'estado', 'creado', 'medio_pago')
-    list_filter = ('estado', 'fecha_entrega', 'medio_pago')
+    list_display = ('id', 'nombre_destinatario', 'fecha_entrega', 'tipo_envio', 'estado', 'creado', 'medio_pago')
+    list_filter = ('estado', 'tipo_envio', 'fecha_entrega', 'medio_pago')
     list_editable = ('estado',)
     search_fields = ('id', 'nombre_destinatario', 'cliente__username', 'cliente__email')
     date_hierarchy = 'creado'
     inlines = [PedidoItemInline]
-    readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'instrucciones', 'regalo_anonimo', 'medio_pago')
+    readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'tipo_envio', 'instrucciones', 'regalo_anonimo', 'medio_pago')
+    exclude = ('metodo_envio',)  # Ocultar el campo legacy
 
     def save_model(self, request, obj, form, change):
         # Guardar el estado original antes de guardar los cambios
