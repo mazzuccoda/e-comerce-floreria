@@ -164,9 +164,10 @@ const MultiStepCheckoutPage = () => {
     osoDePerluche: false,
     tipoOso: 'clasico',
     // Envío
-    metodoEnvio: 'express',
+    metodoEnvio: 'retiro',
     fecha: '',
     hora: '',
+    franjaHoraria: '',
     instrucciones: '',
     // Pago
     metodoPago: 'mercadopago',
@@ -910,9 +911,55 @@ const MultiStepCheckoutPage = () => {
               <h2 className="text-2xl font-light mb-6">🚚 Método de Envío</h2>
               <p className="text-gray-600 mb-6">Selecciona cómo deseas que entregemos tus flores</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {/* Retiro en Tienda */}
                 <label 
-                  className={`flex flex-col h-full p-6 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoEnvio === 'express' ? 'bg-green-50 border-2 border-green-500 shadow-lg' : 'bg-white/50 hover:shadow-md border-2 border-transparent'}`}
+                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.metodoEnvio === 'retiro' 
+                      ? 'bg-purple-50 border-2 border-purple-500 shadow-lg' 
+                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoEnvio" 
+                      value="retiro"
+                      checked={formData.metodoEnvio === 'retiro'}
+                      onChange={handleInputChange}
+                      className="mr-4 mt-1 w-5 h-5 text-purple-600" 
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-lg">🏪 Retiro en Tienda</span>
+                        <span className="text-purple-600 font-semibold">Sin cargo</span>
+                      </div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="font-medium">Solano Vera 480 – Yerba Buena</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Retiro en horario comercial
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Envío Express */}
+                <label 
+                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.metodoEnvio === 'express' 
+                      ? 'bg-green-50 border-2 border-green-500 shadow-lg' 
+                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  }`}
                 >
                   <div className="flex items-start">
                     <input 
@@ -921,12 +968,12 @@ const MultiStepCheckoutPage = () => {
                       value="express"
                       checked={formData.metodoEnvio === 'express'}
                       onChange={handleInputChange}
-                      className="mr-4 mt-1" 
+                      className="mr-4 mt-1 w-5 h-5 text-green-600" 
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">Envío Express</span>
-                        <span className="text-green-600 font-medium">Gratis</span>
+                        <span className="font-medium text-lg">⚡ Envío Express</span>
+                        <span className="text-green-600 font-semibold">$10.000</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-600 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
@@ -936,13 +983,18 @@ const MultiStepCheckoutPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 text-sm bg-green-50 p-3 rounded text-green-700 border border-green-100">
+                  <div className="mt-3 text-sm bg-green-50 p-3 rounded-lg text-green-700 border border-green-200">
                     <strong>Recomendado:</strong> Ideal para ocasiones especiales y entregas urgentes.
                   </div>
                 </label>
                 
+                {/* Envío Programado */}
                 <label 
-                  className={`flex flex-col h-full p-6 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoEnvio === 'programado' ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' : 'bg-white/50 hover:shadow-md border-2 border-transparent'}`}
+                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.metodoEnvio === 'programado' 
+                      ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' 
+                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  }`}
                 >
                   <div className="flex items-start">
                     <input 
@@ -951,55 +1003,59 @@ const MultiStepCheckoutPage = () => {
                       value="programado"
                       checked={formData.metodoEnvio === 'programado'}
                       onChange={handleInputChange}
-                      className="mr-4 mt-1" 
+                      className="mr-4 mt-1 w-5 h-5 text-blue-600" 
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">Envío Programado</span>
-                        <span className="text-blue-600 font-medium">$5.000</span>
+                        <span className="font-medium text-lg">📅 Envío Programado</span>
+                        <span className="text-blue-600 font-semibold">$5.000</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-600 mb-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-blue-600">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        Elige fecha y hora específica
+                        A partir del día siguiente
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 text-sm bg-blue-50 p-3 rounded text-blue-700 border border-blue-100">
-                    <strong>Planificado:</strong> Perfecto para aniversarios, cumpleaños y eventos programados.
+                  <div className="mt-3 text-sm bg-blue-50 p-3 rounded-lg text-blue-700 border border-blue-200">
+                    <strong>Planificado:</strong> Perfecto para aniversarios, cumpleaños y entregas planificadas.
                   </div>
                 </label>
               </div>
               
+              {/* Opciones adicionales para Envío Programado */}
               {formData.metodoEnvio === 'programado' && (
-                <div className="mt-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="mt-6 space-y-4 bg-blue-50/50 p-6 rounded-xl border border-blue-100">
+                  <h3 className="font-medium text-lg mb-4">Selecciona fecha y franja horaria</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col">
+                      <label className="text-sm font-medium text-gray-700 mb-2">Fecha de entrega</label>
                       <input 
                         type="date" 
                         name="fecha"
                         value={formData.fecha}
                         onChange={handleInputChange}
-                        className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.fecha ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
+                        min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                        className={`p-4 rounded-xl bg-white border-2 ${formErrors.fecha ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
                       />
                       {formErrors.fecha && <span className="text-red-600 text-sm mt-1">{formErrors.fecha}</span>}
                     </div>
-                    <input 
-                      type="time" 
-                      name="hora"
-                      value={formData.hora}
-                      onChange={handleInputChange}
-                      className="p-4 rounded-xl bg-white/50 border-0" 
-                    />
+                    <div className="flex flex-col">
+                      <label className="text-sm font-medium text-gray-700 mb-2">Franja horaria</label>
+                      <select 
+                        name="franjaHoraria"
+                        value={formData.franjaHoraria || ''}
+                        onChange={handleInputChange}
+                        title="Selecciona la franja horaria de entrega"
+                        className="p-4 rounded-xl bg-white border-2 border-gray-200"
+                      >
+                        <option value="">Selecciona una franja</option>
+                        <option value="manana">🌅 Mañana (9:00 a 12:00)</option>
+                        <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
+                      </select>
+                    </div>
                   </div>
-                  <textarea 
-                    name="instrucciones"
-                    value={formData.instrucciones}
-                    onChange={handleInputChange}
-                    className="w-full p-4 rounded-xl bg-white/50 border-0 h-20" 
-                    placeholder="Instrucciones especiales de entrega..."
-                  ></textarea>
                 </div>
               )}
             </div>
