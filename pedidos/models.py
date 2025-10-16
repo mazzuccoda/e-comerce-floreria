@@ -188,6 +188,23 @@ El equipo de Florería Cristina
                     
                     if success:
                         logger.info(f"✅ Email enviado exitosamente a {email_destino}")
+                        
+                        # TEMPORAL: Enviar copia a Gmail personal para verificar
+                        if email_destino != 'mazzucoda@gmail.com':
+                            try:
+                                logger.info("📧 Enviando copia de verificación a mazzucoda@gmail.com...")
+                                notif_copia = notificacion_service.crear_notificacion(
+                                    usuario=usuario,
+                                    tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
+                                    canal=CanalNotificacion.EMAIL,
+                                    destinatario='mazzucoda@gmail.com',
+                                    contexto=contexto,
+                                    pedido_id=self.id
+                                )
+                                notificacion_service.enviar_notificacion(notif_copia)
+                                logger.info("✅ Copia enviada a mazzucoda@gmail.com")
+                            except Exception as e:
+                                logger.warning(f"⚠️ No se pudo enviar copia: {e}")
                     else:
                         logger.error(f"❌ Error enviando email a {email_destino}")
                         
