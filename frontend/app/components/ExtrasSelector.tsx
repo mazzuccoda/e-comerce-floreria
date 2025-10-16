@@ -23,6 +23,7 @@ interface ExtrasSelectorProps {
 export default function ExtrasSelector({ selectedExtras, onExtrasChange }: ExtrasSelectorProps) {
   const [productos, setProductos] = useState<ProductoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchAdicionales = async () => {
@@ -46,11 +47,56 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
     fetchAdicionales();
   }, []);
 
-  const toggleExtra = (productoId: number) => {
-    if (selectedExtras.includes(productoId)) {
-      onExtrasChange(selectedExtras.filter(id => id !== productoId));
-    } else {
-      onExtrasChange([...selectedExtras, productoId]);
+  const toggleExtra = async (productoId: number) => {
+    const isCurrentlySelected = selectedExtras.includes(productoId);
+    
+    try {
+      setAddingToCart(productoId);
+      
+      if (isCurrentlySelected) {
+        // Quitar del carrito
+        console.log('🗑️ Quitando extra del carrito:', productoId);
+        const response = await fetch(`${API_URL}/carrito/remove/`, {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ producto_id: productoId })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Extra removido del carrito');
+          onExtrasChange(selectedExtras.filter(id => id !== productoId));
+        } else {
+          console.error('❌ Error removiendo extra del carrito');
+        }
+      } else {
+        // Agregar al carrito
+        console.log('➕ Agregando extra al carrito:', productoId);
+        const response = await fetch(`${API_URL}/carrito/add/`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            producto_id: productoId,
+            quantity: 1
+          })
+        });
+        
+        if (response.ok) {
+          console.log('✅ Extra agregado al carrito');
+          onExtrasChange([...selectedExtras, productoId]);
+        } else {
+          console.error('❌ Error agregando extra al carrito');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error en toggleExtra:', error);
+    } finally {
+      setAddingToCart(null);
     }
   };
 
@@ -81,13 +127,18 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
         {productos.map((producto) => (
           <div
             key={producto.id}
-            className={`bg-white/30 rounded-xl p-6 transition-all duration-200 cursor-pointer ${
+            className={`bg-white/30 rounded-xl p-6 transition-all duration-200 cursor-pointer relative ${
               isSelected(producto.id)
                 ? 'ring-2 ring-green-500 shadow-lg'
                 : 'hover:shadow-md'
-            }`}
+            } ${addingToCart === producto.id ? 'opacity-50 pointer-events-none' : ''}`}
             onClick={() => toggleExtra(producto.id)}
           >
+            {addingToCart === producto.id && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/50 rounded-xl z-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              </div>
+            )}
             <label className="flex items-start cursor-pointer">
               <input
                 type="checkbox"
@@ -95,6 +146,7 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
                 onChange={() => toggleExtra(producto.id)}
                 className="mr-4 mt-1 w-5 h-5 text-green-600 rounded focus:ring-green-500"
                 onClick={(e) => e.stopPropagation()}
+                disabled={addingToCart === producto.id}
               />
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-3">

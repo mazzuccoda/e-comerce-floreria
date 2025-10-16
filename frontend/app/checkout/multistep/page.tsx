@@ -41,6 +41,35 @@ const MultiStepCheckoutPage = () => {
   const [hasError, setHasError] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
 
+  // Función para recargar el carrito
+  const reloadCart = async () => {
+    try {
+      console.log('🔄 Recargando carrito...');
+      const endpoint = `${API_URL}/carrito/simple/`;
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const normalizedCart = {
+          items: Array.isArray(data.items) ? data.items : [],
+          total_price: parseFloat(data.total_price) || 0,
+          total_items: parseInt(data.total_items) || 0,
+          is_empty: Boolean(data.is_empty)
+        };
+        setDirectCart(normalizedCart);
+        console.log('✅ Carrito recargado:', normalizedCart);
+      }
+    } catch (error) {
+      console.error('❌ Error recargando carrito:', error);
+    }
+  };
+
   // Carga directa del carrito desde el API, sin depender del contexto
   useEffect(() => {
     const fetchCartDirectly = async () => {
@@ -865,7 +894,11 @@ const MultiStepCheckoutPage = () => {
           {currentStep === 4 && (
             <ExtrasSelector
               selectedExtras={selectedExtras}
-              onExtrasChange={setSelectedExtras}
+              onExtrasChange={(extras) => {
+                setSelectedExtras(extras);
+                // Recargar el carrito después de agregar/quitar extras
+                reloadCart();
+              }}
             />
           )}
 
