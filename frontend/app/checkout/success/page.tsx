@@ -40,6 +40,9 @@ interface PedidoData {
     incluirTarjeta: boolean;
   };
   fecha_entrega: string;
+  franja_horaria?: string;
+  metodo_envio?: string;
+  costo_envio?: number;
   medio_pago: string;
 }
 
@@ -118,7 +121,16 @@ const PaymentSuccessPage = () => {
       `Teléfono: ${pedidoData.destinatario.telefono}\n` +
       `Dirección: ${pedidoData.destinatario.direccion}\n` +
       `Ciudad: ${pedidoData.destinatario.ciudad}\n` +
-      `📅 Fecha de entrega: ${pedidoData.fecha_entrega}\n\n` +
+      `📅 Fecha de entrega: ${pedidoData.fecha_entrega}\n` +
+      `🚚 Método de envío: ${(() => {
+        if (pedidoData.metodo_envio === 'retiro') return '🏪 Retiro en tienda';
+        if (pedidoData.metodo_envio === 'express') return '⚡ Envío Express (2-4 horas)';
+        if (pedidoData.metodo_envio === 'programado') {
+          const franja = pedidoData.franja_horaria === 'manana' ? 'Mañana (9:00-12:00)' : 'Tarde (16:00-20:00)';
+          return `📅 Envío Programado (${franja})`;
+        }
+        return 'No especificado';
+      })()}\n\n` +
       
       dedicatoriaTexto +
       
