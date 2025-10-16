@@ -89,11 +89,17 @@ class NotificacionService:
         return notificacion
     
     def _renderizar_template(self, template_string: str, contexto: Dict[str, Any]) -> str:
-        """Renderiza una plantilla con el contexto dado"""
+        """Renderiza una plantilla con el contexto dado usando format()"""
         try:
-            template = Template(template_string)
-            context = Context(contexto)
-            return template.render(context)
+            # Usar format() de Python para reemplazar {variable}
+            return template_string.format(**contexto)
+        except KeyError as e:
+            logger.warning(f"Variable faltante en template: {str(e)}")
+            # Intentar con las variables disponibles
+            try:
+                return template_string.format_map(contexto)
+            except Exception:
+                return template_string
         except Exception as e:
             logger.error(f"Error renderizando template: {str(e)}")
             return template_string
