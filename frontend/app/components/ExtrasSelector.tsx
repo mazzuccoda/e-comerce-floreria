@@ -56,8 +56,8 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
       if (isCurrentlySelected) {
         // Quitar del carrito
         console.log('🗑️ Quitando extra del carrito:', productoId);
-        const response = await fetch(`${API_URL}/carrito/remove/`, {
-          method: 'DELETE',
+        const response = await fetch(`${API_URL}/carrito/simple/remove/`, {
+          method: 'POST',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
       } else {
         // Agregar al carrito
         console.log('➕ Agregando extra al carrito:', productoId);
-        const response = await fetch(`${API_URL}/carrito/add/`, {
+        const response = await fetch(`${API_URL}/carrito/simple/add/`, {
           method: 'POST',
           credentials: 'include',
           headers: {
