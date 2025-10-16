@@ -250,6 +250,7 @@ const MultiStepCheckoutPage = () => {
     switch(currentStep) {
       case 1: // Remitente
         console.log('👤 Validando datos del remitente');
+        // Solo validar si NO es envío anónimo
         if (!formData.envioAnonimo) {
           errors.nombre = validateField('nombre', formData.nombre);
           errors.email = validateField('email', formData.email);
@@ -840,16 +841,19 @@ const MultiStepCheckoutPage = () => {
                 </div>
               </div>
               <div className="mt-4">
-                <label className="flex items-center">
+                <label className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition">
                   <input 
                     type="checkbox" 
                     name="envioAnonimo"
                     checked={formData.envioAnonimo}
                     onChange={handleInputChange}
-                    className="mr-2" 
+                    className="mr-3 w-4 h-4 text-blue-600" 
                   />
-                  <span>Envío anónimo</span>
+                  <span className="text-gray-700 font-medium">Envío anónimo</span>
                 </label>
+                {formData.envioAnonimo && (
+                  <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">ℹ️ Los campos de remitente son opcionales</p>
+                )}
               </div>
             </div>
           )}
@@ -1370,8 +1374,8 @@ const MultiStepCheckoutPage = () => {
         </div>
 
         {/* Summary Card */}
-        <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+        <div className="mt-6 sm:mt-8 bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
+          <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
               <path d="M16.5 9.4 7.55 4.24"/>
@@ -1385,21 +1389,21 @@ const MultiStepCheckoutPage = () => {
           
           {/* Productos del carrito */}
           {directCart?.items && directCart.items.length > 0 ? (
-            <div className="space-y-3 mb-4 divide-y divide-gray-100">
+            <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 divide-y divide-gray-100">
               {directCart.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-center pt-3 first:pt-0">
-                  <div className="flex gap-3 items-center">
-                    <div className="bg-gray-50 w-12 h-12 rounded-lg flex items-center justify-center text-xl">🌸</div>
-                    <div>
-                      <span className="font-medium text-gray-800">{item.producto.nombre}</span>
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs">Cantidad: {item.quantity}</span>
-                        <span className="text-gray-400">|</span>
-                        <span>${(Number(item.price)).toFixed(2)} c/u</span>
+                <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-2 sm:pt-3 first:pt-0 gap-2">
+                  <div className="flex gap-2 sm:gap-3 items-start sm:items-center">
+                    <div className="bg-gray-50 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-xl flex-shrink-0">🌸</div>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-gray-800 text-sm sm:text-base block truncate">{item.producto.nombre}</span>
+                      <div className="text-xs sm:text-sm text-gray-500 flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                        <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs">Cant: {item.quantity}</span>
+                        <span className="text-gray-400 hidden sm:inline">|</span>
+                        <span className="text-xs">${(Number(item.price)).toFixed(2)} c/u</span>
                       </div>
                     </div>
                   </div>
-                  <div className="font-medium text-green-600">
+                  <div className="font-medium text-green-600 text-sm sm:text-base self-end sm:self-auto">
                     ${(Number(item.price) * item.quantity).toFixed(2)}
                   </div>
                 </div>
@@ -1419,39 +1423,46 @@ const MultiStepCheckoutPage = () => {
           )}
           
           {/* Subtotal y extras */}
-          <div className="border-t border-gray-100 pt-4 mt-4 space-y-3">
-            <div className="flex justify-between text-gray-700 font-medium">
+          <div className="border-t border-gray-100 pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-2 sm:space-y-3">
+            <div className="flex justify-between text-gray-700 font-medium text-sm sm:text-base">
               <span>Subtotal productos</span>
               <span>${directCart.total_price.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             
             {formData.tarjetaPersonalizada && (
-              <div className="flex justify-between text-gray-600 text-sm pl-4">
+              <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
                 <span>📝 Tarjeta personalizada</span>
                 <span className="font-medium">+ $5.000,00</span>
               </div>
             )}
             
             {formData.osoDePerluche && (
-              <div className="flex justify-between text-gray-600 text-sm pl-4">
+              <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
                 <span>🧸 Oso de peluche</span>
                 <span className="font-medium">+ $15.000,00</span>
               </div>
             )}
             
             {/* Costo de envío dinámico */}
-            <div className="flex justify-between text-gray-700 font-medium border-t border-gray-100 pt-3">
-              <span>
-                {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
-                {formData.metodoEnvio === 'express' && '⚡ Envío Express'}
-                {formData.metodoEnvio === 'programado' && '📅 Envío Programado'}
+            <div className="flex justify-between text-gray-700 font-medium border-t border-gray-100 pt-2 sm:pt-3 text-sm sm:text-base">
+              <span className="flex items-center gap-1">
+                <span className="hidden sm:inline">
+                  {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
+                  {formData.metodoEnvio === 'express' && '⚡ Envío Express'}
+                  {formData.metodoEnvio === 'programado' && '📅 Envío Programado'}
+                </span>
+                <span className="sm:hidden">
+                  {formData.metodoEnvio === 'retiro' && '🏪 Retiro'}
+                  {formData.metodoEnvio === 'express' && '⚡ Express'}
+                  {formData.metodoEnvio === 'programado' && '📅 Programado'}
+                </span>
               </span>
               <span className={getShippingCost() === 0 ? 'text-green-600 font-bold' : 'font-medium'}>
                 {getShippingCost() === 0 ? 'Gratis ✓' : `+ $${getShippingCost().toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
               </span>
             </div>
             
-            <div className="flex justify-between font-bold text-xl text-green-700 pt-3 border-t-2 border-green-200 bg-green-50 -mx-6 px-6 py-3 rounded-b-xl">
+            <div className="flex justify-between font-bold text-lg sm:text-xl text-green-700 pt-2 sm:pt-3 border-t-2 border-green-200 bg-green-50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 sm:py-3 rounded-b-xl">
               <span>Total a Pagar</span>
               <span>${calculateTotal().toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
