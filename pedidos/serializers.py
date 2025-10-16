@@ -132,6 +132,12 @@ class CheckoutSerializer(serializers.Serializer):
         # Extraer tipo_envio del validated_data (viene del frontend como 'metodo_envio')
         tipo_envio = validated_data.pop('metodo_envio', None)
         
+        # Log para debug
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🚚 Tipo de envío recibido: {tipo_envio}")
+        logger.info(f"📦 Validated data keys: {validated_data.keys()}")
+        
         # Crear el pedido
         pedido_data = validated_data.copy()
         pedido_data['metodo_envio'] = metodo_envio_obj
@@ -139,6 +145,9 @@ class CheckoutSerializer(serializers.Serializer):
         # Guardar el tipo de envío (retiro, express, programado)
         if tipo_envio:
             pedido_data['tipo_envio'] = tipo_envio
+            logger.info(f"✅ Tipo de envío guardado: {tipo_envio}")
+        else:
+            logger.warning(f"⚠️ No se recibió tipo_envio en el request")
         
         # Asignar usuario si está autenticado
         if request.user.is_authenticated:
