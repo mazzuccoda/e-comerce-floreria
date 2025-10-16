@@ -3,90 +3,155 @@
 {% block title %}Editar {{ producto.nombre }} - Admin Simple{% endblock %}
 
 {% block content %}
-<div class="mb-8">
+<!-- Header con Breadcrumb -->
+<div class="mb-6">
+    <div class="flex items-center text-sm text-gray-500 mb-4">
+        <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-green-600 transition-colors">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <a href="{% url 'admin_simple:productos-list' %}" class="hover:text-green-600 transition-colors">
+            Productos
+        </a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <span class="text-gray-900 font-medium">Editar</span>
+    </div>
+    
     <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-3xl font-bold text-gray-900">Editar Producto</h2>
-            <p class="text-gray-600 mt-2">{{ producto.nombre }}</p>
+        <div class="flex items-center">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-3 shadow-lg">
+                <i class="fas fa-edit text-white text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <h2 class="text-3xl font-bold text-gray-900">Editar Producto</h2>
+                <p class="text-gray-600 mt-1 flex items-center">
+                    <i class="fas fa-tag text-green-600 mr-2"></i>
+                    {{ producto.nombre }}
+                </p>
+            </div>
         </div>
-        <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver a la lista
+        <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary group">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Volver
         </a>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Formulario Principal -->
-    <div class="lg:col-span-2">
-        <div class="card">
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Card: Información Básica -->
+        <div class="card bg-gradient-to-br from-white to-gray-50">
+            <div class="flex items-center mb-6 pb-4 border-b-2 border-green-100">
+                <div class="bg-green-500 rounded-lg p-2">
+                    <i class="fas fa-info-circle text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 ml-3">Información Básica</h3>
+            </div>
             <form method="post" id="producto-form">
                 {% csrf_token %}
                 
                 <!-- Nombre -->
                 <div class="mb-6">
-                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-tag"></i> Nombre del Producto *
+                    <label for="nombre" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fas fa-tag text-blue-600 mr-2"></i> Nombre del Producto
+                        <span class="text-red-500 ml-1">*</span>
                     </label>
                     <input type="text" 
                            id="nombre" 
                            name="nombre" 
                            value="{{ producto.nombre }}" 
                            required
-                           class="input-field"
+                           class="input-field text-lg font-medium"
                            placeholder="Ej: Ramo de Rosas Rojas">
                 </div>
 
                 <!-- Descripción Corta -->
                 <div class="mb-6">
-                    <label for="descripcion_corta" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-align-left"></i> Descripción Corta
+                    <label for="descripcion_corta" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fas fa-align-left text-purple-600 mr-2"></i> Descripción Corta
+                        <span class="ml-2 text-xs text-gray-500 font-normal">(Aparece en tarjetas)</span>
                     </label>
                     <textarea id="descripcion_corta" 
                               name="descripcion_corta" 
                               rows="2" 
                               maxlength="200"
-                              class="input-field"
-                              placeholder="Descripción breve que aparece en las tarjetas de producto">{{ producto.descripcion_corta }}</textarea>
-                    <p class="text-xs text-gray-500 mt-1">Máximo 200 caracteres</p>
+                              class="input-field resize-none"
+                              placeholder="Una breve descripción que capte la atención...">{{ producto.descripcion_corta }}</textarea>
+                    <div class="flex justify-between mt-1">
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-info-circle"></i> Máximo 200 caracteres
+                        </p>
+                        <p class="text-xs text-gray-400" id="count-corta">0/200</p>
+                    </div>
                 </div>
 
                 <!-- Descripción Completa -->
                 <div class="mb-6">
-                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-align-justify"></i> Descripción Completa
+                    <label for="descripcion" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <i class="fas fa-align-justify text-indigo-600 mr-2"></i> Descripción Completa
+                        <span class="ml-2 text-xs text-gray-500 font-normal">(Detalle del producto)</span>
                     </label>
                     <textarea id="descripcion" 
                               name="descripcion" 
                               rows="5" 
                               maxlength="500"
-                              class="input-field"
-                              placeholder="Descripción detallada del producto">{{ producto.descripcion }}</textarea>
-                    <p class="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
+                              class="input-field resize-none"
+                              placeholder="Describe el producto en detalle: características, colores, tamaño, etc.">{{ producto.descripcion }}</textarea>
+                    <div class="flex justify-between mt-1">
+                        <p class="text-xs text-gray-500">
+                            <i class="fas fa-info-circle"></i> Máximo 500 caracteres
+                        </p>
+                        <p class="text-xs text-gray-400" id="count-completa">0/500</p>
+                    </div>
                 </div>
+            </form>
+        </div>
 
-                <!-- Precio y Stock -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <!-- Card: Precio y Stock -->
+        <div class="card bg-gradient-to-br from-white to-gray-50">
+            <div class="flex items-center mb-6 pb-4 border-b-2 border-blue-100">
+                <div class="bg-blue-500 rounded-lg p-2">
+                    <i class="fas fa-dollar-sign text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 ml-3">Precio y Stock</h3>
+            </div>
+            
+            <form method="post" id="precio-stock-form">
+                {% csrf_token %}
+                <input type="hidden" name="nombre" value="{{ producto.nombre }}">
+                <input type="hidden" name="descripcion_corta" value="{{ producto.descripcion_corta }}">
+                <input type="hidden" name="descripcion" value="{{ producto.descripcion }}">
+                <input type="hidden" name="is_active" value="{{ producto.is_active|yesno:'on,off' }}">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Precio -->
-                    <div>
-                        <label for="precio" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-dollar-sign"></i> Precio (ARS) *
+                    <div class="bg-green-50 p-4 rounded-xl border-2 border-green-200">
+                        <label for="precio" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-dollar-sign text-green-600 mr-2"></i> Precio (ARS)
+                            <span class="text-red-500 ml-1">*</span>
                         </label>
-                        <input type="number" 
-                               id="precio" 
-                               name="precio" 
-                               value="{{ producto.precio }}" 
-                               required
-                               min="0"
-                               step="100"
-                               class="input-field"
-                               placeholder="15000">
-                        <p class="text-xs text-gray-500 mt-1">Precio en pesos argentinos</p>
+                        <div class="relative">
+                            <span class="absolute left-4 top-4 text-gray-500 text-xl font-bold">$</span>
+                            <input type="number" 
+                                   id="precio" 
+                                   name="precio" 
+                                   value="{{ producto.precio }}" 
+                                   required
+                                   min="0"
+                                   step="100"
+                                   class="input-field pl-10 text-2xl font-bold text-green-700"
+                                   placeholder="15000">
+                        </div>
+                        <p class="text-xs text-gray-600 mt-2">
+                            <i class="fas fa-info-circle"></i> Precio en pesos argentinos
+                        </p>
                     </div>
 
                     <!-- Stock -->
-                    <div>
-                        <label for="stock" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-boxes"></i> Stock *
+                    <div class="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                        <label for="stock" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-boxes text-blue-600 mr-2"></i> Stock
+                            <span class="text-red-500 ml-1">*</span>
                         </label>
                         <input type="number" 
                                id="stock" 
@@ -94,121 +159,184 @@
                                value="{{ producto.stock }}" 
                                required
                                min="0"
-                               class="input-field"
+                               class="input-field text-2xl font-bold text-blue-700"
                                placeholder="10">
-                        <p class="text-xs text-gray-500 mt-1">Unidades disponibles</p>
+                        <p class="text-xs text-gray-600 mt-2">
+                            <i class="fas fa-info-circle"></i> Unidades disponibles
+                        </p>
                     </div>
-                </div>
-
-                <!-- Disponible -->
-                <div class="mb-6">
-                    <div class="flex items-center">
-                        <input type="checkbox" 
-                               id="is_active" 
-                               name="is_active" 
-                               {% if producto.is_active %}checked{% endif %}
-                               class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
-                        <label for="is_active" class="ml-3 block text-sm font-medium text-gray-700">
-                            <i class="fas fa-eye"></i> Producto visible en la tienda
-                        </label>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2 ml-8">
-                        Si está desactivado, el producto no aparecerá en la tienda online
-                    </p>
-                </div>
-
-                <!-- Botones -->
-                <div class="flex items-center justify-between pt-6 border-t">
-                    <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-save"></i> Guardar Cambios
-                    </button>
                 </div>
             </form>
+        </div>
+
+        <!-- Card: Visibilidad -->
+        <div class="card bg-gradient-to-br from-white to-gray-50">
+            <div class="flex items-center mb-6 pb-4 border-b-2 border-purple-100">
+                <div class="bg-purple-500 rounded-lg p-2">
+                    <i class="fas fa-eye text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 ml-3">Visibilidad en Tienda</h3>
+            </div>
+            
+            <form method="post" id="visibilidad-form">
+                {% csrf_token %}
+                <input type="hidden" name="nombre" value="{{ producto.nombre }}">
+                <input type="hidden" name="descripcion_corta" value="{{ producto.descripcion_corta }}">
+                <input type="hidden" name="descripcion" value="{{ producto.descripcion }}">
+                <input type="hidden" name="precio" value="{{ producto.precio }}">
+                <input type="hidden" name="stock" value="{{ producto.stock }}">
+                
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border-2 border-green-200">
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" 
+                                   id="is_active" 
+                                   name="is_active" 
+                                   {% if producto.is_active %}checked{% endif %}
+                                   class="h-6 w-6 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        </div>
+                        <div class="ml-4">
+                            <label for="is_active" class="block text-lg font-bold text-gray-900">
+                                <i class="fas fa-store-alt text-green-600"></i> Producto visible en la tienda online
+                            </label>
+                            <p class="text-sm text-gray-600 mt-2">
+                                Si está activado, los clientes podrán ver y comprar este producto en la tienda.
+                                Si está desactivado, el producto estará oculto.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="card bg-gradient-to-r from-gray-50 to-white">
+            <div class="flex items-center justify-between">
+                <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary group">
+                    <i class="fas fa-times group-hover:rotate-90 transition-transform"></i> Cancelar
+                </a>
+                <button type="button" onclick="submitAllForms()" class="btn-primary group shadow-lg">
+                    <i class="fas fa-save group-hover:scale-110 transition-transform"></i> Guardar Todos los Cambios
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-3 text-center">
+                <i class="fas fa-keyboard"></i> Atajo: <kbd class="px-2 py-1 bg-gray-200 rounded">Ctrl + S</kbd>
+            </p>
         </div>
     </div>
 
     <!-- Panel Lateral -->
     <div class="lg:col-span-1">
         <!-- Imagen Actual -->
-        <div class="card mb-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-image"></i> Imagen Actual
-            </h3>
-            {% if producto.get_primary_image_url %}
-            <img src="{{ producto.get_primary_image_url }}" 
-                 alt="{{ producto.nombre }}" 
-                 class="w-full rounded-lg shadow-md">
-            {% else %}
-            <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                <i class="fas fa-image text-gray-400 text-4xl"></i>
+        <div class="card mb-6 bg-gradient-to-br from-white to-purple-50 sticky top-6">
+            <div class="flex items-center mb-4 pb-3 border-b-2 border-purple-100">
+                <div class="bg-purple-500 rounded-lg p-2">
+                    <i class="fas fa-image text-white"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 ml-3">Vista Previa</h3>
             </div>
-            <p class="text-sm text-gray-500 mt-2 text-center">Sin imagen</p>
+            {% if producto.get_primary_image_url %}
+            <div class="relative group">
+                <img src="{{ producto.get_primary_image_url }}" 
+                     alt="{{ producto.nombre }}" 
+                     class="w-full rounded-xl shadow-lg group-hover:shadow-2xl transition-shadow duration-300">
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-xl transition-all duration-300"></div>
+            </div>
+            {% else %}
+            <div class="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300">
+                <i class="fas fa-image text-gray-400 text-5xl mb-3"></i>
+                <p class="text-sm text-gray-500 font-medium">Sin imagen</p>
+            </div>
             {% endif %}
-            <p class="text-xs text-gray-500 mt-4">
-                <i class="fas fa-info-circle"></i> Para cambiar la imagen, usa el admin de Django
-            </p>
+            <div class="mt-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p class="text-xs text-blue-800 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i> 
+                    Para cambiar la imagen, usa el <a href="{% url 'admin:index' %}" class="font-bold underline hover:text-blue-600">Admin de Django</a>
+                </p>
+            </div>
         </div>
 
         <!-- Información Adicional -->
-        <div class="card">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-info-circle"></i> Información
-            </h3>
-            <dl class="space-y-3">
-                <div>
-                    <dt class="text-sm font-medium text-gray-500">Categoría</dt>
-                    <dd class="text-sm text-gray-900 mt-1">{{ producto.categoria.nombre }}</dd>
+        <div class="card mb-6 bg-gradient-to-br from-white to-indigo-50">
+            <div class="flex items-center mb-4 pb-3 border-b-2 border-indigo-100">
+                <div class="bg-indigo-500 rounded-lg p-2">
+                    <i class="fas fa-info-circle text-white"></i>
                 </div>
-                <div>
-                    <dt class="text-sm font-medium text-gray-500">ID</dt>
-                    <dd class="text-sm text-gray-900 mt-1">#{{ producto.id }}</dd>
+                <h3 class="text-lg font-bold text-gray-900 ml-3">Información</h3>
+            </div>
+            <dl class="space-y-4">
+                <div class="bg-white p-3 rounded-lg border-l-4 border-purple-500">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Categoría</dt>
+                    <dd class="text-sm text-gray-900 mt-1 font-medium">
+                        <i class="fas fa-folder text-purple-600 mr-1"></i>
+                        {{ producto.categoria.nombre|default:"Sin categoría" }}
+                    </dd>
                 </div>
-                <div>
-                    <dt class="text-sm font-medium text-gray-500">Creado</dt>
-                    <dd class="text-sm text-gray-900 mt-1">{{ producto.creado|date:"d/m/Y H:i" }}</dd>
+                <div class="bg-white p-3 rounded-lg border-l-4 border-blue-500">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide">ID del Producto</dt>
+                    <dd class="text-sm text-gray-900 mt-1 font-mono font-bold">
+                        <i class="fas fa-hashtag text-blue-600 mr-1"></i>
+                        {{ producto.id }}
+                    </dd>
                 </div>
-                <div>
-                    <dt class="text-sm font-medium text-gray-500">Última actualización</dt>
-                    <dd class="text-sm text-gray-900 mt-1">{{ producto.actualizado|date:"d/m/Y H:i" }}</dd>
+                <div class="bg-white p-3 rounded-lg border-l-4 border-green-500">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha de Creación</dt>
+                    <dd class="text-sm text-gray-900 mt-1">
+                        <i class="fas fa-calendar-plus text-green-600 mr-1"></i>
+                        {{ producto.created_at|date:"d/m/Y H:i" }}
+                    </dd>
+                </div>
+                <div class="bg-white p-3 rounded-lg border-l-4 border-orange-500">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Última Actualización</dt>
+                    <dd class="text-sm text-gray-900 mt-1">
+                        <i class="fas fa-clock text-orange-600 mr-1"></i>
+                        {{ producto.updated_at|date:"d/m/Y H:i" }}
+                    </dd>
                 </div>
             </dl>
         </div>
 
         <!-- Estado del Stock -->
-        <div class="card mt-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-chart-line"></i> Estado del Stock
-            </h3>
+        <div class="card bg-gradient-to-br from-white to-gray-50">
+            <div class="flex items-center mb-4 pb-3 border-b-2 border-gray-200">
+                <div class="bg-gray-700 rounded-lg p-2">
+                    <i class="fas fa-chart-line text-white"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 ml-3">Estado del Stock</h3>
+            </div>
             {% if producto.stock == 0 %}
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <div class="flex">
-                    <i class="fas fa-exclamation-circle text-red-500 mt-1"></i>
+            <div class="bg-gradient-to-r from-red-50 to-red-100 border-l-4 border-red-500 p-5 rounded-xl shadow-md">
+                <div class="flex items-start">
+                    <div class="bg-red-500 rounded-full p-2">
+                        <i class="fas fa-exclamation-circle text-white text-lg"></i>
+                    </div>
                     <div class="ml-3">
-                        <p class="text-sm text-red-700 font-semibold">Sin Stock</p>
-                        <p class="text-xs text-red-600 mt-1">Actualiza el stock para que el producto esté disponible</p>
+                        <p class="text-base text-red-900 font-bold">⚠️ Sin Stock</p>
+                        <p class="text-sm text-red-700 mt-1">Actualiza el stock para que el producto esté disponible para la venta</p>
                     </div>
                 </div>
             </div>
             {% elif producto.stock < 5 %}
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-                <div class="flex">
-                    <i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i>
+            <div class="bg-gradient-to-r from-yellow-50 to-orange-100 border-l-4 border-yellow-500 p-5 rounded-xl shadow-md">
+                <div class="flex items-start">
+                    <div class="bg-yellow-500 rounded-full p-2">
+                        <i class="fas fa-exclamation-triangle text-white text-lg"></i>
+                    </div>
                     <div class="ml-3">
-                        <p class="text-sm text-yellow-700 font-semibold">Stock Bajo</p>
-                        <p class="text-xs text-yellow-600 mt-1">Quedan solo {{ producto.stock }} unidades</p>
+                        <p class="text-base text-yellow-900 font-bold">⚡ Stock Bajo</p>
+                        <p class="text-sm text-yellow-700 mt-1">Quedan solo <strong>{{ producto.stock }}</strong> unidades. Considera reponer pronto.</p>
                     </div>
                 </div>
             </div>
             {% else %}
-            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                <div class="flex">
-                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+            <div class="bg-gradient-to-r from-green-50 to-emerald-100 border-l-4 border-green-500 p-5 rounded-xl shadow-md">
+                <div class="flex items-start">
+                    <div class="bg-green-500 rounded-full p-2">
+                        <i class="fas fa-check-circle text-white text-lg"></i>
+                    </div>
                     <div class="ml-3">
-                        <p class="text-sm text-green-700 font-semibold">Stock Suficiente</p>
-                        <p class="text-xs text-green-600 mt-1">{{ producto.stock }} unidades disponibles</p>
+                        <p class="text-base text-green-900 font-bold">✅ Stock Suficiente</p>
+                        <p class="text-sm text-green-700 mt-1"><strong>{{ producto.stock }}</strong> unidades disponibles para la venta</p>
                     </div>
                 </div>
             </div>
@@ -220,25 +348,111 @@
 
 {% block extra_js %}
 <script>
+// Función para enviar todos los formularios
+function submitAllForms() {
+    // Sincronizar valores entre formularios
+    const nombre = document.getElementById('nombre').value;
+    const descripcionCorta = document.getElementById('descripcion_corta').value;
+    const descripcion = document.getElementById('descripcion').value;
+    const precio = document.getElementById('precio').value;
+    const stock = document.getElementById('stock').value;
+    const isActive = document.getElementById('is_active').checked;
+    
+    // Crear un formulario único con todos los datos
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '';
+    
+    // Agregar CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    form.innerHTML = `
+        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+        <input type="hidden" name="nombre" value="${nombre}">
+        <input type="hidden" name="descripcion_corta" value="${descripcionCorta}">
+        <input type="hidden" name="descripcion" value="${descripcion}">
+        <input type="hidden" name="precio" value="${precio}">
+        <input type="hidden" name="stock" value="${stock}">
+        ${isActive ? '<input type="hidden" name="is_active" value="on">' : ''}
+    `;
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
 // Atajo de teclado Ctrl+S para guardar
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        document.getElementById('producto-form').submit();
+        submitAllForms();
     }
 });
 
-// Validación en tiempo real
+// Contador de caracteres para descripción corta
+const descCorta = document.getElementById('descripcion_corta');
+const countCorta = document.getElementById('count-corta');
+function updateCountCorta() {
+    const length = descCorta.value.length;
+    countCorta.textContent = `${length}/200`;
+    countCorta.className = length > 180 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400';
+}
+descCorta.addEventListener('input', updateCountCorta);
+updateCountCorta();
+
+// Contador de caracteres para descripción completa
+const descCompleta = document.getElementById('descripcion');
+const countCompleta = document.getElementById('count-completa');
+function updateCountCompleta() {
+    const length = descCompleta.value.length;
+    countCompleta.textContent = `${length}/500`;
+    countCompleta.className = length > 450 ? 'text-xs text-red-500 font-bold' : 'text-xs text-gray-400';
+}
+descCompleta.addEventListener('input', updateCountCompleta);
+updateCountCompleta();
+
+// Validación en tiempo real para precio
 document.getElementById('precio').addEventListener('input', function() {
     if (this.value < 0) {
         this.value = 0;
     }
+    // Formatear visualmente
+    this.style.color = this.value > 0 ? '#15803d' : '#dc2626';
 });
 
+// Validación en tiempo real para stock
 document.getElementById('stock').addEventListener('input', function() {
     if (this.value < 0) {
         this.value = 0;
     }
+    // Cambiar color según stock
+    if (this.value == 0) {
+        this.style.color = '#dc2626'; // rojo
+    } else if (this.value < 5) {
+        this.style.color = '#ea580c'; // naranja
+    } else {
+        this.style.color = '#1d4ed8'; // azul
+    }
+});
+
+// Trigger inicial para colores
+document.getElementById('precio').dispatchEvent(new Event('input'));
+document.getElementById('stock').dispatchEvent(new Event('input'));
+
+// Confirmación antes de salir si hay cambios sin guardar
+let formChanged = false;
+document.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('change', () => formChanged = true);
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (formChanged) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// Resetear flag cuando se guarda
+document.querySelector('button[onclick="submitAllForms()"]').addEventListener('click', () => {
+    formChanged = false;
 });
 </script>
 {% endblock %}
