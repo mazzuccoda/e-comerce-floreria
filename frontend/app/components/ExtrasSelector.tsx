@@ -62,7 +62,7 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ producto_id: productoId })
+          body: JSON.stringify({ product_id: productoId })
         });
         
         if (response.ok) {
@@ -81,7 +81,7 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
-            producto_id: productoId,
+            product_id: productoId,
             quantity: 1
           })
         });
