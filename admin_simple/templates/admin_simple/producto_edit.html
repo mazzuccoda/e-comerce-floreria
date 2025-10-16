@@ -1,0 +1,244 @@
+{% extends 'admin_simple/base.html' %}
+
+{% block title %}Editar {{ producto.nombre }} - Admin Simple{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">Editar Producto</h2>
+            <p class="text-gray-600 mt-2">{{ producto.nombre }}</p>
+        </div>
+        <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Formulario Principal -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <form method="post" id="producto-form">
+                {% csrf_token %}
+                
+                <!-- Nombre -->
+                <div class="mb-6">
+                    <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tag"></i> Nombre del Producto *
+                    </label>
+                    <input type="text" 
+                           id="nombre" 
+                           name="nombre" 
+                           value="{{ producto.nombre }}" 
+                           required
+                           class="input-field"
+                           placeholder="Ej: Ramo de Rosas Rojas">
+                </div>
+
+                <!-- Descripción Corta -->
+                <div class="mb-6">
+                    <label for="descripcion_corta" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-align-left"></i> Descripción Corta
+                    </label>
+                    <textarea id="descripcion_corta" 
+                              name="descripcion_corta" 
+                              rows="2" 
+                              maxlength="200"
+                              class="input-field"
+                              placeholder="Descripción breve que aparece en las tarjetas de producto">{{ producto.descripcion_corta }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Máximo 200 caracteres</p>
+                </div>
+
+                <!-- Descripción Completa -->
+                <div class="mb-6">
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-align-justify"></i> Descripción Completa
+                    </label>
+                    <textarea id="descripcion" 
+                              name="descripcion" 
+                              rows="5" 
+                              maxlength="500"
+                              class="input-field"
+                              placeholder="Descripción detallada del producto">{{ producto.descripcion }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Máximo 500 caracteres</p>
+                </div>
+
+                <!-- Precio y Stock -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Precio -->
+                    <div>
+                        <label for="precio" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-dollar-sign"></i> Precio (ARS) *
+                        </label>
+                        <input type="number" 
+                               id="precio" 
+                               name="precio" 
+                               value="{{ producto.precio }}" 
+                               required
+                               min="0"
+                               step="100"
+                               class="input-field"
+                               placeholder="15000">
+                        <p class="text-xs text-gray-500 mt-1">Precio en pesos argentinos</p>
+                    </div>
+
+                    <!-- Stock -->
+                    <div>
+                        <label for="stock" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-boxes"></i> Stock *
+                        </label>
+                        <input type="number" 
+                               id="stock" 
+                               name="stock" 
+                               value="{{ producto.stock }}" 
+                               required
+                               min="0"
+                               class="input-field"
+                               placeholder="10">
+                        <p class="text-xs text-gray-500 mt-1">Unidades disponibles</p>
+                    </div>
+                </div>
+
+                <!-- Disponible -->
+                <div class="mb-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" 
+                               id="disponible" 
+                               name="disponible" 
+                               {% if producto.disponible %}checked{% endif %}
+                               class="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <label for="disponible" class="ml-3 block text-sm font-medium text-gray-700">
+                            <i class="fas fa-eye"></i> Producto visible en la tienda
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 ml-8">
+                        Si está desactivado, el producto no aparecerá en la tienda online
+                    </p>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center justify-between pt-6 border-t">
+                    <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel Lateral -->
+    <div class="lg:col-span-1">
+        <!-- Imagen Actual -->
+        <div class="card mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-image"></i> Imagen Actual
+            </h3>
+            {% if producto.get_primary_image_url %}
+            <img src="{{ producto.get_primary_image_url }}" 
+                 alt="{{ producto.nombre }}" 
+                 class="w-full rounded-lg shadow-md">
+            {% else %}
+            <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                <i class="fas fa-image text-gray-400 text-4xl"></i>
+            </div>
+            <p class="text-sm text-gray-500 mt-2 text-center">Sin imagen</p>
+            {% endif %}
+            <p class="text-xs text-gray-500 mt-4">
+                <i class="fas fa-info-circle"></i> Para cambiar la imagen, usa el admin de Django
+            </p>
+        </div>
+
+        <!-- Información Adicional -->
+        <div class="card">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-info-circle"></i> Información
+            </h3>
+            <dl class="space-y-3">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Categoría</dt>
+                    <dd class="text-sm text-gray-900 mt-1">{{ producto.categoria.nombre }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">ID</dt>
+                    <dd class="text-sm text-gray-900 mt-1">#{{ producto.id }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Creado</dt>
+                    <dd class="text-sm text-gray-900 mt-1">{{ producto.creado|date:"d/m/Y H:i" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Última actualización</dt>
+                    <dd class="text-sm text-gray-900 mt-1">{{ producto.actualizado|date:"d/m/Y H:i" }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Estado del Stock -->
+        <div class="card mt-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-chart-line"></i> Estado del Stock
+            </h3>
+            {% if producto.stock == 0 %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                <div class="flex">
+                    <i class="fas fa-exclamation-circle text-red-500 mt-1"></i>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700 font-semibold">Sin Stock</p>
+                        <p class="text-xs text-red-600 mt-1">Actualiza el stock para que el producto esté disponible</p>
+                    </div>
+                </div>
+            </div>
+            {% elif producto.stock < 5 %}
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                <div class="flex">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700 font-semibold">Stock Bajo</p>
+                        <p class="text-xs text-yellow-600 mt-1">Quedan solo {{ producto.stock }} unidades</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                <div class="flex">
+                    <i class="fas fa-check-circle text-green-500 mt-1"></i>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700 font-semibold">Stock Suficiente</p>
+                        <p class="text-xs text-green-600 mt-1">{{ producto.stock }} unidades disponibles</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Atajo de teclado Ctrl+S para guardar
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        document.getElementById('producto-form').submit();
+    }
+});
+
+// Validación en tiempo real
+document.getElementById('precio').addEventListener('input', function() {
+    if (this.value < 0) {
+        this.value = 0;
+    }
+});
+
+document.getElementById('stock').addEventListener('input', function() {
+    if (this.value < 0) {
+        this.value = 0;
+    }
+});
+</script>
+{% endblock %}

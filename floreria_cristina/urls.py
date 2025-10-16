@@ -32,6 +32,9 @@ api_urlpatterns = [
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
+    
+    # Admin Simple (solo superusuarios)
+    path('admin-simple/', include('admin_simple.urls', namespace='admin_simple')),
 
     # Core (páginas estáticas, etc.)
     path('', include('core.urls', namespace='core')),

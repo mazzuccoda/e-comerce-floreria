@@ -1,0 +1,116 @@
+{% extends 'admin_simple/base.html' %}
+
+{% block title %}Dashboard - Admin Simple{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
+    <p class="text-gray-600 mt-2">Resumen general de productos</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Productos -->
+    <div class="card hover:shadow-lg transition duration-200">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                <i class="fas fa-box text-white text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Productos</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_productos }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Productos Activos -->
+    <div class="card hover:shadow-lg transition duration-200">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                <i class="fas fa-check-circle text-white text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Activos</p>
+                <p class="text-2xl font-bold text-green-600">{{ productos_activos }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Bajo -->
+    <div class="card hover:shadow-lg transition duration-200">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Stock Bajo</p>
+                <p class="text-2xl font-bold text-yellow-600">{{ productos_stock_bajo }}</p>
+                <p class="text-xs text-gray-500">Menos de 5 unidades</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sin Stock -->
+    <div class="card hover:shadow-lg transition duration-200">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 bg-red-500 rounded-md p-3">
+                <i class="fas fa-times-circle text-white text-2xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Sin Stock</p>
+                <p class="text-2xl font-bold text-red-600">{{ productos_sin_stock }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <h3 class="text-xl font-bold text-gray-900 mb-4">
+        <i class="fas fa-bolt text-yellow-500"></i>
+        Acciones Rápidas
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="{% url 'admin_simple:productos-list' %}" 
+           class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition duration-200">
+            <i class="fas fa-list text-green-600 text-2xl mr-4"></i>
+            <div>
+                <p class="font-semibold text-gray-900">Ver Todos los Productos</p>
+                <p class="text-sm text-gray-600">Gestionar inventario</p>
+            </div>
+        </a>
+
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=stock_bajo" 
+           class="flex items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition duration-200">
+            <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-4"></i>
+            <div>
+                <p class="font-semibold text-gray-900">Stock Bajo</p>
+                <p class="text-sm text-gray-600">Requieren atención</p>
+            </div>
+        </a>
+
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=inactivos" 
+           class="flex items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition duration-200">
+            <i class="fas fa-eye-slash text-red-600 text-2xl mr-4"></i>
+            <div>
+                <p class="font-semibold text-gray-900">Productos Inactivos</p>
+                <p class="text-sm text-gray-600">No visibles en tienda</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Info Box -->
+<div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm text-blue-700">
+                <strong>Tip:</strong> Puedes editar precios y stock directamente desde la lista de productos haciendo click en los valores.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
