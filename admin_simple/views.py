@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 def is_superuser(user):
     """Verificar que el usuario sea superusuario"""
-    return user.is_superuser
+    return user.is_authenticated and user.is_superuser
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(is_superuser, login_url='/admin/')
 def dashboard(request):
     """
     Dashboard principal con estadísticas
@@ -39,7 +39,7 @@ def dashboard(request):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(is_superuser, login_url='/admin/')
 def productos_list(request):
     """
     Lista de productos con filtros y búsqueda
@@ -109,7 +109,7 @@ def productos_list(request):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(is_superuser, login_url='/admin/')
 def producto_edit(request, pk):
     """
     Editar un producto
@@ -156,7 +156,7 @@ def producto_edit(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(is_superuser, login_url='/admin/')
 @require_POST
 def producto_toggle(request, pk):
     """
@@ -183,7 +183,7 @@ def producto_toggle(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser)
+@user_passes_test(is_superuser, login_url='/admin/')
 @require_POST
 def producto_update_field(request, pk):
     """
