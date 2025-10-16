@@ -523,6 +523,53 @@ const MultiStepCheckoutPage = () => {
       if (response.ok) {
         alert(`🎉 ¡Pedido #${result.numero_pedido} creado exitosamente! ID: ${result.pedido_id}`);
         
+        // Guardar datos del pedido en localStorage SIEMPRE (para todos los métodos de pago)
+        const pedidoData = {
+          pedido_id: result.pedido_id,
+          numero_pedido: result.numero_pedido,
+          total: result.total,
+          items: cartData.items,
+          comprador: {
+            nombre: formData.nombre,
+            email: formData.email,
+            telefono: formData.telefono
+          },
+          destinatario: {
+            nombre: formData.nombreDestinatario,
+            telefono: formData.telefonoDestinatario,
+            direccion: formData.direccion,
+            ciudad: formData.ciudad
+          },
+          dedicatoria: {
+            mensaje: formData.mensaje,
+            firmadoComo: formData.firmadoComo,
+            incluirTarjeta: formData.incluirTarjeta
+          },
+          fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
+          franja_horaria: formData.metodoEnvio === 'programado' ? formData.franjaHoraria : 'mañana',
+          metodo_envio: formData.metodoEnvio,
+          costo_envio: getShippingCost(),
+          medio_pago: formData.metodoPago
+        };
+        
+        localStorage.setItem('ultimo_pedido', JSON.stringify(pedidoData));
+        console.log('💾 Datos del pedido guardados en localStorage');
+        
+        // Limpiar el carrito SIEMPRE (para todos los métodos de pago)
+        try {
+          console.log('🗑️ Limpiando carrito...');
+          await fetch(`${API_URL}/carrito/simple/clear/`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          console.log('✅ Carrito limpiado');
+        } catch (clearError) {
+          console.error('⚠️ Error al limpiar carrito:', clearError);
+        }
+        
         // Si el método de pago es MercadoPago, crear preferencia y redirigir
         if (formData.metodoPago === 'mercadopago') {
           try {
@@ -551,51 +598,7 @@ const MultiStepCheckoutPage = () => {
             alert('❌ Error al procesar el pago. Pedido creado pero pago pendiente.');
           }
         } else {
-          // Guardar datos del pedido en localStorage para mostrar en la página de éxito
-          const pedidoData = {
-            pedido_id: result.pedido_id,
-            numero_pedido: result.numero_pedido,
-            total: result.total,
-            items: cartData.items,
-            comprador: {
-              nombre: formData.nombre,
-              email: formData.email,
-              telefono: formData.telefono
-            },
-            destinatario: {
-              nombre: formData.nombreDestinatario,
-              telefono: formData.telefonoDestinatario,
-              direccion: formData.direccion,
-              ciudad: formData.ciudad
-            },
-            dedicatoria: {
-              mensaje: formData.mensaje,
-              firmadoComo: formData.firmadoComo,
-              incluirTarjeta: formData.incluirTarjeta
-            },
-            fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-            franja_horaria: formData.metodoEnvio === 'programado' ? formData.franjaHoraria : 'mañana',
-            metodo_envio: formData.metodoEnvio,
-            costo_envio: getShippingCost(),
-            medio_pago: formData.metodoPago
-          };
-          
-          localStorage.setItem('ultimo_pedido', JSON.stringify(pedidoData));
-          
-          // Limpiar el carrito después de crear el pedido exitosamente
-          try {
-            console.log('🗑️ Limpiando carrito...');
-            await fetch(`${API_URL}/carrito/simple/clear/`, {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            });
-            console.log('✅ Carrito limpiado');
-          } catch (clearError) {
-            console.error('⚠️ Error al limpiar carrito:', clearError);
-          }
+          // Para otros métodos de pago, redirigir directamente a la página de éxito
           
           // Para otros métodos de pago, redirigir a página de éxito
           window.location.href = `/checkout/success?pedido=${result.pedido_id}`;

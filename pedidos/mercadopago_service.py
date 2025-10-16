@@ -92,7 +92,11 @@ class MercadoPagoService:
                     "zip_code": pedido.codigo_postal
                 }
             
-            # Configuración de la preferencia (sin back_urls por restricciones de localhost)
+            # URLs de retorno
+            from django.conf import settings
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://floreriaviverocristian.up.railway.app')
+            
+            # Configuración de la preferencia
             preference_data = {
                 "items": items,
                 "payer": payer,
@@ -101,6 +105,12 @@ class MercadoPagoService:
                     "excluded_payment_types": [],
                     "installments": 12
                 },
+                "back_urls": {
+                    "success": f"{frontend_url}/checkout/success?pedido={pedido.id}&payment=success",
+                    "failure": f"{frontend_url}/checkout/success?pedido={pedido.id}&payment=failure",
+                    "pending": f"{frontend_url}/checkout/success?pedido={pedido.id}&payment=pending"
+                },
+                "auto_return": "approved",
                 "external_reference": str(pedido.id),
                 "statement_descriptor": "FLORERIA CRISTINA"
             }
