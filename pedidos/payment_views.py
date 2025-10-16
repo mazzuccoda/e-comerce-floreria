@@ -2,13 +2,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import transaction
+from django.conf import settings
 import json
 import logging
+import os
 
 from .models import Pedido
 from .mercadopago_service import MercadoPagoService
@@ -130,6 +132,7 @@ class MercadoPagoWebhookView(APIView):
 class PaymentSuccessView(APIView):
     """
     Vista para manejar el retorno exitoso de Mercado Pago
+    Redirige al frontend con los parámetros del pago
     """
     permission_classes = [AllowAny]
     
@@ -142,34 +145,40 @@ class PaymentSuccessView(APIView):
             status_mp = request.GET.get('status')
             merchant_order_id = request.GET.get('merchant_order_id')
             
-            # Si hay payment_id, obtener información del pago
-            payment_info = None
+            logger.info(f"✅ Pago exitoso para pedido #{pedido_id}")
+            logger.info(f"💳 Payment ID: {payment_id}, Status: {status_mp}")
+            
+            # Si hay payment_id, actualizar estado del pedido
             if payment_id:
                 mp_service = MercadoPagoService()
                 payment_result = mp_service.get_payment_info(payment_id)
                 
                 if payment_result['success']:
                     payment_info = payment_result['payment']
+                    # Actualizar estado del pedido según el estado del pago
+                    if payment_info.get('status') == 'approved':
+                        pedido.estado_pago = 'aprobado'
+                        pedido.save()
+                        logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado")
             
-            return Response({
-                'success': True,
-                'pedido': PedidoReadSerializer(pedido).data,
-                'payment_id': payment_id,
-                'status': status_mp,
-                'merchant_order_id': merchant_order_id,
-                'payment_info': payment_info
-            }, status=status.HTTP_200_OK)
+            # Redirigir al frontend
+            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=success&payment_id={payment_id or ''}"
+            
+            logger.info(f"🔄 Redirigiendo a: {redirect_url}")
+            return redirect(redirect_url)
             
         except Exception as e:
-            logger.error(f"Error in payment success: {str(e)}")
-            return Response({
-                'error': 'Error al procesar el pago exitoso'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"❌ Error in payment success: {str(e)}")
+            # En caso de error, redirigir al frontend con error
+            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
 
 
 class PaymentFailureView(APIView):
     """
     Vista para manejar el retorno fallido de Mercado Pago
+    Redirige al frontend con el estado de fallo
     """
     permission_classes = [AllowAny]
     
@@ -177,22 +186,25 @@ class PaymentFailureView(APIView):
         try:
             pedido = get_object_or_404(Pedido, id=pedido_id)
             
-            return Response({
-                'success': False,
-                'pedido': PedidoReadSerializer(pedido).data,
-                'message': 'El pago no pudo ser procesado'
-            }, status=status.HTTP_200_OK)
+            logger.warning(f"⚠️ Pago fallido para pedido #{pedido_id}")
+            
+            # Redirigir al frontend
+            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=failure"
+            
+            logger.info(f"🔄 Redirigiendo a: {redirect_url}")
+            return redirect(redirect_url)
             
         except Exception as e:
-            logger.error(f"Error in payment failure: {str(e)}")
-            return Response({
-                'error': 'Error al procesar el pago fallido'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"❌ Error in payment failure: {str(e)}")
+            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
 
 
 class PaymentPendingView(APIView):
     """
     Vista para manejar el retorno pendiente de Mercado Pago
+    Redirige al frontend con el estado pendiente
     """
     permission_classes = [AllowAny]
     
@@ -200,14 +212,16 @@ class PaymentPendingView(APIView):
         try:
             pedido = get_object_or_404(Pedido, id=pedido_id)
             
-            return Response({
-                'success': True,
-                'pedido': PedidoReadSerializer(pedido).data,
-                'message': 'El pago está siendo procesado'
-            }, status=status.HTTP_200_OK)
+            logger.info(f"⏳ Pago pendiente para pedido #{pedido_id}")
+            
+            # Redirigir al frontend
+            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=pending"
+            
+            logger.info(f"🔄 Redirigiendo a: {redirect_url}")
+            return redirect(redirect_url)
             
         except Exception as e:
-            logger.error(f"Error in payment pending: {str(e)}")
-            return Response({
-                'error': 'Error al procesar el pago pendiente'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"❌ Error in payment pending: {str(e)}")
+            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
