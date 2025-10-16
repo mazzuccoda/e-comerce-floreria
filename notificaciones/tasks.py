@@ -97,11 +97,21 @@ def notificar_pedido_confirmado(pedido_id, usuario_id):
         usuario = User.objects.get(id=usuario_id)
         pedido = Pedido.objects.get(id=pedido_id)
         
+        # Formatear tipo de envío para mostrar
+        tipo_envio_display = 'No especificado'
+        if pedido.tipo_envio == 'retiro':
+            tipo_envio_display = '🏪 Retiro en tienda'
+        elif pedido.tipo_envio == 'express':
+            tipo_envio_display = '⚡ Envío Express (2-4 horas)'
+        elif pedido.tipo_envio == 'programado':
+            tipo_envio_display = f'📅 Envío Programado ({pedido.get_franja_horaria_display()})'
+        
         contexto = {
             'pedido_id': pedido.id,
             'total': pedido.get_total_price(),
             'fecha': pedido.created_at.strftime('%d/%m/%Y'),
-            'items_count': pedido.items.count()
+            'items_count': pedido.items.count(),
+            'tipo_envio': tipo_envio_display
         }
         
         notificaciones = notificacion_service.enviar_notificacion_pedido(

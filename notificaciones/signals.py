@@ -81,11 +81,21 @@ def notificar_cambio_estado_pedido(sender, instance, created, **kwargs):
                         if tipo_notificacion:
                             from .services import notificacion_service
                             
+                            # Formatear tipo de envío para mostrar
+                            tipo_envio_display = 'No especificado'
+                            if instance.tipo_envio == 'retiro':
+                                tipo_envio_display = '🏪 Retiro en tienda'
+                            elif instance.tipo_envio == 'express':
+                                tipo_envio_display = '⚡ Envío Express (2-4 horas)'
+                            elif instance.tipo_envio == 'programado':
+                                tipo_envio_display = f'📅 Envío Programado ({instance.get_franja_horaria_display()})'
+                            
                             contexto = {
                                 'pedido_id': instance.id,
                                 'estado': instance.get_estado_display(),
                                 'fecha': instance.actualizado.strftime('%d/%m/%Y %H:%M'),
-                                'total': instance.total
+                                'total': instance.total,
+                                'tipo_envio': tipo_envio_display
                             }
                             
                             notificacion_service.enviar_notificacion_pedido(

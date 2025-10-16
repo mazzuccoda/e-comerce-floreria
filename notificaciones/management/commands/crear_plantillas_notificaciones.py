@@ -121,6 +121,7 @@ Tu pedido #{pedido_id} ha sido *confirmado*.
 
 💰 Total: ${total}
 📅 Fecha: {fecha}
+🚚 Envío: {tipo_envio}
 
 Te notificaremos cuando esté en camino.
 

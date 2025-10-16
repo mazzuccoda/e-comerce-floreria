@@ -126,12 +126,17 @@ class CheckoutSerializer(serializers.Serializer):
             raise serializers.ValidationError("El carrito está vacío")
         
         # Obtener método de envío
-        metodo_envio = MetodoEnvio.objects.get(id=validated_data.pop('metodo_envio_id'))
-        tipo_envio = validated_data.pop('metodo_envio', None)  # Extraer tipo_envio
+        metodo_envio_id = validated_data.pop('metodo_envio_id')
+        metodo_envio_obj = MetodoEnvio.objects.get(id=metodo_envio_id)
+        
+        # Extraer tipo_envio del validated_data (viene del frontend como 'metodo_envio')
+        tipo_envio = validated_data.pop('metodo_envio', None)
         
         # Crear el pedido
         pedido_data = validated_data.copy()
-        pedido_data['metodo_envio'] = metodo_envio
+        pedido_data['metodo_envio'] = metodo_envio_obj
+        
+        # Guardar el tipo de envío (retiro, express, programado)
         if tipo_envio:
             pedido_data['tipo_envio'] = tipo_envio
         
