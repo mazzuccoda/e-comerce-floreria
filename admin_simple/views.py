@@ -22,20 +22,30 @@ def dashboard(request):
     """
     Dashboard principal con estadísticas
     """
-    # Estadísticas
-    total_productos = Producto.objects.count()
-    productos_activos = Producto.objects.filter(disponible=True).count()
-    productos_stock_bajo = Producto.objects.filter(stock__lt=5, stock__gt=0).count()
-    productos_sin_stock = Producto.objects.filter(stock=0).count()
-    
-    context = {
-        'total_productos': total_productos,
-        'productos_activos': productos_activos,
-        'productos_stock_bajo': productos_stock_bajo,
-        'productos_sin_stock': productos_sin_stock,
-    }
-    
-    return render(request, 'admin_simple/dashboard.html', context)
+    try:
+        # Estadísticas
+        total_productos = Producto.objects.count()
+        productos_activos = Producto.objects.filter(disponible=True).count()
+        productos_stock_bajo = Producto.objects.filter(stock__lt=5, stock__gt=0).count()
+        productos_sin_stock = Producto.objects.filter(stock=0).count()
+        
+        context = {
+            'total_productos': total_productos,
+            'productos_activos': productos_activos,
+            'productos_stock_bajo': productos_stock_bajo,
+            'productos_sin_stock': productos_sin_stock,
+        }
+        
+        return render(request, 'admin_simple/dashboard.html', context)
+    except Exception as e:
+        logger.error(f'Error en dashboard: {str(e)}')
+        from django.http import HttpResponse
+        return HttpResponse(f"""
+            <h1>Error en Dashboard</h1>
+            <p>Error: {str(e)}</p>
+            <p>Tipo: {type(e).__name__}</p>
+            <a href="/admin/">Volver al Admin</a>
+        """)
 
 
 @login_required
