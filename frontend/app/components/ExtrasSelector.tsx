@@ -5,6 +5,15 @@ import Image from 'next/image';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
+// Función para obtener el token CSRF de las cookies
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
 interface ProductoAdicional {
   id: number;
   nombre: string;
@@ -56,11 +65,13 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
       if (isCurrentlySelected) {
         // Quitar del carrito
         console.log('🗑️ Quitando extra del carrito:', productoId);
+        const csrfToken = getCookie('csrftoken');
         const response = await fetch(`${API_URL}/carrito/remove/`, {
           method: 'DELETE',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '',
           },
           body: JSON.stringify({ producto_id: productoId })
         });
@@ -74,11 +85,14 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
       } else {
         // Agregar al carrito
         console.log('➕ Agregando extra al carrito:', productoId);
+        const csrfToken = getCookie('csrftoken');
+        console.log('🔑 CSRF Token:', csrfToken ? 'Encontrado' : 'No encontrado');
         const response = await fetch(`${API_URL}/carrito/add/`, {
           method: 'POST',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || '',
           },
           body: JSON.stringify({ 
             producto_id: productoId,
