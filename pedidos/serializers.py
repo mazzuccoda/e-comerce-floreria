@@ -67,6 +67,7 @@ class CheckoutSerializer(serializers.Serializer):
     fecha_entrega = serializers.DateField()
     franja_horaria = serializers.ChoiceField(choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)')])
     metodo_envio_id = serializers.IntegerField()
+    metodo_envio = serializers.CharField(max_length=20, required=False, allow_blank=True)  # 'retiro', 'express', 'programado'
     
     # Datos adicionales
     dedicatoria = serializers.CharField(required=False, allow_blank=True)
@@ -126,10 +127,13 @@ class CheckoutSerializer(serializers.Serializer):
         
         # Obtener método de envío
         metodo_envio = MetodoEnvio.objects.get(id=validated_data.pop('metodo_envio_id'))
+        tipo_envio = validated_data.pop('metodo_envio', None)  # Extraer tipo_envio
         
         # Crear el pedido
         pedido_data = validated_data.copy()
         pedido_data['metodo_envio'] = metodo_envio
+        if tipo_envio:
+            pedido_data['tipo_envio'] = tipo_envio
         
         # Asignar usuario si está autenticado
         if request.user.is_authenticated:

@@ -35,6 +35,7 @@ class Pedido(models.Model):
     franja_horaria = models.CharField(max_length=20, choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)')])
     instrucciones = models.CharField(max_length=200, blank=True)
     metodo_envio = models.ForeignKey('MetodoEnvio', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Método de envío")
+    tipo_envio = models.CharField(max_length=20, blank=True, null=True, help_text="Tipo de envío: retiro, express, programado")
     estado = models.CharField(max_length=20, choices=ESTADOS, default='recibido')
     estado_pago = models.CharField(max_length=20, choices=ESTADOS_PAGO, default='pendiente')
     creado = models.DateTimeField(auto_now_add=True)

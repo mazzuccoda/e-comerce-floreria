@@ -477,9 +477,10 @@ const MultiStepCheckoutPage = () => {
           codigo_postal: formData.codigoPostal ? formData.codigoPostal.trim() : "1000",
           
           // Datos de entrega - obligatorios
-          fecha_entrega: fechaEntrega,
-          franja_horaria: "mañana", // Valor debe ser exactamente 'mañana' o 'tarde'
+          fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
+          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
           metodo_envio_id: 1,
+          metodo_envio: formData.metodoEnvio, // 'retiro', 'express', 'programado'
           
           // Datos adicionales - opcionales
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
@@ -572,11 +573,29 @@ const MultiStepCheckoutPage = () => {
               firmadoComo: formData.firmadoComo,
               incluirTarjeta: formData.incluirTarjeta
             },
-            fecha_entrega: fechaEntrega,
+            fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
+            franja_horaria: formData.metodoEnvio === 'programado' ? formData.franjaHoraria : 'mañana',
+            metodo_envio: formData.metodoEnvio,
+            costo_envio: getShippingCost(),
             medio_pago: formData.metodoPago
           };
           
           localStorage.setItem('ultimo_pedido', JSON.stringify(pedidoData));
+          
+          // Limpiar el carrito después de crear el pedido exitosamente
+          try {
+            console.log('🗑️ Limpiando carrito...');
+            await fetch(`${API_URL}/carrito/simple/clear/`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            });
+            console.log('✅ Carrito limpiado');
+          } catch (clearError) {
+            console.error('⚠️ Error al limpiar carrito:', clearError);
+          }
           
           // Para otros métodos de pago, redirigir a página de éxito
           window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
