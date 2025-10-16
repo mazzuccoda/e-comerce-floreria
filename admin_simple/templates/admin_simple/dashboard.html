@@ -11,54 +11,57 @@
 <!-- Stats Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <!-- Total Productos -->
-    <div class="card hover:shadow-lg transition duration-200">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                <i class="fas fa-box text-white text-2xl"></i>
+    <div class="stat-card from-blue-500 to-blue-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-blue-100 text-sm font-medium mb-1">Total Productos</p>
+                <p class="text-4xl font-bold">{{ total_productos }}</p>
+                <p class="text-blue-100 text-xs mt-2">En catálogo</p>
             </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Total Productos</p>
-                <p class="text-2xl font-bold text-gray-900">{{ total_productos }}</p>
+            <div class="bg-white/20 rounded-full p-4">
+                <i class="fas fa-box text-3xl"></i>
             </div>
         </div>
     </div>
 
     <!-- Productos Activos -->
-    <div class="card hover:shadow-lg transition duration-200">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
-                <i class="fas fa-check-circle text-white text-2xl"></i>
+    <div class="stat-card from-green-500 to-green-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-green-100 text-sm font-medium mb-1">Activos</p>
+                <p class="text-4xl font-bold">{{ productos_activos }}</p>
+                <p class="text-green-100 text-xs mt-2">Visibles en tienda</p>
             </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Activos</p>
-                <p class="text-2xl font-bold text-green-600">{{ productos_activos }}</p>
+            <div class="bg-white/20 rounded-full p-4">
+                <i class="fas fa-check-circle text-3xl"></i>
             </div>
         </div>
     </div>
 
     <!-- Stock Bajo -->
-    <div class="card hover:shadow-lg transition duration-200">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-yellow-500 rounded-md p-3">
-                <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+    <div class="stat-card from-yellow-500 to-orange-500">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-yellow-100 text-sm font-medium mb-1">Stock Bajo</p>
+                <p class="text-4xl font-bold">{{ productos_stock_bajo }}</p>
+                <p class="text-yellow-100 text-xs mt-2">Menos de 5 unidades</p>
             </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Stock Bajo</p>
-                <p class="text-2xl font-bold text-yellow-600">{{ productos_stock_bajo }}</p>
-                <p class="text-xs text-gray-500">Menos de 5 unidades</p>
+            <div class="bg-white/20 rounded-full p-4">
+                <i class="fas fa-exclamation-triangle text-3xl"></i>
             </div>
         </div>
     </div>
 
     <!-- Sin Stock -->
-    <div class="card hover:shadow-lg transition duration-200">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 bg-red-500 rounded-md p-3">
-                <i class="fas fa-times-circle text-white text-2xl"></i>
+    <div class="stat-card from-red-500 to-red-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-red-100 text-sm font-medium mb-1">Sin Stock</p>
+                <p class="text-4xl font-bold">{{ productos_sin_stock }}</p>
+                <p class="text-red-100 text-xs mt-2">Requieren reposición</p>
             </div>
-            <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Sin Stock</p>
-                <p class="text-2xl font-bold text-red-600">{{ productos_sin_stock }}</p>
+            <div class="bg-white/20 rounded-full p-4">
+                <i class="fas fa-times-circle text-3xl"></i>
             </div>
         </div>
     </div>
@@ -66,49 +69,65 @@
 
 <!-- Quick Actions -->
 <div class="card">
-    <h3 class="text-xl font-bold text-gray-900 mb-4">
-        <i class="fas fa-bolt text-yellow-500"></i>
-        Acciones Rápidas
-    </h3>
+    <div class="flex items-center mb-6">
+        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg p-2">
+            <i class="fas fa-bolt text-white text-xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 ml-3">Acciones Rápidas</h3>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <a href="{% url 'admin_simple:productos-list' %}" 
-           class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition duration-200">
-            <i class="fas fa-list text-green-600 text-2xl mr-4"></i>
-            <div>
-                <p class="font-semibold text-gray-900">Ver Todos los Productos</p>
-                <p class="text-sm text-gray-600">Gestionar inventario</p>
+           class="group relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-xl p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-green-200">
+            <div class="flex items-start">
+                <div class="bg-green-500 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-list text-white text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="font-bold text-gray-900 text-lg">Ver Todos</p>
+                    <p class="text-sm text-gray-600 mt-1">Gestionar inventario completo</p>
+                </div>
             </div>
         </a>
 
         <a href="{% url 'admin_simple:productos-list' %}?filtro=stock_bajo" 
-           class="flex items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition duration-200">
-            <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-4"></i>
-            <div>
-                <p class="font-semibold text-gray-900">Stock Bajo</p>
-                <p class="text-sm text-gray-600">Requieren atención</p>
+           class="group relative overflow-hidden bg-gradient-to-br from-yellow-50 to-orange-100 hover:from-yellow-100 hover:to-orange-200 rounded-xl p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-yellow-200">
+            <div class="flex items-start">
+                <div class="bg-yellow-500 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="font-bold text-gray-900 text-lg">Stock Bajo</p>
+                    <p class="text-sm text-gray-600 mt-1">Requieren atención urgente</p>
+                </div>
             </div>
         </a>
 
         <a href="{% url 'admin_simple:productos-list' %}?filtro=inactivos" 
-           class="flex items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition duration-200">
-            <i class="fas fa-eye-slash text-red-600 text-2xl mr-4"></i>
-            <div>
-                <p class="font-semibold text-gray-900">Productos Inactivos</p>
-                <p class="text-sm text-gray-600">No visibles en tienda</p>
+           class="group relative overflow-hidden bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-xl p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-red-200">
+            <div class="flex items-start">
+                <div class="bg-red-500 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-eye-slash text-white text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="font-bold text-gray-900 text-lg">Inactivos</p>
+                    <p class="text-sm text-gray-600 mt-1">No visibles en tienda</p>
+                </div>
             </div>
         </a>
     </div>
 </div>
 
 <!-- Info Box -->
-<div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+<div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-6 rounded-xl shadow-md">
+    <div class="flex items-start">
+        <div class="flex-shrink-0 bg-blue-500 rounded-full p-3">
+            <i class="fas fa-lightbulb text-white text-xl"></i>
         </div>
-        <div class="ml-3">
-            <p class="text-sm text-blue-700">
-                <strong>Tip:</strong> Puedes editar precios y stock directamente desde la lista de productos haciendo click en los valores.
+        <div class="ml-4">
+            <h4 class="text-lg font-bold text-blue-900 mb-2">💡 Consejo Útil</h4>
+            <p class="text-sm text-blue-800 leading-relaxed">
+                Puedes editar <strong>precios y stock</strong> directamente desde la lista de productos haciendo click en los valores. 
+                Los cambios se guardan automáticamente sin recargar la página.
             </p>
         </div>
     </div>
