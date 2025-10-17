@@ -49,13 +49,28 @@ const nextConfig = {
   generateEtags: true,
   trailingSlash: false,
   images: {
-    unoptimized: true,
+    unoptimized: false, // ✅ Activar optimización de imágenes
+    formats: ['image/webp', 'image/avif'], // Formatos modernos para mejor compresión
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920], // Tamaños responsive
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // Tamaños de thumbnails
+    minimumCacheTTL: 60, // Cache de 60 segundos
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '8000',
         pathname: '/media/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'web',
+        port: '8000',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/dmxc6odsi/**', // ✅ Cloudinary para producción
       },
       {
         protocol: 'https',

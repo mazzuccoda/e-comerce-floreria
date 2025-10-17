@@ -164,15 +164,14 @@ export default function ProductPage({ params }: ProductPageParams) {
           {/* Imagen del producto */}
           <div className="relative">
             <div className="sticky top-8">
-              <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl">
+              <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-xl">
                 <img
                   src={getImageUrl(product.imagen_principal)}
                   alt={product.nombre}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-8"
                   onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/images/no-image.jpg';
-                    target.classList.add('p-8', 'object-contain');
                   }}
                 />
               </div>

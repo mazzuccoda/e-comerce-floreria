@@ -4,6 +4,7 @@ from django.utils.text import slugify
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.conf import settings
+from .utils import optimize_image
 
 
 class TipoFlor(models.Model):
@@ -244,6 +245,15 @@ class ProductoImagen(models.Model):
         return f"Imagen de {self.producto.nombre}"
 
     def save(self, *args, **kwargs):
+        # Optimizar imagen antes de guardar
+        if self.imagen and not self.pk:  # Solo en creación, no en actualización
+            self.imagen = optimize_image(
+                self.imagen,
+                max_width=1200,
+                max_height=1200,
+                quality=90  # Alta calidad para productos
+            )
+        
         # Si se marca como imagen principal, desmarcar las demás
         if self.is_primary:
             ProductoImagen.objects.filter(producto=self.producto).exclude(pk=self.pk).update(is_primary=False)

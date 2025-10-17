@@ -68,7 +68,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       className="block cursor-pointer"
     >
       <div className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200 transform hover:-translate-y-2 cursor-pointer">
-        <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
+        <div className="relative aspect-square bg-white overflow-hidden">
           {/* Badge de envío gratis */}
           {product.envio_gratis && (
             <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-3 py-1.5 rounded-full font-semibold z-10 shadow-md">
@@ -76,17 +76,16 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
           
-          {/* Imagen con efecto hover */}
+          {/* Imagen con efecto hover - MEJORADA PARA MEJOR CALIDAD */}
           <img
             key={`product-${product.id}-img`}
             src={imageUrl}
             alt={product.nombre || 'Producto'}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
               const target = e.target as HTMLImageElement;
               console.log('Error cargando imagen, usando fallback para:', product.nombre);
               target.src = '/images/no-image.jpg';
-              target.classList.add('p-4', 'object-contain');
             }}
             loading="lazy"
           />
