@@ -135,15 +135,15 @@
                             <input type="number" 
                                    id="precio" 
                                    name="precio" 
-                                   value="{{ producto.precio }}" 
+                                   value="{{ producto.precio|floatformat:0 }}" 
                                    required
                                    min="0"
-                                   step="100"
+                                   step="1"
                                    class="input-field pl-10 text-2xl font-bold text-green-700"
                                    placeholder="15000">
                         </div>
                         <p class="text-xs text-gray-600 mt-2">
-                            <i class="fas fa-info-circle"></i> Precio en pesos argentinos
+                            <i class="fas fa-info-circle"></i> Precio en pesos argentinos (sin centavos)
                         </p>
                     </div>
 
@@ -159,6 +159,7 @@
                                value="{{ producto.stock }}" 
                                required
                                min="0"
+                               step="1"
                                class="input-field text-2xl font-bold text-blue-700"
                                placeholder="10">
                         <p class="text-xs text-gray-600 mt-2">
