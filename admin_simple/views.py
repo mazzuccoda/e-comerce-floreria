@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Count, Sum
 from django.core.paginator import Paginator
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from catalogo.models import Producto, Categoria
 from pedidos.models import Pedido, PedidoItem
 from django.utils import timezone
@@ -373,3 +373,100 @@ def pedido_detail(request, pk):
     }
     
     return render(request, 'admin_simple/pedido_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_http_methods(["POST"])
+def pedido_cambiar_estado(request, pk):
+    """
+    Cambiar el estado de un pedido
+    """
+    pedido = get_object_or_404(Pedido, pk=pk)
+    nuevo_estado = request.POST.get('estado')
+    
+    if nuevo_estado not in dict(Pedido._meta.get_field('estado').choices):
+        return JsonResponse({
+            'success': False,
+            'error': 'Estado no válido'
+        }, status=400)
+    
+    estado_anterior = pedido.estado
+    pedido.estado = nuevo_estado
+    pedido.save()
+    
+    logger.info(f'Pedido {pedido.id} cambió de estado: {estado_anterior} → {nuevo_estado} por {request.user.username}')
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Estado actualizado a {pedido.get_estado_display()}',
+        'nuevo_estado': nuevo_estado
+    })
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_http_methods(["POST"])
+def pedido_confirmar(request, pk):
+    """
+    Confirmar un pedido y reducir stock
+    """
+    pedido = get_object_or_404(Pedido, pk=pk)
+    
+    if pedido.confirmado:
+        return JsonResponse({
+            'success': False,
+            'error': 'El pedido ya está confirmado'
+        }, status=400)
+    
+    # Usar el método del modelo para confirmar
+    exito, mensaje = pedido.confirmar_pedido()
+    
+    if exito:
+        logger.info(f'Pedido {pedido.id} confirmado por {request.user.username}')
+        return JsonResponse({
+            'success': True,
+            'message': 'Pedido confirmado exitosamente. Stock reducido.'
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': mensaje
+        }, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_http_methods(["POST"])
+def pedido_cancelar(request, pk):
+    """
+    Cancelar un pedido y restaurar stock si estaba confirmado
+    """
+    pedido = get_object_or_404(Pedido, pk=pk)
+    
+    if pedido.estado == 'cancelado':
+        return JsonResponse({
+            'success': False,
+            'error': 'El pedido ya está cancelado'
+        }, status=400)
+    
+    if pedido.estado == 'entregado':
+        return JsonResponse({
+            'success': False,
+            'error': 'No se puede cancelar un pedido ya entregado'
+        }, status=400)
+    
+    # Usar el método del modelo para cancelar
+    exito, mensaje = pedido.cancelar_pedido()
+    
+    if exito:
+        logger.info(f'Pedido {pedido.id} cancelado por {request.user.username}')
+        return JsonResponse({
+            'success': True,
+            'message': 'Pedido cancelado exitosamente. Stock restaurado.'
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'error': mensaje
+        }, status=400)

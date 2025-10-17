@@ -312,29 +312,36 @@
             </div>
             
             <div class="space-y-3">
-                <button class="w-full btn-primary">
-                    <i class="fas fa-edit mr-2"></i> Editar Pedido
-                </button>
-                
                 {% if pedido.estado != 'cancelado' %}
-                <button class="w-full btn-secondary">
-                    <i class="fas fa-exchange-alt mr-2"></i> Cambiar Estado
-                </button>
+                <!-- Cambiar Estado -->
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 block mb-2">Cambiar Estado:</label>
+                    <select id="estadoSelect" class="input-field mb-2">
+                        <option value="recibido" {% if pedido.estado == 'recibido' %}selected{% endif %}>🆕 Recibido</option>
+                        <option value="preparando" {% if pedido.estado == 'preparando' %}selected{% endif %}>⚙️ Preparando</option>
+                        <option value="en_camino" {% if pedido.estado == 'en_camino' %}selected{% endif %}>🚚 En Camino</option>
+                        <option value="entregado" {% if pedido.estado == 'entregado' %}selected{% endif %}>✅ Entregado</option>
+                        <option value="cancelado" {% if pedido.estado == 'cancelado' %}selected{% endif %}>❌ Cancelado</option>
+                    </select>
+                    <button onclick="cambiarEstado()" class="w-full btn-secondary">
+                        <i class="fas fa-exchange-alt mr-2"></i> Actualizar Estado
+                    </button>
+                </div>
                 {% endif %}
                 
-                {% if pedido.estado == 'recibido' %}
-                <button class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                {% if pedido.estado == 'recibido' and not pedido.confirmado %}
+                <button onclick="confirmarPedido()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
                     <i class="fas fa-check mr-2"></i> Confirmar Pedido
                 </button>
                 {% endif %}
                 
                 {% if pedido.estado != 'cancelado' and pedido.estado != 'entregado' %}
-                <button class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                <button onclick="cancelarPedido()" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
                     <i class="fas fa-times mr-2"></i> Cancelar Pedido
                 </button>
                 {% endif %}
                 
-                <button class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                <button onclick="window.print()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
                     <i class="fas fa-print mr-2"></i> Imprimir
                 </button>
             </div>
@@ -349,5 +356,109 @@
         <i class="fas fa-arrow-left mr-2"></i> Volver a la lista de pedidos
     </a>
 </div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function cambiarEstado() {
+    const nuevoEstado = document.getElementById('estadoSelect').value;
+    const csrftoken = getCookie('csrftoken');
+    
+    if (!confirm('¿Estás seguro de cambiar el estado del pedido?')) {
+        return;
+    }
+    
+    fetch('{% url "admin_simple:pedido-cambiar-estado" pedido.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken
+        },
+        body: `estado=${nuevoEstado}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar el estado');
+    });
+}
+
+function confirmarPedido() {
+    if (!confirm('¿Confirmar este pedido? Esto reducirá el stock de los productos.')) {
+        return;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch('{% url "admin_simple:pedido-confirmar" pedido.pk %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al confirmar el pedido');
+    });
+}
+
+function cancelarPedido() {
+    if (!confirm('¿Estás seguro de cancelar este pedido? Si estaba confirmado, se restaurará el stock.')) {
+        return;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch('{% url "admin_simple:pedido-cancelar" pedido.pk %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cancelar el pedido');
+    });
+}
+</script>
 
 {% endblock %}
