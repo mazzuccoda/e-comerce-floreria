@@ -351,3 +351,25 @@ def pedidos_list(request):
     }
     
     return render(request, 'admin_simple/pedidos_list.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def pedido_detail(request, pk):
+    """
+    Vista detallada de un pedido específico
+    """
+    pedido = get_object_or_404(
+        Pedido.objects.select_related('cliente').prefetch_related('items__producto'),
+        pk=pk
+    )
+    
+    # Calcular totales
+    subtotal = sum(item.precio_unitario * item.cantidad for item in pedido.items.all())
+    
+    context = {
+        'pedido': pedido,
+        'subtotal': subtotal,
+    }
+    
+    return render(request, 'admin_simple/pedido_detail.html', context)

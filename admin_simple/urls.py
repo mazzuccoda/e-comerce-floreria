@@ -16,4 +16,5 @@ urlpatterns = [
     
     # Pedidos
     path('pedidos/', views.pedidos_list, name='pedidos-list'),
+    path('pedidos/<int:pk>/', views.pedido_detail, name='pedido-detail'),
 ]
