@@ -67,21 +67,15 @@ export default function ProductCard({ product }: ProductCardProps) {
       onClick={handleClick}
       className="block cursor-pointer"
     >
-      <div className="group bg-white rounded-xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200 transform hover:-translate-y-2 cursor-pointer">
-        <div className="relative aspect-square bg-white overflow-hidden">
-          {/* Badge de envío gratis */}
-          {product.envio_gratis && (
-            <div className="absolute top-3 right-3 bg-green-600 text-white text-xs px-3 py-1.5 rounded-full font-semibold z-10 shadow-md">
-              Envío gratis
-            </div>
-          )}
-          
-          {/* Imagen con efecto hover - MEJORADA PARA MEJOR CALIDAD */}
+      <div className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-200 cursor-pointer">
+        {/* Contenedor de imagen con altura fija uniforme */}
+        <div className="relative w-full h-64 bg-white overflow-hidden">
+          {/* Imagen con tamaño uniforme */}
           <img
             key={`product-${product.id}-img`}
             src={imageUrl}
             alt={product.nombre || 'Producto'}
-            className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
               const target = e.target as HTMLImageElement;
               console.log('Error cargando imagen, usando fallback para:', product.nombre);
@@ -89,29 +83,19 @@ export default function ProductCard({ product }: ProductCardProps) {
             }}
             loading="lazy"
           />
-          
-          {/* Overlay oscuro sutil en hover */}
-          <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
         </div>
 
-        <div className="p-5">
-          {/* Nombre del producto con tipografía elegante */}
-          <h3 className="font-serif text-gray-900 text-base mb-3 line-clamp-2 min-h-[3rem] leading-relaxed tracking-wide">
+        <div className="p-4">
+          {/* Nombre del producto */}
+          <h3 className="text-gray-800 text-sm mb-2 line-clamp-2 min-h-[2.5rem] leading-snug">
             {product.nombre}
           </h3>
           
-          {/* Descripción corta si existe */}
-          {product.descripcion_corta && (
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-              {product.descripcion_corta}
-            </p>
-          )}
-          
           {/* Precio */}
-          <div className="flex items-baseline justify-between mb-4">
+          <div className="mb-3">
             {product.precio_descuento ? (
               <div className="flex flex-col gap-1">
-                <span className="text-xl font-bold text-green-700">
+                <span className="text-lg font-semibold text-gray-900">
                   $ {parseFloat(product.precio_descuento).toLocaleString()}
                 </span>
                 <span className="text-sm text-gray-400 line-through">
@@ -119,16 +103,16 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </span>
               </div>
             ) : (
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-lg font-semibold text-gray-900">
                 $ {parseFloat(product.precio).toLocaleString()}
               </span>
             )}
           </div>
 
-          {/* Botón ver detalles */}
-          <div className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 text-sm shadow-sm hover:shadow-md text-center">
-            Ver detalles
-          </div>
+          {/* Botón comprar */}
+          <button className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm">
+            Comprar
+          </button>
         </div>
       </div>
     </div>
