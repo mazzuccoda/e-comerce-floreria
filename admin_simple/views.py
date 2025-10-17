@@ -365,7 +365,7 @@ def pedido_detail(request, pk):
     )
     
     # Calcular totales
-    subtotal = sum(item.precio_unitario * item.cantidad for item in pedido.items.all())
+    subtotal = sum(item.precio * item.cantidad for item in pedido.items.all())
     
     context = {
         'pedido': pedido,

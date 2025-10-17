@@ -93,14 +93,14 @@
                         <h4 class="font-bold text-gray-900">{{ item.producto.nombre }}</h4>
                         <p class="text-sm text-gray-600 mt-1">
                             Cantidad: <span class="font-semibold">{{ item.cantidad }}</span> × 
-                            ${{ item.precio_unitario|floatformat:0 }}
+                            ${{ item.precio|floatformat:0 }}
                         </p>
                     </div>
                     
                     <!-- Subtotal -->
                     <div class="text-right">
                         <p class="text-lg font-bold text-green-600">
-                            ${{ item.precio_unitario|floatformat:0|add:"0"|mul:item.cantidad }}
+                            ${% widthratio item.precio 1 item.cantidad %}
                         </p>
                     </div>
                 </div>
