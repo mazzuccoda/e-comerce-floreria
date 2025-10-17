@@ -6,6 +6,9 @@ from django.db.models import Q, Count, Sum
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 from catalogo.models import Producto, Categoria
+from pedidos.models import Pedido, PedidoItem
+from django.utils import timezone
+from datetime import timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -256,3 +259,95 @@ def producto_update_field(request, pk):
             'success': False,
             'error': str(e)
         }, status=400)
+
+
+# ============================================
+# GESTIÓN DE PEDIDOS
+# ============================================
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def pedidos_list(request):
+    """
+    Lista de pedidos con filtros y búsqueda
+    """
+    # Obtener todos los pedidos
+    pedidos = Pedido.objects.select_related('cliente').prefetch_related('items__producto').order_by('-creado')
+    
+    # Filtros
+    filtro_estado = request.GET.get('estado', '')
+    filtro_pago = request.GET.get('pago', '')
+    filtro_fecha = request.GET.get('fecha', '')
+    filtro_envio = request.GET.get('envio', '')
+    buscar = request.GET.get('buscar', '')
+    
+    # Aplicar filtro de estado
+    if filtro_estado:
+        pedidos = pedidos.filter(estado=filtro_estado)
+    
+    # Aplicar filtro de pago
+    if filtro_pago:
+        pedidos = pedidos.filter(estado_pago=filtro_pago)
+    
+    # Aplicar filtro de tipo de envío
+    if filtro_envio:
+        pedidos = pedidos.filter(tipo_envio=filtro_envio)
+    
+    # Aplicar filtro de fecha
+    if filtro_fecha == 'hoy':
+        pedidos = pedidos.filter(creado__date=timezone.now().date())
+    elif filtro_fecha == 'semana':
+        inicio_semana = timezone.now() - timedelta(days=7)
+        pedidos = pedidos.filter(creado__gte=inicio_semana)
+    elif filtro_fecha == 'mes':
+        inicio_mes = timezone.now() - timedelta(days=30)
+        pedidos = pedidos.filter(creado__gte=inicio_mes)
+    
+    # Búsqueda
+    if buscar:
+        pedidos = pedidos.filter(
+            Q(numero_pedido__icontains=buscar) |
+            Q(nombre_comprador__icontains=buscar) |
+            Q(nombre_destinatario__icontains=buscar) |
+            Q(email_comprador__icontains=buscar) |
+            Q(telefono_destinatario__icontains=buscar) |
+            Q(cliente__username__icontains=buscar) |
+            Q(cliente__email__icontains=buscar)
+        )
+    
+    # Estadísticas para badges
+    total_pedidos = Pedido.objects.count()
+    pedidos_recibidos = Pedido.objects.filter(estado='recibido').count()
+    pedidos_preparando = Pedido.objects.filter(estado='preparando').count()
+    pedidos_en_camino = Pedido.objects.filter(estado='en_camino').count()
+    pedidos_entregados = Pedido.objects.filter(estado='entregado').count()
+    pedidos_cancelados = Pedido.objects.filter(estado='cancelado').count()
+    
+    pagos_pendientes = Pedido.objects.filter(estado_pago='pendiente').count()
+    pagos_aprobados = Pedido.objects.filter(estado_pago='approved').count()
+    pagos_rechazados = Pedido.objects.filter(estado_pago='rejected').count()
+    
+    # Paginación
+    paginator = Paginator(pedidos, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'total_pedidos': total_pedidos,
+        'pedidos_recibidos': pedidos_recibidos,
+        'pedidos_preparando': pedidos_preparando,
+        'pedidos_en_camino': pedidos_en_camino,
+        'pedidos_entregados': pedidos_entregados,
+        'pedidos_cancelados': pedidos_cancelados,
+        'pagos_pendientes': pagos_pendientes,
+        'pagos_aprobados': pagos_aprobados,
+        'pagos_rechazados': pagos_rechazados,
+        'filtro_estado': filtro_estado,
+        'filtro_pago': filtro_pago,
+        'filtro_fecha': filtro_fecha,
+        'filtro_envio': filtro_envio,
+        'buscar_actual': buscar,
+    }
+    
+    return render(request, 'admin_simple/pedidos_list.html', context)
