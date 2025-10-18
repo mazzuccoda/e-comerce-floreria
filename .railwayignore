@@ -1,0 +1,15 @@
+# Railway ignore file
+# Do NOT ignore these files
+!requirements.txt
+!runtime.txt
+!nixpacks.toml
+!start.sh
+!manage.py
+
+# Ignore these
+node_modules/
+.git/
+*.pyc
+__pycache__/
+.env.local
+.DS_Store
