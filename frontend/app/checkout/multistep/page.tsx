@@ -1056,7 +1056,7 @@ const MultiStepCheckoutPage = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">⚡ Envío Express</span>
+                        <span className="font-medium text-lg">⚡ Envío Express <span className="text-sm text-gray-500">(Solo en Yerba Buena)</span></span>
                         <span className="text-green-600 font-semibold">$10.000</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-600 mb-2">
@@ -1091,7 +1091,7 @@ const MultiStepCheckoutPage = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">📅 Envío Programado</span>
+                        <span className="font-medium text-lg">📅 Envío Programado <span className="text-sm text-gray-500">(Solo en Yerba Buena)</span></span>
                         <span className="text-blue-600 font-semibold">$5.000</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-600 mb-2">
