@@ -50,8 +50,12 @@ export default function AddressMapPicker({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  // Debug: Verificar API Key
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+  console.log('🗺️ Google Maps API Key:', apiKey ? `${apiKey.substring(0, 20)}...` : '❌ NO CONFIGURADA');
+
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: apiKey,
     libraries,
   });
 
