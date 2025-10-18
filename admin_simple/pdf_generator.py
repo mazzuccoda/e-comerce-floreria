@@ -6,11 +6,13 @@ from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+import requests
+from PIL import Image as PILImage
 
 
 def generar_pdf_pedido(pedido):
@@ -82,24 +84,47 @@ def generar_pdf_pedido(pedido):
     # === PRODUCTOS ===
     story.append(Paragraph("PRODUCTOS", subtitulo_style))
     
-    # Tabla de productos
-    productos_data = [['Producto', 'Cant.', 'Precio', 'Subtotal']]
+    # Tabla de productos con imágenes
+    productos_data = [['Imagen', 'Producto', 'Cant.', 'Precio', 'Subtotal']]
     
     for item in pedido.items.all():
+        # Intentar obtener la imagen del producto
+        img = None
+        try:
+            if item.producto.imagen:
+                # Si la imagen es una URL completa
+                if str(item.producto.imagen).startswith('http'):
+                    response = requests.get(str(item.producto.imagen), timeout=5)
+                    if response.status_code == 200:
+                        img_buffer = BytesIO(response.content)
+                        img = Image(img_buffer, width=1.5*cm, height=1.5*cm)
+                # Si es una ruta local
+                else:
+                    img = Image(item.producto.imagen.path, width=1.5*cm, height=1.5*cm)
+        except Exception as e:
+            # Si falla, usar un placeholder de texto
+            img = Paragraph("📦", normal_style)
+        
+        if img is None:
+            img = Paragraph("📦", normal_style)
+        
         productos_data.append([
+            img,
             Paragraph(item.producto.nombre, normal_style),
             str(item.cantidad),
             f"${item.precio:,.0f}".replace(',', '.'),
             f"${item.precio * item.cantidad:,.0f}".replace(',', '.')
         ])
     
-    productos_table = Table(productos_data, colWidths=[8*cm, 2*cm, 3*cm, 3*cm])
+    productos_table = Table(productos_data, colWidths=[2*cm, 6.5*cm, 1.5*cm, 3*cm, 3*cm])
     productos_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f7fafc')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#2d3748')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-        ('ALIGN', (3, 0), (3, -1), 'RIGHT'),
+        ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Imagen centrada
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),    # Producto a la izquierda
+        ('ALIGN', (2, 0), (-1, -1), 'CENTER'), # Resto centrado
+        ('ALIGN', (4, 0), (4, -1), 'RIGHT'),   # Subtotal a la derecha
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # Alineación vertical
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('FONTSIZE', (0, 1), (-1, -1), 9),
