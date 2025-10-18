@@ -1297,7 +1297,7 @@ const MultiStepCheckoutPage = () => {
                     💵
                   </div>
                   <div className="mt-3 text-xs text-gray-600 text-center">
-                    Pago al recibir
+                    Pago al retirar
                   </div>
                 </label>
               </div>

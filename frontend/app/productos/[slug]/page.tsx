@@ -22,6 +22,8 @@ export default function ProductPage({ params }: ProductPageParams) {
   const [error, setError] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
   const getImageUrl = (url: string) => {
     const fallbackImage = '/images/no-image.jpg';
@@ -57,6 +59,13 @@ export default function ProductPage({ params }: ProductPageParams) {
     } finally {
       setAddingToCart(false);
     }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePosition({ x, y });
   };
 
   // Resolver params Promise
@@ -164,24 +173,47 @@ export default function ProductPage({ params }: ProductPageParams) {
           {/* Imagen del producto */}
           <div className="relative">
             <div className="sticky top-8">
-              <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-xl">
+              <div 
+                className="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-xl cursor-zoom-in"
+                onMouseEnter={() => setIsZoomed(true)}
+                onMouseLeave={() => setIsZoomed(false)}
+                onMouseMove={handleMouseMove}
+              >
                 <img
                   src={getImageUrl(product.imagen_principal)}
                   alt={product.nombre}
-                  className="w-full h-full object-contain p-8"
+                  className="w-full h-full object-cover transition-transform duration-200"
+                  style={{
+                    transform: isZoomed ? 'scale(2)' : 'scale(1)',
+                    transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
+                  }}
                   onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/images/no-image.jpg';
                   }}
                 />
+                
+                {/* Icono de lupa */}
+                {!isZoomed && (
+                  <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                    </svg>
+                  </div>
+                )}
               </div>
               
               {/* Badge de envío gratis */}
               {product.envio_gratis && (
-                <div className="absolute top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg">
+                <div className="absolute top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-10">
                   Envío gratis
                 </div>
               )}
+              
+              {/* Instrucción de zoom */}
+              <p className="text-center text-sm text-gray-500 mt-4">
+                🔍 Pasa el mouse sobre la imagen para ver más detalles
+              </p>
             </div>
           </div>
 
