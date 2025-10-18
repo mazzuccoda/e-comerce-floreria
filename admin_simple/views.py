@@ -4,20 +4,13 @@ from django.views.decorators.http import require_http_methods, require_POST
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
+from django.core.paginator import Paginator
+from django.contrib import messages
 from datetime import timedelta
 import logging
-from io import BytesIO
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-from reportlab.pdfgen import canvas
-import requests
 
 from pedidos.models import Pedido
-from catalogo.models import Producto
+from catalogo.models import Producto, Categoria
 
 logger = logging.getLogger(__name__)
 
