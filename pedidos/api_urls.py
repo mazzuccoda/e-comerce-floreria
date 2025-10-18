@@ -19,6 +19,7 @@ from .payment_views import (
     PaymentPendingView
 )
 from .views_debug import test_mercadopago_view
+from .views_zones import validate_delivery_zone, get_delivery_zones
 
 app_name = 'pedidos-api'
 
@@ -46,4 +47,8 @@ urlpatterns = [
     path('<int:pedido_id>/payment/success/', PaymentSuccessView.as_view(), name='payment-success'),
     path('<int:pedido_id>/payment/failure/', PaymentFailureView.as_view(), name='payment-failure'),
     path('<int:pedido_id>/payment/pending/', PaymentPendingView.as_view(), name='payment-pending'),
+    
+    # Zonas de entrega
+    path('validate-zone/', validate_delivery_zone, name='validate-zone'),
+    path('delivery-zones/', get_delivery_zones, name='delivery-zones'),
 ]

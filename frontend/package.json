@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.19.3",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.545.0",
     "next": "^14.2.30",
