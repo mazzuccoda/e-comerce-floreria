@@ -68,6 +68,11 @@ class MercadoPagoService:
             shipping_cost = 0
             shipping_name = ""
             
+            # Debug: Log del tipo de envío
+            logger.info(f"🚚 DEBUG - Pedido #{pedido.id}")
+            logger.info(f"🚚 DEBUG - tipo_envio: {pedido.tipo_envio}")
+            logger.info(f"🚚 DEBUG - metodo_envio: {pedido.metodo_envio}")
+            
             # Determinar costo de envío según tipo_envio
             if pedido.tipo_envio == 'express':
                 shipping_cost = 10000  # $10.000
