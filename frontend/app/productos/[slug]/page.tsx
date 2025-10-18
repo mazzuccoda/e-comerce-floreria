@@ -68,6 +68,16 @@ export default function ProductPage({ params }: ProductPageParams) {
     setMousePosition({ x, y });
   };
 
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width) * 100;
+      const y = ((touch.clientY - rect.top) / rect.height) * 100;
+      setMousePosition({ x, y });
+    }
+  };
+
   // Resolver params Promise
   useEffect(() => {
     const resolveParams = async () => {
@@ -178,6 +188,9 @@ export default function ProductPage({ params }: ProductPageParams) {
                 onMouseEnter={() => setIsZoomed(true)}
                 onMouseLeave={() => setIsZoomed(false)}
                 onMouseMove={handleMouseMove}
+                onTouchStart={() => setIsZoomed(true)}
+                onTouchEnd={() => setIsZoomed(false)}
+                onTouchMove={handleTouchMove}
               >
                 <img
                   src={getImageUrl(product.imagen_principal)}
@@ -212,7 +225,8 @@ export default function ProductPage({ params }: ProductPageParams) {
               
               {/* Instrucción de zoom */}
               <p className="text-center text-sm text-gray-500 mt-4">
-                🔍 Pasa el mouse sobre la imagen para ver más detalles
+                <span className="hidden md:inline">🔍 Pasa el mouse sobre la imagen para ver más detalles</span>
+                <span className="md:hidden">🔍 Toca y desliza sobre la imagen para ver más detalles</span>
               </p>
             </div>
           </div>
