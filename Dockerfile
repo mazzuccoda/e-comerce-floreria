@@ -20,8 +20,9 @@ WORKDIR /app
 # Copy requirements files
 COPY requirements/ /app/requirements/
 
-# Install base dependencies first
-RUN pip install --no-cache-dir -r requirements/base.txt
+# Install reportlab first, then base dependencies
+RUN pip install --no-cache-dir reportlab==4.0.7 && \
+    pip install --no-cache-dir -r requirements/base.txt
 
 # Development stage
 FROM python:3.11-slim as development
@@ -105,7 +106,8 @@ COPY --chown=appuser:appuser requirements/ /app/requirements/
 
 # Install production dependencies as root
 USER root
-RUN pip install --no-cache-dir -r requirements/base.txt
+RUN pip install --no-cache-dir reportlab==4.0.7 && \
+    pip install --no-cache-dir -r requirements/base.txt
 
 # Install local requirements if they exist
 RUN if [ -f requirements/local.txt ]; then pip install --no-cache-dir -r requirements/local.txt; fi
