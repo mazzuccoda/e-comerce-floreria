@@ -1,15 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods, require_POST
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Count, Sum
-from django.core.paginator import Paginator
-from django.views.decorators.http import require_POST, require_http_methods
-from catalogo.models import Producto, Categoria
-from pedidos.models import Pedido, PedidoItem
 from django.utils import timezone
 from datetime import timedelta
 import logging
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.pdfgen import canvas
+import requests
+
+from pedidos.models import Pedido
+from catalogo.models import Producto
 
 logger = logging.getLogger(__name__)
 
@@ -470,3 +478,33 @@ def pedido_cancelar(request, pk):
             'success': False,
             'error': mensaje
         }, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def pedido_pdf(request, pk):
+    """
+    Generar PDF del pedido
+    """
+    from .pdf_generator import generar_pdf_pedido
+    
+    pedido = get_object_or_404(
+        Pedido.objects.select_related('cliente').prefetch_related('items__producto'),
+        pk=pk
+    )
+    
+    try:
+        # Generar PDF
+        pdf = generar_pdf_pedido(pedido)
+        
+        # Crear respuesta HTTP
+        response = HttpResponse(pdf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="pedido_{pedido.numero_pedido or pedido.id}.pdf"'
+        
+        logger.info(f'PDF generado para pedido {pedido.id} por {request.user.username}')
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f'Error generando PDF para pedido {pk}: {str(e)}')
+        return HttpResponse(f'Error generando PDF: {str(e)}', status=500)

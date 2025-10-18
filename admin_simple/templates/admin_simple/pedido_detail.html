@@ -77,10 +77,11 @@
                 <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <!-- Imagen del Producto -->
                     <div class="w-20 h-20 flex-shrink-0">
-                        {% if item.producto.imagen %}
-                            <img src="{{ item.producto.imagen.url }}" 
+                        {% if item.producto.get_primary_image_url %}
+                            <img src="{{ item.producto.get_primary_image_url }}" 
                                  alt="{{ item.producto.nombre }}"
-                                 class="w-full h-full object-cover rounded-lg shadow">
+                                 class="w-full h-full object-cover rounded-lg shadow"
+                                 onerror="this.parentElement.innerHTML='<div class=\'w-full h-full bg-gray-200 rounded-lg flex items-center justify-center\'><i class=\'fas fa-image text-gray-400 text-2xl\'></i></div>'">
                         {% else %}
                             <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-image text-gray-400 text-2xl"></i>
@@ -344,6 +345,12 @@
                 <button onclick="window.print()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
                     <i class="fas fa-print mr-2"></i> Imprimir
                 </button>
+                
+                <a href="{% url 'admin_simple:pedido-pdf' pedido.pk %}" 
+                   target="_blank"
+                   class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors inline-flex items-center justify-center">
+                    <i class="fas fa-file-pdf mr-2"></i> Descargar PDF
+                </a>
             </div>
         </div>
         

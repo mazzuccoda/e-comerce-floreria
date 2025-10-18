@@ -33,6 +33,7 @@ sendgrid==6.11.0
 python-stdnum==1.19
 stripe==7.6.0
 mercadopago==2.3.0
+reportlab==4.0.7
 
 # Storage
 django-storages[boto3]==1.14.0

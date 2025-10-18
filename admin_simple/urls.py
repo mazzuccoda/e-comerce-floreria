@@ -20,4 +20,5 @@ urlpatterns = [
     path('pedidos/<int:pk>/cambiar-estado/', views.pedido_cambiar_estado, name='pedido-cambiar-estado'),
     path('pedidos/<int:pk>/confirmar/', views.pedido_confirmar, name='pedido-confirmar'),
     path('pedidos/<int:pk>/cancelar/', views.pedido_cancelar, name='pedido-cancelar'),
+    path('pedidos/<int:pk>/pdf/', views.pedido_pdf, name='pedido-pdf'),
 ]
