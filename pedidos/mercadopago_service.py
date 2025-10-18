@@ -65,16 +65,36 @@ class MercadoPagoService:
                 })
             
             # Agregar costo de envío como item separado
-            if pedido.metodo_envio and pedido.metodo_envio.costo > 0:
+            shipping_cost = 0
+            shipping_name = ""
+            
+            # Determinar costo de envío según tipo_envio
+            if pedido.tipo_envio == 'express':
+                shipping_cost = 10000  # $10.000
+                shipping_name = "Envío Express (2-4 horas)"
+            elif pedido.tipo_envio == 'programado':
+                shipping_cost = 5000  # $5.000
+                shipping_name = "Envío Programado"
+            elif pedido.tipo_envio == 'retiro':
+                shipping_cost = 0
+                shipping_name = "Retiro en tienda"
+            # Fallback: si usa metodo_envio legacy
+            elif pedido.metodo_envio and pedido.metodo_envio.costo > 0:
+                shipping_cost = float(pedido.metodo_envio.costo)
+                shipping_name = pedido.metodo_envio.nombre
+            
+            # Agregar item de envío si tiene costo
+            if shipping_cost > 0:
                 items.append({
                     "id": "shipping",
-                    "title": f"Envío - {pedido.metodo_envio.nombre}",
+                    "title": f"Envío - {shipping_name}",
                     "description": "Costo de envío",
                     "category_id": "shipping",
                     "quantity": 1,
                     "currency_id": "ARS",
-                    "unit_price": float(pedido.metodo_envio.costo)
+                    "unit_price": float(shipping_cost)
                 })
+                logger.info(f"📦 Agregando costo de envío: ${shipping_cost} ({shipping_name})")
             
             # Datos del comprador
             payer = {
