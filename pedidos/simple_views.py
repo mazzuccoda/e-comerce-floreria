@@ -386,6 +386,7 @@ def simple_checkout_with_items(request):
                 fecha_entrega=data['fecha_entrega'],
                 franja_horaria=data['franja_horaria'],
                 metodo_envio=metodo_envio,
+                tipo_envio=data.get('metodo_envio'),  # 'retiro', 'express', 'programado'
                 dedicatoria=data.get('dedicatoria', ''),
                 instrucciones=data.get('instrucciones', ''),
                 regalo_anonimo=data.get('regalo_anonimo', False),
@@ -393,6 +394,8 @@ def simple_checkout_with_items(request):
                 cliente=request.user if request.user.is_authenticated else None,
                 anonimo=not request.user.is_authenticated
             )
+            
+            print(f"🚚 Tipo de envío guardado: {data.get('metodo_envio')}")
             
             print(f"✅ Pedido creado: #{pedido.numero_pedido}")
             
