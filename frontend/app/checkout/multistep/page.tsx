@@ -1312,12 +1312,13 @@ const MultiStepCheckoutPage = () => {
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-600"><strong>Banco:</strong> Banco de Argentina</p>
-                      <p className="text-gray-600"><strong>Titular:</strong> Florería Cristina S.A.</p>
+                      <p className="text-gray-600"><strong>Banco:</strong> Mercado Pago</p>
+                      <p className="text-gray-600"><strong>Alias:</strong> eleososatuc</p>
+                      <p className="text-gray-600"><strong>Titular:</strong> Monica Eleonora Sosa</p>
                     </div>
                     <div>
-                      <p className="text-gray-600"><strong>CBU:</strong> 0000000000000000000000</p>
-                      <p className="text-gray-600"><strong>CUIT:</strong> 30-12345678-9</p>
+                      <p className="text-gray-600"><strong>CVU:</strong> 0000003100095405777972</p>
+                      <p className="text-gray-600"><strong>CUIT:</strong> 27-26676582-2</p>
                     </div>
                   </div>
                 </div>
