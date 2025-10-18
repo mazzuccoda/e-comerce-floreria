@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useCartRobust } from '@/context/CartContextRobust';
 import { useAuth } from '@/context/AuthContext';
 import ExtrasSelector from '@/app/components/ExtrasSelector';
+import AddressMapPicker from '@/app/components/AddressMapPicker';
+import { AddressData } from '@/types/Address';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -154,6 +156,8 @@ const MultiStepCheckoutPage = () => {
     ciudad: '',
     codigoPostal: '',
     referencia: '',
+    lat: 0,
+    lng: 0,
     // Dedicatoria
     mensaje: '',
     firmadoComo: '',
@@ -861,6 +865,26 @@ const MultiStepCheckoutPage = () => {
           {currentStep === 2 && (
             <div>
               <h2 className="text-2xl font-light mb-6">📍 Datos del Destinatario</h2>
+              
+              {/* Mapa interactivo para seleccionar dirección */}
+              <div className="mb-6">
+                <AddressMapPicker
+                  onAddressSelect={(addressData: AddressData) => {
+                    console.log('Dirección seleccionada:', addressData);
+                    setFormData({
+                      ...formData,
+                      direccion: addressData.formatted_address,
+                      ciudad: addressData.city,
+                      codigoPostal: addressData.postal_code,
+                      lat: addressData.lat,
+                      lng: addressData.lng,
+                    });
+                  }}
+                  defaultCenter={{ lat: -34.6037, lng: -58.3816 }}
+                  initialAddress={formData.direccion}
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
                   <input 
