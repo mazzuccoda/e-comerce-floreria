@@ -91,19 +91,18 @@ def generar_pdf_pedido(pedido):
         # Intentar obtener la imagen del producto
         img = None
         try:
-            if item.producto.imagen:
-                # Si la imagen es una URL completa
-                if str(item.producto.imagen).startswith('http'):
-                    response = requests.get(str(item.producto.imagen), timeout=5)
-                    if response.status_code == 200:
-                        img_buffer = BytesIO(response.content)
-                        img = Image(img_buffer, width=1.5*cm, height=1.5*cm)
-                # Si es una ruta local
-                else:
-                    img = Image(item.producto.imagen.path, width=1.5*cm, height=1.5*cm)
+            # Obtener la URL de la imagen principal del producto
+            image_url = item.producto.get_primary_image_url
+            
+            if image_url and not image_url.startswith('https://via.placeholder.com'):
+                # Descargar la imagen desde Cloudinary o cualquier URL
+                response = requests.get(image_url, timeout=10)
+                if response.status_code == 200:
+                    img_buffer = BytesIO(response.content)
+                    img = Image(img_buffer, width=1.5*cm, height=1.5*cm)
         except Exception as e:
             # Si falla, usar un placeholder de texto
-            img = Paragraph("📦", normal_style)
+            pass
         
         if img is None:
             img = Paragraph("📦", normal_style)
