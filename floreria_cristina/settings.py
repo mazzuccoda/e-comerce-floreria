@@ -424,8 +424,8 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Email settings (for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email settings - Configurado en línea 339 con variables de entorno
+# No redefinir aquí para permitir configuración desde Railway
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
