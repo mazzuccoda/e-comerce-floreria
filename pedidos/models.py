@@ -184,7 +184,9 @@ El equipo de Florería Cristina
                     logger.info(f"✅ Notificación {notif.id} creada")
                     
                     # Enviar inmediatamente (sin Celery)
+                    logger.info(f"📤 Intentando enviar notificación {notif.id}...")
                     success = notificacion_service.enviar_notificacion(notif)
+                    logger.info(f"📬 Resultado del envío: {success}")
                     
                     if success:
                         logger.info(f"✅ Email enviado exitosamente a {email_destino}")

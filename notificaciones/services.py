@@ -108,6 +108,8 @@ class NotificacionService:
         """
         Envía una notificación según su canal
         """
+        logger.info(f"🔄 Iniciando envío de notificación {notificacion.id}, canal: {notificacion.canal}")
+        
         if not notificacion.puede_reintentar():
             logger.warning(f"Notificación {notificacion.id} no puede reintentarse")
             return False
@@ -115,9 +117,11 @@ class NotificacionService:
         notificacion.intentos += 1
         notificacion.estado = EstadoNotificacion.REINTENTANDO
         notificacion.save()
+        logger.info(f"📝 Notificación {notificacion.id} actualizada, intentos: {notificacion.intentos}")
         
         try:
             if notificacion.canal == CanalNotificacion.EMAIL:
+                logger.info(f"📧 Enviando email a {notificacion.destinatario}...")
                 return self._enviar_email(notificacion)
             elif notificacion.canal == CanalNotificacion.WHATSAPP:
                 return self._enviar_whatsapp(notificacion)
@@ -135,20 +139,26 @@ class NotificacionService:
     def _enviar_email(self, notificacion: Notificacion) -> bool:
         """Envía notificación por email"""
         try:
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@floreriacristina.com')
+            logger.info(f"📮 Preparando email desde {from_email} hacia {notificacion.destinatario}")
+            logger.info(f"📋 Asunto: {notificacion.asunto}")
+            logger.info(f"📧 Backend EMAIL: {getattr(settings, 'EMAIL_BACKEND', 'NO CONFIGURADO')}")
+            logger.info(f"🔧 EMAIL_HOST: {getattr(settings, 'EMAIL_HOST', 'NO CONFIGURADO')}")
+            
             send_mail(
                 subject=notificacion.asunto,
                 message=notificacion.mensaje,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@floreriacristina.com'),
+                from_email=from_email,
                 recipient_list=[notificacion.destinatario],
                 fail_silently=False
             )
             
             notificacion.marcar_como_enviada()
-            logger.info(f"Email enviado a {notificacion.destinatario}")
+            logger.info(f"✅ Email enviado exitosamente a {notificacion.destinatario}")
             return True
             
         except Exception as e:
-            logger.error(f"Error enviando email: {str(e)}")
+            logger.error(f"❌ Error enviando email: {str(e)}", exc_info=True)
             raise
     
     def _enviar_whatsapp(self, notificacion: Notificacion) -> bool:
