@@ -1,5 +1,5 @@
 # Build stage for Python dependencies
-FROM python:3.11-slim as builder
+FROM python:3.11.9-slim-bookworm as builder
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir reportlab==4.0.7 && \
     pip install --no-cache-dir -r requirements/base.txt
 
 # Development stage
-FROM python:3.11-slim as development
+FROM python:3.11.9-slim-bookworm as development
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -72,7 +72,7 @@ EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 # Final production stage
-FROM python:3.11-slim as production
+FROM python:3.11.9-slim-bookworm as production
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
