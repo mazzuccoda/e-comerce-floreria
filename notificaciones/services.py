@@ -145,18 +145,31 @@ class NotificacionService:
             logger.info(f"📧 Backend EMAIL: {getattr(settings, 'EMAIL_BACKEND', 'NO CONFIGURADO')}")
             logger.info(f"🔧 EMAIL_HOST: {getattr(settings, 'EMAIL_HOST', 'NO CONFIGURADO')}")
             
-            send_mail(
-                subject=notificacion.asunto,
-                message=notificacion.mensaje,
-                from_email=from_email,
-                recipient_list=[notificacion.destinatario],
-                fail_silently=False
-            )
+            # Agregar timeout para evitar bloqueos
+            import socket
+            original_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(10)  # 10 segundos máximo
             
-            notificacion.marcar_como_enviada()
-            logger.info(f"✅ Email enviado exitosamente a {notificacion.destinatario}")
-            return True
+            try:
+                send_mail(
+                    subject=notificacion.asunto,
+                    message=notificacion.mensaje,
+                    from_email=from_email,
+                    recipient_list=[notificacion.destinatario],
+                    fail_silently=False
+                )
+                
+                notificacion.marcar_como_enviada()
+                logger.info(f"✅ Email enviado exitosamente a {notificacion.destinatario}")
+                return True
+            finally:
+                socket.setdefaulttimeout(original_timeout)
             
+        except socket.timeout:
+            error_msg = "Timeout conectando al servidor SMTP (Railway puede estar bloqueando el puerto 587)"
+            logger.error(f"⏱️ {error_msg}")
+            notificacion.marcar_como_fallida(error_msg)
+            return False
         except Exception as e:
             logger.error(f"❌ Error enviando email: {str(e)}", exc_info=True)
             raise

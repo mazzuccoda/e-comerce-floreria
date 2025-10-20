@@ -183,32 +183,22 @@ El equipo de Florería Cristina
                     
                     logger.info(f"✅ Notificación {notif.id} creada")
                     
-                    # Enviar inmediatamente (sin Celery)
+                    # Enviar de forma asíncrona con timeout para no bloquear el checkout
                     logger.info(f"📤 Intentando enviar notificación {notif.id}...")
-                    success = notificacion_service.enviar_notificacion(notif)
-                    logger.info(f"📬 Resultado del envío: {success}")
                     
-                    if success:
-                        logger.info(f"✅ Email enviado exitosamente a {email_destino}")
-                        
-                        # TEMPORAL: Enviar copia a Gmail personal para verificar
-                        if email_destino != 'mazzucoda@gmail.com':
-                            try:
-                                logger.info("📧 Enviando copia de verificación a mazzucoda@gmail.com...")
-                                notif_copia = notificacion_service.crear_notificacion(
-                                    usuario=usuario,
-                                    tipo=TipoNotificacion.PEDIDO_CONFIRMADO,
-                                    canal=CanalNotificacion.EMAIL,
-                                    destinatario='mazzucoda@gmail.com',
-                                    contexto=contexto,
-                                    pedido_id=self.id
-                                )
-                                notificacion_service.enviar_notificacion(notif_copia)
-                                logger.info("✅ Copia enviada a mazzucoda@gmail.com")
-                            except Exception as e:
-                                logger.warning(f"⚠️ No se pudo enviar copia: {e}")
-                    else:
-                        logger.error(f"❌ Error enviando email a {email_destino}")
+                    # Usar threading para no bloquear el proceso principal
+                    import threading
+                    def enviar_async():
+                        try:
+                            success = notificacion_service.enviar_notificacion(notif)
+                            logger.info(f"📬 Resultado del envío: {success}")
+                        except Exception as e:
+                            logger.error(f"❌ Error en envío asíncrono: {e}")
+                    
+                    thread = threading.Thread(target=enviar_async)
+                    thread.daemon = True  # No bloquear el cierre de la app
+                    thread.start()
+                    logger.info(f"🔄 Notificación {notif.id} enviándose en background")
                         
                 except Exception as e:
                     logger.error(f"❌ Error creando/enviando notificación: {str(e)}", exc_info=True)
