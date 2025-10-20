@@ -70,23 +70,34 @@ class MercadoPagoService:
             
             # Debug: Log del tipo de envío
             logger.info(f"🚚 DEBUG - Pedido #{pedido.id}")
-            logger.info(f"🚚 DEBUG - tipo_envio: {pedido.tipo_envio}")
+            logger.info(f"🚚 DEBUG - tipo_envio: '{pedido.tipo_envio}' (type: {type(pedido.tipo_envio)})")
+            logger.info(f"🚚 DEBUG - tipo_envio repr: {repr(pedido.tipo_envio)}")
             logger.info(f"🚚 DEBUG - metodo_envio: {pedido.metodo_envio}")
             
+            # Normalizar tipo_envio (eliminar espacios y convertir a minúsculas)
+            tipo_envio_normalizado = str(pedido.tipo_envio).strip().lower() if pedido.tipo_envio else None
+            logger.info(f"🚚 DEBUG - tipo_envio_normalizado: '{tipo_envio_normalizado}'")
+            
             # Determinar costo de envío según tipo_envio
-            if pedido.tipo_envio == 'express':
+            if tipo_envio_normalizado == 'express':
                 shipping_cost = 10000  # $10.000
                 shipping_name = "Envío Express (2-4 horas)"
-            elif pedido.tipo_envio == 'programado':
+                logger.info(f"✅ Detectado envío EXPRESS: ${shipping_cost}")
+            elif tipo_envio_normalizado == 'programado':
                 shipping_cost = 5000  # $5.000
                 shipping_name = "Envío Programado"
-            elif pedido.tipo_envio == 'retiro':
+                logger.info(f"✅ Detectado envío PROGRAMADO: ${shipping_cost}")
+            elif tipo_envio_normalizado == 'retiro':
                 shipping_cost = 0
                 shipping_name = "Retiro en tienda"
+                logger.info(f"✅ Detectado RETIRO en tienda: ${shipping_cost}")
             # Fallback: si usa metodo_envio legacy
             elif pedido.metodo_envio and pedido.metodo_envio.costo > 0:
                 shipping_cost = float(pedido.metodo_envio.costo)
                 shipping_name = pedido.metodo_envio.nombre
+                logger.info(f"✅ Usando método de envío legacy: ${shipping_cost}")
+            else:
+                logger.warning(f"⚠️ No se pudo determinar costo de envío. tipo_envio='{tipo_envio_normalizado}', metodo_envio={pedido.metodo_envio}")
             
             # Agregar item de envío si tiene costo
             if shipping_cost > 0:
