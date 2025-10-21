@@ -138,19 +138,26 @@ class NotificacionService:
     
     def _enviar_email(self, notificacion: Notificacion) -> bool:
         """Envía notificación por email"""
+        import socket
+        import smtplib
+        
         try:
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@floreriacristina.com')
             logger.info(f"📮 Preparando email desde {from_email} hacia {notificacion.destinatario}")
             logger.info(f"📋 Asunto: {notificacion.asunto}")
             logger.info(f"📧 Backend EMAIL: {getattr(settings, 'EMAIL_BACKEND', 'NO CONFIGURADO')}")
             logger.info(f"🔧 EMAIL_HOST: {getattr(settings, 'EMAIL_HOST', 'NO CONFIGURADO')}")
+            logger.info(f"🔧 EMAIL_PORT: {getattr(settings, 'EMAIL_PORT', 'NO CONFIGURADO')}")
+            logger.info(f"🔧 EMAIL_USE_TLS: {getattr(settings, 'EMAIL_USE_TLS', 'NO CONFIGURADO')}")
+            logger.info(f"🔧 EMAIL_HOST_USER: {getattr(settings, 'EMAIL_HOST_USER', 'NO CONFIGURADO')}")
             
             # Agregar timeout para evitar bloqueos
-            import socket
             original_timeout = socket.getdefaulttimeout()
-            socket.setdefaulttimeout(10)  # 10 segundos máximo
+            socket.setdefaulttimeout(15)  # 15 segundos máximo
+            logger.info(f"⏱️ Timeout configurado: 15 segundos")
             
             try:
+                logger.info(f"📤 Iniciando envío de email...")
                 send_mail(
                     subject=notificacion.asunto,
                     message=notificacion.mensaje,
@@ -161,18 +168,39 @@ class NotificacionService:
                 
                 notificacion.marcar_como_enviada()
                 logger.info(f"✅ Email enviado exitosamente a {notificacion.destinatario}")
+                logger.info(f"✅ Notificación {notificacion.id} marcada como ENVIADA")
                 return True
             finally:
                 socket.setdefaulttimeout(original_timeout)
+                logger.info(f"🔄 Timeout restaurado")
             
-        except socket.timeout:
-            error_msg = "Timeout conectando al servidor SMTP (Railway puede estar bloqueando el puerto 587)"
+        except socket.timeout as e:
+            error_msg = f"Timeout conectando al servidor SMTP después de 15 segundos. Railway puede estar bloqueando el puerto {getattr(settings, 'EMAIL_PORT', 587)}"
             logger.error(f"⏱️ {error_msg}")
+            logger.error(f"⏱️ Detalles del error: {str(e)}")
             notificacion.marcar_como_fallida(error_msg)
             return False
+            
+        except smtplib.SMTPAuthenticationError as e:
+            error_msg = f"Error de autenticación SMTP: {str(e)}"
+            logger.error(f"🔐 {error_msg}")
+            logger.error(f"🔐 Verifica que EMAIL_HOST_USER='apikey' y EMAIL_HOST_PASSWORD sea tu API Key de SendGrid")
+            notificacion.marcar_como_fallida(error_msg)
+            return False
+            
+        except smtplib.SMTPException as e:
+            error_msg = f"Error SMTP: {str(e)}"
+            logger.error(f"📧 {error_msg}")
+            notificacion.marcar_como_fallida(error_msg)
+            return False
+            
         except Exception as e:
-            logger.error(f"❌ Error enviando email: {str(e)}", exc_info=True)
-            raise
+            error_msg = f"Error inesperado enviando email: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            logger.error(f"❌ Tipo de error: {type(e).__name__}")
+            logger.error(f"❌ Traceback:", exc_info=True)
+            notificacion.marcar_como_fallida(error_msg)
+            return False
     
     def _enviar_whatsapp(self, notificacion: Notificacion) -> bool:
         """Envía notificación por WhatsApp"""
