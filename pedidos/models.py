@@ -144,18 +144,23 @@ El equipo de Florería Cristina
             email_destino = None
             nombre_destino = 'Cliente'
             
-            if self.cliente:
-                # Cliente registrado
+            # PRIORIDAD 1: Usar email_comprador del formulario si está disponible
+            if self.email_comprador:
+                email_destino = self.email_comprador
+                nombre_destino = self.nombre_comprador or 'Cliente'
+                # Si hay usuario autenticado, usarlo; sino usar admin temporal
+                if self.cliente:
+                    usuario = self.cliente
+                    logger.info(f"📧 Usuario autenticado con email del formulario: {email_destino}")
+                else:
+                    usuario = User.objects.filter(is_superuser=True).first()
+                    logger.info(f"📧 Cliente invitado: {email_destino}")
+            # PRIORIDAD 2: Si no hay email_comprador, usar email del usuario autenticado
+            elif self.cliente:
                 usuario = self.cliente
                 email_destino = self.cliente.email
                 nombre_destino = self.cliente.first_name or self.cliente.username
-                logger.info(f"📧 Cliente registrado: {email_destino}")
-            elif self.email_comprador:
-                # Cliente invitado - usar admin como usuario temporal
-                usuario = User.objects.filter(is_superuser=True).first()
-                email_destino = self.email_comprador
-                nombre_destino = self.nombre_comprador or 'Cliente'
-                logger.info(f"📧 Cliente invitado: {email_destino}")
+                logger.info(f"📧 Cliente registrado (sin email en formulario): {email_destino}")
             
             if usuario and email_destino:
                 # Preparar contexto
