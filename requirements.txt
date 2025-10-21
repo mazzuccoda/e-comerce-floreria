@@ -5,6 +5,7 @@ Pillow==10.0.0
 python-dotenv==1.0.0
 django-environ==0.11.2
 dj-database-url==2.1.0
+sendgrid==6.11.0
 
 # Django Extensions
 django-crispy-forms==2.1
@@ -29,7 +30,6 @@ redis==4.6.0
 # Utilities
 requests==2.31.0
 python-dateutil==2.8.2
-sendgrid==6.11.0
 python-stdnum==1.19
 stripe==7.6.0
 mercadopago==2.3.0
