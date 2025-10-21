@@ -335,15 +335,28 @@ USE_TZ = True
 
 # Email Backend Configuration
 # --------------------------------------------------------------------------
-# Para desarrollo: mostrar emails en consola
-EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+# Determinar si usar SendGrid API o SMTP
+USE_SENDGRID_API = env.bool('USE_SENDGRID_API', default=False)
 
-# Para producción con Gmail/SMTP
-EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+if USE_SENDGRID_API:
+    # Usar SendGrid API (recomendado para Railway - no requiere puertos SMTP)
+    EMAIL_BACKEND = 'notificaciones.sendgrid_backend.SendGridAPIBackend'
+    SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("📧 Usando SendGrid API Backend")
+else:
+    # Usar SMTP tradicional (puede estar bloqueado en Railway)
+    EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+    EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+    EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+    EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
+    EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("📧 Usando SMTP Backend")
 
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='no-responder@floreriacristina.com')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
