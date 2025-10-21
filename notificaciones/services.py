@@ -153,8 +153,8 @@ class NotificacionService:
             
             # Agregar timeout para evitar bloqueos
             original_timeout = socket.getdefaulttimeout()
-            socket.setdefaulttimeout(15)  # 15 segundos máximo
-            logger.info(f"⏱️ Timeout configurado: 15 segundos")
+            socket.setdefaulttimeout(10)  # 10 segundos máximo
+            logger.info(f"⏱️ Timeout configurado: 10 segundos")
             
             try:
                 logger.info(f"📤 Iniciando envío de email...")

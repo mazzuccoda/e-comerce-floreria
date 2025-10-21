@@ -188,22 +188,17 @@ El equipo de Florería Cristina
                     
                     logger.info(f"✅ Notificación {notif.id} creada")
                     
-                    # Enviar de forma asíncrona con timeout para no bloquear el checkout
-                    logger.info(f"📤 Intentando enviar notificación {notif.id}...")
+                    # Enviar INMEDIATAMENTE (sin Celery, sin threading)
+                    logger.info(f"📤 Enviando notificación {notif.id} de forma directa...")
                     
-                    # Usar threading para no bloquear el proceso principal
-                    import threading
-                    def enviar_async():
-                        try:
-                            success = notificacion_service.enviar_notificacion(notif)
-                            logger.info(f"📬 Resultado del envío: {success}")
-                        except Exception as e:
-                            logger.error(f"❌ Error en envío asíncrono: {e}")
-                    
-                    thread = threading.Thread(target=enviar_async)
-                    thread.daemon = True  # No bloquear el cierre de la app
-                    thread.start()
-                    logger.info(f"🔄 Notificación {notif.id} enviándose en background")
+                    try:
+                        success = notificacion_service.enviar_notificacion(notif)
+                        if success:
+                            logger.info(f"✅ Email enviado exitosamente a {email_destino}")
+                        else:
+                            logger.warning(f"⚠️ Email no se pudo enviar a {email_destino}")
+                    except Exception as e:
+                        logger.error(f"❌ Error enviando email: {str(e)}")
                         
                 except Exception as e:
                     logger.error(f"❌ Error creando/enviando notificación: {str(e)}", exc_info=True)
