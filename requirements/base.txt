@@ -21,6 +21,7 @@ django-celery-results==2.6.0
 
 # Email
 django-anymail==10.1
+sendgrid==6.11.0
 
 # API
 djangorestframework==3.14.0
