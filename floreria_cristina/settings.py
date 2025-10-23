@@ -571,3 +571,10 @@ LOGGING = {
         'level': 'INFO',
     },
 }
+
+# ==============================================================================
+# N8N CONFIGURATION
+# ==============================================================================
+N8N_WEBHOOK_URL = env('N8N_WEBHOOK_URL', default='http://localhost:5678')
+N8N_API_KEY = env('N8N_API_KEY', default='')
+N8N_ENABLED = env.bool('N8N_ENABLED', default=False)
