@@ -68,8 +68,8 @@ export default function ProductCard({ product }: ProductCardProps) {
       className="block cursor-pointer"
     >
       <div className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-200 cursor-pointer">
-        {/* Contenedor de imagen con altura fija uniforme */}
-        <div className="relative w-full h-64 bg-white overflow-hidden">
+        {/* Contenedor de imagen con altura fija uniforme - más compacto en móvil */}
+        <div className="relative w-full h-48 sm:h-56 lg:h-64 bg-white overflow-hidden">
           {/* Imagen con tamaño uniforme */}
           <img
             key={`product-${product.id}-img`}
@@ -85,32 +85,32 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
         </div>
 
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Nombre del producto */}
-          <h3 className="text-gray-800 text-sm mb-2 line-clamp-2 min-h-[2.5rem] leading-snug">
+          <h3 className="text-gray-800 text-xs sm:text-sm mb-2 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem] leading-snug">
             {product.nombre}
           </h3>
           
           {/* Precio */}
-          <div className="mb-3">
+          <div className="mb-2 sm:mb-3">
             {product.precio_descuento ? (
               <div className="flex flex-col gap-1">
-                <span className="text-lg font-semibold text-gray-900">
+                <span className="text-sm sm:text-lg font-semibold text-gray-900">
                   $ {parseFloat(product.precio_descuento).toLocaleString()}
                 </span>
-                <span className="text-sm text-gray-400 line-through">
+                <span className="text-xs sm:text-sm text-gray-400 line-through">
                   $ {parseFloat(product.precio).toLocaleString()}
                 </span>
               </div>
             ) : (
-              <span className="text-lg font-semibold text-gray-900">
+              <span className="text-sm sm:text-lg font-semibold text-gray-900">
                 $ {parseFloat(product.precio).toLocaleString()}
               </span>
             )}
           </div>
 
           {/* Botón comprar */}
-          <button className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm">
+          <button className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg transition-colors duration-200 text-xs sm:text-sm">
             Comprar
           </button>
         </div>
