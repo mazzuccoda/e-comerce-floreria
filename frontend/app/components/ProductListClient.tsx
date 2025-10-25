@@ -540,7 +540,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
           <h1 className="text-2xl font-bold text-gray-800">
             {showRecommended ? 'Productos Recomendados' : 
              showAdditionals ? 'Productos Adicionales' : 
-             'Catálogo de Productos'}
+             'Productos'}
           </h1>
         </div>
         <p className="text-gray-600">

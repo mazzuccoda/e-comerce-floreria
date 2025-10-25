@@ -124,7 +124,7 @@ function StepByStep() {
 
 export default function Home() {
   return (
-    <div>
+    <div className="w-full">
       <ConnectionStatusBanner />
       
       {/* Carrusel Hero */}
@@ -132,10 +132,14 @@ export default function Home() {
 
       <StepByStep />
 
-      <section id="catalogo" className="section">
-        <h2 className="section-title">RECOMENDADOS</h2>
-        <p className="section-subtitle">Las flores más vendidas en Tucumán</p>
-        <ProductListFinal showRecommended={true} />
+      <section id="catalogo" className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">RECOMENDADOS</h2>
+            <p className="text-lg text-gray-600">Las flores más vendidas en Tucumán</p>
+          </div>
+          <ProductListFinal showRecommended={true} />
+        </div>
       </section>
 
       {/* Sección de adicionales con diseño especial */}
