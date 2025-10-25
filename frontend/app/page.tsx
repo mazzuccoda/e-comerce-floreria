@@ -1,3 +1,5 @@
+'use client';
+
 import ProductListFinal from './components/ProductListFinal';
 import HeroCarousel from './components/HeroCarousel';
 import AdicionalesSection from './components/AdicionalesSection';
