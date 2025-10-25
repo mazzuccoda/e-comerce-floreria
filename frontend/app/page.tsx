@@ -3,12 +3,51 @@ import HeroCarousel from './components/HeroCarousel';
 import AdicionalesSection from './components/AdicionalesSection';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { ShoppingBag, UserRound, MessageSquareHeart, Gift, CalendarClock, CreditCard, PackageCheck } from 'lucide-react';
 
 // Cargar el banner de estado sin SSR para evitar errores de hidratación
 const ConnectionStatusBanner = dynamic(
   () => import('./components/ConnectionStatusBanner'),
   { ssr: false }
 );
+
+function StepByStep() {
+  const steps = [
+    { icon: ShoppingBag, title: 'Elegí el ramo', desc: 'Explorá los más vendidos o por ocasión' },
+    { icon: UserRound, title: 'Completá datos del envío', desc: 'Tu nombre y el del destinatario' },
+    { icon: MessageSquareHeart, title: 'Agregá dedicatoria', desc: 'Hacelo especial con un mensaje' },
+    { icon: Gift, title: 'Sumá un adicional', desc: 'Chocolates, peluches y más' },
+    { icon: CalendarClock, title: 'Elegí fecha y horario', desc: 'Coordinamos la franja de entrega' },
+    { icon: CreditCard, title: 'Pagá de forma segura', desc: 'Múltiples medios y confirmación inmediata' },
+    { icon: PackageCheck, title: 'Entrega confirmada', desc: 'Te confirmamos cuando esté entregado' },
+  ];
+  return (
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">Cómo comprar en 3 minutos</h2>
+          <p className="text-gray-600 mt-2">Un proceso simple, seguro y rápido</p>
+        </div>
+        <ol role="list" className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6 items-start">
+          {steps.map((s, idx) => (
+            <li key={idx} role="listitem" className="group">
+              <div className="flex flex-col items-center text-center h-full">
+                <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
+                  <s.icon className="w-7 h-7 text-pink-600" />
+                </div>
+                <h3 className="mt-3 text-sm font-medium text-gray-900">{idx + 1}. {s.title}</h3>
+                <p className="mt-1 text-xs text-gray-600">{s.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-10 flex justify-center">
+          <Link href="#catalogo" className="inline-flex items-center px-6 py-3 rounded-md bg-pink-600 text-white font-medium hover:bg-pink-700 transition-colors">Empezar compra</Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   return (
@@ -18,42 +57,9 @@ export default function Home() {
       {/* Carrusel Hero */}
       <HeroCarousel />
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-green-100">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Comprá online</h3>
-              <p className="text-gray-600">desde cualquier parte</p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-blue-100">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Pagá con múltiples</h3>
-              <p className="text-gray-600">medios de pago</p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-purple-100">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Envíos a domicilio</h3>
-              <p className="text-gray-600">en Tucumán</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <StepByStep />
 
-      <section className="section">
+      <section id="catalogo" className="section">
         <h2 className="section-title">RECOMENDADOS</h2>
         <p className="section-subtitle">Las flores más vendidas en Tucumán</p>
         <ProductListFinal showRecommended={true} />
