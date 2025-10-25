@@ -19,13 +19,27 @@ const nextConfig = {
   },
   reactStrictMode: true,
   images: {
-    domains: ['localhost', 'web', '127.0.0.1', 'images.unsplash.com', 'e-comerce-floreria-production.up.railway.app', 'res.cloudinary.com'],
     remotePatterns: [
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '8000',
         pathname: '/media/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'web',
+        pathname: '/media/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
       },
       {
         protocol: 'https',
