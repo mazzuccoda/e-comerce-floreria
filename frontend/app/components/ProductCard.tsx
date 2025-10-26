@@ -67,15 +67,15 @@ export default function ProductCard({ product }: ProductCardProps) {
       onClick={handleClick}
       className="block cursor-pointer"
     >
-      {/* Estilo exacto de Florería Palermo */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-        {/* Imagen */}
-        <div className="relative w-full h-48 sm:h-56 lg:h-64 bg-gray-50">
+      {/* Estilo EXACTO de Florería Palermo */}
+      <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 group">
+        {/* Imagen con overlay de "Envío gratis" */}
+        <div className="relative w-full h-48 sm:h-56 lg:h-64 bg-gray-50 overflow-hidden">
           <img
             key={`product-${product.id}-img`}
             src={imageUrl}
             alt={product.nombre || 'Producto'}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
               const target = e.target as HTMLImageElement;
               console.log('Error cargando imagen, usando fallback para:', product.nombre);
@@ -83,35 +83,39 @@ export default function ProductCard({ product }: ProductCardProps) {
             }}
             loading="lazy"
           />
+          {/* Badge "Envío gratis" como Florería Palermo */}
+          <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
+            Envío gratis
+          </div>
         </div>
 
         {/* Contenido */}
-        <div className="p-4">
+        <div className="p-5">
           {/* Nombre del producto */}
-          <h3 className="text-gray-900 text-sm font-medium mb-3 leading-tight">
+          <h3 className="text-gray-900 text-base font-normal mb-4 leading-relaxed min-h-[3rem] line-clamp-2">
             {product.nombre}
           </h3>
           
           {/* Precio */}
-          <div className="mb-4">
+          <div className="mb-5">
             {product.precio_descuento ? (
               <div className="space-y-1">
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-xl font-normal text-gray-900">
                   $ {parseFloat(product.precio_descuento).toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-500 line-through">
+                <p className="text-base text-gray-400 line-through">
                   $ {parseFloat(product.precio).toLocaleString()}
                 </p>
               </div>
             ) : (
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-xl font-normal text-gray-900">
                 $ {parseFloat(product.precio).toLocaleString()}
               </p>
             )}
           </div>
 
-          {/* Botón exacto estilo Florería Palermo */}
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 text-sm">
+          {/* Botón EXACTO estilo Florería Palermo - OUTLINE */}
+          <button className="w-full border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-medium py-3 px-4 rounded-md transition-all duration-200 text-sm">
             Comprar
           </button>
         </div>
