@@ -109,8 +109,8 @@
     </form>
 </div>
 
-<!-- Products Table -->
-<div class="card overflow-hidden">
+<!-- Products Table - Desktop View -->
+<div class="card overflow-hidden hidden md:block">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -138,15 +138,21 @@
             <tbody class="bg-white divide-y divide-gray-200">
                 {% for producto in page_obj %}
                 <tr class="hover:bg-gray-50">
-                    <!-- Imagen -->
+                    <!-- Imagen - Más grande para escritorio -->
                     <td class="px-6 py-4 whitespace-nowrap">
                         {% if producto.get_primary_image_url %}
-                        <img src="{{ producto.get_primary_image_url }}" 
-                             alt="{{ producto.nombre }}" 
-                             class="h-12 w-12 rounded-lg object-cover">
+                        <div class="relative group">
+                            <img src="{{ producto.get_primary_image_url }}" 
+                                 alt="{{ producto.nombre }}" 
+                                 class="h-20 w-20 rounded-lg object-cover shadow-md transition-transform duration-200 group-hover:scale-105 cursor-pointer"
+                                 onclick="openImageModal('{{ producto.get_primary_image_url }}', '{{ producto.nombre }}')">
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
+                                <i class="fas fa-search-plus text-white opacity-0 group-hover:opacity-100 text-lg"></i>
+                            </div>
+                        </div>
                         {% else %}
-                        <div class="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <i class="fas fa-image text-gray-400"></i>
+                        <div class="h-20 w-20 rounded-lg bg-gray-200 flex items-center justify-center shadow-md">
+                            <i class="fas fa-image text-gray-400 text-xl"></i>
                         </div>
                         {% endif %}
                     </td>
@@ -221,6 +227,97 @@
     </div>
 </div>
 
+<!-- Products Cards - Mobile View -->
+<div class="md:hidden space-y-4">
+    {% for producto in page_obj %}
+    <div class="card hover:shadow-lg transition-shadow duration-200">
+        <div class="flex items-start space-x-4 p-4">
+            <!-- Imagen más grande para móvil -->
+            <div class="flex-shrink-0">
+                {% if producto.get_primary_image_url %}
+                <div class="relative group">
+                    <img src="{{ producto.get_primary_image_url }}" 
+                         alt="{{ producto.nombre }}" 
+                         class="h-24 w-24 rounded-lg object-cover shadow-md cursor-pointer"
+                         onclick="openImageModal('{{ producto.get_primary_image_url }}', '{{ producto.nombre }}')">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 active:bg-opacity-20 rounded-lg transition-all duration-200 flex items-center justify-center">
+                        <i class="fas fa-search-plus text-white opacity-0 active:opacity-100 text-lg"></i>
+                    </div>
+                </div>
+                {% else %}
+                <div class="h-24 w-24 rounded-lg bg-gray-200 flex items-center justify-center shadow-md">
+                    <i class="fas fa-image text-gray-400 text-xl"></i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Información del producto -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between mb-2">
+                    <div class="flex-1">
+                        <h3 class="text-base font-semibold text-gray-900 truncate">{{ producto.nombre }}</h3>
+                        <p class="text-sm text-gray-500">{{ producto.categoria.nombre }}</p>
+                    </div>
+                    
+                    <!-- Toggle disponible -->
+                    <label class="toggle-switch inline-block ml-2">
+                        <input type="checkbox" 
+                               class="disponible-toggle" 
+                               data-producto-id="{{ producto.id }}"
+                               {% if producto.is_active %}checked{% endif %}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <!-- Precio y Stock en línea -->
+                <div class="flex items-center justify-between mb-3">
+                    <!-- Precio editable -->
+                    <div class="editable-field" data-producto-id="{{ producto.id }}" data-field="precio">
+                        <span class="precio-display text-lg font-bold text-green-600 cursor-pointer hover:bg-yellow-50 px-2 py-1 rounded">
+                            ${{ producto.precio|floatformat:0 }}
+                        </span>
+                        <input type="number" 
+                               class="precio-input hidden input-field w-24" 
+                               value="{{ producto.precio }}" 
+                               min="0" 
+                               step="100">
+                    </div>
+                    
+                    <!-- Stock editable -->
+                    <div class="editable-field" data-producto-id="{{ producto.id }}" data-field="stock">
+                        <span class="stock-display cursor-pointer hover:bg-yellow-50 px-2 py-1 rounded">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if producto.stock == 0 %}bg-red-100 text-red-800
+                                {% elif producto.stock < 5 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-green-100 text-green-800{% endif %}">
+                                {{ producto.stock }} unidades
+                            </span>
+                        </span>
+                        <input type="number" 
+                               class="stock-input hidden input-field w-20" 
+                               value="{{ producto.stock }}" 
+                               min="0">
+                    </div>
+                </div>
+                
+                <!-- Botón de editar -->
+                <div class="flex justify-end">
+                    <a href="{% url 'admin_simple:producto-edit' producto.id %}" 
+                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors duration-200">
+                        <i class="fas fa-edit mr-2"></i> Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card text-center py-12">
+        <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
+        <p class="text-gray-500">No se encontraron productos</p>
+    </div>
+    {% endfor %}
+</div>
+
 <!-- Pagination -->
 {% if page_obj.has_other_pages %}
 <div class="mt-6 flex justify-center">
@@ -255,6 +352,19 @@
 </div>
 {% endif %}
 
+<!-- Modal para ver imagen en grande -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+    <div class="relative max-w-4xl max-h-full">
+        <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white hover:text-gray-300 z-10">
+            <i class="fas fa-times text-2xl"></i>
+        </button>
+        <img id="modalImage" src="" alt="" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+        <div class="absolute bottom-4 left-4 right-4 text-center">
+            <p id="modalImageName" class="text-white text-lg font-semibold bg-black bg-opacity-50 px-4 py-2 rounded-lg"></p>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -275,6 +385,40 @@ function getCookie(name) {
     return cookieValue;
 }
 const csrftoken = getCookie('csrftoken');
+
+// Modal de imagen
+function openImageModal(imageUrl, imageName) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalImageName = document.getElementById('modalImageName');
+    
+    modalImage.src = imageUrl;
+    modalImage.alt = imageName;
+    modalImageName.textContent = imageName;
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
+
+// Cerrar modal al hacer click fuera de la imagen
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
 
 // Toggle Disponibilidad
 $('.disponible-toggle').change(function() {
