@@ -92,32 +92,32 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Contenido */}
-        <div className="p-5">
+        <div className="p-4">
           {/* Nombre del producto */}
-          <h3 className="text-gray-900 text-base font-normal mb-2 leading-relaxed min-h-[3rem] line-clamp-2">
+          <h3 className="text-gray-900 text-sm sm:text-base font-normal mb-2 leading-tight min-h-[2.5rem] line-clamp-2">
             {product.nombre}
           </h3>
           
           {/* Precio */}
-          <div className="mb-4">
+          <div className="mb-3">
             {product.precio_descuento ? (
-              <div className="space-y-1">
-                <p className="text-xl font-normal text-gray-900">
+              <div className="space-y-0.5">
+                <p className="text-lg sm:text-xl font-normal text-gray-900">
                   $ {parseFloat(product.precio_descuento).toLocaleString()}
                 </p>
-                <p className="text-base text-gray-400 line-through">
+                <p className="text-sm sm:text-base text-gray-400 line-through">
                   $ {parseFloat(product.precio).toLocaleString()}
                 </p>
               </div>
             ) : (
-              <p className="text-xl font-normal text-gray-900">
+              <p className="text-lg sm:text-xl font-normal text-gray-900">
                 $ {parseFloat(product.precio).toLocaleString()}
               </p>
             )}
           </div>
 
           {/* Botón EXACTO estilo Florería Palermo - OUTLINE */}
-          <button className="w-full border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-medium py-3 px-4 rounded-md transition-all duration-200 text-sm">
+          <button className="w-full border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white font-medium py-2.5 sm:py-3 px-4 rounded-md transition-all duration-200 text-sm">
             Comprar
           </button>
         </div>
