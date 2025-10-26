@@ -61,7 +61,14 @@ export default function Navbar() {
 
   // Cerrar menús cuando se hace click fuera
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // No cerrar si el click es en el botón hamburguesa o en el menú móvil
+      if (target.closest('[data-mobile-menu]') || target.closest('[data-mobile-button]')) {
+        return;
+      }
+      
       setShowTiposFlor(false);
       setShowOcasiones(false);
       setShowUserMenu(false);
@@ -78,6 +85,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           {/* Botón hamburguesa móvil */}
           <button
+            data-mobile-button
             onClick={(e) => {
               e.stopPropagation();
               setShowMobileMenu(!showMobileMenu);
@@ -255,6 +263,7 @@ export default function Navbar() {
       {/* Menú móvil desplegable */}
       {showMobileMenu && (
         <div 
+          data-mobile-menu
           className="md:hidden bg-white border-t border-gray-200 shadow-lg"
           onClick={(e) => e.stopPropagation()}
         >
