@@ -1,12 +1,10 @@
-'use client';
-
 import ProductListFinal from './components/ProductListFinal';
 import HeroCarousel from './components/HeroCarousel';
 import AdicionalesSection from './components/AdicionalesSection';
+import CategoriesSection from './components/CategoriesSection';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
-import { ShoppingBag, UserRound, MessageSquareHeart, Gift, CalendarClock, CreditCard, PackageCheck, ChevronDown } from 'lucide-react';
+import { ShoppingBag, UserRound, MessageSquareHeart, Gift, CalendarClock, CreditCard, PackageCheck } from 'lucide-react';
 
 // Cargar el banner de estado sin SSR para evitar errores de hidratación
 const ConnectionStatusBanner = dynamic(
@@ -15,107 +13,37 @@ const ConnectionStatusBanner = dynamic(
 );
 
 function StepByStep() {
-  const [activeSection, setActiveSection] = useState(0);
-  
-  const stepGroups = [
-    {
-      title: 'Selección y personalización',
-      steps: [
-        { icon: ShoppingBag, title: 'Elegí el ramo', desc: 'Explorá los más vendidos o por ocasión' },
-        { icon: MessageSquareHeart, title: 'Agregá dedicatoria', desc: 'Hacelo especial con un mensaje' },
-        { icon: Gift, title: 'Sumá un adicional', desc: 'Chocolates, peluches y más' },
-      ]
-    },
-    {
-      title: 'Datos y envío',
-      steps: [
-        { icon: UserRound, title: 'Completá datos del envío', desc: 'Tu nombre y el del destinatario' },
-        { icon: CalendarClock, title: 'Elegí fecha y horario', desc: 'Coordinamos la franja de entrega' },
-      ]
-    },
-    {
-      title: 'Pago y confirmación',
-      steps: [
-        { icon: CreditCard, title: 'Pagá de forma segura', desc: 'Múltiples medios y confirmación inmediata' },
-        { icon: PackageCheck, title: 'Entrega confirmada', desc: 'Te confirmamos cuando esté entregado' },
-      ]
-    }
+  const steps = [
+    { icon: ShoppingBag, title: 'Elegí el ramo', desc: 'Explorá los más vendidos o por ocasión' },
+    { icon: UserRound, title: 'Completá datos del envío', desc: 'Tu nombre y el del destinatario' },
+    { icon: MessageSquareHeart, title: 'Agregá dedicatoria', desc: 'Hacelo especial con un mensaje' },
+    { icon: Gift, title: 'Sumá un adicional', desc: 'Chocolates, peluches y más' },
+    { icon: CalendarClock, title: 'Elegí fecha y horario', desc: 'Coordinamos la franja de entrega' },
+    { icon: CreditCard, title: 'Pagá de forma segura', desc: 'Múltiples medios y confirmación inmediata' },
+    { icon: PackageCheck, title: 'Entrega confirmada', desc: 'Te confirmamos cuando esté entregado' },
   ];
-
   return (
-    <section className="py-8 md:py-16 bg-white">
+    <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-6 md:mb-10">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">Cómo comprar en 3 minutos</h2>
-          <p className="text-sm md:text-base text-gray-600 mt-2">Un proceso simple, seguro y rápido</p>
+        <div className="text-center mb-10">
+          <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">Cómo comprar en 3 minutos</h2>
+          <p className="text-gray-600 mt-2">Un proceso simple, seguro y rápido</p>
         </div>
-        
-        {/* Desktop: Grilla completa */}
-        <div className="hidden lg:block">
-          <ol role="list" className="grid grid-cols-7 gap-6 items-start">
-            {stepGroups.flatMap(group => group.steps).map((s, idx) => (
-              <li key={idx} role="listitem" className="group">
-                <div className="flex flex-col items-center text-center h-full">
-                  <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
-                    <s.icon className="w-7 h-7 text-pink-600" />
-                  </div>
-                  <h3 className="mt-3 text-sm font-medium text-gray-900">{idx + 1}. {s.title}</h3>
-                  <p className="mt-1 text-xs text-gray-600">{s.desc}</p>
+        <ol role="list" className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6 items-start">
+          {steps.map((s, idx) => (
+            <li key={idx} role="listitem" className="group">
+              <div className="flex flex-col items-center text-center h-full">
+                <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
+                  <s.icon className="w-7 h-7 text-pink-600" />
                 </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* Mobile: Accordion */}
-        <div className="lg:hidden space-y-2">
-          {stepGroups.map((group, groupIdx) => (
-            <div key={groupIdx} className="border border-gray-200 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setActiveSection(activeSection === groupIdx ? -1 : groupIdx)}
-                className="w-full px-3 py-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
-              >
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">{group.title}</h3>
-                  <p className="text-xs text-gray-600">{group.steps.length} pasos</p>
-                </div>
-                <ChevronDown 
-                  className={`w-4 h-4 text-gray-500 transition-transform ${
-                    activeSection === groupIdx ? 'rotate-180' : ''
-                  }`} 
-                />
-              </button>
-              
-              {activeSection === groupIdx && (
-                <div className="px-3 py-3 bg-white">
-                  <ol className="space-y-3">
-                    {group.steps.map((step, stepIdx) => {
-                      const globalIdx = stepGroups.slice(0, groupIdx).reduce((acc, g) => acc + g.steps.length, 0) + stepIdx;
-                      return (
-                        <li key={stepIdx} className="flex items-start space-x-2">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
-                            <step.icon className="w-4 h-4 text-pink-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-medium text-gray-900">
-                              {globalIdx + 1}. {step.title}
-                            </h4>
-                            <p className="text-xs text-gray-600 mt-0.5">{step.desc}</p>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              )}
-            </div>
+                <h3 className="mt-3 text-sm font-medium text-gray-900">{idx + 1}. {s.title}</h3>
+                <p className="mt-1 text-xs text-gray-600">{s.desc}</p>
+              </div>
+            </li>
           ))}
-        </div>
-
+        </ol>
         <div className="mt-10 flex justify-center">
-          <Link href="#catalogo" className="inline-flex items-center px-6 py-3 rounded-md bg-pink-600 text-white font-medium hover:bg-pink-700 transition-colors">
-            Empezar compra
-          </Link>
+          <Link href="#catalogo" className="inline-flex items-center px-6 py-3 rounded-md bg-pink-600 text-white font-medium hover:bg-pink-700 transition-colors">Empezar compra</Link>
         </div>
       </div>
     </section>
@@ -124,7 +52,7 @@ function StepByStep() {
 
 export default function Home() {
   return (
-    <div className="w-full pt-24 md:pt-20">
+    <div>
       <ConnectionStatusBanner />
       
       {/* Carrusel Hero */}
@@ -132,14 +60,17 @@ export default function Home() {
 
       <StepByStep />
 
-      <section id="catalogo" className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <ProductListFinal showRecommended={true} />
-        </div>
+      <section id="catalogo" className="section">
+        <h2 className="section-title">DESTACADOS</h2>
+        <p className="section-subtitle">Las flores más vendidas en Tucumán</p>
+        <ProductListFinal showFeatured={true} />
       </section>
 
       {/* Sección de adicionales con diseño especial */}
       <AdicionalesSection />
+
+      {/* Nueva sección de categorías */}
+      <CategoriesSection />
     </div>
   );
 }

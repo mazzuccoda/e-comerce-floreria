@@ -197,17 +197,17 @@ const mockProducts: Product[] = [
 interface ProductListProps {
   showRecommended?: boolean;
   showAdditionals?: boolean;
+  showFeatured?: boolean;
   showFilters?: boolean;
 }
 
-export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFilters: showFiltersProp }: ProductListProps) {
+export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFeatured = false, showFilters: showFiltersProp }: ProductListProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const showFilters = showFiltersProp !== undefined ? showFiltersProp : (!showRecommended && !showAdditionals);
+  const showFilters = showFiltersProp !== undefined ? showFiltersProp : (!showRecommended && !showAdditionals && !showFeatured);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   // Hook para detectar cambios en URL
   const searchParams = useSearchParams();
@@ -272,9 +272,22 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         console.log(`✅ ${data.length} productos cargados correctamente`);
         console.log('📸 Primera imagen:', data[0]?.imagen_principal);
         
+        // Filtrar productos según el tipo de vista
+        let filteredData = data;
+        
+        if (showFeatured) {
+          // Mostrar solo productos destacados (is_featured = true)
+          filteredData = data.filter((product: any) => product.is_featured === true);
+          console.log(`⭐ Mostrando ${filteredData.length} productos destacados de ${data.length} totales`);
+        } else if (showAdditionals) {
+          // Mostrar solo productos adicionales (es_adicional = true)
+          filteredData = data.filter((product: any) => product.es_adicional === true);
+          console.log(`🎁 Mostrando ${filteredData.length} productos adicionales de ${data.length} totales`);
+        }
+        
         setProducts(data);
-        setFilteredProducts(data);
-        setDisplayProducts(data);
+        setFilteredProducts(filteredData);
+        setDisplayProducts(filteredData);
       } catch (error: any) {
         console.error('❌ Error cargando productos:', error.message);
         console.error('Error completo:', error);
@@ -532,67 +545,33 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     );
   }
 
-  // Renderizado principal del componente
   return (
     <div className="w-full">
       {/* Header */}
-      {showRecommended && (
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center gap-3 mb-6">
-            <div className="w-12 h-0.5 bg-gradient-to-r from-transparent to-pink-300"></div>
-            <span className="text-3xl">🌸</span>
-            <div className="w-12 h-0.5 bg-gradient-to-l from-transparent to-pink-300"></div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
-            RECOMENDADOS
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-2xl">🌸</span>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {showFeatured ? 'Productos Destacados' :
+             showRecommended ? 'Productos Recomendados' : 
+             showAdditionals ? 'Productos Adicionales' : 
+             'Catálogo de Productos'}
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Las flores más vendidas en Tucumán
-          </p>
-          <div className="mt-6 flex justify-center">
-            <div className="w-24 h-1 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full"></div>
-          </div>
         </div>
-      )}
-
-      {!showRecommended && (
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-2xl">🌸</span>
-            <h1 className="text-2xl font-bold text-gray-800">
-              {showAdditionals ? 'Productos Adicionales' : 'Productos'}
-            </h1>
-          </div>
-          <p className="text-gray-600">
-            Mostrando {displayProducts.length} de {products.length} productos disponibles
-          </p>
-        </div>
-      )}
-
-      {/* Botón de filtros para móvil */}
-      {showFilters && (
-        <div className="md:hidden mb-4">
-          <button
-            onClick={() => setShowMobileFilters(!showMobileFilters)}
-            className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            {showMobileFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-          </button>
-        </div>
-      )}
+        <p className="text-gray-600">
+          Mostrando {displayProducts.length} de {products.length} productos disponibles
+        </p>
+      </div>
 
       {/* Filtros */}
       {showFilters && (
-        <div className={`mb-8 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
+        <div className="mb-8">
           <ProductFilters onFiltersChange={handleFiltersChange} />
         </div>
       )}
 
-      {/* Grid de productos estilo Florería Palermo */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-8 mt-8 px-4 sm:px-6 lg:px-8">
+      {/* Grid de productos mejorado */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-8 px-2">
         {displayProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}

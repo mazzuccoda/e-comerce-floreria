@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import dynamic from 'next/dynamic';
@@ -15,8 +15,9 @@ const ProductListClient = dynamic(() => import('./ProductListClient'), {
 interface ProductListProps {
   showRecommended?: boolean;
   showAdditionals?: boolean;
+  showFeatured?: boolean;
 }
 
-export default function ProductListFinal({ showRecommended = false, showAdditionals = false }: ProductListProps) {
-  return <ProductListClient showRecommended={showRecommended} showAdditionals={showAdditionals} />;
+export default function ProductListFinal({ showRecommended = false, showAdditionals = false, showFeatured = false }: ProductListProps) {
+  return <ProductListClient showRecommended={showRecommended} showAdditionals={showAdditionals} showFeatured={showFeatured} />;
 }
