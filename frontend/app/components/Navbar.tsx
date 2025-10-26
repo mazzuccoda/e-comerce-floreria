@@ -78,7 +78,10 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           {/* Botón hamburguesa móvil */}
           <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMobileMenu(!showMobileMenu);
+            }}
             className="md:hidden text-gray-700 hover:text-gray-900 transition-colors p-2"
             aria-label="Menú"
           >
@@ -245,7 +248,10 @@ export default function Navbar() {
 
       {/* Menú móvil desplegable */}
       {showMobileMenu && (
-        <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+        <div 
+          className="md:hidden bg-white border-t border-gray-200 shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="px-4 py-2 space-y-1">
             {/* Tipo de flor */}
             <div className="border-b border-gray-100 pb-2">
