@@ -207,6 +207,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   const [error, setError] = useState<string | null>(null);
   const showFilters = showFiltersProp !== undefined ? showFiltersProp : (!showRecommended && !showAdditionals);
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   // Hook para detectar cambios en URL
   const searchParams = useSearchParams();
@@ -548,9 +549,24 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         </p>
       </div>
 
+      {/* Botón de filtros para móvil */}
+      {showFilters && (
+        <div className="md:hidden mb-4">
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            {showMobileFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+          </button>
+        </div>
+      )}
+
       {/* Filtros */}
       {showFilters && (
-        <div className="mb-8">
+        <div className={`mb-8 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
           <ProductFilters onFiltersChange={handleFiltersChange} />
         </div>
       )}
