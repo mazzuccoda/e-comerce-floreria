@@ -64,8 +64,11 @@ export default function Navbar() {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       
-      // No cerrar si el click es en el botón hamburguesa o en el menú móvil
-      if (target.closest('[data-mobile-menu]') || target.closest('[data-mobile-button]')) {
+      // No cerrar si el click es dentro de cualquier menú o botón
+      if (target.closest('[data-mobile-menu]') || 
+          target.closest('[data-mobile-button]') ||
+          target.closest('[data-desktop-menu]') ||
+          target.closest('[data-desktop-button]')) {
         return;
       }
       
@@ -117,6 +120,7 @@ export default function Navbar() {
           <ul className="hidden md:flex items-center space-x-8">
             <li className="relative">
               <button 
+                data-desktop-button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowTiposFlor(!showTiposFlor);
@@ -128,7 +132,7 @@ export default function Navbar() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showTiposFlor ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+              <div data-desktop-menu className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showTiposFlor ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 {tiposFlor.length > 0 ? (
                   tiposFlor.map(tipo => (
                     <a 
@@ -147,6 +151,7 @@ export default function Navbar() {
             
             <li className="relative">
               <button 
+                data-desktop-button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowOcasiones(!showOcasiones);
@@ -158,7 +163,7 @@ export default function Navbar() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showOcasiones ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
+              <div data-desktop-menu className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showOcasiones ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 {ocasiones.length > 0 ? (
                   ocasiones.map(ocasion => (
                     <a 
