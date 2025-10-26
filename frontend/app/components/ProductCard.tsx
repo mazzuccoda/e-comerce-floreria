@@ -83,21 +83,23 @@ export default function ProductCard({ product }: ProductCardProps) {
             }}
             loading="lazy"
           />
-          {/* Badge "Envío gratis" como Florería Palermo */}
-          <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
-            Envío gratis
-          </div>
+          {/* Badge "Envío gratis" solo si está marcado en la BD */}
+          {product.envio_gratis && (
+            <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">
+              Envío gratis
+            </div>
+          )}
         </div>
 
         {/* Contenido */}
         <div className="p-5">
           {/* Nombre del producto */}
-          <h3 className="text-gray-900 text-base font-normal mb-4 leading-relaxed min-h-[3rem] line-clamp-2">
+          <h3 className="text-gray-900 text-base font-normal mb-2 leading-relaxed min-h-[3rem] line-clamp-2">
             {product.nombre}
           </h3>
           
           {/* Precio */}
-          <div className="mb-5">
+          <div className="mb-4">
             {product.precio_descuento ? (
               <div className="space-y-1">
                 <p className="text-xl font-normal text-gray-900">
