@@ -43,11 +43,11 @@ function StepByStep() {
   ];
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-8 md:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">Cómo comprar en 3 minutos</h2>
-          <p className="text-gray-600 mt-2">Un proceso simple, seguro y rápido</p>
+        <div className="text-center mb-6 md:mb-10">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">Cómo comprar en 3 minutos</h2>
+          <p className="text-sm md:text-base text-gray-600 mt-2">Un proceso simple, seguro y rápido</p>
         </div>
         
         {/* Desktop: Grilla completa */}
@@ -68,39 +68,39 @@ function StepByStep() {
         </div>
 
         {/* Mobile: Accordion */}
-        <div className="lg:hidden space-y-4">
+        <div className="lg:hidden space-y-2">
           {stepGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="border border-gray-200 rounded-lg overflow-hidden">
               <button
                 onClick={() => setActiveSection(activeSection === groupIdx ? -1 : groupIdx)}
-                className="w-full px-4 py-4 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
+                className="w-full px-3 py-3 text-left bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between"
               >
                 <div>
-                  <h3 className="font-medium text-gray-900">{group.title}</h3>
-                  <p className="text-sm text-gray-600">{group.steps.length} pasos</p>
+                  <h3 className="text-sm font-medium text-gray-900">{group.title}</h3>
+                  <p className="text-xs text-gray-600">{group.steps.length} pasos</p>
                 </div>
                 <ChevronDown 
-                  className={`w-5 h-5 text-gray-500 transition-transform ${
+                  className={`w-4 h-4 text-gray-500 transition-transform ${
                     activeSection === groupIdx ? 'rotate-180' : ''
                   }`} 
                 />
               </button>
               
               {activeSection === groupIdx && (
-                <div className="px-4 py-4 bg-white">
-                  <ol className="space-y-4">
+                <div className="px-3 py-3 bg-white">
+                  <ol className="space-y-3">
                     {group.steps.map((step, stepIdx) => {
                       const globalIdx = stepGroups.slice(0, groupIdx).reduce((acc, g) => acc + g.steps.length, 0) + stepIdx;
                       return (
-                        <li key={stepIdx} className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
-                            <step.icon className="w-5 h-5 text-pink-600" />
+                        <li key={stepIdx} className="flex items-start space-x-2">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
+                            <step.icon className="w-4 h-4 text-pink-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium text-gray-900">
+                            <h4 className="text-xs font-medium text-gray-900">
                               {globalIdx + 1}. {step.title}
                             </h4>
-                            <p className="text-sm text-gray-600 mt-1">{step.desc}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">{step.desc}</p>
                           </div>
                         </li>
                       );
