@@ -57,6 +57,18 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Cerrar menús cuando se hace click fuera
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowTiposFlor(false);
+      setShowOcasiones(false);
+      setShowUserMenu(false);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   
   return (
     <nav className="bg-[#f5f0eb] border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -73,14 +85,20 @@ export default function Navbar() {
           
           {/* Menú central */}
           <ul className="hidden md:flex items-center space-x-8">
-            <li className="relative group">
-              <button className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors flex items-center gap-1">
+            <li className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTiposFlor(!showTiposFlor);
+                }}
+                className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors flex items-center gap-1"
+              >
                 Tipo de flor
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showTiposFlor ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 {tiposFlor.length > 0 ? (
                   tiposFlor.map(tipo => (
                     <a 
@@ -97,14 +115,20 @@ export default function Navbar() {
               </div>
             </li>
             
-            <li className="relative group">
-              <button className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors flex items-center gap-1">
+            <li className="relative">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowOcasiones(!showOcasiones);
+                }}
+                className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors flex items-center gap-1"
+              >
                 Ocasiones
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+              <div className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showOcasiones ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 {ocasiones.length > 0 ? (
                   ocasiones.map(ocasion => (
                     <a 
