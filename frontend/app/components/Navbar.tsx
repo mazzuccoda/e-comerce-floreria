@@ -27,7 +27,8 @@ export default function Navbar() {
   const [showOcasiones, setShowOcasiones] = useState(false);
   const [showTiposFlor, setShowTiposFlor] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
   // Cargar tipos de flor y ocasiones desde la API
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -64,6 +65,7 @@ export default function Navbar() {
       setShowTiposFlor(false);
       setShowOcasiones(false);
       setShowUserMenu(false);
+      setShowMobileMenu(false);
     };
 
     document.addEventListener('click', handleClickOutside);
@@ -74,6 +76,17 @@ export default function Navbar() {
     <nav className="bg-[#f5f0eb] border-b border-gray-200 fixed top-0 left-0 right-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
+          {/* Botón hamburguesa móvil */}
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden text-gray-700 hover:text-gray-900 transition-colors p-2"
+            aria-label="Menú"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <img 
@@ -229,6 +242,73 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Menú móvil desplegable */}
+      {showMobileMenu && (
+        <div className="md:hidden bg-white border-t border-gray-200 shadow-lg">
+          <div className="px-4 py-2 space-y-1">
+            {/* Tipo de flor */}
+            <div className="border-b border-gray-100 pb-2">
+              <p className="text-gray-500 text-sm font-medium mb-2">Tipo de flor</p>
+              {tiposFlor.length > 0 ? (
+                tiposFlor.map(tipo => (
+                  <a 
+                    key={tipo.id} 
+                    onClick={() => {
+                      window.location.href = `/productos?tipo_flor=${tipo.id}`;
+                      setShowMobileMenu(false);
+                    }}
+                    className="block px-2 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer rounded"
+                  >
+                    {tipo.nombre}
+                  </a>
+                ))
+              ) : (
+                <span className="block px-2 py-2 text-gray-400 text-sm">Cargando...</span>
+              )}
+            </div>
+
+            {/* Ocasiones */}
+            <div className="border-b border-gray-100 pb-2">
+              <p className="text-gray-500 text-sm font-medium mb-2">Ocasiones</p>
+              {ocasiones.length > 0 ? (
+                ocasiones.map(ocasion => (
+                  <a 
+                    key={ocasion.id} 
+                    onClick={() => {
+                      window.location.href = `/productos?ocasion=${ocasion.id}`;
+                      setShowMobileMenu(false);
+                    }}
+                    className="block px-2 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer rounded"
+                  >
+                    {ocasion.nombre}
+                  </a>
+                ))
+              ) : (
+                <span className="block px-2 py-2 text-gray-400 text-sm">Cargando...</span>
+              )}
+            </div>
+
+            {/* Enlaces adicionales */}
+            <div className="pt-2">
+              <Link 
+                href="/ayuda" 
+                className="block px-2 py-3 text-gray-700 hover:bg-gray-50 rounded font-medium"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Ayuda
+              </Link>
+              <Link 
+                href="/contacto" 
+                className="block px-2 py-3 text-gray-700 hover:bg-gray-50 rounded font-medium"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Contacto
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
