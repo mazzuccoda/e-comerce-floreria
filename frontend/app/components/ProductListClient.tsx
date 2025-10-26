@@ -591,8 +591,8 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         </div>
       )}
 
-      {/* Grid de productos mejorado */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 mt-8 px-4 sm:px-6 lg:px-8">
+      {/* Grid de productos estilo Florería Palermo */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-6 mt-8 px-4 sm:px-6 lg:px-8">
         {displayProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
