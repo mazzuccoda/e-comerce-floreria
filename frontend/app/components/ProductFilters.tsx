@@ -6,16 +6,18 @@ import './ProductFilters.css';
 interface TipoFlor {
   id: number;
   nombre: string;
+  count?: number;
 }
 
 interface Ocasion {
   id: number;
   nombre: string;
+  count?: number;
 }
 
 interface FilterState {
-  tipo_flor?: number;
-  ocasion?: number;
+  tipo_flor?: number[];
+  ocasion?: number[];
   precio_min?: number;
   precio_max?: number;
   destacados?: boolean;
@@ -26,13 +28,15 @@ interface FilterState {
 interface ProductFiltersProps {
   onFiltersChange: (filters: FilterState) => void;
   className?: string;
+  productsCount?: number;
 }
 
-const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, className = '' }) => {
+const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, className = '', productsCount = 0 }) => {
   const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
   const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
-  const [filters, setFilters] = useState<FilterState>({});
+  const [filters, setFilters] = useState<FilterState>({ tipo_flor: [], ocasion: [] });
   const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   console.log('🔥 ProductFilters RENDERIZADO!', { 
     loading, 
@@ -101,21 +105,54 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
     }));
   };
 
-  const clearFilters = () => {
-    setFilters({});
+  const handleCheckboxChange = (key: 'tipo_flor' | 'ocasion', id: number) => {
+    setFilters(prev => {
+      const current = prev[key] || [];
+      const updated = current.includes(id)
+        ? current.filter(item => item !== id)
+        : [...current, id];
+      return {
+        ...prev,
+        [key]: updated.length > 0 ? updated : undefined
+      };
+    });
   };
 
-  const hasActiveFilters = Object.keys(filters).some(key => 
-    filters[key as keyof FilterState] !== undefined
-  );
+  const clearFilters = () => {
+    setFilters({ tipo_flor: [], ocasion: [] });
+  };
+
+  const hasActiveFilters = Object.keys(filters).some(key => {
+    const value = filters[key as keyof FilterState];
+    return value !== undefined && (Array.isArray(value) ? value.length > 0 : true);
+  });
+
+  const activeFiltersCount = Object.keys(filters).filter(key => {
+    const value = filters[key as keyof FilterState];
+    return value !== undefined && (Array.isArray(value) ? value.length > 0 : true);
+  }).length;
 
   return (
     <div className={`product-filters ${className}`}>
+      {/* Header con toggle móvil */}
+      <button 
+        className="filters-toggle"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>🔍 Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
+        <span className="toggle-icon">{isOpen ? '▲' : '▼'}</span>
+      </button>
+
       <div className="filters-header">
-        <h3>🔍 Filtros de Productos</h3>
+        <div className="filters-title">
+          <h3>🔍 Filtros</h3>
+          {productsCount > 0 && (
+            <span className="products-count">{productsCount} productos</span>
+          )}
+        </div>
         {hasActiveFilters && (
           <button onClick={clearFilters} className="clear-filters-btn">
-            🗑️ Limpiar filtros
+            Limpiar todo
           </button>
         )}
       </div>
@@ -125,41 +162,57 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
           <p>Cargando filtros...</p>
         </div>
       ) : (
-        <div className="filters-content">
-          {/* Tipo de Flor */}
+        <div className={`filters-content ${isOpen ? 'open' : ''}`}>
+          {/* Ordenamiento - Primero */}
           <div className="filter-group">
-            <label className="filter-label">🌸 Tipo de Flor</label>
+            <label className="filter-label">📊 Ordenar por</label>
             <select
-              value={filters.tipo_flor || ''}
-              onChange={(e) => handleFilterChange('tipo_flor', e.target.value ? parseInt(e.target.value) : undefined)}
+              value={filters.ordering || ''}
+              onChange={(e) => handleFilterChange('ordering', e.target.value || undefined)}
               className="filter-select"
-              aria-label="Seleccionar tipo de flor"
+              aria-label="Seleccionar orden de productos"
             >
-              <option value="">Todos los tipos</option>
-              {tiposFlor.map(tipo => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
+              <option value="">Destacados</option>
+              <option value="precio">Precio: Menor a Mayor</option>
+              <option value="-precio">Precio: Mayor a Menor</option>
+              <option value="nombre">Nombre: A-Z</option>
+              <option value="-nombre">Nombre: Z-A</option>
+              <option value="-created_at">Más recientes</option>
             </select>
           </div>
 
-          {/* Ocasión */}
-          <div className="filter-group">
-            <label className="filter-label">🎉 Ocasión</label>
-            <select
-              value={filters.ocasion || ''}
-              onChange={(e) => handleFilterChange('ocasion', e.target.value ? parseInt(e.target.value) : undefined)}
-              className="filter-select"
-              aria-label="Seleccionar ocasión"
-            >
-              <option value="">Todas las ocasiones</option>
-              {ocasiones.map(ocasion => (
-                <option key={ocasion.id} value={ocasion.id}>
-                  {ocasion.nombre}
-                </option>
+          {/* Tipo de Flor - Checkboxes */}
+          <div className="filter-group filter-group-checkboxes">
+            <label className="filter-label">🌸 Tipo de Flor</label>
+            <div className="checkbox-list">
+              {tiposFlor.map(tipo => (
+                <label key={tipo.id} className="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={(filters.tipo_flor || []).includes(tipo.id)}
+                    onChange={() => handleCheckboxChange('tipo_flor', tipo.id)}
+                  />
+                  <span>{tipo.nombre}</span>
+                </label>
               ))}
-            </select>
+            </div>
+          </div>
+
+          {/* Ocasión - Checkboxes */}
+          <div className="filter-group filter-group-checkboxes">
+            <label className="filter-label">🎉 Ocasión</label>
+            <div className="checkbox-list">
+              {ocasiones.slice(0, 6).map(ocasion => (
+                <label key={ocasion.id} className="filter-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={(filters.ocasion || []).includes(ocasion.id)}
+                    onChange={() => handleCheckboxChange('ocasion', ocasion.id)}
+                  />
+                  <span>{ocasion.nombre}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Rango de Precio */}
@@ -184,43 +237,24 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
             </div>
           </div>
 
-          {/* Ordenamiento */}
-          <div className="filter-group">
-            <label className="filter-label">📊 Ordenar por</label>
-            <select
-              value={filters.ordering || ''}
-              onChange={(e) => handleFilterChange('ordering', e.target.value || undefined)}
-              className="filter-select"
-              aria-label="Seleccionar orden de productos"
-            >
-              <option value="">Más recientes</option>
-              <option value="nombre">Nombre A-Z</option>
-              <option value="-nombre">Nombre Z-A</option>
-              <option value="precio">Precio menor</option>
-              <option value="-precio">Precio mayor</option>
-            </select>
-          </div>
-
           {/* Filtros especiales */}
-          <div className="filter-group">
+          <div className="filter-group filter-group-special">
+            <label className="filter-label">✨ Especiales</label>
             <label className="filter-checkbox">
               <input
                 type="checkbox"
                 checked={filters.destacados || false}
                 onChange={(e) => handleFilterChange('destacados', e.target.checked || undefined)}
               />
-              ⭐ Solo destacados
+              <span>⭐ Solo destacados</span>
             </label>
-          </div>
-
-          <div className="filter-group">
             <label className="filter-checkbox">
               <input
                 type="checkbox"
                 checked={filters.adicionales || false}
                 onChange={(e) => handleFilterChange('adicionales', e.target.checked || undefined)}
               />
-              🎁 Solo adicionales
+              <span>🎁 Solo adicionales</span>
             </label>
           </div>
         </div>

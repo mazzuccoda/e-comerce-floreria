@@ -14,13 +14,21 @@
   border: 1px solid #e9ecef;
   border-radius: 8px;
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .filters-toggle:hover {
   background: #e9ecef;
+}
+
+.toggle-icon {
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .active-indicator {
@@ -29,11 +37,40 @@
   margin-left: 8px;
 }
 
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filters-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filters-title h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.products-count {
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .filters-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  align-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  align-items: start;
 }
 
 .filter-group {
@@ -76,42 +113,96 @@
   min-width: 80px;
 }
 
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.checkbox-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.checkbox-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.checkbox-list::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border-radius: 3px;
+}
+
 .filter-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 14px;
   cursor: pointer;
-  padding: 8px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.filter-checkbox:hover {
+  background-color: #f3f4f6;
 }
 
 .filter-checkbox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   accent-color: #10b981;
+  cursor: pointer;
+}
+
+.filter-checkbox span {
+  user-select: none;
+}
+
+.filter-group-checkboxes {
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.filter-group-special {
+  border: 1px solid #fbbf24;
+  background: #fffbeb;
+  padding: 16px;
+  border-radius: 8px;
 }
 
 .clear-filters-btn {
-  grid-column: 1 / -1;
-  padding: 10px 16px;
+  padding: 8px 16px;
   background: #ef4444;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  justify-self: start;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .clear-filters-btn:hover {
   background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .filters-toggle {
-    display: block;
+    display: flex;
+  }
+
+  .filters-header {
+    display: none;
   }
 
   .filters-content {
@@ -125,10 +216,26 @@
 
   .filters-content.open {
     display: grid;
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .product-filters {
     padding: 16px;
+  }
+
+  .checkbox-list {
+    max-height: 150px;
   }
 }
 
@@ -141,6 +248,15 @@
   .price-range span {
     text-align: center;
     font-weight: 500;
+  }
+
+  .filters-content {
+    gap: 12px;
+  }
+
+  .filter-group-checkboxes,
+  .filter-group-special {
+    padding: 12px;
   }
 }
 

@@ -580,7 +580,10 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       {/* Filtros */}
       {showFilters && (
         <div className="mb-8">
-          <ProductFilters onFiltersChange={handleFiltersChange} />
+          <ProductFilters 
+            onFiltersChange={handleFiltersChange}
+            productsCount={displayProducts.length}
+          />
         </div>
       )}
 
