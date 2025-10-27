@@ -63,19 +63,6 @@ export default function CategoriesSection() {
   return (
     <section className="py-16 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Título de la sección */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-3xl">🌸</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Explorá por Categoría
-            </h2>
-          </div>
-          <p className="text-gray-600 text-lg">
-            Encontrá el arreglo perfecto para cada ocasión
-          </p>
-        </div>
-
         {/* Grid de categorías */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
           {categories.map((category) => (

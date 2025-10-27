@@ -58,7 +58,8 @@ export default function Home() {
       {/* Carrusel Hero */}
       <HeroCarousel />
 
-      <StepByStep />
+      {/* Sección de categorías */}
+      <CategoriesSection />
 
       <section id="catalogo" className="section">
         <h2 className="section-title">DESTACADOS</h2>
@@ -69,8 +70,8 @@ export default function Home() {
       {/* Sección de adicionales con diseño especial */}
       <AdicionalesSection />
 
-      {/* Nueva sección de categorías */}
-      <CategoriesSection />
+      {/* Cómo comprar */}
+      <StepByStep />
     </div>
   );
 }
