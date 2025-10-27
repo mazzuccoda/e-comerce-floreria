@@ -80,7 +80,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {/* Estilo EXACTO de Florería Palermo */}
       <div className="bg-white rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 group">
-        {/* Imagen con overlay de "Envío gratis" */}
+        {/* Imagen con overlay de "Envío gratis" y badge de descuento */}
         <div className="relative w-full h-48 sm:h-56 lg:h-64 bg-gray-50 overflow-hidden">
           <img
             key={`product-${product.id}-img`}
@@ -100,6 +100,12 @@ export default function ProductCard({ product }: ProductCardProps) {
               Envío gratis
             </div>
           )}
+          {/* Badge de descuento en esquina superior derecha */}
+          {product.porcentaje_descuento && product.porcentaje_descuento > 0 && (
+            <div className="absolute top-3 right-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
+              -{product.porcentaje_descuento}%
+            </div>
+          )}
         </div>
 
         {/* Contenido */}
@@ -117,18 +123,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                   Solicitar cotización
                 </span>
               </div>
-            ) : product.precio_descuento ? (
-              <div className="space-y-0.5">
-                <p className="text-lg sm:text-xl font-normal text-gray-900">
-                  $ {parseFloat(product.precio_descuento).toLocaleString()}
+            ) : product.precio_descuento && product.porcentaje_descuento && product.porcentaje_descuento > 0 ? (
+              <div className="flex items-center gap-2">
+                <p className="text-xl sm:text-2xl font-bold text-green-700">
+                  $ {parseFloat(product.precio_descuento).toLocaleString('es-AR')}
                 </p>
-                <p className="text-sm sm:text-base text-gray-400 line-through">
-                  $ {parseFloat(product.precio).toLocaleString()}
+                <p className="text-sm text-gray-400 line-through">
+                  $ {parseFloat(product.precio).toLocaleString('es-AR')}
                 </p>
               </div>
             ) : (
               <p className="text-lg sm:text-xl font-normal text-gray-900">
-                $ {parseFloat(product.precio).toLocaleString()}
+                $ {parseFloat(product.precio).toLocaleString('es-AR')}
               </p>
             )}
           </div>
