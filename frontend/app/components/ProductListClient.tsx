@@ -233,9 +233,11 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         const tipoFlor = urlParams.get('tipo_flor');
         const ocasion = urlParams.get('ocasion');
         const categoria = urlParams.get('categoria');
+        const search = urlParams.get('search');
         if (tipoFlor) queryParams.set('tipo_flor', tipoFlor);
         if (ocasion) queryParams.set('ocasion', ocasion);
         if (categoria) queryParams.set('categoria', categoria);
+        if (search) queryParams.set('search', search);
         
         // Agregar filtro de destacados si showFeatured es true
         if (showFeatured) {
