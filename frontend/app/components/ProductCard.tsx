@@ -102,7 +102,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
           {/* Badge de descuento en esquina superior derecha */}
           {product.porcentaje_descuento && product.porcentaje_descuento > 0 && (
-            <div className="absolute top-3 right-3 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
+            <div className="absolute top-3 right-3 bg-green-600 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
               -{product.porcentaje_descuento}%
             </div>
           )}
@@ -124,11 +124,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </span>
               </div>
             ) : product.precio_descuento && product.porcentaje_descuento && product.porcentaje_descuento > 0 ? (
-              <div className="flex items-center gap-2">
+              <div className="space-y-1">
                 <p className="text-xl sm:text-2xl font-bold text-green-700">
                   $ {parseFloat(product.precio_descuento).toLocaleString('es-AR')}
                 </p>
-                <p className="text-sm text-gray-400 line-through">
+                <p className="text-xs sm:text-sm text-gray-400 line-through">
                   $ {parseFloat(product.precio).toLocaleString('es-AR')}
                 </p>
               </div>
