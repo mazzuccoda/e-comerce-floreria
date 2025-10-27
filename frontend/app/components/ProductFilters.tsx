@@ -84,9 +84,11 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
         
         setTiposFlor(mockTiposFlor);
         setOcasiones(mockOcasiones);
+        setLoading(false);
 
       } catch (error) {
         console.error('💥 Error loading filter data:', error);
+        setLoading(false);
       }
     };
 
