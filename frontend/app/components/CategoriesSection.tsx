@@ -81,7 +81,7 @@ export default function CategoriesSection() {
           {categories.map((category) => (
             <Link
               key={category.id}
-              href={`/catalogo?categoria=${category.slug}`}
+              href={`/productos?categoria=${category.slug}`}
               className="group relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300"
             >
               {/* Imagen de categoría */}

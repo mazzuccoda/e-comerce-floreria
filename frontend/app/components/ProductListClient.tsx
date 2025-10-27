@@ -232,13 +232,15 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         // Agregar filtros si existen
         const tipoFlor = urlParams.get('tipo_flor');
         const ocasion = urlParams.get('ocasion');
+        const categoria = urlParams.get('categoria');
         if (tipoFlor) queryParams.set('tipo_flor', tipoFlor);
         if (ocasion) queryParams.set('ocasion', ocasion);
+        if (categoria) queryParams.set('categoria', categoria);
         
         const apiUrl = `${backendUrl}/api/catalogo/productos/?${queryParams.toString()}`;
           
         console.log('🔍 Iniciando solicitud a:', apiUrl);
-        console.log('🎯 Filtros aplicados:', { tipo_flor: tipoFlor, ocasion });
+        console.log('🎯 Filtros aplicados:', { tipo_flor: tipoFlor, ocasion, categoria });
         const response = await fetch(apiUrl, {
           credentials: 'omit',  // Omitir credenciales para evitar CORS sin Nginx
           headers: {
