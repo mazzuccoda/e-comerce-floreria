@@ -547,18 +547,35 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     );
   }
 
+  // Verificar si hay filtros activos en la URL
+  const hasActiveFilters = searchParams.get('categoria') || searchParams.get('tipo_flor') || searchParams.get('ocasion');
+
   return (
     <div className="w-full">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-2xl">🌸</span>
-          <h1 className="text-2xl font-bold text-gray-800">
-            {showFeatured ? 'Productos Destacados' :
-             showRecommended ? 'Productos Recomendados' : 
-             showAdditionals ? 'Productos Adicionales' : 
-             'Catálogo de Productos'}
-          </h1>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🌸</span>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {showFeatured ? 'Productos Destacados' :
+               showRecommended ? 'Productos Recomendados' : 
+               showAdditionals ? 'Productos Adicionales' : 
+               'Catálogo de Productos'}
+            </h1>
+          </div>
+          {/* Botón para volver al inicio cuando hay filtros */}
+          {hasActiveFilters && (
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+              </svg>
+              Volver al inicio
+            </a>
+          )}
         </div>
         <p className="text-gray-600">
           Mostrando {displayProducts.length} de {products.length} productos disponibles

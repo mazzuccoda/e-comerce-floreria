@@ -26,6 +26,7 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
         queryset = super().get_queryset()
         
         # Filtros por query params
+        categoria = self.request.query_params.get('categoria')
         tipo_flor = self.request.query_params.get('tipo_flor')
         ocasion = self.request.query_params.get('ocasion')
         precio_min = self.request.query_params.get('precio_min')
@@ -33,6 +34,9 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
         destacados = self.request.query_params.get('destacados')
         adicionales = self.request.query_params.get('adicionales')
         ordering = self.request.query_params.get('ordering')
+        
+        if categoria:
+            queryset = queryset.filter(categoria__slug=categoria)
         
         if tipo_flor:
             queryset = queryset.filter(tipo_flor__id=tipo_flor)
