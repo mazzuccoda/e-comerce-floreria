@@ -27,6 +27,7 @@ api_urlpatterns = [
         path('carrito/', include('carrito.api_urls', namespace='carrito-api')),
         path('usuarios/', include('usuarios.api_urls')),
         path('pedidos/', include('pedidos.api_urls', namespace='pedidos-api')),
+        path('notificaciones/', include('notificaciones.urls', namespace='notificaciones-api')),
 ]
 
 urlpatterns = [
