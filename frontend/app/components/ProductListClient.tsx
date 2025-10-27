@@ -552,35 +552,20 @@ export default function ProductListClient({ showRecommended = false, showAdditio
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🌸</span>
-            <h1 className="text-2xl font-bold text-gray-800">
-              {showFeatured ? 'Productos Destacados' :
-               showRecommended ? 'Productos Recomendados' : 
-               showAdditionals ? 'Productos Adicionales' : 
-               'Catálogo de Productos'}
-            </h1>
-          </div>
-          {/* Botón para volver al inicio cuando hay filtros */}
-          {hasActiveFilters && (
-            <a
-              href="/"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-              </svg>
-              Volver al inicio
-            </a>
-          )}
+      {/* Botón para volver al inicio cuando hay filtros */}
+      {hasActiveFilters && (
+        <div className="mb-6 flex justify-end">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            </svg>
+            Volver al inicio
+          </a>
         </div>
-        <p className="text-gray-600">
-          Mostrando {displayProducts.length} de {products.length} productos disponibles
-        </p>
-      </div>
+      )}
 
       {/* Filtros */}
       {showFilters && (
@@ -590,7 +575,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       )}
 
       {/* Grid de productos mejorado */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mt-8 px-2">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mt-8 px-2">
         {displayProducts.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
