@@ -16,13 +16,13 @@ interface Ocasion {
 }
 
 interface FilterState {
-  tipo_flor?: number[];
-  ocasion?: number[];
+  tipo_flor?: number;
   precio_min?: number;
   precio_max?: number;
   destacados?: boolean;
   adicionales?: boolean;
   ordering?: string;
+  search?: string;
 }
 
 interface ProductFiltersProps {
@@ -33,15 +33,13 @@ interface ProductFiltersProps {
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, className = '', productsCount = 0 }) => {
   const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
-  const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
-  const [filters, setFilters] = useState<FilterState>({ tipo_flor: [], ocasion: [] });
+  const [filters, setFilters] = useState<FilterState>({});
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
   console.log('🔥 ProductFilters RENDERIZADO!', { 
     loading, 
-    tiposFlor: tiposFlor.length, 
-    ocasiones: ocasiones.length 
+    tiposFlor: tiposFlor.length
   });
 
   // Cargar tipos de flor y ocasiones
@@ -63,27 +61,9 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
           { id: 7, nombre: 'Gerberas' }
         ];
         
-        const mockOcasiones: Ocasion[] = [
-          { id: 1, nombre: 'Amor' },
-          { id: 2, nombre: 'San Valentín' },
-          { id: 3, nombre: 'Aniversario' },
-          { id: 4, nombre: 'Cumpleaños' },
-          { id: 5, nombre: 'Felicitaciones' },
-          { id: 6, nombre: 'Graduación' },
-          { id: 7, nombre: 'Amistad' },
-          { id: 8, nombre: 'Alegría' },
-          { id: 9, nombre: 'Boda' },
-          { id: 10, nombre: 'Elegancia' },
-          { id: 11, nombre: 'Pureza' },
-          { id: 12, nombre: 'Decoración' },
-          { id: 13, nombre: 'Lujo' }
-        ];
-
         console.log('🌸 Mock tipos de flor loaded:', mockTiposFlor.length);
-        console.log('🎉 Mock ocasiones loaded:', mockOcasiones.length);
         
         setTiposFlor(mockTiposFlor);
-        setOcasiones(mockOcasiones);
         setLoading(false);
 
       } catch (error) {
@@ -107,32 +87,18 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
     }));
   };
 
-  const handleCheckboxChange = (key: 'tipo_flor' | 'ocasion', id: number) => {
-    setFilters(prev => {
-      const current = prev[key] || [];
-      const updated = current.includes(id)
-        ? current.filter(item => item !== id)
-        : [...current, id];
-      return {
-        ...prev,
-        [key]: updated.length > 0 ? updated : undefined
-      };
-    });
-  };
 
   const clearFilters = () => {
-    setFilters({ tipo_flor: [], ocasion: [] });
+    setFilters({});
   };
 
-  const hasActiveFilters = Object.keys(filters).some(key => {
-    const value = filters[key as keyof FilterState];
-    return value !== undefined && (Array.isArray(value) ? value.length > 0 : true);
-  });
+  const hasActiveFilters = Object.keys(filters).some(key => 
+    filters[key as keyof FilterState] !== undefined && filters[key as keyof FilterState] !== ''
+  );
 
-  const activeFiltersCount = Object.keys(filters).filter(key => {
-    const value = filters[key as keyof FilterState];
-    return value !== undefined && (Array.isArray(value) ? value.length > 0 : true);
-  }).length;
+  const activeFiltersCount = Object.keys(filters).filter(key => 
+    filters[key as keyof FilterState] !== undefined && filters[key as keyof FilterState] !== ''
+  ).length;
 
   return (
     <div className={`product-filters ${className}`}>
@@ -165,7 +131,19 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
         </div>
       ) : (
         <div className={`filters-content ${isOpen ? 'open' : ''}`}>
-          {/* Ordenamiento - Primero */}
+          {/* Búsqueda por nombre */}
+          <div className="filter-group">
+            <label className="filter-label">🔍 Buscar</label>
+            <input
+              type="text"
+              placeholder="Buscar por nombre..."
+              value={filters.search || ''}
+              onChange={(e) => handleFilterChange('search', e.target.value || undefined)}
+              className="filter-select"
+            />
+          </div>
+
+          {/* Ordenamiento */}
           <div className="filter-group">
             <label className="filter-label">📊 Ordenar por</label>
             <select
@@ -183,38 +161,22 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
             </select>
           </div>
 
-          {/* Tipo de Flor - Checkboxes */}
-          <div className="filter-group filter-group-checkboxes">
+          {/* Tipo de Flor - Select */}
+          <div className="filter-group">
             <label className="filter-label">🌸 Tipo de Flor</label>
-            <div className="checkbox-list">
+            <select
+              value={filters.tipo_flor || ''}
+              onChange={(e) => handleFilterChange('tipo_flor', e.target.value ? parseInt(e.target.value) : undefined)}
+              className="filter-select"
+              aria-label="Seleccionar tipo de flor"
+            >
+              <option value="">Todos los tipos</option>
               {tiposFlor.map(tipo => (
-                <label key={tipo.id} className="filter-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={(filters.tipo_flor || []).includes(tipo.id)}
-                    onChange={() => handleCheckboxChange('tipo_flor', tipo.id)}
-                  />
-                  <span>{tipo.nombre}</span>
-                </label>
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre}
+                </option>
               ))}
-            </div>
-          </div>
-
-          {/* Ocasión - Checkboxes */}
-          <div className="filter-group filter-group-checkboxes">
-            <label className="filter-label">🎉 Ocasión</label>
-            <div className="checkbox-list">
-              {ocasiones.slice(0, 6).map(ocasion => (
-                <label key={ocasion.id} className="filter-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={(filters.ocasion || []).includes(ocasion.id)}
-                    onChange={() => handleCheckboxChange('ocasion', ocasion.id)}
-                  />
-                  <span>{ocasion.nombre}</span>
-                </label>
-              ))}
-            </div>
+            </select>
           </div>
 
           {/* Rango de Precio */}
@@ -240,24 +202,28 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ onFiltersChange, classN
           </div>
 
           {/* Filtros especiales */}
-          <div className="filter-group filter-group-special">
+          <div className="filter-group">
             <label className="filter-label">✨ Especiales</label>
-            <label className="filter-checkbox">
-              <input
-                type="checkbox"
-                checked={filters.destacados || false}
-                onChange={(e) => handleFilterChange('destacados', e.target.checked || undefined)}
-              />
-              <span>⭐ Solo destacados</span>
-            </label>
-            <label className="filter-checkbox">
-              <input
-                type="checkbox"
-                checked={filters.adicionales || false}
-                onChange={(e) => handleFilterChange('adicionales', e.target.checked || undefined)}
-              />
-              <span>🎁 Solo adicionales</span>
-            </label>
+            <select
+              value={filters.destacados ? 'destacados' : filters.adicionales ? 'adicionales' : ''}
+              onChange={(e) => {
+                if (e.target.value === 'destacados') {
+                  handleFilterChange('destacados', true);
+                  handleFilterChange('adicionales', undefined);
+                } else if (e.target.value === 'adicionales') {
+                  handleFilterChange('adicionales', true);
+                  handleFilterChange('destacados', undefined);
+                } else {
+                  handleFilterChange('destacados', undefined);
+                  handleFilterChange('adicionales', undefined);
+                }
+              }}
+              className="filter-select"
+            >
+              <option value="">Todos</option>
+              <option value="destacados">⭐ Solo destacados</option>
+              <option value="adicionales">🎁 Solo adicionales</option>
+            </select>
           </div>
         </div>
       )}

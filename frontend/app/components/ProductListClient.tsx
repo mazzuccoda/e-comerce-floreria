@@ -426,44 +426,30 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       { id: 1, nombre: 'Rosas' },
       { id: 2, nombre: 'Tulipanes' },
       { id: 3, nombre: 'Girasoles' },
-      { id: 4, nombre: 'Gerberas' },
+      { id: 4, nombre: 'Orquídeas' },
       { id: 5, nombre: 'Mixto' },
-      { id: 6, nombre: 'Orquídeas' }
+      { id: 6, nombre: 'Lilium' },
+      { id: 7, nombre: 'Gerberas' }
     ];
 
-    // Mapear IDs a nombres para ocasiones
-    const ocasiones = [
-      { id: 1, nombre: 'Amor' },
-      { id: 2, nombre: 'Cumpleaños' },
-      { id: 3, nombre: 'Amistad' },
-      { id: 4, nombre: 'Aniversario' },
-      { id: 5, nombre: 'Agradecimiento' }
-    ];
-
-    // Filtrar por tipo de flor
-    if (filters.tipo_flor && filters.tipo_flor.length > 0) {
-      const tiposSeleccionados = filters.tipo_flor.map((id: number) => {
-        const tipo = tiposFlor.find(t => t.id === id);
-        return tipo ? tipo.nombre : '';
-      }).filter(Boolean);
-      
-      console.log('🌸 Filtrando por tipos de flor:', tiposSeleccionados);
+    // Filtrar por búsqueda de nombre
+    if (filters.search) {
+      console.log('🔍 Buscando por nombre:', filters.search);
+      const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(product => 
-        tiposSeleccionados.includes(product.tipo_flor?.nombre)
+        product.nombre.toLowerCase().includes(searchLower)
       );
     }
 
-    // Filtrar por ocasión
-    if (filters.ocasion && filters.ocasion.length > 0) {
-      const ocasionesSeleccionadas = filters.ocasion.map((id: number) => {
-        const ocasion = ocasiones.find(o => o.id === id);
-        return ocasion ? ocasion.nombre : '';
-      }).filter(Boolean);
-      
-      console.log('🎉 Filtrando por ocasiones:', ocasionesSeleccionadas);
-      filtered = filtered.filter(product => 
-        product.ocasiones?.some(ocasion => ocasionesSeleccionadas.includes(ocasion.nombre))
-      );
+    // Filtrar por tipo de flor (ID único)
+    if (filters.tipo_flor) {
+      const tipo = tiposFlor.find(t => t.id === filters.tipo_flor);
+      if (tipo) {
+        console.log('🌸 Filtrando por tipo de flor:', tipo.nombre);
+        filtered = filtered.filter(product => 
+          product.tipo_flor?.id === filters.tipo_flor
+        );
+      }
     }
 
     // Filtrar por rango de precio
@@ -489,29 +475,43 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       filtered = filtered.filter(product => product.is_featured);
     }
 
+    // Filtrar por adicionales
+    if (filters.adicionales) {
+      console.log('🎁 Filtrando solo adicionales');
+      filtered = filtered.filter(product => product.es_adicional);
+    }
+
     // Ordenar
     if (filters.ordering) {
       console.log('📊 Ordenando por:', filters.ordering);
       switch (filters.ordering) {
-        case 'precio_asc':
+        case 'precio':
           filtered.sort((a, b) => {
             const precioA = parseFloat(a.precio_descuento || a.precio);
             const precioB = parseFloat(b.precio_descuento || b.precio);
             return precioA - precioB;
           });
           break;
-        case 'precio_desc':
+        case '-precio':
           filtered.sort((a, b) => {
             const precioA = parseFloat(a.precio_descuento || a.precio);
             const precioB = parseFloat(b.precio_descuento || b.precio);
             return precioB - precioA;
           });
           break;
-        case 'nombre_asc':
+        case 'nombre':
           filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
           break;
-        case 'nombre_desc':
+        case '-nombre':
           filtered.sort((a, b) => b.nombre.localeCompare(a.nombre));
+          break;
+        case '-created_at':
+          // Ordenar por más recientes (si existe el campo)
+          filtered.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0).getTime();
+            const dateB = new Date(b.created_at || 0).getTime();
+            return dateB - dateA;
+          });
           break;
       }
     }
