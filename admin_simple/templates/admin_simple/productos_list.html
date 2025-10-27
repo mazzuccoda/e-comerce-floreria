@@ -131,6 +131,9 @@
                         Disponible
                     </th>
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Destacado
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Acciones
                     </th>
                 </tr>
@@ -206,6 +209,17 @@
                         </label>
                     </td>
 
+                    <!-- Destacado (toggle) -->
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <label class="toggle-switch inline-block">
+                            <input type="checkbox" 
+                                   class="destacado-toggle" 
+                                   data-producto-id="{{ producto.id }}"
+                                   {% if producto.is_featured %}checked{% endif %}>
+                            <span class="slider slider-yellow"></span>
+                        </label>
+                    </td>
+
                     <!-- Acciones -->
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <a href="{% url 'admin_simple:producto-edit' producto.id %}" 
@@ -216,7 +230,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center">
+                    <td colspan="7" class="px-6 py-12 text-center">
                         <i class="fas fa-inbox text-gray-400 text-4xl mb-4"></i>
                         <p class="text-gray-500">No se encontraron productos</p>
                     </td>
@@ -275,6 +289,25 @@
                             <span class="slider"></span>
                         </label>
                         <span class="text-xs text-green-600 font-medium">Activo</span>
+                    </div>
+                </div>
+                
+                <!-- Toggle destacado -->
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-medium text-gray-700">
+                        <i class="fas fa-star text-yellow-500 mr-1"></i>
+                        Destacado:
+                    </span>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-gray-500">No</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" 
+                                   class="destacado-toggle" 
+                                   data-producto-id="{{ producto.id }}"
+                                   {% if producto.is_featured %}checked{% endif %}>
+                            <span class="slider slider-yellow"></span>
+                        </label>
+                        <span class="text-xs text-yellow-600 font-medium">Sí</span>
                     </div>
                 </div>
                 
@@ -442,6 +475,31 @@ $('.disponible-toggle').change(function() {
             if (response.success) {
                 // Mostrar mensaje temporal
                 const message = $('<div class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50"></div>')
+                    .text(response.message);
+                $('body').append(message);
+                setTimeout(() => message.fadeOut(() => message.remove()), 2000);
+            }
+        },
+        error: function() {
+            toggle.prop('checked', !toggle.prop('checked'));
+            alert('Error al actualizar el producto');
+        }
+    });
+});
+
+// Toggle Destacado
+$('.destacado-toggle').change(function() {
+    const productoId = $(this).data('producto-id');
+    const toggle = $(this);
+    
+    $.ajax({
+        url: `/admin-simple/productos/${productoId}/toggle-destacado/`,
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken},
+        success: function(response) {
+            if (response.success) {
+                // Mostrar mensaje temporal
+                const message = $('<div class="fixed top-4 right-4 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg z-50"></div>')
                     .text(response.message);
                 $('body').append(message);
                 setTimeout(() => message.fadeOut(() => message.remove()), 2000);

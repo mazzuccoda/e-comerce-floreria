@@ -12,6 +12,7 @@ urlpatterns = [
     path('productos/', views.productos_list, name='productos-list'),
     path('productos/<int:pk>/editar/', views.producto_edit, name='producto-edit'),
     path('productos/<int:pk>/toggle/', views.producto_toggle, name='producto-toggle'),
+    path('productos/<int:pk>/toggle-destacado/', views.producto_toggle_destacado, name='producto-toggle-destacado'),
     path('productos/<int:pk>/update-field/', views.producto_update_field, name='producto-update-field'),
     
     # Pedidos

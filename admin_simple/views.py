@@ -209,6 +209,33 @@ def producto_toggle(request, pk):
 @login_required
 @user_passes_test(is_superuser, login_url='/admin/')
 @require_POST
+def producto_toggle_destacado(request, pk):
+    """
+    Toggle destacado de un producto (AJAX)
+    """
+    try:
+        producto = get_object_or_404(Producto, pk=pk)
+        producto.is_featured = not producto.is_featured
+        producto.save()
+        
+        logger.info(f'Producto {producto.id} destacado cambiado a {producto.is_featured} por {request.user.username}')
+        
+        return JsonResponse({
+            'success': True,
+            'is_featured': producto.is_featured,
+            'message': f'Producto {"marcado como destacado" if producto.is_featured else "desmarcado como destacado"}'
+        })
+    except Exception as e:
+        logger.error(f'Error toggling destacado producto {pk}: {str(e)}')
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_POST
 def producto_update_field(request, pk):
     """
     Actualizar un campo específico del producto (AJAX)
