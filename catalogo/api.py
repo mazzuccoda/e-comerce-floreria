@@ -34,6 +34,7 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
         destacados = self.request.query_params.get('destacados')
         adicionales = self.request.query_params.get('adicionales')
         ordering = self.request.query_params.get('ordering')
+        search = self.request.query_params.get('search')
         
         if categoria:
             queryset = queryset.filter(categoria__slug=categoria)
@@ -57,6 +58,15 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(es_adicional=True)
         elif adicionales == 'false':
             queryset = queryset.filter(es_adicional=False)
+        
+        # Búsqueda por nombre o descripción
+        if search:
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(nombre__icontains=search) | 
+                Q(descripcion__icontains=search) |
+                Q(descripcion_corta__icontains=search)
+            )
         
         # Ordenamiento
         if ordering == 'nombre':
