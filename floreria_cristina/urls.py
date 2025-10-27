@@ -51,6 +51,9 @@ urlpatterns = [
 
     # API URLs
     path('api/', include(api_urlpatterns)),
+    
+    # Test endpoint directo (sin /api/)
+    path('test-whatsapp/', include('notificaciones.urls')),
 
     # Authentication (allauth)
     path('accounts/', include('allauth.urls')),

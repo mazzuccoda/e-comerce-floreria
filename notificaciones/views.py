@@ -186,11 +186,25 @@ def test_whatsapp(request):
                 'error': 'Número de teléfono requerido'
             }, status=400)
         
+        # Verificar configuración
+        from django.conf import settings
+        
+        config_info = {
+            'n8n_enabled': n8n_service.enabled,
+            'n8n_url': getattr(settings, 'N8N_WEBHOOK_URL', 'NO CONFIGURADO'),
+            'n8n_api_key': 'Configurado' if getattr(settings, 'N8N_API_KEY', '') else 'NO CONFIGURADO',
+            'twilio_sid': 'Configurado' if getattr(settings, 'TWILIO_ACCOUNT_SID', '').startswith('AC') else 'NO CONFIGURADO',
+            'twilio_token': 'Configurado' if getattr(settings, 'TWILIO_AUTH_TOKEN', '') and getattr(settings, 'TWILIO_AUTH_TOKEN', '') != 'your_auth_token' else 'NO CONFIGURADO',
+            'twilio_whatsapp': getattr(settings, 'TWILIO_WHATSAPP_NUMBER', 'NO CONFIGURADO'),
+        }
+        
+        logger.info(f"📋 Configuración: {config_info}")
+        
         # Verificar que n8n esté habilitado
         if not n8n_service.enabled:
             return JsonResponse({
                 'success': False,
-                'error': 'n8n está deshabilitado. Configura N8N_ENABLED=True'
+                'error': f'n8n está deshabilitado. Configura N8N_ENABLED=True. Config actual: {config_info}'
             }, status=400)
         
         # Crear pedido mock para prueba
@@ -238,7 +252,7 @@ def test_whatsapp(request):
         else:
             return JsonResponse({
                 'success': False,
-                'error': 'No se pudo enviar el mensaje. Revisa los logs.'
+                'error': f'No se pudo enviar el mensaje. Config: {config_info}. Revisa los logs de Railway.'
             }, status=500)
             
     except Exception as e:
