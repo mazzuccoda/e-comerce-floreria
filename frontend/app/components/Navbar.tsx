@@ -108,13 +108,13 @@ export default function Navbar() {
           </button>
 
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <a href="/" className="flex items-center">
             <img 
               src="https://res.cloudinary.com/dmxc6odsi/image/upload/v1760465112/Logo_Crsitina_t6ofnz.png" 
               alt="Florería Cristina" 
-              className="h-12 w-auto"
+              className="h-12 w-auto cursor-pointer"
             />
-          </Link>
+          </a>
           
           {/* Menú central */}
           <ul className="hidden md:flex items-center space-x-8">
