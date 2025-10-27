@@ -29,19 +29,42 @@ function StepByStep() {
           <h2 className="text-2xl md:text-3xl font-semibold text-gray-900">Cómo comprar en 3 minutos</h2>
           <p className="text-gray-600 mt-2">Un proceso simple, seguro y rápido</p>
         </div>
-        <ol role="list" className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-6 items-start">
-          {steps.map((s, idx) => (
-            <li key={idx} role="listitem" className="group">
-              <div className="flex flex-col items-center text-center h-full">
-                <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
-                  <s.icon className="w-7 h-7 text-pink-600" />
+        
+        {/* Carrusel horizontal en móvil, grid en desktop */}
+        <div className="relative">
+          {/* Vista móvil: Carrusel horizontal con scroll */}
+          <div className="lg:hidden overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+            <ol role="list" className="flex gap-4 pb-4">
+              {steps.map((s, idx) => (
+                <li key={idx} role="listitem" className="flex-shrink-0 w-64 snap-center">
+                  <div className="flex flex-col items-center text-center h-full bg-gray-50 rounded-lg p-6 shadow-sm">
+                    <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
+                      <s.icon className="w-7 h-7 text-pink-600" />
+                    </div>
+                    <h3 className="mt-3 text-sm font-medium text-gray-900">{idx + 1}. {s.title}</h3>
+                    <p className="mt-1 text-xs text-gray-600">{s.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          
+          {/* Vista desktop: Grid */}
+          <ol role="list" className="hidden lg:grid relative grid-cols-4 xl:grid-cols-7 gap-6 items-start">
+            {steps.map((s, idx) => (
+              <li key={idx} role="listitem" className="group">
+                <div className="flex flex-col items-center text-center h-full">
+                  <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center ring-1 ring-pink-100">
+                    <s.icon className="w-7 h-7 text-pink-600" />
+                  </div>
+                  <h3 className="mt-3 text-sm font-medium text-gray-900">{idx + 1}. {s.title}</h3>
+                  <p className="mt-1 text-xs text-gray-600">{s.desc}</p>
                 </div>
-                <h3 className="mt-3 text-sm font-medium text-gray-900">{idx + 1}. {s.title}</h3>
-                <p className="mt-1 text-xs text-gray-600">{s.desc}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
+              </li>
+            ))}
+          </ol>
+        </div>
+        
         <div className="mt-10 flex justify-center">
           <Link href="#catalogo" className="inline-flex items-center px-6 py-3 rounded-md bg-pink-600 text-white font-medium hover:bg-pink-700 transition-colors">Empezar compra</Link>
         </div>

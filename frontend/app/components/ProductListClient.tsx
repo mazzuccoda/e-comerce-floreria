@@ -237,6 +237,16 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         if (ocasion) queryParams.set('ocasion', ocasion);
         if (categoria) queryParams.set('categoria', categoria);
         
+        // Agregar filtro de destacados si showFeatured es true
+        if (showFeatured) {
+          queryParams.set('destacados', 'true');
+        }
+        
+        // Agregar filtro de adicionales si showAdditionals es true
+        if (showAdditionals) {
+          queryParams.set('adicionales', 'true');
+        }
+        
         const apiUrl = `${backendUrl}/api/catalogo/productos/?${queryParams.toString()}`;
           
         console.log('🔍 Iniciando solicitud a:', apiUrl);
