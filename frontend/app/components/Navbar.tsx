@@ -70,7 +70,9 @@ export default function Navbar() {
       if (target.closest('[data-mobile-menu]') || 
           target.closest('[data-mobile-button]') ||
           target.closest('[data-desktop-menu]') ||
-          target.closest('[data-desktop-button]')) {
+          target.closest('[data-desktop-button]') ||
+          target.closest('[data-search-bar]') ||
+          target.closest('[data-search-button]')) {
         return;
       }
       
@@ -200,6 +202,7 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             {/* Búsqueda */}
             <button 
+              data-search-button
               onClick={(e) => {
                 e.stopPropagation();
                 setShowSearch(!showSearch);
@@ -277,7 +280,7 @@ export default function Navbar() {
 
       {/* Barra de búsqueda expandible */}
       {showSearch && (
-        <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
+        <div data-search-bar className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="relative">
               <input
