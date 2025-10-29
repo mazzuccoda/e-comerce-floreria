@@ -39,6 +39,13 @@ class N8NService:
             return False
         
         try:
+            # Preparar fecha_entrega (puede ser date o string)
+            from datetime import date
+            if isinstance(pedido.fecha_entrega, date):
+                fecha_entrega_str = pedido.fecha_entrega.strftime('%d/%m/%Y')
+            else:
+                fecha_entrega_str = str(pedido.fecha_entrega)
+            
             # Preparar datos del pedido
             data = {
                 'pedido_id': pedido.id,
@@ -46,7 +53,7 @@ class N8NService:
                 'nombre_destinatario': pedido.nombre_destinatario,
                 'telefono_destinatario': pedido.telefono_destinatario,
                 'direccion': pedido.direccion,
-                'fecha_entrega': pedido.fecha_entrega.strftime('%d/%m/%Y'),
+                'fecha_entrega': fecha_entrega_str,
                 'franja_horaria': pedido.get_franja_horaria_display(),
                 'estado': pedido.estado,
                 'total': str(pedido.total),
