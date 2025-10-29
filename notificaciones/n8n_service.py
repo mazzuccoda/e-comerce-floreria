@@ -62,10 +62,11 @@ class N8NService:
             }
             
             # Determinar webhook según tipo
+            # El path debe coincidir EXACTAMENTE con el configurado en n8n
             webhook_path = {
-                'confirmado': '/webhook-test/pedido-confirmado',
-                'estado': '/webhook-test/pedido-estado'
-            }.get(tipo, '/webhook-test/pedido-confirmado')
+                'confirmado': '/webhook/pedido-confirmado',
+                'estado': '/webhook/pedido-estado'
+            }.get(tipo, '/webhook/pedido-confirmado')
             
             # Enviar a n8n
             logger.info(f"📤 Enviando notificación n8n para pedido #{pedido.numero_pedido} (tipo: {tipo})")
