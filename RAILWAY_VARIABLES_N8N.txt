@@ -1,0 +1,52 @@
+# ========================================
+# VARIABLES DE ENTORNO PARA n8n EN RAILWAY
+# ========================================
+# Copiar y pegar en Railway Dashboard → Variables
+
+# === AUTENTICACIÓN ===
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=Floreria2025!Secure
+
+# === BASE DE DATOS ===
+DB_TYPE=postgresdb
+DB_POSTGRESDB_DATABASE=${{Postgres.PGDATABASE}}
+DB_POSTGRESDB_HOST=${{Postgres.PGHOST}}
+DB_POSTGRESDB_PORT=${{Postgres.PGPORT}}
+DB_POSTGRESDB_USER=${{Postgres.PGUSER}}
+DB_POSTGRESDB_PASSWORD=${{Postgres.PGPASSWORD}}
+
+# === CONFIGURACIÓN ===
+N8N_HOST=${{RAILWAY_PUBLIC_DOMAIN}}
+N8N_PORT=5678
+N8N_PROTOCOL=https
+WEBHOOK_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}/
+GENERIC_TIMEZONE=America/Argentina/Buenos_Aires
+NODE_ENV=production
+
+# === SEGURIDAD ===
+# ⚠️ GENERAR CON: openssl rand -hex 32
+# O en PowerShell: -join ((48..57) + (97..102) | Get-Random -Count 64 | ForEach-Object {[char]$_})
+N8N_ENCRYPTION_KEY=REEMPLAZAR_CON_KEY_GENERADA
+
+# === LIMPIEZA AUTOMÁTICA ===
+EXECUTIONS_DATA_PRUNE=true
+EXECUTIONS_DATA_MAX_AGE=168
+
+# ========================================
+# VARIABLES PARA BACKEND DJANGO EN RAILWAY
+# ========================================
+# Agregar estas variables en tu servicio Django
+
+# n8n Configuration
+N8N_WEBHOOK_URL=https://REEMPLAZAR-CON-TU-URL-N8N.up.railway.app
+N8N_API_KEY=floreria_n8n_api_key_2025_super_secret_change_this
+N8N_ENABLED=True
+
+# ========================================
+# NOTAS IMPORTANTES
+# ========================================
+# 1. Generar N8N_ENCRYPTION_KEY antes de desplegar
+# 2. Reemplazar N8N_WEBHOOK_URL con la URL real de tu n8n
+# 3. Cambiar N8N_API_KEY por una key más segura en producción
+# 4. Las variables ${{Postgres.XXX}} se auto-completan en Railway

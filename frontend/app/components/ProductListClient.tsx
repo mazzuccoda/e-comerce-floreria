@@ -533,26 +533,25 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   }
 
   if (error) {
-    // Verificar si es un mensaje de modo sin conexión
     const isOfflineMode = error.includes('MODO SIN CONEXIÓN');
     
     return (
       <div className="text-center py-6 mb-4">
         <div className={`${isOfflineMode ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200'} border rounded-lg p-6 max-w-2xl mx-auto shadow-sm`}>
           {isOfflineMode ? (
-            <>
+            <React.Fragment>
               <div className="flex items-center mb-2">
                 <span className="text-2xl mr-2">⚠️</span>
                 <h3 className="text-amber-800 font-semibold">Modo Sin Conexión</h3>
               </div>
               <p className="text-amber-700 mb-2">No se pudo establecer conexión con el servidor.</p>
               <p className="text-amber-600">Mostrando productos de demostración sin precios ni imágenes reales.</p>
-            </>
+            </React.Fragment>
           ) : (
-            <>
+            <React.Fragment>
               <h3 className="text-red-800 font-semibold mb-2">Error al cargar productos</h3>
               <p className="text-red-600">{error}</p>
-            </>
+            </React.Fragment>
           )}
         </div>
       </div>
