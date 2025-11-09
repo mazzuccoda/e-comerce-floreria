@@ -23,10 +23,11 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
   const [modalImageIndex, setModalImageIndex] = useState(0);
 
   // Combinar imagen principal con imágenes adicionales
-  const allImages = [
-    { id: 0, imagen: mainImage, alt_text: productName },
-    ...images
-  ];
+  // Solo agregar mainImage si no está ya en el array de images
+  const mainImageInArray = images.some(img => img.imagen === mainImage);
+  const allImages = mainImageInArray 
+    ? images 
+    : [{ id: 0, imagen: mainImage, alt_text: productName }, ...images];
 
   const getImageUrl = (url: string) => {
     const fallbackImage = '/images/no-image.jpg';
