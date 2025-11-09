@@ -7,6 +7,7 @@ import { useCartRobust } from '@/context/CartContextRobust';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import ProductImageGallery from '@/app/components/ProductImageGallery';
 
 interface ProductPageParams {
   params: Promise<{
@@ -22,8 +23,6 @@ export default function ProductPage({ params }: ProductPageParams) {
   const [error, setError] = useState<string | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
   // Verificar si el producto requiere cotización (precio = 0)
   const requiresQuote = product ? parseFloat(product.precio) === 0 : false;
@@ -70,23 +69,6 @@ export default function ProductPage({ params }: ProductPageParams) {
       toast.error(`Error: ${error.message || 'No se pudo agregar al carrito'}`);
     } finally {
       setAddingToCart(false);
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setMousePosition({ x, y });
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length > 0) {
-      const touch = e.touches[0];
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = ((touch.clientX - rect.left) / rect.width) * 100;
-      const y = ((touch.clientY - rect.top) / rect.height) * 100;
-      setMousePosition({ x, y });
     }
   };
 
@@ -192,55 +174,20 @@ export default function ProductPage({ params }: ProductPageParams) {
 
         {/* Grid principal */}
         <div className="grid md:grid-cols-2 gap-12 lg:gap-16">
-          {/* Imagen del producto */}
+          {/* Galería de imágenes del producto */}
           <div className="relative">
-            <div className="sticky top-8">
-              <div 
-                className="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-xl cursor-zoom-in"
-                onMouseEnter={() => setIsZoomed(true)}
-                onMouseLeave={() => setIsZoomed(false)}
-                onMouseMove={handleMouseMove}
-                onTouchStart={() => setIsZoomed(true)}
-                onTouchEnd={() => setIsZoomed(false)}
-                onTouchMove={handleTouchMove}
-              >
-                <img
-                  src={getImageUrl(product.imagen_principal)}
-                  alt={product.nombre}
-                  className="w-full h-full object-cover transition-transform duration-200"
-                  style={{
-                    transform: isZoomed ? 'scale(2)' : 'scale(1)',
-                    transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
-                  }}
-                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/images/no-image.jpg';
-                  }}
-                />
-                
-                {/* Icono de lupa */}
-                {!isZoomed && (
-                  <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
-                    </svg>
-                  </div>
-                )}
+            {/* Badge de envío gratis */}
+            {product.envio_gratis && (
+              <div className="absolute top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-10">
+                Envío gratis
               </div>
-              
-              {/* Badge de envío gratis */}
-              {product.envio_gratis && (
-                <div className="absolute top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg z-10">
-                  Envío gratis
-                </div>
-              )}
-              
-              {/* Instrucción de zoom */}
-              <p className="text-center text-sm text-gray-500 mt-4">
-                <span className="hidden md:inline">🔍 Pasa el mouse sobre la imagen para ver más detalles</span>
-                <span className="md:hidden">🔍 Toca y desliza sobre la imagen para ver más detalles</span>
-              </p>
-            </div>
+            )}
+            
+            <ProductImageGallery 
+              images={product.imagenes || []}
+              productName={product.nombre}
+              mainImage={product.imagen_principal}
+            />
           </div>
 
           {/* Información del producto */}
