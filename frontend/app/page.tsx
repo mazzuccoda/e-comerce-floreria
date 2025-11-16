@@ -2,6 +2,7 @@ import ProductListFinal from './components/ProductListFinal';
 import HeroCarousel from './components/HeroCarousel';
 import AdicionalesSection from './components/AdicionalesSection';
 import CategoriesSection from './components/CategoriesSection';
+import OfertasDelDia from './components/OfertasDelDia';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ShoppingBag, UserRound, MessageSquareHeart, Gift, CalendarClock, CreditCard, PackageCheck } from 'lucide-react';
@@ -83,6 +84,9 @@ export default function Home() {
 
       {/* Sección de categorías */}
       <CategoriesSection />
+
+      {/* Sección de ofertas del día */}
+      <OfertasDelDia />
 
       <section id="catalogo" className="section">
         <h2 className="section-title">DESTACADOS</h2>
