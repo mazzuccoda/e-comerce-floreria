@@ -22,9 +22,15 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
   const fetchOfertasDelDia = async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app';
+      
+      // Obtener la URL base del window.location para asegurar que use el mismo dominio
+      const isClient = typeof window !== 'undefined';
+      const apiUrl = isClient 
+        ? `${window.location.protocol}//${window.location.host}`
+        : 'https://floreriaviverocristian.up.railway.app';
       
       console.log('🔍 Fetching ofertas del día from:', apiUrl);
+      console.log('🌐 Window location:', isClient ? window.location.href : 'SSR');
       
       // Buscar productos de la categoría "Oferta del día" - URL encode del parámetro
       const categoriaParam = encodeURIComponent('Oferta del día');
@@ -36,18 +42,23 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
           'Accept': 'application/json',
         },
         cache: 'no-store', // Evitar cache
+        mode: 'cors', // Asegurar CORS
       });
 
       console.log('📊 Response status:', response.status);
+      console.log('📊 Response headers:', response.headers);
 
       if (!response.ok) {
+        const errorText = await response.text();
         console.error('❌ Response not OK:', response.status, response.statusText);
-        throw new Error('Error al cargar ofertas del día');
+        console.error('❌ Error body:', errorText);
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
       console.log('📦 Productos recibidos:', data);
       console.log('📦 Total productos:', Array.isArray(data) ? data.length : 'No es array');
+      console.log('📦 Primer producto:', data[0]);
       
       // Asegurarse de que data es un array
       const productosArray = Array.isArray(data) ? data : [];
@@ -55,12 +66,14 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       // Filtrar solo productos activos
       const productosActivos = productosArray.filter((p: Product) => p.is_active);
       console.log('✅ Productos activos:', productosActivos.length);
+      console.log('✅ Productos activos detalle:', productosActivos);
       
       setProductos(productosActivos);
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Error fetching ofertas del día:', err);
-      setError('No se pudieron cargar las ofertas del día');
+      console.error('❌ Error stack:', err.stack);
+      setError(`No se pudieron cargar las ofertas: ${err.message}`);
       setProductos([]);
     } finally {
       setLoading(false);
