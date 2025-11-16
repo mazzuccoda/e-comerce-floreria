@@ -32,47 +32,19 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       console.log('🔍 Fetching ofertas del día from:', apiUrl);
       console.log('🌐 Window location:', isClient ? window.location.href : 'SSR');
       
-      // Primero obtener todas las categorías para encontrar el ID de "Oferta del día"
-      console.log('📋 Obteniendo categorías...');
-      const categoriasResponse = await fetch(`${apiUrl}/api/catalogo/categorias/`, {
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-store',
-        mode: 'cors',
-      });
-      
-      if (!categoriasResponse.ok) {
-        throw new Error('No se pudieron cargar las categorías');
-      }
-      
-      const categorias = await categoriasResponse.json();
-      console.log('📋 Categorías disponibles:', categorias);
-      
-      // Buscar la categoría "Oferta del día"
-      const categoriaOferta = categorias.find((cat: any) => 
-        cat.nombre.toLowerCase().includes('oferta') || 
-        cat.slug === 'oferta-del-dia'
-      );
-      
-      console.log('🎯 Categoría encontrada:', categoriaOferta);
-      
-      if (!categoriaOferta) {
-        throw new Error('No se encontró la categoría "Oferta del día"');
-      }
-      
-      // Buscar productos de esa categoría usando el ID
-      const url = `${apiUrl}/api/catalogo/productos/?categoria=${categoriaOferta.id}`;
+      // Obtener TODOS los productos y filtrar en el cliente
+      const url = `${apiUrl}/api/catalogo/productos/`;
       console.log('📡 URL completa:', url);
       
       const response = await fetch(url, {
         headers: {
           'Accept': 'application/json',
         },
-        cache: 'no-store', // Evitar cache
-        mode: 'cors', // Asegurar CORS
+        cache: 'no-store',
+        mode: 'cors',
       });
 
       console.log('📊 Response status:', response.status);
-      console.log('📊 Response headers:', response.headers);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -84,17 +56,22 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       const data = await response.json();
       console.log('📦 Productos recibidos:', data);
       console.log('📦 Total productos:', Array.isArray(data) ? data.length : 'No es array');
-      console.log('📦 Primer producto:', data[0]);
       
       // Asegurarse de que data es un array
       const productosArray = Array.isArray(data) ? data : [];
       
-      // Filtrar solo productos activos
-      const productosActivos = productosArray.filter((p: Product) => p.is_active);
-      console.log('✅ Productos activos:', productosActivos.length);
-      console.log('✅ Productos activos detalle:', productosActivos);
+      // Filtrar productos de la categoría "Oferta del día" en el cliente
+      const productosOfertas = productosArray.filter((p: Product) => {
+        const esOferta = p.categoria?.nombre?.toLowerCase().includes('oferta') ||
+                        p.categoria?.slug === 'oferta-del-dia';
+        const estaActivo = p.is_active;
+        return esOferta && estaActivo;
+      });
       
-      setProductos(productosActivos);
+      console.log('✅ Productos de ofertas encontrados:', productosOfertas.length);
+      console.log('✅ Productos ofertas detalle:', productosOfertas);
+      
+      setProductos(productosOfertas);
       setError(null);
     } catch (err: any) {
       console.error('❌ Error fetching ofertas del día:', err);
