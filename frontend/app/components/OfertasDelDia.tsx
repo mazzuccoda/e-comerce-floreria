@@ -32,9 +32,35 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       console.log('🔍 Fetching ofertas del día from:', apiUrl);
       console.log('🌐 Window location:', isClient ? window.location.href : 'SSR');
       
-      // Buscar productos de la categoría "Oferta del día" - URL encode del parámetro
-      const categoriaParam = encodeURIComponent('Oferta del día');
-      const url = `${apiUrl}/api/catalogo/productos/?categoria__nombre=${categoriaParam}`;
+      // Primero obtener todas las categorías para encontrar el ID de "Oferta del día"
+      console.log('📋 Obteniendo categorías...');
+      const categoriasResponse = await fetch(`${apiUrl}/api/catalogo/categorias/`, {
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store',
+        mode: 'cors',
+      });
+      
+      if (!categoriasResponse.ok) {
+        throw new Error('No se pudieron cargar las categorías');
+      }
+      
+      const categorias = await categoriasResponse.json();
+      console.log('📋 Categorías disponibles:', categorias);
+      
+      // Buscar la categoría "Oferta del día"
+      const categoriaOferta = categorias.find((cat: any) => 
+        cat.nombre.toLowerCase().includes('oferta') || 
+        cat.slug === 'oferta-del-dia'
+      );
+      
+      console.log('🎯 Categoría encontrada:', categoriaOferta);
+      
+      if (!categoriaOferta) {
+        throw new Error('No se encontró la categoría "Oferta del día"');
+      }
+      
+      // Buscar productos de esa categoría usando el ID
+      const url = `${apiUrl}/api/catalogo/productos/?categoria=${categoriaOferta.id}`;
       console.log('📡 URL completa:', url);
       
       const response = await fetch(url, {
