@@ -10,7 +10,9 @@ from datetime import timedelta
 import logging
 
 from pedidos.models import Pedido
-from catalogo.models import Producto, Categoria
+from catalogo.models import Producto, Categoria, ProductoImagen
+from django.utils.text import slugify
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +122,102 @@ def productos_list(request):
     }
     
     return render(request, 'admin_simple/productos_list.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def producto_create(request):
+    """
+    Crear un nuevo producto
+    """
+    if request.method == 'POST':
+        try:
+            # Generar SKU único
+            sku = f"PROD-{uuid.uuid4().hex[:8].upper()}"
+            while Producto.objects.filter(sku=sku).exists():
+                sku = f"PROD-{uuid.uuid4().hex[:8].upper()}"
+            
+            # Crear producto
+            producto = Producto()
+            producto.nombre = request.POST.get('nombre')
+            producto.sku = sku
+            
+            # Descripción
+            producto.descripcion_corta = request.POST.get('descripcion_corta', '')
+            producto.descripcion = request.POST.get('descripcion', producto.descripcion_corta)
+            
+            # Categoría
+            categoria_id = request.POST.get('categoria')
+            if categoria_id:
+                producto.categoria_id = int(categoria_id)
+            
+            # Precio y stock
+            precio_str = request.POST.get('precio', '0')
+            precio_str = precio_str.replace('.', '').replace(',', '.')
+            producto.precio = float(precio_str)
+            
+            stock_str = request.POST.get('stock', '10')
+            stock_str = stock_str.replace('.', '').replace(',', '')
+            producto.stock = int(stock_str)
+            
+            # Estado
+            producto.is_active = request.POST.get('is_active') == 'on'
+            
+            # Validaciones
+            if not producto.nombre:
+                messages.error(request, 'El nombre es obligatorio')
+                categorias = Categoria.objects.filter(is_active=True)
+                return render(request, 'admin_simple/producto_create.html', {
+                    'categorias': categorias,
+                    'form_data': request.POST
+                })
+            
+            if producto.precio <= 0:
+                messages.error(request, 'El precio debe ser mayor a 0')
+                categorias = Categoria.objects.filter(is_active=True)
+                return render(request, 'admin_simple/producto_create.html', {
+                    'categorias': categorias,
+                    'form_data': request.POST
+                })
+            
+            if producto.stock < 0:
+                messages.error(request, 'El stock no puede ser negativo')
+                categorias = Categoria.objects.filter(is_active=True)
+                return render(request, 'admin_simple/producto_create.html', {
+                    'categorias': categorias,
+                    'form_data': request.POST
+                })
+            
+            # Guardar producto
+            producto.save()
+            
+            # Manejar imagen si se subió
+            if request.FILES.get('imagen'):
+                imagen = ProductoImagen()
+                imagen.producto = producto
+                imagen.imagen = request.FILES['imagen']
+                imagen.is_primary = True
+                imagen.save()
+            
+            messages.success(request, f'Producto "{producto.nombre}" creado exitosamente')
+            logger.info(f'Producto {producto.id} creado por {request.user.username}')
+            
+            return redirect('admin_simple:productos-list')
+            
+        except ValueError as e:
+            messages.error(request, f'Error en los datos: {str(e)}. Verifica que precio y stock sean números válidos.')
+            logger.error(f'Error creando producto: {str(e)}')
+        except Exception as e:
+            messages.error(request, f'Error inesperado: {str(e)}')
+            logger.error(f'Error inesperado creando producto: {str(e)}')
+    
+    # GET request - mostrar formulario
+    categorias = Categoria.objects.filter(is_active=True)
+    context = {
+        'categorias': categorias,
+    }
+    
+    return render(request, 'admin_simple/producto_create.html', context)
 
 
 @login_required

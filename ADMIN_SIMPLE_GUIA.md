@@ -327,15 +327,90 @@ El admin simple es **completamente responsive**:
 
 ---
 
+## ➕ Crear Nuevo Producto
+
+### **Acceso:**
+- Desde el Dashboard: Click en "Nuevo Producto" en Acciones Rápidas
+- Desde Lista de Productos: Click en botón "Nuevo Producto"
+- URL directa: `/admin-simple/productos/nuevo/`
+
+### **Campos del Formulario:**
+
+#### **📝 Información Básica (Obligatorio):**
+- **Nombre**: Nombre descriptivo del producto
+- **Categoría**: Seleccionar de las categorías existentes
+
+#### **💰 Precio y Stock (Obligatorio):**
+- **Precio**: En pesos argentinos (sin centavos)
+- **Stock Inicial**: Cantidad de unidades disponibles (default: 10)
+
+#### **📸 Imagen (Opcional):**
+- Formatos: JPG, PNG, WEBP
+- Tamaño máximo: 5MB
+- Preview instantáneo antes de guardar
+- Captura directa desde cámara en móvil
+
+#### **📄 Descripción (Opcional):**
+- **Descripción Corta**: Máximo 200 caracteres (aparece en tarjetas)
+
+#### **⚙️ Configuración:**
+- **Producto visible**: Checkbox para activar/desactivar (default: activo)
+
+### **Características Especiales:**
+
+#### **Auto-generación:**
+- **SKU**: Se genera automáticamente (formato: PROD-XXXXXXXX)
+- **Slug**: Se crea desde el nombre del producto
+
+#### **Validaciones en Tiempo Real:**
+- ✅ Precio debe ser mayor a 0
+- ✅ Stock no puede ser negativo
+- ✅ Nombre es obligatorio
+- ✅ Categoría es obligatoria
+
+#### **Preview de Imagen:**
+- Ver la imagen antes de subir
+- Botón para remover y cambiar
+- Validación de tamaño (máx 5MB)
+
+#### **Auto-save:**
+- Los datos se guardan en localStorage
+- Se recuperan si cierras accidentalmente
+- Se limpian al crear exitosamente
+
+#### **Atajo de Teclado:**
+- `Ctrl + S` (o `Cmd + S` en Mac): Crear producto
+
+### **Flujo de Creación:**
+```
+1. Click en "Nuevo Producto"
+2. Completar campos obligatorios (nombre, categoría, precio)
+3. Ajustar stock inicial (opcional, default: 10)
+4. Subir imagen (opcional, desde galería o cámara)
+5. Agregar descripción (opcional)
+6. Configurar visibilidad (default: visible)
+7. Click en "✨ CREAR PRODUCTO"
+8. ✅ Producto creado y redirigido a lista
+```
+
+### **Optimizado para Móvil:**
+- ✅ Diseño vertical adaptativo
+- ✅ Botones grandes táctiles (min 48px)
+- ✅ Teclado numérico para precio/stock
+- ✅ Captura directa desde cámara
+- ✅ Preview de imagen responsive
+- ✅ Formulario sticky en bottom
+
+---
+
 ## 🔄 Actualizaciones Futuras (Posibles)
 
-- 📸 Subir/cambiar imágenes
-- ➕ Crear nuevos productos
 - 🗑️ Eliminar productos
 - 📊 Estadísticas de ventas
 - 📈 Gráficos de stock
 - 🏷️ Gestión de categorías
 - 🎨 Personalización de colores
+- 📝 Edición de descripción completa desde crear
 
 ---
 

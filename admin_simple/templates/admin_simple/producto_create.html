@@ -1,0 +1,374 @@
+{% extends 'admin_simple/base.html' %}
+
+{% block title %}Nuevo Producto - Admin Simple{% endblock %}
+
+{% block content %}
+<!-- Header con Breadcrumb -->
+<div class="mb-6">
+    <div class="flex items-center text-xs sm:text-sm text-gray-500 mb-4 flex-wrap">
+        <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-green-600 transition-colors">
+            <i class="fas fa-home"></i> <span class="hidden sm:inline">Dashboard</span>
+        </a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <a href="{% url 'admin_simple:productos-list' %}" class="hover:text-green-600 transition-colors">
+            Productos
+        </a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <span class="text-gray-900 font-medium">Nuevo</span>
+    </div>
+    
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center">
+            <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-2 sm:p-3 shadow-lg">
+                <i class="fas fa-plus-circle text-white text-xl sm:text-2xl"></i>
+            </div>
+            <div class="ml-3 sm:ml-4">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Nuevo Producto</h2>
+                <p class="text-sm sm:text-base text-gray-600 mt-1 flex items-center">
+                    <i class="fas fa-flower text-green-600 mr-2"></i>
+                    Crear un producto nuevo en el catálogo
+                </p>
+            </div>
+        </div>
+        <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary group w-full sm:w-auto text-center">
+            <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Volver
+        </a>
+    </div>
+</div>
+
+<!-- Formulario -->
+<form method="post" enctype="multipart/form-data" id="producto-form" class="space-y-6">
+    {% csrf_token %}
+    
+    <!-- Sección: Información Básica -->
+    <div class="card bg-gradient-to-br from-white to-gray-50">
+        <div class="flex items-center mb-6 pb-4 border-b-2 border-green-100">
+            <div class="bg-green-500 rounded-lg p-2 sm:p-3">
+                <i class="fas fa-info-circle text-white text-lg sm:text-xl"></i>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 ml-3">📝 Información Básica</h3>
+        </div>
+        
+        <!-- Nombre -->
+        <div class="mb-6">
+            <label for="nombre" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <i class="fas fa-tag text-blue-600 mr-2"></i> Nombre del Producto
+                <span class="text-red-500 ml-1">*</span>
+            </label>
+            <input type="text" 
+                   id="nombre" 
+                   name="nombre" 
+                   value="{{ form_data.nombre|default:'' }}"
+                   required
+                   class="input-field text-base sm:text-lg font-medium"
+                   placeholder="Ej: Ramo de Rosas Rojas">
+            <p class="text-xs text-gray-500 mt-2">
+                <i class="fas fa-lightbulb text-yellow-500"></i> Usa un nombre descriptivo y atractivo
+            </p>
+        </div>
+
+        <!-- Categoría -->
+        <div class="mb-6">
+            <label for="categoria" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <i class="fas fa-folder text-purple-600 mr-2"></i> Categoría
+                <span class="text-red-500 ml-1">*</span>
+            </label>
+            <select id="categoria" 
+                    name="categoria" 
+                    required
+                    class="input-field text-base sm:text-lg">
+                <option value="">-- Selecciona una categoría --</option>
+                {% for cat in categorias %}
+                <option value="{{ cat.id }}" {% if form_data.categoria == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {{ cat.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Sección: Precio y Stock -->
+    <div class="card bg-gradient-to-br from-white to-gray-50">
+        <div class="flex items-center mb-6 pb-4 border-b-2 border-blue-100">
+            <div class="bg-blue-500 rounded-lg p-2 sm:p-3">
+                <i class="fas fa-dollar-sign text-white text-lg sm:text-xl"></i>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 ml-3">💰 Precio y Stock</h3>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <!-- Precio -->
+            <div class="bg-green-50 p-4 rounded-xl border-2 border-green-200">
+                <label for="precio" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-dollar-sign text-green-600 mr-2"></i> Precio (ARS)
+                    <span class="text-red-500 ml-1">*</span>
+                </label>
+                <input type="number" 
+                       id="precio" 
+                       name="precio" 
+                       value="{{ form_data.precio|default:'15000' }}"
+                       required
+                       min="1"
+                       step="1"
+                       class="input-field text-xl sm:text-2xl font-bold text-green-700"
+                       placeholder="15000">
+                <p class="text-xs text-gray-600 mt-2">
+                    <i class="fas fa-info-circle"></i> Sin centavos ni símbolos
+                </p>
+            </div>
+
+            <!-- Stock -->
+            <div class="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                <label for="stock" class="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-boxes text-blue-600 mr-2"></i> Stock Inicial
+                    <span class="text-red-500 ml-1">*</span>
+                </label>
+                <input type="number" 
+                       id="stock" 
+                       name="stock" 
+                       value="{{ form_data.stock|default:'10' }}"
+                       required
+                       min="0"
+                       step="1"
+                       class="input-field text-xl sm:text-2xl font-bold text-blue-700"
+                       placeholder="10">
+                <p class="text-xs text-gray-600 mt-2">
+                    <i class="fas fa-info-circle"></i> Unidades disponibles
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección: Imagen -->
+    <div class="card bg-gradient-to-br from-white to-gray-50">
+        <div class="flex items-center mb-6 pb-4 border-b-2 border-purple-100">
+            <div class="bg-purple-500 rounded-lg p-2 sm:p-3">
+                <i class="fas fa-image text-white text-lg sm:text-xl"></i>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 ml-3">📸 Imagen del Producto</h3>
+        </div>
+        
+        <div class="space-y-4">
+            <!-- Input de archivo -->
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 sm:p-8 text-center hover:border-green-500 transition-all duration-300 bg-gray-50 hover:bg-green-50">
+                <input type="file" 
+                       id="imagen" 
+                       name="imagen" 
+                       accept="image/*"
+                       class="hidden"
+                       onchange="previewImage(event)">
+                <label for="imagen" class="cursor-pointer block">
+                    <div class="mb-4">
+                        <i class="fas fa-cloud-upload-alt text-5xl sm:text-6xl text-gray-400"></i>
+                    </div>
+                    <p class="text-base sm:text-lg font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-camera text-green-600 mr-2"></i>
+                        Toca para subir una imagen
+                    </p>
+                    <p class="text-xs sm:text-sm text-gray-500">
+                        JPG, PNG o WEBP (Máx. 5MB)
+                    </p>
+                </label>
+            </div>
+            
+            <!-- Preview de imagen -->
+            <div id="image-preview" class="hidden">
+                <div class="relative rounded-xl overflow-hidden shadow-lg border-2 border-green-200">
+                    <img id="preview-img" src="" alt="Preview" class="w-full h-auto max-h-96 object-contain bg-gray-100">
+                    <button type="button" 
+                            onclick="removeImage()"
+                            class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all duration-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-600 mt-2 text-center">
+                    <i class="fas fa-check-circle text-green-600"></i> Imagen lista para subir
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección: Descripción (Opcional) -->
+    <div class="card bg-gradient-to-br from-white to-gray-50">
+        <div class="flex items-center mb-6 pb-4 border-b-2 border-indigo-100">
+            <div class="bg-indigo-500 rounded-lg p-2 sm:p-3">
+                <i class="fas fa-align-left text-white text-lg sm:text-xl"></i>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 ml-3">📄 Descripción (Opcional)</h3>
+        </div>
+        
+        <!-- Descripción Corta -->
+        <div class="mb-6">
+            <label for="descripcion_corta" class="block text-sm font-semibold text-gray-700 mb-2 flex items-center flex-wrap">
+                <i class="fas fa-align-left text-purple-600 mr-2"></i> Descripción Corta
+                <span class="ml-2 text-xs text-gray-500 font-normal">(Aparece en tarjetas)</span>
+            </label>
+            <textarea id="descripcion_corta" 
+                      name="descripcion_corta" 
+                      rows="3" 
+                      maxlength="200"
+                      class="input-field resize-y text-sm sm:text-base leading-relaxed"
+                      placeholder="Una breve descripción que capte la atención...">{{ form_data.descripcion_corta|default:'' }}</textarea>
+            <div class="flex justify-between mt-2">
+                <p class="text-xs text-gray-600">
+                    <i class="fas fa-info-circle"></i> Máximo 200 caracteres
+                </p>
+                <p class="text-xs font-bold text-gray-500" id="count-corta">0/200</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección: Configuración -->
+    <div class="card bg-gradient-to-br from-white to-gray-50">
+        <div class="flex items-center mb-6 pb-4 border-b-2 border-yellow-100">
+            <div class="bg-yellow-500 rounded-lg p-2 sm:p-3">
+                <i class="fas fa-cog text-white text-lg sm:text-xl"></i>
+            </div>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-900 ml-3">⚙️ Configuración</h3>
+        </div>
+        
+        <!-- Producto Activo -->
+        <div class="flex items-center justify-between bg-green-50 p-4 rounded-xl border-2 border-green-200">
+            <div class="flex items-center">
+                <i class="fas fa-eye text-green-600 text-xl mr-3"></i>
+                <div>
+                    <p class="font-semibold text-gray-900 text-sm sm:text-base">Producto visible en la tienda</p>
+                    <p class="text-xs sm:text-sm text-gray-600">El producto aparecerá en el catálogo público</p>
+                </div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" name="is_active" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="sticky bottom-0 bg-white border-t-4 border-green-500 p-4 sm:p-6 -mx-4 sm:-mx-6 shadow-2xl rounded-t-2xl">
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button type="submit" 
+                    class="btn-primary flex-1 text-base sm:text-lg py-3 sm:py-4 group">
+                <i class="fas fa-sparkles mr-2 group-hover:rotate-12 transition-transform"></i>
+                ✨ CREAR PRODUCTO
+            </button>
+            <a href="{% url 'admin_simple:productos-list' %}" 
+               class="btn-secondary flex-1 text-base sm:text-lg py-3 sm:py-4 text-center">
+                <i class="fas fa-times mr-2"></i>
+                Cancelar
+            </a>
+        </div>
+        <p class="text-xs text-gray-500 text-center mt-3">
+            <i class="fas fa-info-circle"></i> Los campos con <span class="text-red-500">*</span> son obligatorios
+        </p>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Preview de imagen
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Validar tamaño (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('⚠️ La imagen es muy grande. Máximo 5MB.');
+            event.target.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-img').src = e.target.result;
+            document.getElementById('image-preview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Remover imagen
+function removeImage() {
+    document.getElementById('imagen').value = '';
+    document.getElementById('image-preview').classList.add('hidden');
+    document.getElementById('preview-img').src = '';
+}
+
+// Contador de caracteres
+document.addEventListener('DOMContentLoaded', function() {
+    const descCorta = document.getElementById('descripcion_corta');
+    const countCorta = document.getElementById('count-corta');
+    
+    function updateCount() {
+        const length = descCorta.value.length;
+        countCorta.textContent = length + '/200';
+        
+        if (length > 180) {
+            countCorta.classList.add('text-red-600');
+            countCorta.classList.remove('text-gray-500');
+        } else {
+            countCorta.classList.remove('text-red-600');
+            countCorta.classList.add('text-gray-500');
+        }
+    }
+    
+    descCorta.addEventListener('input', updateCount);
+    updateCount();
+    
+    // Auto-save en localStorage (recuperar si se cierra accidentalmente)
+    const formFields = ['nombre', 'categoria', 'precio', 'stock', 'descripcion_corta'];
+    
+    // Cargar datos guardados
+    formFields.forEach(field => {
+        const saved = localStorage.getItem('nuevo_producto_' + field);
+        if (saved && !document.getElementById(field).value) {
+            document.getElementById(field).value = saved;
+        }
+    });
+    
+    // Guardar en cada cambio
+    formFields.forEach(field => {
+        const input = document.getElementById(field);
+        if (input) {
+            input.addEventListener('input', function() {
+                localStorage.setItem('nuevo_producto_' + field, this.value);
+            });
+        }
+    });
+    
+    // Limpiar localStorage al enviar
+    document.getElementById('producto-form').addEventListener('submit', function() {
+        formFields.forEach(field => {
+            localStorage.removeItem('nuevo_producto_' + field);
+        });
+    });
+    
+    // Validación en tiempo real
+    const precio = document.getElementById('precio');
+    const stock = document.getElementById('stock');
+    
+    precio.addEventListener('input', function() {
+        if (this.value < 1) {
+            this.classList.add('border-red-500');
+        } else {
+            this.classList.remove('border-red-500');
+        }
+    });
+    
+    stock.addEventListener('input', function() {
+        if (this.value < 0) {
+            this.classList.add('border-red-500');
+        } else {
+            this.classList.remove('border-red-500');
+        }
+    });
+});
+
+// Atajo de teclado Ctrl+S / Cmd+S para guardar
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        document.getElementById('producto-form').submit();
+    }
+});
+</script>
+{% endblock %}

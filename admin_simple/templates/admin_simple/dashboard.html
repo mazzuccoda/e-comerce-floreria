@@ -75,7 +75,20 @@
         </div>
         <h3 class="text-2xl font-bold text-gray-900 ml-3">Acciones Rápidas</h3>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <a href="{% url 'admin_simple:producto-create' %}" 
+           class="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-purple-200">
+            <div class="flex items-start">
+                <div class="bg-purple-500 rounded-lg p-3 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-plus-circle text-white text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="font-bold text-gray-900 text-lg">Nuevo Producto</p>
+                    <p class="text-sm text-gray-600 mt-1">Crear desde cero</p>
+                </div>
+            </div>
+        </a>
+        
         <a href="{% url 'admin_simple:pedidos-list' %}" 
            class="group relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 rounded-xl p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-blue-200">
             <div class="flex items-start">
@@ -97,7 +110,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="font-bold text-gray-900 text-lg">Ver Todos</p>
-                    <p class="text-sm text-gray-600 mt-1">Gestionar inventario completo</p>
+                    <p class="text-sm text-gray-600 mt-1">Inventario completo</p>
                 </div>
             </div>
         </a>
@@ -110,7 +123,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="font-bold text-gray-900 text-lg">Stock Bajo</p>
-                    <p class="text-sm text-gray-600 mt-1">Requieren atención urgente</p>
+                    <p class="text-sm text-gray-600 mt-1">Atención urgente</p>
                 </div>
             </div>
         </a>
@@ -123,7 +136,7 @@
                 </div>
                 <div class="ml-4">
                     <p class="font-bold text-gray-900 text-lg">Inactivos</p>
-                    <p class="text-sm text-gray-600 mt-1">No visibles en tienda</p>
+                    <p class="text-sm text-gray-600 mt-1">No visibles</p>
                 </div>
             </div>
         </a>
