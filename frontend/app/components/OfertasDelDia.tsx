@@ -22,27 +22,44 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
   const fetchOfertasDelDia = async () => {
     try {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app';
       
-      // Buscar productos de la categoría "Oferta del día"
-      const response = await fetch(`${apiUrl}/api/catalogo/productos/?categoria__nombre=Oferta del día`, {
+      console.log('🔍 Fetching ofertas del día from:', apiUrl);
+      
+      // Buscar productos de la categoría "Oferta del día" - URL encode del parámetro
+      const categoriaParam = encodeURIComponent('Oferta del día');
+      const url = `${apiUrl}/api/catalogo/productos/?categoria__nombre=${categoriaParam}`;
+      console.log('📡 URL completa:', url);
+      
+      const response = await fetch(url, {
         headers: {
           'Accept': 'application/json',
         },
+        cache: 'no-store', // Evitar cache
       });
 
+      console.log('📊 Response status:', response.status);
+
       if (!response.ok) {
+        console.error('❌ Response not OK:', response.status, response.statusText);
         throw new Error('Error al cargar ofertas del día');
       }
 
       const data = await response.json();
+      console.log('📦 Productos recibidos:', data);
+      console.log('📦 Total productos:', Array.isArray(data) ? data.length : 'No es array');
+      
+      // Asegurarse de que data es un array
+      const productosArray = Array.isArray(data) ? data : [];
       
       // Filtrar solo productos activos
-      const productosActivos = data.filter((p: Product) => p.is_active);
+      const productosActivos = productosArray.filter((p: Product) => p.is_active);
+      console.log('✅ Productos activos:', productosActivos.length);
+      
       setProductos(productosActivos);
       setError(null);
     } catch (err) {
-      console.error('Error fetching ofertas del día:', err);
+      console.error('❌ Error fetching ofertas del día:', err);
       setError('No se pudieron cargar las ofertas del día');
       setProductos([]);
     } finally {
