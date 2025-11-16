@@ -81,10 +81,10 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
     }
   };
 
-  // No mostrar la sección si no hay productos
-  if (!loading && productos.length === 0) {
-    return null;
-  }
+  // Mostrar siempre durante desarrollo para debugging
+  // if (!loading && productos.length === 0) {
+  //   return null;
+  // }
 
   return (
     <section className={`py-12 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 ${className}`}>
@@ -113,8 +113,19 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
 
         {/* Error State */}
         {error && (
-          <div className="text-center py-8 text-red-600">
-            <p>{error}</p>
+          <div className="text-center py-8 text-red-600 bg-red-50 rounded-lg p-4">
+            <p className="font-bold">❌ {error}</p>
+          </div>
+        )}
+
+        {/* Debug Info */}
+        {!loading && (
+          <div className="text-center py-4 bg-blue-50 rounded-lg mb-4">
+            <p className="text-sm text-blue-800">
+              🔍 Debug: {productos.length} productos encontrados | 
+              Estado: {loading ? 'Cargando...' : 'Listo'} | 
+              Error: {error || 'Ninguno'}
+            </p>
           </div>
         )}
 
