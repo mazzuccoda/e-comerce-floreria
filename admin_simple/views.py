@@ -191,15 +191,20 @@ def producto_create(request):
             # Guardar producto
             producto.save()
             
-            # Manejar imagen si se subió
-            if request.FILES.get('imagen'):
-                imagen = ProductoImagen()
-                imagen.producto = producto
-                imagen.imagen = request.FILES['imagen']
-                imagen.is_primary = True
-                imagen.save()
+            # Manejar múltiples imágenes si se subieron
+            imagenes = request.FILES.getlist('imagenes')
+            if imagenes:
+                for index, imagen_file in enumerate(imagenes):
+                    imagen = ProductoImagen()
+                    imagen.producto = producto
+                    imagen.imagen = imagen_file
+                    imagen.is_primary = (index == 0)  # La primera imagen es la principal
+                    imagen.orden = index
+                    imagen.save()
+                
+                logger.info(f'Se subieron {len(imagenes)} imagen(es) para el producto {producto.id}')
             
-            messages.success(request, f'Producto "{producto.nombre}" creado exitosamente')
+            messages.success(request, f'Producto "{producto.nombre}" creado exitosamente con {len(imagenes)} imagen(es)')
             logger.info(f'Producto {producto.id} creado por {request.user.username}')
             
             return redirect('admin_simple:productos-list')

@@ -152,38 +152,43 @@
             <!-- Input de archivo -->
             <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 sm:p-8 text-center hover:border-green-500 transition-all duration-300 bg-gray-50 hover:bg-green-50">
                 <input type="file" 
-                       id="imagen" 
-                       name="imagen" 
+                       id="imagenes" 
+                       name="imagenes" 
                        accept="image/*"
+                       multiple
                        class="hidden"
-                       onchange="previewImage(event)">
-                <label for="imagen" class="cursor-pointer block">
+                       onchange="previewImages(event)">
+                <label for="imagenes" class="cursor-pointer block">
                     <div class="mb-4">
                         <i class="fas fa-cloud-upload-alt text-5xl sm:text-6xl text-gray-400"></i>
                     </div>
                     <p class="text-base sm:text-lg font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-camera text-green-600 mr-2"></i>
-                        Toca para subir una imagen
+                        <i class="fas fa-images text-green-600 mr-2"></i>
+                        Toca para subir imágenes
                     </p>
                     <p class="text-xs sm:text-sm text-gray-500">
-                        JPG, PNG o WEBP (Máx. 5MB)
+                        JPG, PNG o WEBP (Máx. 10MB por imagen)
+                    </p>
+                    <p class="text-xs text-green-600 font-semibold mt-2">
+                        <i class="fas fa-info-circle"></i> Puedes seleccionar múltiples imágenes
                     </p>
                 </label>
             </div>
             
-            <!-- Preview de imagen -->
-            <div id="image-preview" class="hidden">
-                <div class="relative rounded-xl overflow-hidden shadow-lg border-2 border-green-200">
-                    <img id="preview-img" src="" alt="Preview" class="w-full h-auto max-h-96 object-contain bg-gray-100">
-                    <button type="button" 
-                            onclick="removeImage()"
-                            class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all duration-200">
-                        <i class="fas fa-times"></i>
-                    </button>
+            <!-- Preview de imágenes -->
+            <div id="images-preview" class="hidden">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4" id="preview-container">
+                    <!-- Las imágenes se agregarán aquí dinámicamente -->
                 </div>
-                <p class="text-sm text-gray-600 mt-2 text-center">
-                    <i class="fas fa-check-circle text-green-600"></i> Imagen lista para subir
+                <p class="text-sm text-gray-600 mt-3 text-center">
+                    <i class="fas fa-check-circle text-green-600"></i> 
+                    <span id="image-count">0</span> imagen(es) lista(s) para subir
                 </p>
+                <button type="button" 
+                        onclick="clearAllImages()"
+                        class="mt-3 w-full btn-secondary text-sm py-2">
+                    <i class="fas fa-trash mr-2"></i> Eliminar todas las imágenes
+                </button>
             </div>
         </div>
     </div>
@@ -266,31 +271,95 @@
 
 {% block extra_js %}
 <script>
-// Preview de imagen
-function previewImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-        // Validar tamaño (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('⚠️ La imagen es muy grande. Máximo 5MB.');
-            event.target.value = '';
-            return;
+// Array para almacenar las imágenes seleccionadas
+let selectedImages = [];
+
+// Preview de múltiples imágenes
+function previewImages(event) {
+    const files = Array.from(event.target.files);
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const container = document.getElementById('preview-container');
+    
+    // Validar cada archivo
+    for (let file of files) {
+        if (file.size > maxSize) {
+            alert(`⚠️ La imagen "${file.name}" es muy grande. Máximo 10MB por imagen.`);
+            continue;
         }
         
+        // Agregar a la lista de imágenes seleccionadas
+        selectedImages.push(file);
+        
+        // Crear preview
         const reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById('preview-img').src = e.target.result;
-            document.getElementById('image-preview').classList.remove('hidden');
+            const index = selectedImages.length - 1;
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'relative rounded-lg overflow-hidden shadow-lg border-2 border-green-200';
+            previewDiv.setAttribute('data-index', index);
+            previewDiv.innerHTML = `
+                <img src="${e.target.result}" alt="Preview" class="w-full h-32 sm:h-40 object-cover bg-gray-100">
+                <button type="button" 
+                        onclick="removeImage(${index})"
+                        class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-all duration-200 text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 text-center truncate">
+                    ${file.name}
+                </div>
+            `;
+            container.appendChild(previewDiv);
         };
         reader.readAsDataURL(file);
     }
+    
+    // Mostrar el contenedor de previews
+    if (selectedImages.length > 0) {
+        document.getElementById('images-preview').classList.remove('hidden');
+        updateImageCount();
+    }
 }
 
-// Remover imagen
-function removeImage() {
-    document.getElementById('imagen').value = '';
-    document.getElementById('image-preview').classList.add('hidden');
-    document.getElementById('preview-img').src = '';
+// Remover una imagen específica
+function removeImage(index) {
+    // Remover del array
+    selectedImages.splice(index, 1);
+    
+    // Remover del DOM
+    const container = document.getElementById('preview-container');
+    const previewDiv = container.querySelector(`[data-index="${index}"]`);
+    if (previewDiv) {
+        previewDiv.remove();
+    }
+    
+    // Actualizar índices
+    const previews = container.querySelectorAll('[data-index]');
+    previews.forEach((preview, newIndex) => {
+        preview.setAttribute('data-index', newIndex);
+        const button = preview.querySelector('button');
+        button.setAttribute('onclick', `removeImage(${newIndex})`);
+    });
+    
+    // Ocultar si no hay imágenes
+    if (selectedImages.length === 0) {
+        document.getElementById('images-preview').classList.add('hidden');
+        document.getElementById('imagenes').value = '';
+    }
+    
+    updateImageCount();
+}
+
+// Limpiar todas las imágenes
+function clearAllImages() {
+    selectedImages = [];
+    document.getElementById('preview-container').innerHTML = '';
+    document.getElementById('images-preview').classList.add('hidden');
+    document.getElementById('imagenes').value = '';
+}
+
+// Actualizar contador de imágenes
+function updateImageCount() {
+    document.getElementById('image-count').textContent = selectedImages.length;
 }
 
 // Contador de caracteres

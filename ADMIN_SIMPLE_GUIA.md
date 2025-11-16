@@ -344,11 +344,13 @@ El admin simple es **completamente responsive**:
 - **Precio**: En pesos argentinos (sin centavos)
 - **Stock Inicial**: Cantidad de unidades disponibles (default: 10)
 
-#### **📸 Imagen (Opcional):**
+#### **📸 Imágenes (Opcional):**
 - Formatos: JPG, PNG, WEBP
-- Tamaño máximo: 5MB
+- Tamaño máximo: **10MB por imagen**
+- **Múltiples imágenes**: Puedes subir varias a la vez
 - Preview instantáneo antes de guardar
 - Captura directa desde cámara en móvil
+- La primera imagen será la principal
 
 #### **📄 Descripción (Opcional):**
 - **Descripción Corta**: Máximo 200 caracteres (aparece en tarjetas)
@@ -368,10 +370,14 @@ El admin simple es **completamente responsive**:
 - ✅ Nombre es obligatorio
 - ✅ Categoría es obligatoria
 
-#### **Preview de Imagen:**
-- Ver la imagen antes de subir
-- Botón para remover y cambiar
-- Validación de tamaño (máx 5MB)
+#### **Preview de Imágenes:**
+- Ver todas las imágenes antes de subir
+- Grid responsive (2-3 columnas)
+- Botón individual para remover cada imagen
+- Botón para eliminar todas las imágenes
+- Contador de imágenes seleccionadas
+- Validación de tamaño (máx 10MB por imagen)
+- Muestra nombre de archivo en cada preview
 
 #### **Auto-save:**
 - Los datos se guardan en localStorage
@@ -386,11 +392,14 @@ El admin simple es **completamente responsive**:
 1. Click en "Nuevo Producto"
 2. Completar campos obligatorios (nombre, categoría, precio)
 3. Ajustar stock inicial (opcional, default: 10)
-4. Subir imagen (opcional, desde galería o cámara)
+4. Subir imágenes (opcional, múltiples desde galería o cámara)
+   - Selecciona varias imágenes a la vez
+   - Preview instantáneo de todas
+   - Remover individualmente si es necesario
 5. Agregar descripción (opcional)
 6. Configurar visibilidad (default: visible)
 7. Click en "✨ CREAR PRODUCTO"
-8. ✅ Producto creado y redirigido a lista
+8. ✅ Producto creado con todas las imágenes y redirigido a lista
 ```
 
 ### **Optimizado para Móvil:**
