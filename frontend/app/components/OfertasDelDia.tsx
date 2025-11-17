@@ -1,4 +1,5 @@
 'use client';
+// Updated: 2025-11-16 21:42 - Fixed duplicate badge issue
 
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
@@ -142,16 +143,8 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
                     key={producto.id}
                     className="flex-shrink-0 w-72 md:w-80"
                   >
-                    <div className="relative">
-                      {/* Badge de oferta - solo mostrar si hay descuento mayor a 0 */}
-                      {producto.porcentaje_descuento && producto.porcentaje_descuento > 0 && (
-                        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
-                          -{producto.porcentaje_descuento}%
-                        </div>
-                      )}
-                      {/* Ocultar el badge de descuento del ProductCard porque ya mostramos el nuestro */}
-                      <ProductCard product={producto} hideDiscountBadge={true} />
-                    </div>
+                    {/* ProductCard sin badge de descuento - el badge verde "OFERTAS DEL DÍA" ya indica que son ofertas */}
+                    <ProductCard product={producto} hideDiscountBadge={true} />
                   </div>
                 ))}
               </div>
