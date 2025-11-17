@@ -65,6 +65,29 @@
                            placeholder="Ej: Ramo de Rosas Rojas">
                 </div>
 
+                <!-- Categoría -->
+                <div class="mb-6">
+                    <label for="categoria" class="block text-base font-bold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-tag text-orange-600 mr-2 text-lg"></i> Categoría
+                        <span class="text-red-500 ml-1">*</span>
+                    </label>
+                    <select id="categoria" 
+                            name="categoria" 
+                            required
+                            class="input-field text-base font-medium bg-white cursor-pointer hover:border-orange-500 transition-colors">
+                        <option value="">-- Selecciona una categoría --</option>
+                        {% for cat in categorias %}
+                        <option value="{{ cat.id }}" {% if producto.categoria.id == cat.id %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-sm text-gray-600 mt-2">
+                        <i class="fas fa-info-circle text-orange-500"></i> 
+                        La categoría determina dónde aparece el producto en la tienda
+                    </p>
+                </div>
+
                 <!-- Descripción Corta -->
                 <div class="mb-6">
                     <label for="descripcion_corta" class="block text-base font-bold text-gray-700 mb-3 flex items-center flex-wrap">

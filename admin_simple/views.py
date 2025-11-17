@@ -290,6 +290,11 @@ def producto_edit(request, pk):
             producto.descripcion_corta = request.POST.get('descripcion_corta', '')
             producto.descripcion = request.POST.get('descripcion', '')
             
+            # Actualizar categoría
+            categoria_id = request.POST.get('categoria')
+            if categoria_id:
+                producto.categoria_id = int(categoria_id)
+            
             # Limpiar y convertir precio (remover comas y puntos de miles)
             precio_str = request.POST.get('precio', '0')
             # Remover puntos de miles y reemplazar coma decimal por punto
@@ -351,9 +356,13 @@ def producto_edit(request, pk):
     # Obtener todas las imágenes del producto
     imagenes = producto.imagenes.all().order_by('-is_primary', '-id')
     
+    # Obtener todas las categorías activas
+    categorias = Categoria.objects.filter(is_active=True).order_by('nombre')
+    
     context = {
         'producto': producto,
         'imagenes': imagenes,
+        'categorias': categorias,
     }
     
     return render(request, 'admin_simple/producto_edit.html', context)
