@@ -88,10 +88,19 @@ export default function Home() {
       {/* Sección de ofertas del día */}
       <OfertasDelDia />
 
-      <section id="catalogo" className="section">
-        <h2 className="section-title">DESTACADOS</h2>
-        <p className="section-subtitle">Las flores más vendidas en Tucumán</p>
-        <ProductListFinal showFeatured={true} />
+      <section id="catalogo" className="py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header con badge verde similar a Ofertas */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full shadow-lg">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              <span className="font-bold text-lg">DESTACADOS</span>
+            </div>
+          </div>
+          <ProductListFinal showFeatured={true} />
+        </div>
       </section>
 
       {/* Sección de adicionales con diseño especial */}

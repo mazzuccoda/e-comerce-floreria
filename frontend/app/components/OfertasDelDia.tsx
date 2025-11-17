@@ -89,21 +89,15 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
   }
 
   return (
-    <section className={`py-12 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 ${className}`}>
+    <section className={`py-12 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header con diseño especial */}
+        {/* Header con badge verde */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2 rounded-full mb-4 shadow-lg">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full shadow-lg">
             <Tag className="w-5 h-5" />
             <span className="font-bold text-lg">OFERTAS DEL DÍA</span>
             <Clock className="w-5 h-5 animate-pulse" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            ¡Aprovechá estas ofertas especiales!
-          </h2>
-          <p className="text-gray-600 text-lg">
-            Productos seleccionados con descuentos exclusivos por tiempo limitado
-          </p>
         </div>
 
         {/* Loading State */}
@@ -149,9 +143,9 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
                     className="flex-shrink-0 w-72 md:w-80"
                   >
                     <div className="relative">
-                      {/* Badge de oferta */}
-                      {producto.porcentaje_descuento && (
-                        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                      {/* Badge de oferta - solo mostrar si hay descuento mayor a 0 */}
+                      {producto.porcentaje_descuento && producto.porcentaje_descuento > 0 && (
+                        <div className="absolute top-2 left-2 z-10 bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
                           -{producto.porcentaje_descuento}%
                         </div>
                       )}
