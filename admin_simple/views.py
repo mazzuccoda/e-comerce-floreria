@@ -42,9 +42,9 @@ def dashboard(request):
         actividad_reciente = []
         
         # Últimos pedidos
-        ultimos_pedidos = Pedido.objects.select_related('cliente').order_by('-created_at')[:3]
+        ultimos_pedidos = Pedido.objects.select_related('cliente').order_by('-creado')[:3]
         for pedido in ultimos_pedidos:
-            tiempo = timezone.now() - pedido.created_at
+            tiempo = timezone.now() - pedido.creado
             if tiempo.seconds < 3600:
                 tiempo_str = f"Hace {tiempo.seconds // 60} minutos"
             elif tiempo.seconds < 86400:
@@ -53,8 +53,8 @@ def dashboard(request):
                 tiempo_str = f"Hace {tiempo.days} días"
             
             actividad_reciente.append({
-                'titulo': f'Nuevo pedido #{pedido.id}',
-                'descripcion': f'${pedido.total:,.0f} - {pedido.cliente.get_full_name() if pedido.cliente else "Cliente"}',
+                'titulo': f'Nuevo pedido #{pedido.numero_pedido or pedido.id}',
+                'descripcion': f'${pedido.total:,.0f} - {pedido.nombre_destinatario}',
                 'tiempo': tiempo_str,
                 'icono': 'shopping-cart',
                 'color': 'blue'
