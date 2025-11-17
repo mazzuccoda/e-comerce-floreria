@@ -134,16 +134,24 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
           </div>
         )}
 
-        {/* Debug Info */}
-        {!loading && (
-          <div className="text-center py-4 bg-blue-50 rounded-lg mb-4">
-            <p className="text-sm text-blue-800">
-              🔍 Debug: {productos.length} productos encontrados | 
-              Estado: {loading ? 'Cargando...' : 'Listo'} | 
-              Error: {error || 'Ninguno'}
-            </p>
-          </div>
-        )}
+        {/* Debug Info - Siempre visible */}
+        <div className="text-center py-4 bg-blue-50 rounded-lg mb-4 border-2 border-blue-300">
+          <p className="text-sm text-blue-800 font-bold mb-2">
+            🔍 DEBUG INFO
+          </p>
+          <p className="text-xs text-blue-700">
+            Productos encontrados: <span className="font-bold text-lg">{productos.length}</span>
+          </p>
+          <p className="text-xs text-blue-700">
+            Estado: <span className="font-bold">{loading ? '⏳ Cargando...' : '✅ Listo'}</span>
+          </p>
+          <p className="text-xs text-blue-700">
+            Error: <span className="font-bold">{error || '✅ Ninguno'}</span>
+          </p>
+          <p className="text-xs text-gray-600 mt-2">
+            Versión: 1.0.5 | {new Date().toLocaleTimeString()}
+          </p>
+        </div>
 
         {/* Carrusel de productos */}
         {!loading && productos.length > 0 && (
