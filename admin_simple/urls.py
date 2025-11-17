@@ -16,6 +16,10 @@ urlpatterns = [
     path('productos/<int:pk>/toggle-destacado/', views.producto_toggle_destacado, name='producto-toggle-destacado'),
     path('productos/<int:pk>/update-field/', views.producto_update_field, name='producto-update-field'),
     
+    # Imágenes de productos
+    path('imagenes/<int:pk>/eliminar/', views.imagen_delete, name='imagen-delete'),
+    path('imagenes/<int:pk>/set-primary/', views.imagen_set_primary, name='imagen-set-primary'),
+    
     # Pedidos
     path('pedidos/', views.pedidos_list, name='pedidos-list'),
     path('pedidos/<int:pk>/', views.pedido_detail, name='pedido-detail'),

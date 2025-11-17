@@ -263,10 +263,33 @@ def producto_edit(request, pk):
                 return render(request, 'admin_simple/producto_edit.html', {'producto': producto})
             
             producto.save()
+            
+            # Manejar subida de nuevas imágenes
+            imagenes = request.FILES.getlist('imagenes')
+            if imagenes:
+                from catalogo.models import ProductoImagen
+                imagenes_creadas = 0
+                for imagen in imagenes:
+                    # Validar tamaño (10MB máximo)
+                    if imagen.size > 10 * 1024 * 1024:
+                        messages.warning(request, f'Imagen {imagen.name} excede 10MB y fue omitida')
+                        continue
+                    
+                    # Crear imagen del producto
+                    ProductoImagen.objects.create(
+                        producto=producto,
+                        imagen=imagen,
+                        is_primary=False  # La primera imagen existente sigue siendo primaria
+                    )
+                    imagenes_creadas += 1
+                
+                if imagenes_creadas > 0:
+                    messages.success(request, f'{imagenes_creadas} imagen(es) agregada(s) exitosamente')
+            
             messages.success(request, f'Producto "{producto.nombre}" actualizado exitosamente')
             logger.info(f'Producto {producto.id} actualizado por {request.user.username}')
             
-            return redirect('admin_simple:productos-list')
+            return redirect('admin_simple:producto-edit', pk=pk)
             
         except ValueError as e:
             messages.error(request, f'Error en los datos: {str(e)}. Verifica que precio y stock sean números válidos.')
@@ -275,8 +298,12 @@ def producto_edit(request, pk):
             messages.error(request, f'Error inesperado: {str(e)}')
             logger.error(f'Error inesperado actualizando producto {pk}: {str(e)}')
     
+    # Obtener todas las imágenes del producto
+    imagenes = producto.imagenes.all().order_by('-is_primary', '-id')
+    
     context = {
         'producto': producto,
+        'imagenes': imagenes,
     }
     
     return render(request, 'admin_simple/producto_edit.html', context)
@@ -631,3 +658,75 @@ def pedido_pdf(request, pk):
     except Exception as e:
         logger.error(f'Error generando PDF para pedido {pk}: {str(e)}')
         return HttpResponse(f'Error generando PDF: {str(e)}', status=500)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_POST
+def imagen_delete(request, pk):
+    """
+    Eliminar una imagen del producto (AJAX)
+    """
+    try:
+        imagen = get_object_or_404(ProductoImagen, pk=pk)
+        producto_id = imagen.producto.id
+        
+        # No permitir eliminar si es la única imagen
+        if imagen.producto.imagenes.count() == 1:
+            return JsonResponse({
+                'success': False,
+                'error': 'No se puede eliminar la única imagen del producto'
+            }, status=400)
+        
+        # Si es la imagen primaria, establecer otra como primaria
+        if imagen.is_primary:
+            otra_imagen = imagen.producto.imagenes.exclude(pk=pk).first()
+            if otra_imagen:
+                otra_imagen.is_primary = True
+                otra_imagen.save()
+        
+        imagen.delete()
+        logger.info(f'Imagen {pk} eliminada por {request.user.username}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Imagen eliminada exitosamente'
+        })
+    except Exception as e:
+        logger.error(f'Error eliminando imagen {pk}: {str(e)}')
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_POST
+def imagen_set_primary(request, pk):
+    """
+    Establecer una imagen como primaria (AJAX)
+    """
+    try:
+        imagen = get_object_or_404(ProductoImagen, pk=pk)
+        producto = imagen.producto
+        
+        # Quitar primaria de todas las imágenes del producto
+        producto.imagenes.update(is_primary=False)
+        
+        # Establecer esta como primaria
+        imagen.is_primary = True
+        imagen.save()
+        
+        logger.info(f'Imagen {pk} establecida como primaria por {request.user.username}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Imagen principal actualizada'
+        })
+    except Exception as e:
+        logger.error(f'Error estableciendo imagen primaria {pk}: {str(e)}')
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
