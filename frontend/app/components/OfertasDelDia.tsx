@@ -149,7 +149,8 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
                           -{producto.porcentaje_descuento}%
                         </div>
                       )}
-                      <ProductCard product={producto} />
+                      {/* Ocultar el badge de descuento del ProductCard porque ya mostramos el nuestro */}
+                      <ProductCard product={producto} hideDiscountBadge={true} />
                     </div>
                   </div>
                 ))}

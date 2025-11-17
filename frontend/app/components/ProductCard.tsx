@@ -6,9 +6,10 @@ import { Product } from '@/types/Product';
 
 interface ProductCardProps {
   product: Product;
+  hideDiscountBadge?: boolean; // Prop para ocultar el badge de descuento
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, hideDiscountBadge = false }: ProductCardProps) {
   const router = useRouter();
 
   // Verificar si el producto requiere cotización (precio = 0)
@@ -101,7 +102,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
           {/* Badge de descuento en esquina superior derecha */}
-          {product.porcentaje_descuento && product.porcentaje_descuento > 0 && (
+          {!hideDiscountBadge && product.porcentaje_descuento && product.porcentaje_descuento > 0 && (
             <div className="absolute top-3 right-3 bg-green-600 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
               -{product.porcentaje_descuento}%
             </div>
