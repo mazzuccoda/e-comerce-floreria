@@ -23,20 +23,21 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
     try {
       setLoading(true);
       
-      // Obtener la URL base del window.location para asegurar que use el mismo dominio
-      const isClient = typeof window !== 'undefined';
-      const apiUrl = isClient 
-        ? `${window.location.protocol}//${window.location.host}`
-        : 'https://floreriaviverocristian.up.railway.app';
+      // Usar la misma URL que usa el resto de la aplicación
+      // Vemos en los logs que ProductListClient usa esta URL y funciona
+      const apiUrl = 'https://e-comerce-floreria-production.up.railway.app';
       
       console.log('🔍 Fetching ofertas del día from:', apiUrl);
-      console.log('🌐 Window location:', isClient ? window.location.href : 'SSR');
       
-      // Obtener TODOS los productos y filtrar en el cliente
-      const url = `${apiUrl}/api/catalogo/productos/`;
-      console.log('📡 URL completa:', url);
+      // Construir URL con query params para evitar problemas de trailing slash
+      const url = new URL('/api/catalogo/productos/', apiUrl);
+      // Agregar timestamp para evitar cache
+      url.searchParams.append('t', Date.now().toString());
       
-      const response = await fetch(url, {
+      const urlString = url.toString();
+      console.log('📡 URL completa:', urlString);
+      
+      const response = await fetch(urlString, {
         headers: {
           'Accept': 'application/json',
         },
@@ -149,7 +150,7 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
             Error: <span className="font-bold">{error || '✅ Ninguno'}</span>
           </p>
           <p className="text-xs text-gray-600 mt-2">
-            Versión: 1.0.5 | {new Date().toLocaleTimeString()}
+            Versión: 1.0.7 | {new Date().toLocaleTimeString()}
           </p>
         </div>
 
