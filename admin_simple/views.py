@@ -26,20 +26,58 @@ def is_superuser(user):
 @user_passes_test(is_superuser, login_url='/admin/')
 def dashboard(request):
     """
-    Dashboard principal con estadísticas
+    Dashboard principal con estadísticas y actividad reciente
     """
     try:
-        # Estadísticas
+        # Estadísticas de productos
         total_productos = Producto.objects.count()
         productos_activos = Producto.objects.filter(is_active=True).count()
         productos_stock_bajo = Producto.objects.filter(stock__lt=5, stock__gt=0).count()
         productos_sin_stock = Producto.objects.filter(stock=0).count()
+        
+        # Pedidos pendientes
+        pedidos_pendientes = Pedido.objects.filter(estado='pendiente').count()
+        
+        # Actividad reciente (últimos 5 eventos)
+        actividad_reciente = []
+        
+        # Últimos pedidos
+        ultimos_pedidos = Pedido.objects.select_related('cliente').order_by('-created_at')[:3]
+        for pedido in ultimos_pedidos:
+            tiempo = timezone.now() - pedido.created_at
+            if tiempo.seconds < 3600:
+                tiempo_str = f"Hace {tiempo.seconds // 60} minutos"
+            elif tiempo.seconds < 86400:
+                tiempo_str = f"Hace {tiempo.seconds // 3600} horas"
+            else:
+                tiempo_str = f"Hace {tiempo.days} días"
+            
+            actividad_reciente.append({
+                'titulo': f'Nuevo pedido #{pedido.id}',
+                'descripcion': f'${pedido.total:,.0f} - {pedido.cliente.get_full_name() if pedido.cliente else "Cliente"}',
+                'tiempo': tiempo_str,
+                'icono': 'shopping-cart',
+                'color': 'blue'
+            })
+        
+        # Productos con stock bajo
+        productos_bajo_stock = Producto.objects.filter(stock__lt=5, stock__gt=0).order_by('stock')[:2]
+        for producto in productos_bajo_stock:
+            actividad_reciente.append({
+                'titulo': f'Stock bajo: {producto.nombre}',
+                'descripcion': f'Solo {producto.stock} unidades disponibles',
+                'tiempo': 'Requiere atención',
+                'icono': 'exclamation-triangle',
+                'color': 'yellow'
+            })
         
         context = {
             'total_productos': total_productos,
             'productos_activos': productos_activos,
             'productos_stock_bajo': productos_stock_bajo,
             'productos_sin_stock': productos_sin_stock,
+            'pedidos_pendientes': pedidos_pendientes,
+            'actividad_reciente': actividad_reciente[:5],  # Máximo 5 items
         }
         
         return render(request, 'admin_simple/dashboard.html', context)
@@ -69,6 +107,15 @@ def productos_list(request):
     # Query base
     productos = Producto.objects.all()
     
+    # Estadísticas para los chips
+    stats = {
+        'total': Producto.objects.count(),
+        'activos': Producto.objects.filter(is_active=True).count(),
+        'inactivos': Producto.objects.filter(is_active=False).count(),
+        'stock_bajo': Producto.objects.filter(stock__lt=5, stock__gt=0).count(),
+        'destacados': Producto.objects.filter(is_featured=True).count(),
+    }
+    
     # Aplicar filtros
     if filtro == 'activos':
         productos = productos.filter(is_active=True)
@@ -78,6 +125,8 @@ def productos_list(request):
         productos = productos.filter(stock__lt=5, stock__gt=0)
     elif filtro == 'sin_stock':
         productos = productos.filter(stock=0)
+    elif filtro == 'destacados':
+        productos = productos.filter(is_featured=True)
     
     # Buscar por nombre
     if buscar:
@@ -119,6 +168,7 @@ def productos_list(request):
         'buscar_actual': buscar,
         'categoria_actual': categoria_id,
         'orden_actual': orden,
+        'stats': stats,
     }
     
     return render(request, 'admin_simple/productos_list.html', context)

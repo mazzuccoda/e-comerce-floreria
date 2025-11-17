@@ -3,31 +3,111 @@
 {% block title %}Productos - Admin Simple{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+<!-- Header -->
+<div class="mb-4 sm:mb-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
                 <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-2 mr-3">
                     <i class="fas fa-box text-white text-xl sm:text-2xl"></i>
                 </div>
-                Productos
+                📦 Productos
             </h2>
-            <p class="text-sm sm:text-base text-gray-600 mt-2 ml-0 sm:ml-14">Gestiona precios, stock y disponibilidad</p>
+            <p class="text-xs sm:text-sm text-gray-600 mt-1 ml-0 sm:ml-14">Gestión completa de inventario</p>
         </div>
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-            <div class="text-right flex-1 sm:flex-none">
-                <p class="text-xs sm:text-sm text-gray-500">Total de productos</p>
-                <p class="text-2xl sm:text-3xl font-bold text-green-600">{{ page_obj.paginator.count }}</p>
-            </div>
-            <a href="{% url 'admin_simple:producto-create' %}" 
-               class="btn-primary whitespace-nowrap group">
-                <i class="fas fa-plus-circle mr-2 group-hover:rotate-90 transition-transform"></i>
-                <span class="hidden sm:inline">Nuevo Producto</span>
-                <span class="sm:hidden">Nuevo</span>
-            </a>
-        </div>
+        <a href="{% url 'admin_simple:producto-create' %}" 
+           class="btn-primary whitespace-nowrap group w-full sm:w-auto text-center shadow-lg">
+            <i class="fas fa-plus-circle mr-2 group-hover:rotate-90 transition-transform"></i>
+            <span class="hidden sm:inline">Crear Nuevo Producto</span>
+            <span class="sm:hidden">Crear Producto</span>
+        </a>
     </div>
 </div>
+
+<!-- Filtros Rápidos (Chips) -->
+<div class="mb-4 sm:mb-6">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <a href="{% url 'admin_simple:productos-list' %}" 
+           class="filter-chip {% if not filtro_actual or filtro_actual == 'todos' %}active{% endif %}">
+            <i class="fas fa-th mr-1.5"></i>
+            <span>Todos</span>
+            <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.total }}</span>
+        </a>
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=activos" 
+           class="filter-chip filter-chip-green {% if filtro_actual == 'activos' %}active{% endif %}">
+            <i class="fas fa-check-circle mr-1.5"></i>
+            <span>Activos</span>
+            <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.activos }}</span>
+        </a>
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=inactivos" 
+           class="filter-chip filter-chip-red {% if filtro_actual == 'inactivos' %}active{% endif %}">
+            <i class="fas fa-times-circle mr-1.5"></i>
+            <span>Inactivos</span>
+            <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.inactivos }}</span>
+        </a>
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=stock_bajo" 
+           class="filter-chip filter-chip-yellow {% if filtro_actual == 'stock_bajo' %}active{% endif %}">
+            <i class="fas fa-exclamation-triangle mr-1.5"></i>
+            <span>Stock Bajo</span>
+            <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.stock_bajo }}</span>
+        </a>
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=destacados" 
+           class="filter-chip filter-chip-orange {% if filtro_actual == 'destacados' %}active{% endif %}">
+            <i class="fas fa-star mr-1.5"></i>
+            <span>Destacados</span>
+            <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.destacados }}</span>
+        </a>
+    </div>
+</div>
+
+<style>
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #374151;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+.filter-chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.filter-chip.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-color: #1d4ed8;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+}
+.filter-chip-green.active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #047857;
+}
+.filter-chip-red.active {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: #b91c1c;
+}
+.filter-chip-yellow.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-color: #b45309;
+}
+.filter-chip-orange.active {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border-color: #c2410c;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+</style>
 
 <!-- Filters and Search -->
 <div class="card mb-6 bg-gradient-to-br from-white to-gray-50">
