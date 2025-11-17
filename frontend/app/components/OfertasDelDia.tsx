@@ -143,8 +143,16 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
                     key={producto.id}
                     className="flex-shrink-0 w-72 md:w-80"
                   >
-                    {/* ProductCard sin badge de descuento - el badge verde "OFERTAS DEL DÍA" ya indica que son ofertas */}
-                    <ProductCard product={producto} hideDiscountBadge={true} />
+                    <div className="relative">
+                      {/* Badge de descuento verde - solo si hay descuento real */}
+                      {producto.porcentaje_descuento && producto.porcentaje_descuento > 0 && (
+                        <div className="absolute top-2 right-2 z-20 bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                          -{producto.porcentaje_descuento}%
+                        </div>
+                      )}
+                      {/* ProductCard sin su propio badge para evitar duplicación */}
+                      <ProductCard product={producto} hideDiscountBadge={true} />
+                    </div>
                   </div>
                 ))}
               </div>
