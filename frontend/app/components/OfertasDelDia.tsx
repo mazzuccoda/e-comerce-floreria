@@ -1,5 +1,5 @@
 'use client';
-// Updated: 2025-11-16 21:42 - Fixed duplicate badge issue
+// Updated: 2025-11-16 21:55 - Badge only shows when discount > 0
 
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
@@ -144,8 +144,10 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
                     className="flex-shrink-0 w-72 md:w-80"
                   >
                     <div className="relative">
-                      {/* Badge de descuento verde - solo si hay descuento real */}
-                      {producto.porcentaje_descuento && producto.porcentaje_descuento > 0 && (
+                      {/* Badge de descuento verde - SOLO si hay descuento MAYOR a 0 */}
+                      {producto.porcentaje_descuento && 
+                       typeof producto.porcentaje_descuento === 'number' && 
+                       producto.porcentaje_descuento > 0 && (
                         <div className="absolute top-2 right-2 z-20 bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
                           -{producto.porcentaje_descuento}%
                         </div>
