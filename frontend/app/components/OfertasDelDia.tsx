@@ -145,13 +145,11 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
                   >
                     <div className="relative">
                       {/* Badge de descuento verde - SOLO si hay descuento MAYOR a 0 */}
-                      {producto.porcentaje_descuento && 
-                       typeof producto.porcentaje_descuento === 'number' && 
-                       producto.porcentaje_descuento > 0 && (
+                      {(producto.porcentaje_descuento && producto.porcentaje_descuento > 0) ? (
                         <div className="absolute top-2 right-2 z-20 bg-gradient-to-r from-green-600 to-green-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
                           -{producto.porcentaje_descuento}%
                         </div>
-                      )}
+                      ) : null}
                       {/* ProductCard sin su propio badge para evitar duplicación */}
                       <ProductCard product={producto} hideDiscountBadge={true} />
                     </div>
