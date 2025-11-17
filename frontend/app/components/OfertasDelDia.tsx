@@ -24,10 +24,7 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       setLoading(true);
       
       // Usar la misma URL que usa el resto de la aplicación
-      // Vemos en los logs que ProductListClient usa esta URL y funciona
       const apiUrl = 'https://e-comerce-floreria-production.up.railway.app';
-      
-      console.log('🔍 Fetching ofertas del día from:', apiUrl);
       
       // Construir URL con query params para evitar problemas de trailing slash
       const url = new URL('/api/catalogo/productos/', apiUrl);
@@ -35,7 +32,6 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       url.searchParams.append('t', Date.now().toString());
       
       const urlString = url.toString();
-      console.log('📡 URL completa:', urlString);
       
       const response = await fetch(urlString, {
         headers: {
@@ -45,18 +41,11 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
         mode: 'cors',
       });
 
-      console.log('📊 Response status:', response.status);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Response not OK:', response.status, response.statusText);
-        console.error('❌ Error body:', errorText);
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('📦 Productos recibidos:', data);
-      console.log('📦 Total productos:', Array.isArray(data) ? data.length : 'No es array');
       
       // Asegurarse de que data es un array
       const productosArray = Array.isArray(data) ? data : [];
@@ -69,15 +58,11 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
         return esOferta && estaActivo;
       });
       
-      console.log('✅ Productos de ofertas encontrados:', productosOfertas.length);
-      console.log('✅ Productos ofertas detalle:', productosOfertas);
-      
       setProductos(productosOfertas);
       setError(null);
     } catch (err: any) {
-      console.error('❌ Error fetching ofertas del día:', err);
-      console.error('❌ Error stack:', err.stack);
-      setError(`No se pudieron cargar las ofertas: ${err.message}`);
+      console.error('Error cargando ofertas del día:', err.message);
+      setError('No se pudieron cargar las ofertas del día');
       setProductos([]);
     } finally {
       setLoading(false);
@@ -98,10 +83,10 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
     }
   };
 
-  // Mostrar siempre durante desarrollo para debugging
-  // if (!loading && productos.length === 0) {
-  //   return null;
-  // }
+  // No mostrar la sección si no hay productos
+  if (!loading && productos.length === 0) {
+    return null;
+  }
 
   return (
     <section className={`py-12 bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 ${className}`}>
@@ -135,24 +120,6 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
           </div>
         )}
 
-        {/* Debug Info - Siempre visible */}
-        <div className="text-center py-4 bg-blue-50 rounded-lg mb-4 border-2 border-blue-300">
-          <p className="text-sm text-blue-800 font-bold mb-2">
-            🔍 DEBUG INFO
-          </p>
-          <p className="text-xs text-blue-700">
-            Productos encontrados: <span className="font-bold text-lg">{productos.length}</span>
-          </p>
-          <p className="text-xs text-blue-700">
-            Estado: <span className="font-bold">{loading ? '⏳ Cargando...' : '✅ Listo'}</span>
-          </p>
-          <p className="text-xs text-blue-700">
-            Error: <span className="font-bold">{error || '✅ Ninguno'}</span>
-          </p>
-          <p className="text-xs text-gray-600 mt-2">
-            Versión: 1.0.7 | {new Date().toLocaleTimeString()}
-          </p>
-        </div>
 
         {/* Carrusel de productos */}
         {!loading && productos.length > 0 && (
