@@ -308,7 +308,10 @@ def producto_edit(request, pk):
                 stock_str = stock_str.replace('.', '').replace(',', '')
                 producto.stock = int(stock_str)
             
-            producto.is_active = request.POST.get('is_active') == 'on'
+            # Actualizar visibilidad solo si viene en el POST
+            is_active_value = request.POST.get('is_active', None)
+            if is_active_value is not None:
+                producto.is_active = is_active_value == 'on'
             
             # Validaciones
             if producto.precio is None or producto.precio <= 0:
