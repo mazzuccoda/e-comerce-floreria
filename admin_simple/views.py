@@ -295,25 +295,27 @@ def producto_edit(request, pk):
             if categoria_id:
                 producto.categoria_id = int(categoria_id)
             
-            # Limpiar y convertir precio (remover comas y puntos de miles)
-            precio_str = request.POST.get('precio', '0')
-            # Remover puntos de miles y reemplazar coma decimal por punto
-            precio_str = precio_str.replace('.', '').replace(',', '.')
-            producto.precio = float(precio_str)
+            # Limpiar y convertir precio (remover comas y puntos de miles) solo si viene en el POST
+            precio_str = request.POST.get('precio', None)
+            if precio_str is not None and precio_str != '':
+                # Remover puntos de miles y reemplazar coma decimal por punto
+                precio_str = precio_str.replace('.', '').replace(',', '.')
+                producto.precio = float(precio_str)
             
-            # Limpiar y convertir stock
-            stock_str = request.POST.get('stock', '0')
-            stock_str = stock_str.replace('.', '').replace(',', '')
-            producto.stock = int(stock_str)
+            # Limpiar y convertir stock solo si viene en el POST
+            stock_str = request.POST.get('stock', None)
+            if stock_str is not None and stock_str != '':
+                stock_str = stock_str.replace('.', '').replace(',', '')
+                producto.stock = int(stock_str)
             
             producto.is_active = request.POST.get('is_active') == 'on'
             
             # Validaciones
-            if producto.precio <= 0:
+            if producto.precio is None or producto.precio <= 0:
                 messages.error(request, 'El precio debe ser mayor a 0')
                 return render(request, 'admin_simple/producto_edit.html', {'producto': producto})
             
-            if producto.stock < 0:
+            if producto.stock is None or producto.stock < 0:
                 messages.error(request, 'El stock no puede ser negativo')
                 return render(request, 'admin_simple/producto_edit.html', {'producto': producto})
             
