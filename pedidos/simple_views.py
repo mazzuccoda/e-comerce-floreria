@@ -203,6 +203,11 @@ def simple_pedido_detalle(request, pedido_id):
         
         serializer = PedidoReadSerializer(pedido)
         
+        # DEBUG: Ver qué datos se están devolviendo
+        print(f"📦 Pedido #{pedido.numero_pedido} - Items:")
+        for item in serializer.data.get('items', []):
+            print(f"   - {item.get('producto_nombre')}: imagen = {item.get('producto', {}).get('imagen_principal')}")
+        
         response = JsonResponse(serializer.data)
         response['Access-Control-Allow-Origin'] = '*'
         return response
