@@ -10,6 +10,10 @@ interface PedidoItem {
   producto_nombre: string;
   cantidad: number;
   precio: string;
+  producto?: {
+    nombre: string;
+    imagen_principal?: string;
+  };
 }
 
 interface Pedido {
@@ -34,6 +38,7 @@ interface Pedido {
   dedicatoria: string;
   instrucciones: string;
   metodo_envio?: string;
+  tipo_envio?: string;
   costo_envio?: string | number;
   items: PedidoItem[];
 }
@@ -206,16 +211,35 @@ const PedidoDetallePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {pedido.items.map((item) => (
-                  <tr key={item.id} className="border-t">
-                    <td className="p-4">{item.producto_nombre}</td>
-                    <td className="text-center p-4">{item.cantidad}</td>
-                    <td className="text-right p-4">${parseFloat(item.precio).toFixed(2)}</td>
-                    <td className="text-right p-4 font-medium">
-                      ${(parseFloat(item.precio) * item.cantidad).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
+                {pedido.items.map((item) => {
+                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app';
+                  const imagenUrl = item.producto?.imagen_principal 
+                    ? `${apiUrl}${item.producto.imagen_principal}`
+                    : '/placeholder-product.png';
+                  
+                  return (
+                    <tr key={item.id} className="border-t">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={imagenUrl}
+                            alt={item.producto?.nombre || item.producto_nombre}
+                            className="w-16 h-16 object-cover rounded-lg"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-product.png';
+                            }}
+                          />
+                          <span>{item.producto?.nombre || item.producto_nombre}</span>
+                        </div>
+                      </td>
+                      <td className="text-center p-4">{item.cantidad}</td>
+                      <td className="text-right p-4">${parseFloat(item.precio).toFixed(2)}</td>
+                      <td className="text-right p-4 font-medium">
+                        ${(parseFloat(item.precio) * item.cantidad).toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -231,10 +255,10 @@ const PedidoDetallePage: React.FC = () => {
           {pedido.costo_envio !== undefined && pedido.costo_envio !== null && (
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600">
-                {pedido.metodo_envio === 'retiro' && '🏪 Retiro en tienda'}
-                {pedido.metodo_envio === 'express' && '⚡ Envío Express'}
-                {pedido.metodo_envio === 'programado' && '📅 Envío Programado'}
-                {!pedido.metodo_envio && 'Envío'}:
+                {pedido.tipo_envio === 'retiro' && '🏪 Retiro en tienda'}
+                {pedido.tipo_envio === 'express' && '⚡ Envío Express'}
+                {pedido.tipo_envio === 'programado' && '📅 Envío Programado'}
+                {!pedido.tipo_envio && 'Envío'}:
               </span>
               <span className="font-medium">
                 {parseFloat(pedido.costo_envio.toString()) === 0 

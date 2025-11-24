@@ -15,10 +15,20 @@ class MetodoEnvioSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'costo']
 
 
+class ProductoSimpleSerializer(serializers.Serializer):
+    """Serializer simple para producto en items de pedido"""
+    nombre = serializers.CharField()
+    imagen_principal = serializers.SerializerMethodField()
+    
+    def get_imagen_principal(self, obj):
+        return obj.get_primary_image_url
+
+
 class PedidoItemReadSerializer(serializers.ModelSerializer):
     """Serializer para leer items de pedido"""
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     producto_imagen = serializers.SerializerMethodField()
+    producto = ProductoSimpleSerializer(read_only=True)
     
     class Meta:
         model = PedidoItem
@@ -42,7 +52,7 @@ class PedidoReadSerializer(serializers.ModelSerializer):
             'id', 'numero_pedido', 'nombre_comprador', 'email_comprador', 'telefono_comprador',
             'nombre_destinatario', 'direccion', 'ciudad', 'codigo_postal',
             'telefono_destinatario', 'fecha_entrega', 'franja_horaria',
-            'dedicatoria', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre',
+            'dedicatoria', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre', 'tipo_envio',
             'estado', 'estado_display', 'estado_pago', 'estado_pago_display',
             'medio_pago', 'medio_pago_display', 'costo_envio', 'total', 'creado', 'items'
         ]
