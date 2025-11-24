@@ -376,8 +376,9 @@ const PaymentSuccessPage = () => {
           </div>
         )}
 
-          {/* Información del pedido */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl shadow-gray-900/5 border border-white/20 mb-6 sm:mb-8 md:mb-12">
+        {/* Detalles de Entrega */}
+        {pedidoData?.destinatario && (
+          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 mb-8">
             <div className="flex items-center mb-4 sm:mb-6 md:mb-8">
               <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mr-2 sm:mr-3 md:mr-5 shadow-lg shadow-green-500/25"></div>
               <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Detalles del Pedido</h2>
@@ -416,6 +417,7 @@ const PaymentSuccessPage = () => {
               </div>
             </div>
           </div>
+        )}
 
         {/* Próximos Pasos */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 sm:p-8 shadow-lg border border-blue-200 mb-8">
