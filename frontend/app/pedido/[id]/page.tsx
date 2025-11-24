@@ -212,9 +212,13 @@ const PedidoDetallePage: React.FC = () => {
               </thead>
               <tbody>
                 {pedido.items.map((item) => {
-                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app';
-                  const imagenUrl = item.producto?.imagen_principal 
-                    ? `${apiUrl}${item.producto.imagen_principal}`
+                  // Si la imagen ya tiene http/https, usarla directamente (Cloudinary)
+                  // Si no, agregar el apiUrl (imágenes locales)
+                  const imagenPrincipal = item.producto?.imagen_principal;
+                  const imagenUrl = imagenPrincipal
+                    ? (imagenPrincipal.startsWith('http') 
+                        ? imagenPrincipal 
+                        : `${process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app'}${imagenPrincipal}`)
                     : null;
                   
                   return (
