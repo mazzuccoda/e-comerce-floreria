@@ -206,13 +206,26 @@ const MultiStepCheckoutPage = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
 
   // Sincronizar selectedExtras con formData
+  // Los extras se identifican por estar en el carrito, no por IDs hardcodeados
   useEffect(() => {
+    // Buscar en el carrito si hay productos adicionales
+    const cartItems = directCart.items || [];
+    const hasTarjeta = cartItems.some(item => 
+      item.producto.nombre?.toLowerCase().includes('tarjeta')
+    );
+    const hasOso = cartItems.some(item => {
+      const nombre = item.producto.nombre?.toLowerCase() || '';
+      return nombre.includes('oso') || nombre.includes('peluche');
+    });
+    
     setFormData(prev => ({
       ...prev,
-      tarjetaPersonalizada: selectedExtras.includes(1),
-      osoDePerluche: selectedExtras.includes(2)
+      tarjetaPersonalizada: hasTarjeta,
+      osoDePerluche: hasOso
     }));
-  }, [selectedExtras]);
+    
+    console.log('🎁 Extras detectados en carrito:', { hasTarjeta, hasOso, cartItems: cartItems.length });
+  }, [directCart.items]);
 
   // Handler para ExtrasSelector
   const handleExtrasChange = (extras: number[]) => {
@@ -417,17 +430,15 @@ const MultiStepCheckoutPage = () => {
 
   // Calcular total con extras y envío
   const calculateTotal = () => {
+    // El total ya incluye todos los productos del carrito (incluyendo extras)
     let total = directCart.total_price || 0;
     const shippingCost = getShippingCost();
     
-    if (formData.tarjetaPersonalizada) total += 5000;
-    if (formData.osoDePerluche) total += 15000;
+    // Solo sumar el costo de envío, los extras ya están en directCart.total_price
     total += shippingCost;
     
     console.log('💰 Cálculo de total:', {
       subtotal: directCart.total_price,
-      tarjeta: formData.tarjetaPersonalizada ? 5000 : 0,
-      oso: formData.osoDePerluche ? 15000 : 0,
       envio: shippingCost,
       total: total
     });
@@ -1909,19 +1920,31 @@ const MultiStepCheckoutPage = () => {
               <span>${directCart.total_price.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             
-            {formData.tarjetaPersonalizada && (
-              <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
-                <span>📝 Tarjeta personalizada</span>
-                <span className="font-medium">+ $5.000,00</span>
-              </div>
-            )}
+            {/* Mostrar extras detectados en el carrito */}
+            {formData.tarjetaPersonalizada && (() => {
+              const tarjetaItem = directCart.items.find(item => 
+                item.producto.nombre?.toLowerCase().includes('tarjeta')
+              );
+              return tarjetaItem ? (
+                <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
+                  <span>📝 {tarjetaItem.producto.nombre}</span>
+                  <span className="font-medium">Incluido en subtotal</span>
+                </div>
+              ) : null;
+            })()}
             
-            {formData.osoDePerluche && (
-              <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
-                <span>🧸 Oso de peluche</span>
-                <span className="font-medium">+ $15.000,00</span>
-              </div>
-            )}
+            {formData.osoDePerluche && (() => {
+              const osoItem = directCart.items.find(item => {
+                const nombre = item.producto.nombre?.toLowerCase() || '';
+                return nombre.includes('oso') || nombre.includes('peluche');
+              });
+              return osoItem ? (
+                <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
+                  <span>🧸 {osoItem.producto.nombre}</span>
+                  <span className="font-medium">Incluido en subtotal</span>
+                </div>
+              ) : null;
+            })()}
             
             {/* Costo de envío dinámico */}
             <div className="flex justify-between text-gray-700 font-medium border-t border-gray-100 pt-2 sm:pt-3 text-sm sm:text-base">
