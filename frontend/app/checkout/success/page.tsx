@@ -226,6 +226,19 @@ const PaymentSuccessPage = () => {
                   </div>
                 ))}
                 
+                {/* Costo de envío */}
+                {pedidoData.costo_envio !== undefined && pedidoData.costo_envio > 0 && (
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                    <span className="text-sm sm:text-base text-gray-600 flex items-center gap-2">
+                      {pedidoData.metodo_envio === 'express' && '⚡ Envío Express'}
+                      {pedidoData.metodo_envio === 'programado' && '📅 Envío Programado'}
+                      {pedidoData.metodo_envio === 'retiro' && '🏪 Retiro en tienda'}
+                      {!pedidoData.metodo_envio && '🚚 Envío'}
+                    </span>
+                    <span className="text-base sm:text-lg font-semibold text-gray-900">${pedidoData.costo_envio.toLocaleString('es-AR')}</span>
+                  </div>
+                )}
+                
                 {/* Total */}
                 <div className="flex justify-between items-center pt-4 sm:pt-6 border-t-2 border-gray-300 mt-2">
                   <span className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900">Total:</span>
