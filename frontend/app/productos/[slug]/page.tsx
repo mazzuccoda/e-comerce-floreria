@@ -63,8 +63,8 @@ export default function ProductPage({ params }: ProductPageParams) {
     
     setAddingToCart(true);
     try {
+      // Delegar el manejo de toasts de éxito al contexto de carrito
       await addToCart(product, quantity);
-      toast.success(`${product.nombre} agregado al carrito`);
     } catch (error: any) {
       toast.error(`Error: ${error.message || 'No se pudo agregar al carrito'}`);
     } finally {

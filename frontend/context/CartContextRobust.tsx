@@ -340,6 +340,8 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       console.error('❌ Add to cart failed:', error);
       toast.error(error.message || 'Error al agregar producto');
       safeSetError(error.message);
+      // Re-lanzar el error para que el componente llamador pueda manejarlo
+      throw error;
     } finally {
       safeSetLoading(false);
     }
