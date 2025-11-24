@@ -630,15 +630,33 @@ const MultiStepCheckoutPage = () => {
         
         // Limpiar el carrito SIEMPRE (para todos los métodos de pago)
         try {
-          console.log('🗑️ Limpiando carrito...');
-          await fetch(`${API_URL}/carrito/simple/clear/`, {
+          console.log('🗑️ Limpiando carrito usando CartContext...');
+          
+          // Limpiar localStorage directamente
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('cart_data');
+            sessionStorage.removeItem('cart_data');
+            console.log('✅ localStorage y sessionStorage limpiados');
+          }
+          
+          // Actualizar el estado del carrito a vacío
+          setDirectCart({
+            items: [],
+            total_price: 0,
+            total_items: 0,
+            is_empty: true
+          });
+          
+          // Intentar limpiar en el backend también (sin bloquear si falla)
+          fetch(`${API_URL}/carrito/simple/clear/`, {
             method: 'POST',
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
             }
-          });
-          console.log('✅ Carrito limpiado');
+          }).catch(err => console.log('⚠️ Error limpiando backend (no crítico):', err));
+          
+          console.log('✅ Carrito limpiado completamente');
         } catch (clearError) {
           console.error('⚠️ Error al limpiar carrito:', clearError);
         }
