@@ -77,6 +77,11 @@ const PaymentSuccessPage = () => {
       })
       .join('\n\n');
 
+    // Calcular subtotal de productos
+    const subtotalProductos = pedidoData.items.reduce((sum, item) => 
+      sum + (item.price * item.quantity), 0
+    );
+
     // Formatear método de pago
     const metodoPagoTexto = {
       'mercadopago': 'Mercado Pago',
@@ -105,6 +110,10 @@ const PaymentSuccessPage = () => {
       
       `🛍️ *PRODUCTOS COMPRADOS:*\n` +
       `${productosTexto}\n\n` +
+      `Subtotal productos: $${subtotalProductos.toLocaleString('es-AR')}\n` +
+      (pedidoData.costo_envio && pedidoData.costo_envio > 0 
+        ? `Costo de envío: $${pedidoData.costo_envio.toLocaleString('es-AR')}\n` 
+        : '') +
       `💰 *TOTAL: $${pedidoData.total}*\n\n` +
       
       `━━━━━━━━━━━━━━━━━━━━\n` +
