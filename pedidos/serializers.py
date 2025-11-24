@@ -137,6 +137,11 @@ class CheckoutSerializer(serializers.Serializer):
         # Log para debug
         import logging
         logger = logging.getLogger(__name__)
+        print(f"=" * 80)
+        print(f"DEBUG COSTO_ENVIO - Tipo de envío: {tipo_envio}")
+        print(f"DEBUG COSTO_ENVIO - Costo recibido: {costo_envio} (tipo: {type(costo_envio)})")
+        print(f"DEBUG COSTO_ENVIO - Validated data keys: {validated_data.keys()}")
+        print(f"=" * 80)
         logger.info(f"🚚 Tipo de envío recibido: {tipo_envio}")
         logger.info(f"💰 Costo de envío recibido: {costo_envio} (tipo: {type(costo_envio)})")
         logger.info(f"📦 Validated data keys: {validated_data.keys()}")
@@ -160,6 +165,7 @@ class CheckoutSerializer(serializers.Serializer):
             pedido_data['anonimo'] = True
         
         pedido = Pedido.objects.create(**pedido_data)
+        print(f"DEBUG COSTO_ENVIO - Pedido creado con costo_envio: {pedido.costo_envio}")
         logger.info(f"✅ Pedido creado con costo_envio: {pedido.costo_envio}")
         
         # Crear items del pedido desde el carrito
