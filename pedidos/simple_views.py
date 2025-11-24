@@ -340,6 +340,12 @@ def simple_checkout_with_items(request):
         
         data = json.loads(request.body)
         
+        # DEBUG: Ver qué datos llegan
+        print(f"📦 Datos recibidos del frontend:")
+        print(f"   - costo_envio: {data.get('costo_envio')}")
+        print(f"   - metodo_envio: {data.get('metodo_envio')}")
+        print(f"   - metodo_envio_id: {data.get('metodo_envio_id')}")
+        
         # Validar que vengan los items
         items_data = data.get('items', [])
         if not items_data:
