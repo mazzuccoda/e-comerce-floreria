@@ -1394,7 +1394,17 @@ const MultiStepCheckoutPage = () => {
               {directCart.items.map((item, index) => (
                 <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-2 sm:pt-3 first:pt-0 gap-2">
                   <div className="flex gap-2 sm:gap-3 items-start sm:items-center">
-                    <div className="bg-gray-50 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-xl flex-shrink-0">🌸</div>
+                    <div className="bg-gray-50 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-xl flex-shrink-0 overflow-hidden">
+                      {item.producto.imagen_principal ? (
+                        <img
+                          src={item.producto.imagen_principal}
+                          alt={item.producto.nombre}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>🌸</span>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <span className="font-medium text-gray-800 text-sm sm:text-base block truncate">{item.producto.nombre}</span>
                       <div className="text-xs sm:text-sm text-gray-500 flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
