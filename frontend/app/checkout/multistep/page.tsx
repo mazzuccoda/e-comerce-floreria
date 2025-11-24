@@ -204,6 +204,15 @@ const MultiStepCheckoutPage = () => {
   
   // Estado para indicar si se ha intentado enviar el formulario
   const [formSubmitted, setFormSubmitted] = useState(false);
+  
+  // Estado para validación en tiempo real
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  
+  // Estado para copiar al portapapeles
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  
+  // Estado para autocompletar
+  const [useSameAsRemitente, setUseSameAsRemitente] = useState(false);
 
   // Sincronizar selectedExtras con formData
   // Los extras se identifican por estar en el carrito, no por IDs hardcodeados
@@ -246,6 +255,18 @@ const MultiStepCheckoutPage = () => {
   const handleExtrasChange = (extras: number[]) => {
     setSelectedExtras(extras);
   };
+  
+  // Efecto para autocompletar destinatario con datos del remitente
+  useEffect(() => {
+    if (useSameAsRemitente) {
+      setFormData(prev => ({
+        ...prev,
+        nombreDestinatario: prev.nombre,
+        apellidoDestinatario: prev.apellido,
+        telefonoDestinatario: prev.telefono
+      }));
+    }
+  }, [useSameAsRemitente, formData.nombre, formData.apellido, formData.telefono]);
 
   // Validar un campo específico
   const validateField = (name: string, value: any): string => {
@@ -390,11 +411,53 @@ const MultiStepCheckoutPage = () => {
     return Object.keys(filteredErrors).length === 0;
   };
 
+  // Función para copiar al portapapeles
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      console.error('Error al copiar:', err);
+    }
+  };
+  
+  // Función para marcar campo como tocado
+  const handleFieldBlur = (fieldName: string) => {
+    setTouchedFields(prev => ({ ...prev, [fieldName]: true }));
+    // Validar el campo cuando pierde el foco
+    const value = formData[fieldName as keyof typeof formData];
+    const error = validateField(fieldName, value);
+    if (error) {
+      setFormErrors(prev => ({ ...prev, [fieldName]: error }));
+    } else {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    }
+  };
+  
   // Maneja los cambios en los inputs
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     const newValue = type === 'checkbox' ? checked : value;
+    
+    // Validación en tiempo real si el campo ya fue tocado
+    if (touchedFields[name] && type !== 'checkbox') {
+      const error = validateField(name, newValue);
+      if (error) {
+        setFormErrors(prev => ({ ...prev, [name]: error }));
+      } else {
+        setFormErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+    }
     
     setFormData(prev => ({
       ...prev,
@@ -1141,25 +1204,36 @@ const MultiStepCheckoutPage = () => {
             <div>
               <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col">
+                <div className="flex flex-col relative">
                   <input 
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.nombre ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
-                    placeholder="Nombre" 
+                    onBlur={() => handleFieldBlur('nombre')}
+                    className={`p-4 pr-12 rounded-xl transition-all ${
+                      formErrors.nombre 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : touchedFields.nombre && formData.nombre.trim()
+                        ? 'border-2 border-green-500 bg-green-50'
+                        : 'bg-white/50 border-2 border-transparent focus:border-green-300'
+                    }`} 
+                    placeholder="Nombre *" 
                     disabled={formData.envioAnonimo}
                   />
+                  {touchedFields.nombre && formData.nombre.trim() && !formErrors.nombre && (
+                    <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
+                  )}
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
                 </div>
                 <input 
                   name="apellido"
                   value={formData.apellido}
                   onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
+                  className="p-4 rounded-xl bg-white/50 border-2 border-transparent focus:border-green-300 transition-all" 
                   placeholder="Apellido" 
+                  disabled={formData.envioAnonimo}
                 />
-                <div className="flex flex-col">
+                <div className="flex flex-col relative">
                   <label htmlFor="email" className="sr-only">Email</label>
                   <input 
                     id="email"
@@ -1167,31 +1241,51 @@ const MultiStepCheckoutPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.email ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
-                    placeholder="Email" 
+                    onBlur={() => handleFieldBlur('email')}
+                    className={`p-4 pr-12 rounded-xl transition-all ${
+                      formErrors.email 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : touchedFields.email && formData.email.trim() && !formErrors.email
+                        ? 'border-2 border-green-500 bg-green-50'
+                        : 'bg-white/50 border-2 border-transparent focus:border-green-300'
+                    }`} 
+                    placeholder="Email *" 
                     disabled={formData.envioAnonimo}
                     aria-required="true"
                     aria-invalid="false"
                     {...(formErrors.email && { 'aria-invalid': 'true' })}
                     aria-describedby={formErrors.email ? "email-error" : undefined}
                   />
+                  {touchedFields.email && formData.email.trim() && !formErrors.email && (
+                    <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
+                  )}
                   {formErrors.email && <span id="email-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.email}</span>}
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col relative">
                   <label htmlFor="telefono" className="sr-only">Teléfono</label>
                   <input 
                     id="telefono"
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.telefono ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
-                    placeholder="Teléfono (solo números, mínimo 7 dígitos)" 
+                    onBlur={() => handleFieldBlur('telefono')}
+                    className={`p-4 pr-12 rounded-xl transition-all ${
+                      formErrors.telefono 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : touchedFields.telefono && formData.telefono.trim() && !formErrors.telefono
+                        ? 'border-2 border-green-500 bg-green-50'
+                        : 'bg-white/50 border-2 border-transparent focus:border-green-300'
+                    }`} 
+                    placeholder="Teléfono * (ej: 3815551234)" 
                     disabled={formData.envioAnonimo}
                     aria-required="true"
                     aria-invalid="false"
                     {...(formErrors.telefono && { 'aria-invalid': 'true' })}
                     aria-describedby={formErrors.telefono ? "telefono-error" : undefined}
                   />
+                  {touchedFields.telefono && formData.telefono.trim() && !formErrors.telefono && (
+                    <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
+                  )}
                   {formErrors.telefono && <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.telefono}</span>}
                 </div>
               </div>
@@ -1465,6 +1559,22 @@ const MultiStepCheckoutPage = () => {
                 />
                 {formErrors.ciudad && <span className="text-red-600 text-sm mt-1">{formErrors.ciudad}</span>}
               </div>
+              
+              {/* Checkbox para autocompletar con datos del remitente */}
+              <div className="mt-6">
+                <label className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 cursor-pointer hover:from-blue-100 hover:to-indigo-100 transition-all shadow-sm">
+                  <input 
+                    type="checkbox" 
+                    checked={useSameAsRemitente}
+                    onChange={(e) => setUseSameAsRemitente(e.target.checked)}
+                    className="mr-3 w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" 
+                  />
+                  <div className="flex-1">
+                    <span className="text-gray-800 font-semibold">👤 Soy yo el destinatario</span>
+                    <p className="text-sm text-gray-600 mt-1">Usar mis datos como remitente para el destinatario</p>
+                  </div>
+                </label>
+              </div>
             </div>
           )}
 
@@ -1692,22 +1802,87 @@ const MultiStepCheckoutPage = () => {
                 </div>
                 
                 {formData.metodoPago === 'transferencia' && (
-                  <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100">
-                    <h4 className="font-medium mb-2 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl mb-6 border-2 border-green-200 shadow-lg">
+                    <h4 className="font-semibold text-lg mb-4 flex items-center text-green-800">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Datos para transferencia:
+                      Datos para transferencia
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600"><strong>Banco:</strong> Mercado Pago</p>
-                        <p className="text-gray-600"><strong>Alias:</strong> eleososatuc</p>
-                        <p className="text-gray-600"><strong>Titular:</strong> Monica Eleonora Sosa</p>
+                    <div className="space-y-3">
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-500">Alias</span>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard('eleososatuc', 'alias')}
+                            className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-all"
+                          >
+                            {copiedField === 'alias' ? (
+                              <>✓ Copiado</>
+                            ) : (
+                              <>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copiar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xl font-bold text-gray-800">eleososatuc</p>
                       </div>
-                      <div>
-                        <p className="text-gray-600"><strong>CVU:</strong> 0000003100095405777972</p>
-                        <p className="text-gray-600"><strong>CUIT:</strong> 27-26676582-2</p>
+                      
+                      <div className="bg-white p-4 rounded-lg shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-500">CVU</span>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard('0000003100095405777972', 'cvu')}
+                            className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-all"
+                          >
+                            {copiedField === 'cvu' ? (
+                              <>✓ Copiado</>
+                            ) : (
+                              <>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copiar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-lg font-mono font-semibold text-gray-800">0000003100095405777972</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                          <span className="text-xs font-medium text-gray-500">Banco</span>
+                          <p className="font-semibold text-gray-800">Mercado Pago</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg shadow-sm">
+                          <span className="text-xs font-medium text-gray-500">CUIT</span>
+                          <p className="font-semibold text-gray-800">27-26676582-2</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white p-3 rounded-lg shadow-sm">
+                        <span className="text-xs font-medium text-gray-500">Titular</span>
+                        <p className="font-semibold text-gray-800">Monica Eleonora Sosa</p>
+                      </div>
+                      
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-800 flex items-start gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                          </svg>
+                          <span>Envía el comprobante de transferencia por WhatsApp al <strong>381-5551234</strong> para confirmar tu pedido.</span>
+                        </p>
                       </div>
                     </div>
                   </div>
