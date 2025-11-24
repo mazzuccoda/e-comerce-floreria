@@ -135,15 +135,9 @@ const MultiStepCheckoutPage = () => {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cart-updated', handleCartUpdate);
 
-    // Recargar el carrito cada 2 segundos para mantener sincronización
-    const intervalId = setInterval(() => {
-      reloadCart();
-    }, 2000);
-
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cart-updated', handleCartUpdate);
-      clearInterval(intervalId);
     };
   }, []);
   

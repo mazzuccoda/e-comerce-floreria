@@ -240,6 +240,9 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
           localStorage.setItem('cart_data', JSON.stringify(newCart));
           sessionStorage.setItem('cart_data', JSON.stringify(newCart));
           console.log('💾 Carrito guardado en localStorage y sessionStorage');
+          
+          // Disparar evento personalizado para que otros componentes se enteren
+          window.dispatchEvent(new CustomEvent('cart-updated', { detail: newCart }));
         } catch (e) {
           console.error('❌ Error guardando carrito:', e);
         }
@@ -297,13 +300,26 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       console.error('❌ Cart refresh failed:', error);
       safeSetError(`Connection failed: ${error.message}`);
       
-      // Set empty cart as fallback
-      safeSetCart({
-        items: [],
-        total_price: 0,
-        total_items: 0,
-        is_empty: true
-      });
+      // NO vaciar el carrito en caso de error - mantener el estado actual de localStorage
+      console.log('⚠️ Manteniendo carrito actual debido a error de conexión');
+      
+      // Intentar cargar desde localStorage como fallback
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cart_data');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            console.log('✅ Recuperando carrito desde localStorage después de error:', parsed);
+            safeSetCart(parsed);
+            return; // Salir sin vaciar el carrito
+          }
+        } catch (e) {
+          console.error('❌ Error recuperando carrito de localStorage:', e);
+        }
+      }
+      
+      // Solo si no hay nada en localStorage, entonces sí vaciar
+      console.log('⚠️ No hay carrito en localStorage, usando carrito vacío');
     } finally {
       safeSetLoading(false);
       isRefreshingRef.current = false;
