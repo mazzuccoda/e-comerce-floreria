@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useCartRobust } from '@/context/CartContextRobust';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
@@ -24,6 +25,7 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
   const [productos, setProductos] = useState<ProductoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const { addToCart, removeFromCart } = useCartRobust();
 
   useEffect(() => {
     const fetchAdicionales = async () => {
@@ -49,55 +51,41 @@ export default function ExtrasSelector({ selectedExtras, onExtrasChange }: Extra
 
   const toggleExtra = async (productoId: number) => {
     const isCurrentlySelected = selectedExtras.includes(productoId);
+    const producto = productos.find(p => p.id === productoId);
+    
+    if (!producto) {
+      console.error('❌ Producto no encontrado:', productoId);
+      return;
+    }
     
     try {
       setAddingToCart(productoId);
       
       if (isCurrentlySelected) {
-        // Quitar del carrito
+        // Quitar del carrito usando CartContext
         console.log('🗑️ Quitando extra del carrito:', productoId);
-        const response = await fetch(`${API_URL}/carrito/simple/remove/`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ product_id: productoId })
-        });
-        
-        if (response.ok) {
-          console.log('✅ Extra removido del carrito');
-          onExtrasChange(selectedExtras.filter(id => id !== productoId));
-        } else {
-          console.error('❌ Error removiendo extra del carrito');
-        }
+        await removeFromCart(productoId);
+        console.log('✅ Extra removido del carrito');
+        onExtrasChange(selectedExtras.filter(id => id !== productoId));
       } else {
-        // Agregar al carrito
-        console.log('➕ Agregando extra al carrito:', productoId);
-        const response = await fetch(`${API_URL}/carrito/simple/add/`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            product_id: productoId,
-            quantity: 1
-          })
-        });
+        // Agregar al carrito usando CartContext
+        console.log('➕ Agregando extra al carrito:', producto.nombre, productoId);
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Extra agregado al carrito:', data);
-          onExtrasChange([...selectedExtras, productoId]);
-        } else {
-          const errorData = await response.text();
-          console.error('❌ Error agregando extra al carrito:', response.status, errorData);
-          alert('Error al agregar el producto al carrito. Por favor, intenta de nuevo.');
-        }
+        // Convertir ProductoAdicional al formato que espera addToCart
+        const productoParaCarrito = {
+          id: producto.id,
+          nombre: producto.nombre,
+          precio: producto.precio.toString(),
+          imagen_principal: producto.imagen_principal
+        };
+        
+        await addToCart(productoParaCarrito as any, 1);
+        console.log('✅ Extra agregado al carrito via CartContext');
+        onExtrasChange([...selectedExtras, productoId]);
       }
     } catch (error) {
       console.error('❌ Error en toggleExtra:', error);
+      alert('Error al modificar el carrito. Por favor, intenta de nuevo.');
     } finally {
       setAddingToCart(null);
     }
