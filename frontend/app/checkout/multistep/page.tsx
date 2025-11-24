@@ -9,6 +9,7 @@ import { AddressData } from '@/types/Address';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+console.log('🚀 Checkout page loaded');
 
 // Interfaces para carrito directo (mismo shape que simple_get_cart y CartContextRobust)
 interface CartItem {
