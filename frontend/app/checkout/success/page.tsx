@@ -461,8 +461,8 @@ const PaymentSuccessPage = () => {
           </div>
         </div>
 
-          {/* Botón de WhatsApp */}
-          <div className="mb-6 sm:mb-8 px-4 sm:px-0">
+        {/* Botón de WhatsApp */}
+        <div className="mb-6 sm:mb-8 px-4 sm:px-0">
             <button
               onClick={handleWhatsAppClick}
               className="group bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-white py-3 sm:py-4 md:py-5 px-6 sm:px-8 md:px-10 rounded-2xl sm:rounded-3xl hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-300 font-medium text-base sm:text-lg md:text-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto cursor-pointer mx-auto shadow-lg"
@@ -473,10 +473,10 @@ const PaymentSuccessPage = () => {
               <span>Informar al Vendedor</span>
             </button>
             <p className="text-center text-gray-600 mt-2 sm:mt-3 text-xs sm:text-sm px-4">¿Necesitas ayuda? Contáctanos por WhatsApp</p>
-          </div>
+        </div>
 
-          {/* Botones de acción */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
+        {/* Botones de acción */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4 sm:px-0">
             <Link
               href="/"
               className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white py-3 sm:py-4 px-6 sm:px-8 rounded-2xl sm:rounded-3xl hover:shadow-xl hover:shadow-blue-500/25 transition-all duration-300 font-medium text-base sm:text-lg transform hover:scale-[1.02] active:scale-[0.98] text-center shadow-lg"
