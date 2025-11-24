@@ -15,10 +15,14 @@ python healthcheck.py || {
 
 # 2. Migrations
 echo "📋 Step 2: Running Migrations"
+echo "🔍 Checking pending migrations..."
+python manage.py showmigrations
+echo "🚀 Applying migrations..."
 python manage.py migrate --noinput || {
     echo "❌ Migrations failed"
     exit 1
 }
+echo "✅ Migrations completed successfully"
 
 # 3. Collect Static Files (should be done in build, but just in case)
 echo "📋 Step 3: Collecting Static Files"
