@@ -117,15 +117,6 @@ const MultiStepCheckoutPage = () => {
     init();
   }, []);
   
-  const steps = [
-    { id: 1, title: 'Remitente', icon: '👤' },
-    { id: 2, title: 'Destinatario', icon: '📍' },
-    { id: 3, title: 'Dedicatoria', icon: '💌' },
-    { id: 4, title: 'Extras', icon: '🎁' },
-    { id: 5, title: 'Envío', icon: '🚚' },
-    { id: 6, title: 'Pago', icon: '💳' }
-  ];
-
   // Estado para los datos del formulario
   const [formData, setFormData] = useState({
     // Remitente
@@ -163,6 +154,23 @@ const MultiStepCheckoutPage = () => {
     metodoPago: 'mercadopago',
     aceptaTerminos: false
   });
+
+  // Steps se adaptan según el tipo de envío para simplificar el flujo
+  const pickupSteps = [
+    { id: 1, title: 'Remitente', icon: '👤' },
+    { id: 2, title: 'Dedicatoria', icon: '💌' },
+    { id: 3, title: 'Pago', icon: '💳' },
+  ];
+
+  const deliverySteps = [
+    { id: 1, title: 'Destinatario', icon: '📍' },
+    { id: 2, title: 'Remitente', icon: '👤' },
+    { id: 3, title: 'Dedicatoria', icon: '💌' },
+    { id: 4, title: 'Envío y pago', icon: '🚚' },
+  ];
+
+  const isPickup = formData.metodoEnvio === 'retiro';
+  const steps = isPickup ? pickupSteps : deliverySteps;
   
   // Estado para los errores del formulario
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -237,39 +245,49 @@ const MultiStepCheckoutPage = () => {
     console.log(`🔍 Validando paso ${currentStep}...`);
     const errors: Record<string, string> = {};
     
-    switch(currentStep) {
-      case 1: // Remitente
-        console.log('👤 Validando datos del remitente');
-        // Solo validar si NO es envío anónimo
-        if (!formData.envioAnonimo) {
-          errors.nombre = validateField('nombre', formData.nombre);
-          errors.email = validateField('email', formData.email);
-          errors.telefono = validateField('telefono', formData.telefono);
-        } else {
-          console.log('El envío es anónimo, no se validan datos del remitente');
-        }
-        break;
-      
-      case 2: // Destinatario
-        console.log('📍 Validando datos del destinatario');
-        errors.nombreDestinatario = validateField('nombreDestinatario', formData.nombreDestinatario);
-        errors.telefonoDestinatario = validateField('telefonoDestinatario', formData.telefonoDestinatario);
-        errors.direccion = validateField('direccion', formData.direccion);
-        errors.ciudad = validateField('ciudad', formData.ciudad);
-        break;
-      
-      case 5: // Envío
-        console.log('🚚 Validando datos de envío');
-        if (formData.metodoEnvio === 'programado') {
-          errors.fecha = validateField('fecha', formData.fecha);
-          errors.franjaHoraria = validateField('franjaHoraria', formData.franjaHoraria);
-        }
-        break;
-      
-      case 6: // Pago
-        console.log('💳 Validando datos de pago');
-        errors.aceptaTerminos = validateField('aceptaTerminos', formData.aceptaTerminos);
-        break;
+    if (isPickup) {
+      // Flujo simple de retiro en tienda: 3 pasos
+      switch (currentStep) {
+        case 1: // Remitente
+          console.log('👤 [Retiro] Validando datos del remitente');
+          if (!formData.envioAnonimo) {
+            errors.nombre = validateField('nombre', formData.nombre);
+            errors.email = validateField('email', formData.email);
+            errors.telefono = validateField('telefono', formData.telefono);
+          }
+          break;
+        case 3: // Pago + términos
+          console.log('💳 [Retiro] Validando datos de pago');
+          errors.aceptaTerminos = validateField('aceptaTerminos', formData.aceptaTerminos);
+          break;
+      }
+    } else {
+      // Flujo de envío (express/programado): 4 pasos
+      switch (currentStep) {
+        case 1: // Destinatario + dirección
+          console.log('📍 [Envío] Validando datos del destinatario');
+          errors.nombreDestinatario = validateField('nombreDestinatario', formData.nombreDestinatario);
+          errors.telefonoDestinatario = validateField('telefonoDestinatario', formData.telefonoDestinatario);
+          errors.direccion = validateField('direccion', formData.direccion);
+          errors.ciudad = validateField('ciudad', formData.ciudad);
+          break;
+        case 2: // Remitente
+          console.log('👤 [Envío] Validando datos del remitente');
+          if (!formData.envioAnonimo) {
+            errors.nombre = validateField('nombre', formData.nombre);
+            errors.email = validateField('email', formData.email);
+            errors.telefono = validateField('telefono', formData.telefono);
+          }
+          break;
+        case 4: // Envío + pago
+          console.log('🚚 [Envío] Validando datos de envío y pago');
+          if (formData.metodoEnvio === 'programado') {
+            errors.fecha = validateField('fecha', formData.fecha);
+            errors.franjaHoraria = validateField('franjaHoraria', formData.franjaHoraria);
+          }
+          errors.aceptaTerminos = validateField('aceptaTerminos', formData.aceptaTerminos);
+          break;
+      }
     }
     
     // Filtrar los campos vacíos
@@ -313,7 +331,9 @@ const MultiStepCheckoutPage = () => {
     console.log('Validación de formulario:', isValid ? '✅ Paso válido' : '❌ Hay errores en el formulario');
     console.log('Errores:', formErrors);
     
-    if (isValid && currentStep < 6) {
+    const maxStep = isPickup ? 3 : 4;
+
+    if (isValid && currentStep < maxStep) {
       setCurrentStep(currentStep + 1);
       // Al cambiar de paso, reiniciar el estado de envío del formulario
       setFormSubmitted(false);
@@ -761,8 +781,9 @@ const MultiStepCheckoutPage = () => {
         </div>
 
         {/* Step Content */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl mb-8">
-          {currentStep === 1 && (
+        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-4 sm:p-8 shadow-xl mb-8">
+          {/* FLUJO RETIRO EN TIENDA */}
+          {isPickup && currentStep === 1 && (
             <div>
               <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -838,7 +859,180 @@ const MultiStepCheckoutPage = () => {
             </div>
           )}
 
-          {currentStep === 2 && (
+          {isPickup && currentStep === 2 && (
+            <div>
+              <h2 className="text-2xl font-light mb-6">💌 Dedicatoria y Extras</h2>
+              
+              {/* Dedicatoria */}
+              <div className="mb-8">
+                <h3 className="text-lg font-medium mb-4 text-gray-700">Mensaje especial</h3>
+                <textarea 
+                  name="mensaje"
+                  value={formData.mensaje}
+                  onChange={handleInputChange}
+                  className="w-full p-4 rounded-xl bg-white/50 border-0 h-32" 
+                  placeholder="Escribe un mensaje especial (opcional)..."
+                ></textarea>
+                <input 
+                  name="firmadoComo"
+                  value={formData.firmadoComo}
+                  onChange={handleInputChange}
+                  className="w-full p-4 rounded-xl bg-white/50 border-0 mt-4" 
+                  placeholder="Firmado como (opcional)" 
+                />
+                <div className="mt-4">
+                  <label className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      name="incluirTarjeta"
+                      checked={formData.incluirTarjeta}
+                      onChange={handleInputChange}
+                      className="mr-2" 
+                    />
+                    <span>Incluir tarjeta con el mensaje</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Extras */}
+              <div>
+                <h3 className="text-lg font-medium mb-4 text-gray-700">Agregar extras</h3>
+                <ExtrasSelector
+                  selectedExtras={selectedExtras}
+                  onExtrasChange={(extras) => {
+                    setSelectedExtras(extras);
+                    setTimeout(() => {
+                      reloadCart();
+                    }, 1000);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {isPickup && currentStep === 3 && (
+            <div>
+              <h2 className="text-2xl font-light mb-6">💳 Método de Pago</h2>
+              <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <label 
+                  className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'mercadopago' ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' : 'bg-white/50 hover:bg-blue-50/30 hover:shadow-md border-2 border-transparent'}`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoPago" 
+                      value="mercadopago"
+                      checked={formData.metodoPago === 'mercadopago'}
+                      onChange={handleInputChange}
+                      className="mr-3 mt-1" 
+                    />
+                    <div>
+                      <div className="font-medium">MercadoPago</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-center">
+                    <img src="/images/mercadopago.png" alt="MercadoPago" className="h-10" onError={(e) => {e.currentTarget.src = 'https://imgmp.mlstatic.com/org-img/banners/ar/medios/online/468X60.jpg'; e.currentTarget.className='h-8'}} />
+                  </div>
+                  <div className="mt-3 text-xs text-gray-600 text-center">
+                    Tarjetas de crédito/débito
+                  </div>
+                </label>
+                
+                <label 
+                  className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'transferencia' ? 'bg-green-50 border-2 border-green-500 shadow-lg' : 'bg-white/50 hover:bg-green-50/30 hover:shadow-md border-2 border-transparent'}`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoPago" 
+                      value="transferencia"
+                      checked={formData.metodoPago === 'transferencia'}
+                      onChange={handleInputChange}
+                      className="mr-3 mt-1" 
+                    />
+                    <div>
+                      <div className="font-medium">Transferencia</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-center text-3xl">
+                    🏦
+                  </div>
+                  <div className="mt-3 text-xs text-gray-600 text-center">
+                    Transferencia bancaria
+                  </div>
+                </label>
+                
+                <label 
+                  className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'efectivo' ? 'bg-yellow-50 border-2 border-yellow-500 shadow-lg' : 'bg-white/50 hover:bg-yellow-50/30 hover:shadow-md border-2 border-transparent'}`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoPago" 
+                      value="efectivo"
+                      checked={formData.metodoPago === 'efectivo'}
+                      onChange={handleInputChange}
+                      className="mr-3 mt-1" 
+                    />
+                    <div>
+                      <div className="font-medium">Efectivo</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex justify-center text-3xl">
+                    💵
+                  </div>
+                  <div className="mt-3 text-xs text-gray-600 text-center">
+                    Pago al retirar
+                  </div>
+                </label>
+              </div>
+              
+              {formData.metodoPago === 'transferencia' && (
+                <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100">
+                  <h4 className="font-medium mb-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Datos para transferencia:
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600"><strong>Banco:</strong> Mercado Pago</p>
+                      <p className="text-gray-600"><strong>Alias:</strong> eleososatuc</p>
+                      <p className="text-gray-600"><strong>Titular:</strong> Monica Eleonora Sosa</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600"><strong>CVU:</strong> 0000003100095405777972</p>
+                      <p className="text-gray-600"><strong>CUIT:</strong> 27-26676582-2</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-6">
+                <div className="flex flex-col">
+                  <label className="flex items-start">
+                    <input 
+                      type="checkbox" 
+                      name="aceptaTerminos"
+                      checked={formData.aceptaTerminos}
+                      onChange={handleInputChange}
+                      className={`mr-3 mt-1 ${formErrors.aceptaTerminos ? 'outline outline-2 outline-red-300' : ''}`} 
+                    />
+                    <span className="text-sm text-gray-600">
+                      Acepto los <span className="text-green-600 underline cursor-pointer">términos y condiciones</span> y la <span className="text-green-600 underline cursor-pointer">política de privacidad</span>
+                    </span>
+                  </label>
+                  {formErrors.aceptaTerminos && <span className="text-red-600 text-sm mt-1">{formErrors.aceptaTerminos}</span>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FLUJO ENVÍO A DOMICILIO */}
+          {!isPickup && currentStep === 1 && (
             <div>
               <h2 className="text-2xl font-light mb-6">📍 Datos del Destinatario</h2>
               
@@ -920,53 +1114,134 @@ const MultiStepCheckoutPage = () => {
             </div>
           )}
 
-          {currentStep === 3 && (
+          {!isPickup && currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">💌 Dedicatoria</h2>
-              <textarea 
-                name="mensaje"
-                value={formData.mensaje}
-                onChange={handleInputChange}
-                className="w-full p-4 rounded-xl bg-white/50 border-0 h-32" 
-                placeholder="Mensaje especial..."
-              ></textarea>
-              <input 
-                name="firmadoComo"
-                value={formData.firmadoComo}
-                onChange={handleInputChange}
-                className="w-full p-4 rounded-xl bg-white/50 border-0 mt-4" 
-                placeholder="Firmado como (opcional)" 
-              />
+              <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <input 
+                    name="nombre"
+                    value={formData.nombre}
+                    onChange={handleInputChange}
+                    className={`p-4 rounded-xl ${formErrors.nombre ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    placeholder="Nombre" 
+                    disabled={formData.envioAnonimo}
+                  />
+                  {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
+                </div>
+                <input 
+                  name="apellido"
+                  value={formData.apellido}
+                  onChange={handleInputChange}
+                  className="p-4 rounded-xl bg-white/50 border-0" 
+                  placeholder="Apellido" 
+                />
+                <div className="flex flex-col">
+                  <label htmlFor="email" className="sr-only">Email</label>
+                  <input 
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className={`p-4 rounded-xl ${formErrors.email ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    placeholder="Email" 
+                    disabled={formData.envioAnonimo}
+                    aria-required="true"
+                    aria-invalid="false"
+                    {...(formErrors.email && { 'aria-invalid': 'true' })}
+                    aria-describedby={formErrors.email ? "email-error" : undefined}
+                  />
+                  {formErrors.email && <span id="email-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.email}</span>}
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="telefono" className="sr-only">Teléfono</label>
+                  <input 
+                    id="telefono"
+                    name="telefono"
+                    value={formData.telefono}
+                    onChange={handleInputChange}
+                    className={`p-4 rounded-xl ${formErrors.telefono ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    placeholder="Teléfono (solo números, mínimo 7 dígitos)" 
+                    disabled={formData.envioAnonimo}
+                    aria-required="true"
+                    aria-invalid="false"
+                    {...(formErrors.telefono && { 'aria-invalid': 'true' })}
+                    aria-describedby={formErrors.telefono ? "telefono-error" : undefined}
+                  />
+                  {formErrors.telefono && <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.telefono}</span>}
+                </div>
+              </div>
               <div className="mt-4">
-                <label className="flex items-center">
+                <label className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition">
                   <input 
                     type="checkbox" 
-                    name="incluirTarjeta"
-                    checked={formData.incluirTarjeta}
+                    name="envioAnonimo"
+                    checked={formData.envioAnonimo}
                     onChange={handleInputChange}
-                    className="mr-2" 
+                    className="mr-3 w-4 h-4 text-blue-600" 
                   />
-                  <span>Incluir tarjeta con el mensaje</span>
+                  <span className="text-gray-700 font-medium">Envío anónimo</span>
                 </label>
+                {formData.envioAnonimo && (
+                  <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">ℹ️ Los campos de remitente son opcionales</p>
+                )}
               </div>
             </div>
           )}
 
-          {currentStep === 4 && (
-            <ExtrasSelector
-              selectedExtras={selectedExtras}
-              onExtrasChange={(extras) => {
-                setSelectedExtras(extras);
-                // Recargar el carrito después de agregar/quitar extras
-                // Esperar un poco para que el backend procese
-                setTimeout(() => {
-                  reloadCart();
-                }, 1000);
-              }}
-            />
+          {!isPickup && currentStep === 3 && (
+            <div>
+              <h2 className="text-2xl font-light mb-6">💌 Dedicatoria y Extras</h2>
+              
+              {/* Dedicatoria */}
+              <div className="mb-8">
+                <h3 className="text-lg font-medium mb-4 text-gray-700">Mensaje especial</h3>
+                <textarea 
+                  name="mensaje"
+                  value={formData.mensaje}
+                  onChange={handleInputChange}
+                  className="w-full p-4 rounded-xl bg-white/50 border-0 h-32" 
+                  placeholder="Escribe un mensaje especial (opcional)..."
+                ></textarea>
+                <input 
+                  name="firmadoComo"
+                  value={formData.firmadoComo}
+                  onChange={handleInputChange}
+                  className="w-full p-4 rounded-xl bg-white/50 border-0 mt-4" 
+                  placeholder="Firmado como (opcional)" 
+                />
+                <div className="mt-4">
+                  <label className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      name="incluirTarjeta"
+                      checked={formData.incluirTarjeta}
+                      onChange={handleInputChange}
+                      className="mr-2" 
+                    />
+                    <span>Incluir tarjeta con el mensaje</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Extras */}
+              <div>
+                <h3 className="text-lg font-medium mb-4 text-gray-700">Agregar extras</h3>
+                <ExtrasSelector
+                  selectedExtras={selectedExtras}
+                  onExtrasChange={(extras) => {
+                    setSelectedExtras(extras);
+                    setTimeout(() => {
+                      reloadCart();
+                    }, 1000);
+                  }}
+                />
+              </div>
+            </div>
           )}
 
-          {currentStep === 5 && (
+          {!isPickup && currentStep === 4 && (
             <div>
               <h2 className="text-2xl font-light mb-6">🚚 Método de Envío</h2>
               <p className="text-gray-600 mb-6">Selecciona cómo deseas que entregemos tus flores</p>
@@ -1196,125 +1471,124 @@ const MultiStepCheckoutPage = () => {
                   </div>
                 </div>
               )}
-            </div>
-          )}
 
-          {currentStep === 6 && (
-            <div>
-              <h2 className="text-2xl font-light mb-6">💳 Método de Pago</h2>
-              <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <label 
-                  className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'mercadopago' ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' : 'bg-white/50 hover:bg-blue-50/30 hover:shadow-md border-2 border-transparent'}`}
-                >
-                  <div className="flex items-start">
-                    <input 
-                      type="radio" 
-                      name="metodoPago" 
-                      value="mercadopago"
-                      checked={formData.metodoPago === 'mercadopago'}
-                      onChange={handleInputChange}
-                      className="mr-3 mt-1" 
-                    />
-                    <div>
-                      <div className="font-medium">MercadoPago</div>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex justify-center">
-                    <img src="/images/mercadopago.png" alt="MercadoPago" className="h-10" onError={(e) => {e.currentTarget.src = 'https://imgmp.mlstatic.com/org-img/banners/ar/medios/online/468X60.jpg'; e.currentTarget.className='h-8'}} />
-                  </div>
-                  <div className="mt-3 text-xs text-gray-600 text-center">
-                    Tarjetas de crédito/débito
-                  </div>
-                </label>
+              {/* Métodos de pago - dentro del paso 4 de envío */}
+              <div className="mt-8 pt-8 border-t-2 border-gray-200">
+                <h3 className="text-xl font-medium mb-4">💳 Método de Pago</h3>
+                <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
                 
-                <label 
-                  className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'transferencia' ? 'bg-green-50 border-2 border-green-500 shadow-lg' : 'bg-white/50 hover:bg-green-50/30 hover:shadow-md border-2 border-transparent'}`}
-                >
-                  <div className="flex items-start">
-                    <input 
-                      type="radio" 
-                      name="metodoPago" 
-                      value="transferencia"
-                      checked={formData.metodoPago === 'transferencia'}
-                      onChange={handleInputChange}
-                      className="mr-3 mt-1" 
-                    />
-                    <div>
-                      <div className="font-medium">Transferencia</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <label 
+                    className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'mercadopago' ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' : 'bg-white/50 hover:bg-blue-50/30 hover:shadow-md border-2 border-transparent'}`}
+                  >
+                    <div className="flex items-start">
+                      <input 
+                        type="radio" 
+                        name="metodoPago" 
+                        value="mercadopago"
+                        checked={formData.metodoPago === 'mercadopago'}
+                        onChange={handleInputChange}
+                        className="mr-3 mt-1" 
+                      />
+                      <div>
+                        <div className="font-medium">MercadoPago</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-3 flex justify-center text-3xl">
-                    🏦
-                  </div>
-                  <div className="mt-3 text-xs text-gray-600 text-center">
-                    Transferencia bancaria
-                  </div>
-                </label>
-                
-                <label 
-                  className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'efectivo' ? 'bg-yellow-50 border-2 border-yellow-500 shadow-lg' : 'bg-white/50 hover:bg-yellow-50/30 hover:shadow-md border-2 border-transparent'}`}
-                >
-                  <div className="flex items-start">
-                    <input 
-                      type="radio" 
-                      name="metodoPago" 
-                      value="efectivo"
-                      checked={formData.metodoPago === 'efectivo'}
-                      onChange={handleInputChange}
-                      className="mr-3 mt-1" 
-                    />
-                    <div>
-                      <div className="font-medium">Efectivo</div>
+                    <div className="mt-3 flex justify-center">
+                      <img src="/images/mercadopago.png" alt="MercadoPago" className="h-10" onError={(e) => {e.currentTarget.src = 'https://imgmp.mlstatic.com/org-img/banners/ar/medios/online/468X60.jpg'; e.currentTarget.className='h-8'}} />
                     </div>
-                  </div>
-                  <div className="mt-3 flex justify-center text-3xl">
-                    💵
-                  </div>
-                  <div className="mt-3 text-xs text-gray-600 text-center">
-                    Pago al retirar
-                  </div>
-                </label>
-              </div>
-              
-              {formData.metodoPago === 'transferencia' && (
-                <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100">
-                  <h4 className="font-medium mb-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Datos para transferencia:
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600"><strong>Banco:</strong> Mercado Pago</p>
-                      <p className="text-gray-600"><strong>Alias:</strong> eleososatuc</p>
-                      <p className="text-gray-600"><strong>Titular:</strong> Monica Eleonora Sosa</p>
+                    <div className="mt-3 text-xs text-gray-600 text-center">
+                      Tarjetas de crédito/débito
                     </div>
-                    <div>
-                      <p className="text-gray-600"><strong>CVU:</strong> 0000003100095405777972</p>
-                      <p className="text-gray-600"><strong>CUIT:</strong> 27-26676582-2</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="mt-6">
-                <div className="flex flex-col">
-                  <label className="flex items-start">
-                    <input 
-                      type="checkbox" 
-                      name="aceptaTerminos"
-                      checked={formData.aceptaTerminos}
-                      onChange={handleInputChange}
-                      className={`mr-3 mt-1 ${formErrors.aceptaTerminos ? 'outline outline-2 outline-red-300' : ''}`} 
-                    />
-                    <span className="text-sm text-gray-600">
-                      Acepto los <span className="text-green-600 underline cursor-pointer">términos y condiciones</span> y la <span className="text-green-600 underline cursor-pointer">política de privacidad</span>
-                    </span>
                   </label>
-                  {formErrors.aceptaTerminos && <span className="text-red-600 text-sm mt-1">{formErrors.aceptaTerminos}</span>}
+                  
+                  <label 
+                    className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'transferencia' ? 'bg-green-50 border-2 border-green-500 shadow-lg' : 'bg-white/50 hover:bg-green-50/30 hover:shadow-md border-2 border-transparent'}`}
+                  >
+                    <div className="flex items-start">
+                      <input 
+                        type="radio" 
+                        name="metodoPago" 
+                        value="transferencia"
+                        checked={formData.metodoPago === 'transferencia'}
+                        onChange={handleInputChange}
+                        className="mr-3 mt-1" 
+                      />
+                      <div>
+                        <div className="font-medium">Transferencia</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-center text-3xl">
+                      🏦
+                    </div>
+                    <div className="mt-3 text-xs text-gray-600 text-center">
+                      Transferencia bancaria
+                    </div>
+                  </label>
+                  
+                  <label 
+                    className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'efectivo' ? 'bg-yellow-50 border-2 border-yellow-500 shadow-lg' : 'bg-white/50 hover:bg-yellow-50/30 hover:shadow-md border-2 border-transparent'}`}
+                  >
+                    <div className="flex items-start">
+                      <input 
+                        type="radio" 
+                        name="metodoPago" 
+                        value="efectivo"
+                        checked={formData.metodoPago === 'efectivo'}
+                        onChange={handleInputChange}
+                        className="mr-3 mt-1" 
+                      />
+                      <div>
+                        <div className="font-medium">Efectivo</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-center text-3xl">
+                      💵
+                    </div>
+                    <div className="mt-3 text-xs text-gray-600 text-center">
+                      Pago al recibir
+                    </div>
+                  </label>
+                </div>
+                
+                {formData.metodoPago === 'transferencia' && (
+                  <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100">
+                    <h4 className="font-medium mb-2 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Datos para transferencia:
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600"><strong>Banco:</strong> Mercado Pago</p>
+                        <p className="text-gray-600"><strong>Alias:</strong> eleososatuc</p>
+                        <p className="text-gray-600"><strong>Titular:</strong> Monica Eleonora Sosa</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600"><strong>CVU:</strong> 0000003100095405777972</p>
+                        <p className="text-gray-600"><strong>CUIT:</strong> 27-26676582-2</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-6">
+                  <div className="flex flex-col">
+                    <label className="flex items-start">
+                      <input 
+                        type="checkbox" 
+                        name="aceptaTerminos"
+                        checked={formData.aceptaTerminos}
+                        onChange={handleInputChange}
+                        className={`mr-3 mt-1 ${formErrors.aceptaTerminos ? 'outline outline-2 outline-red-300' : ''}`} 
+                      />
+                      <span className="text-sm text-gray-600">
+                        Acepto los <span className="text-green-600 underline cursor-pointer">términos y condiciones</span> y la <span className="text-green-600 underline cursor-pointer">política de privacidad</span>
+                      </span>
+                    </label>
+                    {formErrors.aceptaTerminos && <span className="text-red-600 text-sm mt-1">{formErrors.aceptaTerminos}</span>}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1337,7 +1611,7 @@ const MultiStepCheckoutPage = () => {
             <div>{/* Espacio vacío para mantener la justificación */}</div>
           )}
           
-          {currentStep < 6 ? (
+          {currentStep < (isPickup ? 3 : 4) ? (
             <div className="flex flex-col items-end">
               {formSubmitted && Object.keys(formErrors).length > 0 && (
                 <p className="text-red-500 text-sm mb-2">
