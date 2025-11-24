@@ -58,6 +58,7 @@ class Pedido(models.Model):
     ]
     medio_pago = models.CharField(max_length=30, choices=MEDIOS_PAGO, default='transferencia')
     regalo_anonimo = models.BooleanField(default=False)
+    costo_envio = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Costo del envío")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     confirmado = models.BooleanField(default=False)
     numero_pedido = models.CharField(max_length=20, unique=True, blank=True, null=True)

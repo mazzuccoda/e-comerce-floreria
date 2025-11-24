@@ -44,7 +44,7 @@ class PedidoReadSerializer(serializers.ModelSerializer):
             'telefono_destinatario', 'fecha_entrega', 'franja_horaria',
             'dedicatoria', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre',
             'estado', 'estado_display', 'estado_pago', 'estado_pago_display',
-            'medio_pago', 'medio_pago_display', 'total', 'creado', 'items'
+            'medio_pago', 'medio_pago_display', 'costo_envio', 'total', 'creado', 'items'
         ]
 
 
@@ -68,6 +68,7 @@ class CheckoutSerializer(serializers.Serializer):
     franja_horaria = serializers.ChoiceField(choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)')])
     metodo_envio_id = serializers.IntegerField()
     metodo_envio = serializers.CharField(max_length=20, required=False, allow_blank=True)  # 'retiro', 'express', 'programado'
+    costo_envio = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     
     # Datos adicionales
     dedicatoria = serializers.CharField(required=False, allow_blank=True)
@@ -129,18 +130,21 @@ class CheckoutSerializer(serializers.Serializer):
         metodo_envio_id = validated_data.pop('metodo_envio_id')
         metodo_envio_obj = MetodoEnvio.objects.get(id=metodo_envio_id)
         
-        # Extraer tipo_envio del validated_data (viene del frontend como 'metodo_envio')
+        # Extraer tipo_envio y costo_envio del validated_data
         tipo_envio = validated_data.pop('metodo_envio', None)
+        costo_envio = validated_data.pop('costo_envio', 0)
         
         # Log para debug
         import logging
         logger = logging.getLogger(__name__)
         logger.info(f"🚚 Tipo de envío recibido: {tipo_envio}")
+        logger.info(f"💰 Costo de envío recibido: {costo_envio}")
         logger.info(f"📦 Validated data keys: {validated_data.keys()}")
         
         # Crear el pedido
         pedido_data = validated_data.copy()
         pedido_data['metodo_envio'] = metodo_envio_obj
+        pedido_data['costo_envio'] = costo_envio  # Guardar costo de envío
         
         # Guardar el tipo de envío (retiro, express, programado)
         if tipo_envio:
@@ -186,8 +190,12 @@ class CheckoutSerializer(serializers.Serializer):
             producto.save()
         
         # Calcular total final (productos + envío)
-        pedido.total = total_productos + metodo_envio.costo
+        # Usar el costo_envio que viene del frontend en lugar del metodo_envio.costo
+        from decimal import Decimal
+        pedido.total = total_productos + Decimal(str(costo_envio))
         pedido.save()
+        
+        logger.info(f"💰 Total calculado: productos={total_productos} + envío={costo_envio} = {pedido.total}")
         
         # Limpiar carrito después de crear el pedido
         cart.clear()
