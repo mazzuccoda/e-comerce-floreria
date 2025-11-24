@@ -180,23 +180,104 @@ const PaymentSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30">
-      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16 max-w-4xl">
-        <div className="text-center">
-          {/* Icono de éxito */}
-          <div className="mb-8 sm:mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full mb-6 sm:mb-8 shadow-2xl shadow-green-500/25 animate-pulse">
-              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-gray-900 mb-4 sm:mb-6 px-4">
-              🎉 ¡Pedido Confirmado! 🎉
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto px-4">
-              Tu pedido ha sido procesado exitosamente y está siendo preparado con amor
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl">
+        
+        {/* Hero Section - Limpio y elegante */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-6 shadow-xl animate-scaleIn">
+            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+            ¡Pedido Confirmado!
+          </h1>
+          <p className="text-lg text-gray-600 mb-2">
+            Pedido <span className="font-mono font-semibold text-green-600">#{pedidoData?.numero_pedido || pedidoId}</span>
+          </p>
+          <p className="text-base text-gray-500">
+            Tu pedido está siendo preparado con amor 💚
+          </p>
+        </div>
+
+        {/* Timeline de Estado del Pedido */}
+        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Estado del Pedido
+          </h2>
+          
+          <div className="relative">
+            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-green-500 via-green-300 to-gray-200"></div>
+            
+            <div className="space-y-8">
+              <div className="relative flex items-start gap-4">
+                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg flex-shrink-0">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="flex-1 pt-2">
+                  <h3 className="text-lg font-semibold text-gray-900">Pedido Confirmado</h3>
+                  <p className="text-sm text-gray-500 mt-1">Tu pedido ha sido recibido y confirmado</p>
+                  <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Completado ✓</span>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-4">
+                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-green-400 rounded-full shadow-lg flex-shrink-0 animate-pulse">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1 pt-2">
+                  <h3 className="text-lg font-semibold text-gray-900">En Preparación</h3>
+                  <p className="text-sm text-gray-500 mt-1">Estamos preparando tu pedido con cuidado</p>
+                  <span className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">En proceso...</span>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-4">
+                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full shadow flex-shrink-0">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                </div>
+                <div className="flex-1 pt-2">
+                  <h3 className="text-lg font-semibold text-gray-400">Listo para Envío</h3>
+                  <p className="text-sm text-gray-400 mt-1">Te avisaremos cuando esté listo</p>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-4">
+                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full shadow flex-shrink-0">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                  </svg>
+                </div>
+                <div className="flex-1 pt-2">
+                  <h3 className="text-lg font-semibold text-gray-400">En Camino</h3>
+                  <p className="text-sm text-gray-400 mt-1">{pedidoData?.metodo_envio === 'retiro' ? 'Listo para retiro' : `Fecha estimada: ${pedidoData?.fecha_entrega || 'Por confirmar'}`}</p>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-4">
+                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full shadow flex-shrink-0">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                  </svg>
+                </div>
+                <div className="flex-1 pt-2">
+                  <h3 className="text-lg font-semibold text-gray-400">Entregado</h3>
+                  <p className="text-sm text-gray-400 mt-1">Te confirmaremos la entrega</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
           {/* Productos comprados */}
           {pedidoData && pedidoData.items && pedidoData.items.length > 0 && (
