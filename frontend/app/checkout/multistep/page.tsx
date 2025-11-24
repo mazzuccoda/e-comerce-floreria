@@ -1595,7 +1595,6 @@ const MultiStepCheckoutPage = () => {
                     {formErrors.aceptaTerminos && <span className="text-red-600 text-sm mt-1">{formErrors.aceptaTerminos}</span>}
                   </div>
                 </div>
-              </div>
             </div>
           )}
         </div>
