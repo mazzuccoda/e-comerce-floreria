@@ -384,26 +384,16 @@ const MultiStepCheckoutPage = () => {
     try {
       console.log('🚀 INICIANDO CREACIÓN DE PEDIDO');
       alert('🚀 Iniciando creación de pedido...');
-      
-      // Verificar carrito primero usando API existente
-      console.log('📡 Haciendo request a carrito...');
-      const cartResponse = await fetch(`${API_URL}/carrito/`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      
-      console.log('📡 Response status carrito:', cartResponse.status);
-      const cartData = await cartResponse.json();
-      console.log('📦 Estado del carrito completo:', JSON.stringify(cartData, null, 2));
-      
-      if (!cartData.items || cartData.items.length === 0) {
-        console.log('❌ CARRITO VACÍO - items:', cartData.items);
+
+      // Usar directamente el carrito ya cargado en el checkout (directCart)
+      if (!directCart.items || directCart.items.length === 0) {
+        console.log('❌ CARRITO VACÍO EN directCart - items:', directCart.items);
         alert('❌ El carrito está vacío. Agrega productos antes de finalizar el pedido.');
         return;
       }
-      
-      console.log(`✅ CARRITO VÁLIDO: ${cartData.items.length} productos`);
-      alert(`✅ Carrito verificado: ${cartData.items.length} productos por $${cartData.total_price}`);
+
+      console.log(`✅ CARRITO VÁLIDO (directCart): ${directCart.items.length} productos`);
+      alert(`✅ Carrito verificado: ${directCart.items.length} productos por $${directCart.total_price}`);
 
       // Crear pedido usando el endpoint API existente
       console.log('📡 Enviando pedido a simple-checkout...');
@@ -431,8 +421,8 @@ const MultiStepCheckoutPage = () => {
         direccion: formData.direccion
       });
       
-      // Preparar items del carrito para enviar
-      const items = cartData.items.map((item: any) => ({
+      // Preparar items del carrito para enviar usando directCart
+      const items = directCart.items.map((item: any) => ({
         producto_id: item.producto.id,
         cantidad: item.quantity
       }));
@@ -519,7 +509,7 @@ const MultiStepCheckoutPage = () => {
           pedido_id: result.pedido_id,
           numero_pedido: result.numero_pedido,
           total: result.total,
-          items: cartData.items,
+          items: directCart.items,
           comprador: {
             nombre: formData.nombre,
             email: formData.email,
