@@ -291,6 +291,25 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
           is_empty: Boolean(data.is_empty)
         };
 
+        // PROTECCIÓN: Si el backend devuelve un carrito vacío pero localStorage tiene productos,
+        // NO sobrescribir (probablemente es un problema de sesión)
+        if (normalizedCart.is_empty && typeof window !== 'undefined') {
+          try {
+            const stored = localStorage.getItem('cart_data');
+            if (stored) {
+              const localCart = JSON.parse(stored);
+              if (!localCart.is_empty && localCart.items && localCart.items.length > 0) {
+                console.log('⚠️ Backend devolvió carrito vacío pero localStorage tiene productos. Manteniendo localStorage.');
+                console.log('📦 Carrito de localStorage:', localCart);
+                safeSetCart(localCart);
+                return; // No actualizar con el carrito vacío del backend
+              }
+            }
+          } catch (e) {
+            console.error('❌ Error verificando localStorage:', e);
+          }
+        }
+
         safeSetCart(normalizedCart);
         console.log('✅ Cart refreshed successfully:', normalizedCart);
       } else {
@@ -439,7 +458,24 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Initial load
   useEffect(() => {
-    console.log('🚀 CartProviderRobust mounted, starting initial load...');
+    console.log('🚀 CartProviderRobust mounted');
+    
+    // PRIMERO: Cargar desde localStorage inmediatamente
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('cart_data');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          console.log('✅ Carrito cargado INMEDIATAMENTE desde localStorage:', parsed);
+          setCart(parsed);
+        }
+      } catch (e) {
+        console.error('❌ Error cargando carrito inicial:', e);
+      }
+    }
+    
+    // LUEGO: Intentar sincronizar con backend (sin vaciar si falla)
+    console.log('🔄 Intentando sincronizar con backend...');
     refreshCart();
 
     return () => {
