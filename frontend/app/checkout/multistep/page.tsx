@@ -966,8 +966,57 @@ const MultiStepCheckoutPage = () => {
           </div>
         </div>
 
+        {/* Resumen de pasos completados */}
+        {currentStep > 0 && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-6 border-2 border-green-200 shadow-md">
+            <div className="flex items-center gap-2 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <h3 className="font-semibold text-green-800">Datos completados</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              {/* Método de envío siempre se muestra */}
+              <div className="bg-white p-3 rounded-lg flex items-center gap-2">
+                <span className="text-green-600">✓</span>
+                <div>
+                  <span className="font-medium text-gray-700">Método de envío:</span>
+                  <span className="ml-2 text-gray-900">
+                    {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
+                    {formData.metodoEnvio === 'express' && '⚡ Express'}
+                    {formData.metodoEnvio === 'programado' && '📅 Programado'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Destinatario (solo en flujo de envío) */}
+              {!isPickup && currentStep > 1 && formData.nombreDestinatario && (
+                <div className="bg-white p-3 rounded-lg flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  <div>
+                    <span className="font-medium text-gray-700">Destinatario:</span>
+                    <span className="ml-2 text-gray-900">{formData.nombreDestinatario}</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Remitente */}
+              {((isPickup && currentStep > 1) || (!isPickup && currentStep > 2)) && formData.nombre && (
+                <div className="bg-white p-3 rounded-lg flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  <div>
+                    <span className="font-medium text-gray-700">Remitente:</span>
+                    <span className="ml-2 text-gray-900">{formData.nombre}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Step Content con animación */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 mb-8 transform transition-all duration-300 hover:shadow-3xl">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 mb-8 transform transition-all duration-300 hover:shadow-3xl animate-fadeIn">
           {/* PASO 0: ELEGIR MÉTODO DE ENVÍO (común para ambos flujos) */}
           {currentStep === 0 && (
             <div>
