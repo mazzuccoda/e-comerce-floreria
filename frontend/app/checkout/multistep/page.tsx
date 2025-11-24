@@ -42,6 +42,7 @@ const MultiStepCheckoutPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Función para recargar el carrito desde localStorage y, si es necesario, desde el backend
   const reloadCart = async () => {
@@ -115,6 +116,28 @@ const MultiStepCheckoutPage = () => {
     };
 
     init();
+
+    // Listener para cambios en localStorage (cuando se actualiza el carrito desde otra pestaña o componente)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'cart_data' && e.newValue) {
+        console.log('🔄 Carrito actualizado en localStorage, recargando...');
+        reloadCart();
+      }
+    };
+
+    // Listener personalizado para cambios en el mismo tab
+    const handleCartUpdate = () => {
+      console.log('🔄 Evento cart-updated detectado, recargando...');
+      reloadCart();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cart-updated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cart-updated', handleCartUpdate);
+    };
   }, []);
   
   // Estado para los datos del formulario
@@ -408,6 +431,7 @@ const MultiStepCheckoutPage = () => {
       return;
     }
     
+    setLoading(true);
     try {
       console.log('🚀 INICIANDO CREACIÓN DE PEDIDO');
       alert('🚀 Iniciando creación de pedido...');
@@ -618,6 +642,8 @@ const MultiStepCheckoutPage = () => {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert(`❌ Error de conexión: ${errorMessage}`);
       console.error('Connection error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -739,16 +765,25 @@ const MultiStepCheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50/30">
-      <div className="container mx-auto px-6 py-16 max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-extralight text-gray-900 mb-4">
-            <span className="text-green-500">Florería</span> Cristina
-          </h1>
-          <p className="text-lg text-gray-600">
-            Paso {currentStep + 1} de {steps.length}: <span className="font-medium text-green-600">{steps[currentStep].title}</span>
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl">
+        {/* Header mejorado */}
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-2xl">🌸</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Florería</span> Cristina
+            </h1>
+          </div>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-gray-100">
+            <span className="text-sm font-medium text-gray-500">Paso</span>
+            <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full text-sm font-bold">{currentStep + 1}</span>
+            <span className="text-sm text-gray-400">de {steps.length}</span>
+            <span className="hidden sm:inline text-sm text-gray-400">|</span>
+            <span className="hidden sm:inline text-sm font-medium text-green-600">{steps[currentStep].title}</span>
+          </div>
         </div>
 
         {/* Progress Steps */}
@@ -787,8 +822,8 @@ const MultiStepCheckoutPage = () => {
           </div>
         </div>
 
-        {/* Step Content */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-4 sm:p-8 shadow-xl mb-8">
+        {/* Step Content con animación */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 mb-8 transform transition-all duration-300 hover:shadow-3xl">
           {/* PASO 0: ELEGIR MÉTODO DE ENVÍO (común para ambos flujos) */}
           {currentStep === 0 && (
             <div>
@@ -1720,80 +1755,95 @@ const MultiStepCheckoutPage = () => {
           )}
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-8">
+        {/* Navigation Buttons mejorados */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8">
           {currentStep > 0 ? (
             <button
               onClick={prevStep}
-              className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-all shadow-sm hover:shadow"
+              className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg font-medium text-gray-700"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
-              Anterior
+              ← Anterior
             </button>
           ) : (
-            <div>{/* Espacio vacío para mantener la justificación */}</div>
+            <div className="hidden sm:block">{/* Espacio vacío en desktop */}</div>
           )}
           
           {currentStep < (isPickup ? 3 : 4) ? (
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-stretch sm:items-end flex-1 sm:flex-initial">
               {formSubmitted && Object.keys(formErrors).length > 0 && (
-                <p className="text-red-500 text-sm mb-2">
-                  Por favor, completa correctamente todos los campos requeridos.
+                <p className="text-red-500 text-sm mb-2 text-center sm:text-right bg-red-50 p-2 rounded-lg border border-red-200">
+                  ⚠️ Por favor, completa correctamente todos los campos requeridos.
                 </p>
               )}
               <button
                 onClick={nextStep}
-                className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-md transition-all flex items-center gap-2 font-medium"
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all flex items-center justify-center gap-2 font-semibold text-lg shadow-lg hover:scale-105 transform"
               >
-                Siguiente
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
+                Siguiente →
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-stretch sm:items-end flex-1 sm:flex-initial">
               {formSubmitted && Object.keys(formErrors).length > 0 && (
-                <p className="text-red-500 text-sm mb-2">
-                  Debes aceptar los términos y condiciones para continuar.
+                <p className="text-red-500 text-sm mb-2 text-center sm:text-right bg-red-50 p-2 rounded-lg border border-red-200">
+                  ⚠️ Debes aceptar los términos y condiciones para continuar.
                 </p>
               )}
               <button
                 onClick={handleFinalizarPedido}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-all text-lg font-medium flex items-center gap-2"
+                disabled={loading}
+                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl hover:shadow-xl transition-all text-lg font-bold flex items-center justify-center gap-3 shadow-lg hover:scale-105 transform disabled:scale-100 disabled:cursor-not-allowed"
               >
-                <span>Confirmar Pedido</span>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Procesando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🎉 Confirmar Pedido</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </>
+                )}
               </button>
             </div>
           )}
         </div>
 
-        {/* Summary Card */}
-        <div className="mt-6 sm:mt-8 bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-          <h3 className="text-base sm:text-lg font-medium mb-3 sm:mb-4 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
-              <path d="M16.5 9.4 7.55 4.24"/>
-              <polyline points="3.29 7 12 12 20.71 7"/>
-              <line x1="12" y1="22" x2="12" y2="12"/>
-              <circle cx="18.5" cy="15.5" r="2.5"/>
-              <path d="M20.27 17.27 22 19"/>
-            </svg>
-            <span>Resumen del pedido</span>
-          </h3>
+        {/* Summary Card mejorado */}
+        <div className="mt-6 sm:mt-8 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 sm:p-8 shadow-2xl border-2 border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                <path d="M16.5 9.4 7.55 4.24"/>
+                <polyline points="3.29 7 12 12 20.71 7"/>
+                <line x1="12" y1="22" x2="12" y2="12"/>
+                <circle cx="18.5" cy="15.5" r="2.5"/>
+                <path d="M20.27 17.27 22 19"/>
+              </svg>
+              <span>Resumen del pedido</span>
+            </h3>
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+              {directCart?.total_items || 0} {directCart?.total_items === 1 ? 'producto' : 'productos'}
+            </span>
+          </div>
           
-          {/* Productos del carrito */}
+          {/* Productos del carrito con diseño mejorado */}
           {directCart?.items && directCart.items.length > 0 ? (
-            <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4 divide-y divide-gray-100">
+            <div className="space-y-3 mb-6">
               {directCart.items.map((item, index) => (
-                <div key={index} className="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-2 sm:pt-3 first:pt-0 gap-2">
-                  <div className="flex gap-2 sm:gap-3 items-start sm:items-center">
-                    <div className="bg-gray-50 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-xl flex-shrink-0 overflow-hidden">
+                <div key={index} className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                  <div className="flex gap-4 items-center">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
                       {item.producto.imagen_principal ? (
                         <img
                           src={item.producto.imagen_principal}
@@ -1801,20 +1851,25 @@ const MultiStepCheckoutPage = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span>🌸</span>
+                        <span className="text-3xl">🌸</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="font-medium text-gray-800 text-sm sm:text-base block truncate">{item.producto.nombre}</span>
-                      <div className="text-xs sm:text-sm text-gray-500 flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs">Cant: {item.quantity}</span>
-                        <span className="text-gray-400 hidden sm:inline">|</span>
-                        <span className="text-xs">${(Number(item.price)).toFixed(2)} c/u</span>
+                      <h4 className="font-semibold text-gray-900 text-base sm:text-lg truncate">{item.producto.nombre}</h4>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          × {item.quantity}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          ${Number(item.price).toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u
+                        </span>
                       </div>
                     </div>
-                  </div>
-                  <div className="font-medium text-green-600 text-sm sm:text-base self-end sm:self-auto">
-                    ${(Number(item.price) * item.quantity).toFixed(2)}
+                    <div className="text-right">
+                      <div className="text-lg sm:text-xl font-bold text-green-600">
+                        ${(Number(item.price) * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
