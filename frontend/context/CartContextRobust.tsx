@@ -357,9 +357,23 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       safeSetLoading(true);
       console.log('🛒 Adding to cart:', { product: product.nombre, quantity });
 
-      // Primero agregar al carrito local ANTES de llamar al backend
-      const currentCart = cart.items || [];
+      // IMPORTANTE: Leer el carrito actual DIRECTAMENTE de localStorage para evitar problemas de closure
+      let currentCart: any[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cart_data');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            currentCart = parsed.items || [];
+            console.log('📦 Carrito actual en localStorage:', currentCart.length, 'productos');
+          }
+        } catch (e) {
+          console.error('❌ Error leyendo carrito de localStorage:', e);
+        }
+      }
+
       const existingItemIndex = currentCart.findIndex(item => item.producto.id === product.id);
+      console.log('🔍 Buscando producto existente:', { found: existingItemIndex >= 0, index: existingItemIndex });
       
       let updatedItems;
       if (existingItemIndex >= 0) {
@@ -395,6 +409,11 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       };
 
       // Actualizar inmediatamente el estado local (optimistic update)
+      console.log('💾 Guardando carrito optimista:', {
+        items: optimisticCart.items.length,
+        total_items: optimisticCart.total_items,
+        total_price: optimisticCart.total_price
+      });
       safeSetCart(optimisticCart);
       toast.success(`${product.nombre} agregado al carrito`);
 
