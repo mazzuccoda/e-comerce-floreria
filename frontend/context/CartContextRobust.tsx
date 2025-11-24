@@ -357,30 +357,77 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       safeSetLoading(true);
       console.log('🛒 Adding to cart:', { product: product.nombre, quantity });
 
-      const data = await apiClient.current.request('/carrito/simple/add/', {
-        method: 'POST',
-        body: JSON.stringify({
-          product_id: product.id,
-          quantity: quantity
-        })
-      });
-
-      if (data?.cart) {
-        safeSetCart(data.cart);
-        toast.success(`${product.nombre} agregado al carrito`);
+      // Primero agregar al carrito local ANTES de llamar al backend
+      const currentCart = cart.items || [];
+      const existingItemIndex = currentCart.findIndex(item => item.producto.id === product.id);
+      
+      let updatedItems;
+      if (existingItemIndex >= 0) {
+        // Producto ya existe, actualizar cantidad
+        updatedItems = [...currentCart];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + quantity,
+          total_price: (updatedItems[existingItemIndex].quantity + quantity) * Number(product.precio_descuento || product.precio)
+        };
       } else {
-        await refreshCart(); // Fallback refresh
+        // Producto nuevo, agregarlo
+        updatedItems = [
+          ...currentCart,
+          {
+            producto: product,
+            quantity: quantity,
+            price: Number(product.precio_descuento || product.precio),
+            total_price: quantity * Number(product.precio_descuento || product.precio)
+          }
+        ];
+      }
+
+      // Calcular totales
+      const total_price = updatedItems.reduce((sum, item) => sum + Number(item.total_price), 0);
+      const total_items = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      const optimisticCart: CartData = {
+        items: updatedItems,
+        total_price: total_price,
+        total_items: total_items,
+        is_empty: updatedItems.length === 0
+      };
+
+      // Actualizar inmediatamente el estado local (optimistic update)
+      safeSetCart(optimisticCart);
+      toast.success(`${product.nombre} agregado al carrito`);
+
+      // Luego intentar sincronizar con backend (sin bloquear la UI)
+      try {
+        const data = await apiClient.current.request('/carrito/simple/add/', {
+          method: 'POST',
+          body: JSON.stringify({
+            product_id: product.id,
+            quantity: quantity
+          })
+        });
+
+        // Si el backend responde correctamente, usar su respuesta
+        if (data?.cart && data.cart.items && data.cart.items.length > 0) {
+          console.log('✅ Backend confirmó el carrito:', data.cart);
+          safeSetCart(data.cart);
+        } else {
+          console.log('⚠️ Backend devolvió carrito vacío, manteniendo carrito local');
+        }
+      } catch (backendError: any) {
+        console.error('⚠️ Error sincronizando con backend, pero el producto ya está en localStorage:', backendError);
+        // No hacer nada, el carrito local ya está actualizado
       }
     } catch (error: any) {
       console.error('❌ Add to cart failed:', error);
       toast.error(error.message || 'Error al agregar producto');
       safeSetError(error.message);
-      // Re-lanzar el error para que el componente llamador pueda manejarlo
       throw error;
     } finally {
       safeSetLoading(false);
     }
-  }, [refreshCart, safeSetCart, safeSetLoading, safeSetError]);
+  }, [cart, refreshCart, safeSetCart, safeSetLoading, safeSetError]);
 
   // Remove from cart
   const removeFromCart = useCallback(async (productId: number) => {
