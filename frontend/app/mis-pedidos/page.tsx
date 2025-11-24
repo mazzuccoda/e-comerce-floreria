@@ -60,6 +60,14 @@ const MisPedidosPage: React.FC = () => {
           console.log('✅ Pedidos recibidos:', data);
           console.log('📦 Array de pedidos:', data.pedidos);
           console.log('📊 Cantidad de pedidos:', data.pedidos?.length || 0);
+          
+          // Log para verificar si costo_envio viene del backend
+          if (data.pedidos && data.pedidos.length > 0) {
+            console.log('🔍 Primer pedido completo:', data.pedidos[0]);
+            console.log('💰 Costo envío del primer pedido:', data.pedidos[0].costo_envio);
+            console.log('🚚 Tipo envío del primer pedido:', data.pedidos[0].tipo_envio);
+          }
+          
           setPedidos(data.pedidos || []);
         } else {
           const errorData = await response.json();
