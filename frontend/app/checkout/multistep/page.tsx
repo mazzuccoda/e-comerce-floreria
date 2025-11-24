@@ -135,9 +135,15 @@ const MultiStepCheckoutPage = () => {
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('cart-updated', handleCartUpdate);
 
+    // Recargar el carrito cada 2 segundos para mantener sincronización
+    const intervalId = setInterval(() => {
+      reloadCart();
+    }, 2000);
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('cart-updated', handleCartUpdate);
+      clearInterval(intervalId);
     };
   }, []);
   
@@ -204,6 +210,20 @@ const MultiStepCheckoutPage = () => {
   
   // Estado para indicar si se ha intentado enviar el formulario
   const [formSubmitted, setFormSubmitted] = useState(false);
+
+  // Sincronizar selectedExtras con formData
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      tarjetaPersonalizada: selectedExtras.includes(1),
+      osoDePerluche: selectedExtras.includes(2)
+    }));
+  }, [selectedExtras]);
+
+  // Handler para ExtrasSelector
+  const handleExtrasChange = (extras: number[]) => {
+    setSelectedExtras(extras);
+  };
 
   // Validar un campo específico
   const validateField = (name: string, value: any): string => {
@@ -766,7 +786,7 @@ const MultiStepCheckoutPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 sm:pt-28">
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl">
         {/* Header mejorado */}
         <div className="text-center mb-8 sm:mb-12">
