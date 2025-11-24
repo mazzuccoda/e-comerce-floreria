@@ -13,6 +13,8 @@ interface Pedido {
   medio_pago: string;
   medio_pago_display?: string;
   items: any[];
+  costo_envio?: string | number;
+  tipo_envio?: string;
 }
 
 const MisPedidosPage: React.FC = () => {
@@ -164,9 +166,31 @@ const MisPedidosPage: React.FC = () => {
                     <span className="text-gray-600">Productos:</span>
                     <span className="font-medium">{pedido.items?.length || 0} items</span>
                   </div>
+                  
+                  {/* Desglose de costos */}
+                  <div className="mt-3 pt-3 border-t space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal productos:</span>
+                      <span className="font-medium">${(
+                        parseFloat(pedido.total) - (parseFloat(String(pedido.costo_envio || 0)))
+                      ).toLocaleString('es-AR')}</span>
+                    </div>
+                    {pedido.costo_envio && parseFloat(String(pedido.costo_envio)) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          {pedido.tipo_envio === 'express' && '⚡ Envío Express'}
+                          {pedido.tipo_envio === 'programado' && '📅 Envío Programado'}
+                          {pedido.tipo_envio === 'retiro' && '🏪 Retiro en tienda'}
+                          {!pedido.tipo_envio && '🚚 Envío'}
+                        </span>
+                        <span className="font-medium">${parseFloat(String(pedido.costo_envio)).toLocaleString('es-AR')}</span>
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="flex justify-between text-lg font-bold mt-4 pt-4 border-t">
                     <span>Total:</span>
-                    <span className="text-green-700">${pedido.total}</span>
+                    <span className="text-green-700">${parseFloat(pedido.total).toLocaleString('es-AR')}</span>
                   </div>
                 </div>
                 
