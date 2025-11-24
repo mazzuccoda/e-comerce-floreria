@@ -427,10 +427,20 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
           })
         });
 
-        // Si el backend responde correctamente, usar su respuesta
+        // Si el backend responde correctamente, verificar que tenga TODOS los productos
         if (data?.cart && data.cart.items && data.cart.items.length > 0) {
-          console.log('✅ Backend confirmó el carrito:', data.cart);
-          safeSetCart(data.cart);
+          console.log('✅ Backend respondió con carrito:', data.cart);
+          
+          // PROTECCIÓN: Si el backend tiene MENOS productos que nuestro carrito local, NO sobrescribir
+          if (data.cart.items.length < optimisticCart.items.length) {
+            console.log('⚠️ Backend tiene MENOS productos que el carrito local. Manteniendo carrito local.');
+            console.log('   Backend:', data.cart.items.length, 'productos');
+            console.log('   Local:', optimisticCart.items.length, 'productos');
+            // NO actualizar, mantener el carrito optimista
+          } else {
+            console.log('✅ Backend tiene todos los productos, actualizando');
+            safeSetCart(data.cart);
+          }
         } else {
           console.log('⚠️ Backend devolvió carrito vacío, manteniendo carrito local');
         }
