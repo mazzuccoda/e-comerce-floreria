@@ -213,16 +213,20 @@ export default function ProductPage({ params }: ProductPageParams) {
                   </span>
                 </div>
               ) : product.precio_descuento ? (
-                <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-bold text-green-700">
-                    $ {parseFloat(product.precio_descuento).toLocaleString()}
-                  </span>
-                  <span className="text-2xl text-gray-400 line-through">
-                    $ {parseFloat(product.precio).toLocaleString()}
-                  </span>
-                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">
-                    {Math.round((1 - parseFloat(product.precio_descuento) / parseFloat(product.precio)) * 100)}% OFF
-                  </span>
+                <div className="space-y-1 sm:space-y-0">
+                  <div className="flex items-baseline gap-2 sm:gap-3">
+                    <span className="text-4xl font-bold text-green-700">
+                      $ {parseFloat(product.precio_descuento).toLocaleString()}
+                    </span>
+                    <span className="text-lg sm:text-2xl text-gray-400 line-through">
+                      $ {parseFloat(product.precio).toLocaleString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mt-1">
+                      {Math.round((1 - parseFloat(product.precio_descuento) / parseFloat(product.precio)) * 100)}% OFF
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <span className="text-4xl font-bold text-gray-900">
