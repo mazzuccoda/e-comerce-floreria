@@ -46,14 +46,15 @@ def simple_add_to_cart(request):
         cart = Cart(request)
         cart.add(producto, quantity)
 
-        # Preparar respuesta
+        # Preparar respuesta (incluyendo imagen_principal como en simple_get_cart)
         items_data = []
         for item in cart.get_items():
             items_data.append({
                 'producto': {
                     'id': item['producto'].id,
                     'nombre': item['producto'].nombre,
-                    'precio': str(item['producto'].precio)
+                    'precio': str(item['producto'].precio),
+                    'imagen_principal': item['producto'].get_primary_image_url
                 },
                 'quantity': item['quantity'],
                 'price': str(item['price']),

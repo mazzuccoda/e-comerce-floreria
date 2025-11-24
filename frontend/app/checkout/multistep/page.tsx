@@ -10,17 +10,17 @@ import { AddressData } from '@/types/Address';
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
-// Interfaces para carrito directo
+// Interfaces para carrito directo (mismo shape que simple_get_cart y CartContextRobust)
 interface CartItem {
   producto: {
     id: number;
     nombre: string;
-    precio: number;
-    imagen: string;
+    precio: number | string;
+    imagen_principal?: string;
   };
   quantity: number;
-  price: number;
-  total_price: number;
+  price: number | string;
+  total_price: number | string;
 }
 
 interface DirectCart {
@@ -43,10 +43,36 @@ const MultiStepCheckoutPage = () => {
   const [hasError, setHasError] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
 
-  // Función para recargar el carrito
+  // Función para recargar el carrito desde localStorage y, si es necesario, desde el backend
   const reloadCart = async () => {
     try {
-      console.log('🔄 Recargando carrito...');
+      console.log('🔄 Recargando carrito (localStorage + API)...');
+
+      // 1) Intentar desde localStorage, usando el mismo key que CartContextRobust
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cart_data');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const normalizedFromLocal: DirectCart = {
+              items: Array.isArray(parsed.items) ? parsed.items : [],
+              total_price: parseFloat(parsed.total_price) || 0,
+              total_items: parseInt(parsed.total_items) || 0,
+              is_empty: Boolean(parsed.is_empty)
+            };
+            setDirectCart(normalizedFromLocal);
+            console.log('✅ Carrito cargado desde localStorage en checkout:', normalizedFromLocal);
+            // Si ya hay items desde local, podemos devolver temprano
+            if (!normalizedFromLocal.is_empty && normalizedFromLocal.items.length > 0) {
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error leyendo carrito de localStorage en checkout:', e);
+        }
+      }
+
+      // 2) Fallback: leer directamente del backend
       const endpoint = `${API_URL}/carrito/simple/`;
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -58,68 +84,28 @@ const MultiStepCheckoutPage = () => {
       
       if (response.ok) {
         const data = await response.json();
-        const normalizedCart = {
+        const normalizedCart: DirectCart = {
           items: Array.isArray(data.items) ? data.items : [],
           total_price: parseFloat(data.total_price) || 0,
           total_items: parseInt(data.total_items) || 0,
           is_empty: Boolean(data.is_empty)
         };
         setDirectCart(normalizedCart);
-        console.log('✅ Carrito recargado:', normalizedCart);
+        console.log('✅ Carrito recargado desde API en checkout:', normalizedCart);
       }
     } catch (error) {
       console.error('❌ Error recargando carrito:', error);
     }
   };
 
-  // Carga directa del carrito desde el API, sin depender del contexto
+  // Carga inicial del carrito: primero localStorage, luego API si hace falta
   useEffect(() => {
-    const fetchCartDirectly = async () => {
+    const init = async () => {
       try {
         setIsLoading(true);
-        console.log('🔄 Checkout - Cargando carrito directamente del API...');
-        
-        const endpoint = `${API_URL}/carrito/simple/`;
-        console.log('📡 Fetch URL:', endpoint);
-        
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-          }
-        });
-        
-        console.log(`📡 ${endpoint} - Status:`, response.status, response.statusText);
-        
-        let successData = null;
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`✅ ${endpoint} - Datos:`, data);
-          
-          if (data && Array.isArray(data.items)) {
-            successData = data;
-            console.log(`🎉 ${endpoint} - ¡Encontrados ${data.items.length} productos!`);
-          } else {
-            console.log(`⚠️ ${endpoint} - Carrito vacío o inválido`)
-          }
-        }
-        
-        if (successData) {
-          // Normalizar datos
-          const normalizedCart = {
-            items: Array.isArray(successData.items) ? successData.items : [],
-            total_price: parseFloat(successData.total_price) || 0,
-            total_items: parseInt(successData.total_items) || 0,
-            is_empty: Boolean(successData.is_empty)
-          };
-          
-          setDirectCart(normalizedCart);
-          setHasError(false);
-        } else {
-          throw new Error('No se pudo cargar el carrito desde ningún endpoint');
-        }
+        console.log('🔄 Checkout - Cargando carrito (localStorage + API)...');
+        await reloadCart();
+        setHasError(false);
       } catch (error) {
         console.error('❌ Checkout - Error cargando carrito:', error);
         setHasError(true);
@@ -127,8 +113,8 @@ const MultiStepCheckoutPage = () => {
         setIsLoading(false);
       }
     };
-    
-    fetchCartDirectly();
+
+    init();
   }, []);
   
   const steps = [
