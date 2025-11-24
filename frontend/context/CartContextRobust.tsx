@@ -464,13 +464,49 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       safeSetLoading(true);
       console.log('🗑️ Removing from cart:', productId);
 
-      await apiClient.current.request('/carrito/remove/', {
-        method: 'DELETE',
-        body: JSON.stringify({ product_id: productId })
-      });
+      // OPTIMISTIC UPDATE: Eliminar de localStorage PRIMERO
+      let currentCart: any[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cart_data');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            currentCart = parsed.items || [];
+          }
+        } catch (e) {
+          console.error('❌ Error leyendo carrito:', e);
+        }
+      }
 
-      await refreshCart();
+      // Filtrar el producto eliminado
+      const updatedItems = currentCart.filter(item => item.producto.id !== productId);
+
+      // Recalcular totales
+      const total_price = updatedItems.reduce((sum, item) => sum + Number(item.total_price), 0);
+      const total_items = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      const optimisticCart: CartData = {
+        items: updatedItems,
+        total_price: total_price,
+        total_items: total_items,
+        is_empty: updatedItems.length === 0
+      };
+
+      // Actualizar inmediatamente
+      console.log('💾 Eliminando producto de localStorage:', optimisticCart);
+      safeSetCart(optimisticCart);
       toast.success('Producto eliminado del carrito');
+
+      // Intentar sincronizar con backend en background
+      try {
+        await apiClient.current.request('/carrito/remove/', {
+          method: 'DELETE',
+          body: JSON.stringify({ product_id: productId })
+        });
+        console.log('✅ Backend confirmó eliminación');
+      } catch (backendError: any) {
+        console.error('⚠️ Error sincronizando con backend, pero el producto ya está eliminado localmente:', backendError);
+      }
     } catch (error: any) {
       console.error('❌ Remove from cart failed:', error);
       toast.error(error.message || 'Error al eliminar producto');
@@ -478,7 +514,7 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
     } finally {
       safeSetLoading(false);
     }
-  }, [refreshCart, safeSetLoading, safeSetError]);
+  }, [safeSetCart, safeSetLoading, safeSetError]);
 
   // Update quantity
   const updateQuantity = useCallback(async (productId: number, newQuantity: number) => {
@@ -486,16 +522,61 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       safeSetLoading(true);
       console.log('📝 Updating quantity:', { productId, newQuantity });
 
-      await apiClient.current.request('/carrito/update/', {
-        method: 'PUT',
-        body: JSON.stringify({
-          product_id: productId,
-          quantity: newQuantity
-        })
+      // OPTIMISTIC UPDATE: Actualizar localStorage PRIMERO
+      let currentCart: any[] = [];
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('cart_data');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            currentCart = parsed.items || [];
+          }
+        } catch (e) {
+          console.error('❌ Error leyendo carrito:', e);
+        }
+      }
+
+      // Actualizar la cantidad del producto
+      const updatedItems = currentCart.map(item => {
+        if (item.producto.id === productId) {
+          return {
+            ...item,
+            quantity: newQuantity,
+            total_price: newQuantity * Number(item.price)
+          };
+        }
+        return item;
       });
 
-      await refreshCart();
+      // Recalcular totales
+      const total_price = updatedItems.reduce((sum, item) => sum + Number(item.total_price), 0);
+      const total_items = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      const optimisticCart: CartData = {
+        items: updatedItems,
+        total_price: total_price,
+        total_items: total_items,
+        is_empty: updatedItems.length === 0
+      };
+
+      // Actualizar inmediatamente
+      console.log('💾 Actualizando cantidad en localStorage:', optimisticCart);
+      safeSetCart(optimisticCart);
       toast.success('Cantidad actualizada');
+
+      // Intentar sincronizar con backend en background
+      try {
+        await apiClient.current.request('/carrito/update/', {
+          method: 'PUT',
+          body: JSON.stringify({
+            product_id: productId,
+            quantity: newQuantity
+          })
+        });
+        console.log('✅ Backend confirmó actualización de cantidad');
+      } catch (backendError: any) {
+        console.error('⚠️ Error sincronizando con backend, pero la cantidad ya está actualizada localmente:', backendError);
+      }
     } catch (error: any) {
       console.error('❌ Update quantity failed:', error);
       toast.error(error.message || 'Error al actualizar cantidad');
@@ -503,7 +584,7 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
     } finally {
       safeSetLoading(false);
     }
-  }, [refreshCart, safeSetLoading, safeSetError]);
+  }, [safeSetCart, safeSetLoading, safeSetError]);
 
   // Clear cart
   const clearCart = useCallback(async () => {
