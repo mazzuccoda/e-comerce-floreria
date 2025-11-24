@@ -373,6 +373,10 @@ def simple_checkout_with_items(request):
                     'error': f'Método de envío {data["metodo_envio_id"]} no encontrado'
                 }, status=400)
             
+            # Extraer costo de envío del request
+            costo_envio = Decimal(str(data.get('costo_envio', 0)))
+            print(f"💰 Costo de envío recibido: {costo_envio}")
+            
             # Crear pedido
             pedido = Pedido.objects.create(
                 nombre_comprador=data['nombre_comprador'],
@@ -387,6 +391,7 @@ def simple_checkout_with_items(request):
                 franja_horaria=data['franja_horaria'],
                 metodo_envio=metodo_envio,
                 tipo_envio=data.get('metodo_envio'),  # 'retiro', 'express', 'programado'
+                costo_envio=costo_envio,  # Guardar costo de envío
                 dedicatoria=data.get('dedicatoria', ''),
                 instrucciones=data.get('instrucciones', ''),
                 regalo_anonimo=data.get('regalo_anonimo', False),
@@ -430,11 +435,11 @@ def simple_checkout_with_items(request):
                     pedido.delete()
                     return JsonResponse({'error': str(e)}, status=400)
             
-            # Calcular total
-            pedido.total = total_productos + metodo_envio.costo
+            # Calcular total usando el costo_envio del frontend
+            pedido.total = total_productos + costo_envio
             pedido.save()
             
-            print(f"💰 Total del pedido: ${pedido.total}")
+            print(f"💰 Total del pedido: ${pedido.total} (productos: {total_productos} + envío: {costo_envio})")
             
             # Confirmar pedido (esto reduce stock y envía notificaciones)
             print("📧 Confirmando pedido y enviando notificaciones...")

@@ -49,7 +49,13 @@ class PedidoReadSerializer(serializers.ModelSerializer):
 
 
 class CheckoutSerializer(serializers.Serializer):
-    """Serializer para el proceso de checkout completo"""
+    """
+    Serializer para el proceso de checkout completo
+    
+    NOTA: Este serializer NO se está usando actualmente.
+    El frontend usa el endpoint 'simple_checkout_with_items' en simple_views.py
+    que maneja el checkout de forma más directa.
+    """
     
     # Datos del comprador
     nombre_comprador = serializers.CharField(max_length=100)
@@ -134,18 +140,6 @@ class CheckoutSerializer(serializers.Serializer):
         tipo_envio = validated_data.pop('metodo_envio', None)
         costo_envio = validated_data.pop('costo_envio', 0)
         
-        # Log para debug
-        import logging
-        logger = logging.getLogger(__name__)
-        print(f"=" * 80)
-        print(f"DEBUG COSTO_ENVIO - Tipo de envío: {tipo_envio}")
-        print(f"DEBUG COSTO_ENVIO - Costo recibido: {costo_envio} (tipo: {type(costo_envio)})")
-        print(f"DEBUG COSTO_ENVIO - Validated data keys: {validated_data.keys()}")
-        print(f"=" * 80)
-        logger.info(f"🚚 Tipo de envío recibido: {tipo_envio}")
-        logger.info(f"💰 Costo de envío recibido: {costo_envio} (tipo: {type(costo_envio)})")
-        logger.info(f"📦 Validated data keys: {validated_data.keys()}")
-        
         # Crear el pedido
         pedido_data = validated_data.copy()
         pedido_data['metodo_envio'] = metodo_envio_obj
@@ -154,9 +148,6 @@ class CheckoutSerializer(serializers.Serializer):
         # Guardar el tipo de envío (retiro, express, programado)
         if tipo_envio:
             pedido_data['tipo_envio'] = tipo_envio
-            logger.info(f"✅ Tipo de envío guardado: {tipo_envio}")
-        else:
-            logger.warning(f"⚠️ No se recibió tipo_envio en el request")
         
         # Asignar usuario si está autenticado
         if request.user.is_authenticated:
@@ -165,8 +156,6 @@ class CheckoutSerializer(serializers.Serializer):
             pedido_data['anonimo'] = True
         
         pedido = Pedido.objects.create(**pedido_data)
-        print(f"DEBUG COSTO_ENVIO - Pedido creado con costo_envio: {pedido.costo_envio}")
-        logger.info(f"✅ Pedido creado con costo_envio: {pedido.costo_envio}")
         
         # Crear items del pedido desde el carrito
         total_productos = Decimal('0.00')
@@ -201,8 +190,6 @@ class CheckoutSerializer(serializers.Serializer):
         from decimal import Decimal
         pedido.total = total_productos + Decimal(str(costo_envio))
         pedido.save()
-        
-        logger.info(f"💰 Total calculado: productos={total_productos} + envío={costo_envio} = {pedido.total}")
         
         # Limpiar carrito después de crear el pedido
         cart.clear()
