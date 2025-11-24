@@ -1,164 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-
-interface CartItem {
-  producto: {
-    id: number;
-    nombre: string;
-    precio: string;
-    imagen_principal?: string;
-  };
-  quantity: number;
-  price: string;
-  total_price: string;
-}
-
-interface Cart {
-  items: CartItem[];
-  total_price: string;
-  total_items: number;
-  is_empty: boolean;
-}
-
-// Función auxiliar para obtener la URL base de la API
-const getApiBaseUrl = (): string => {
-  // Usar variable de entorno (incluye /api al final)
-  return process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-};
+import { useCartRobust } from '@/context/CartContextRobust';
 
 const CartPage = () => {
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { cart, loading, error, updateQuantity, removeFromCart, clearCart, refreshCart } = useCartRobust();
   const [updatingItem, setUpdatingItem] = useState<number | null>(null);
-
-  const fetchCart = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Conectando con API en:', `${apiBaseUrl}/carrito/simple/`);
-        
-      const response = await fetch(`${apiBaseUrl}/carrito/simple/`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store',
-          'Pragma': 'no-cache'
-        },
-        cache: 'no-store'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setCart(data);
-    } catch (err: any) {
-      console.error('❌ Error fetching cart:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateQuantity = async (productId: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    setUpdatingItem(productId);
-    try {
-      const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Enviando actualización a:', `${apiBaseUrl}/carrito/simple/update/`);
-        
-      const response = await fetch(`${apiBaseUrl}/carrito/simple/update/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({
-          product_id: productId,
-          quantity: newQuantity
-        })
-      });
-
-      if (response.ok) {
-        await fetchCart();
-      } else {
-        console.error('Error en respuesta:', response.status, response.statusText);
-      }
-    } catch (err) {
-      console.error('Error updating quantity:', err);
-    } finally {
-      setUpdatingItem(null);
-    }
-  };
-
-  const removeItem = async (productId: number) => {
-    setUpdatingItem(productId);
-    try {
-      const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Eliminando producto:', `${apiBaseUrl}/carrito/simple/remove/`);
-        
-      const response = await fetch(`${apiBaseUrl}/carrito/simple/remove/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        },
-        body: JSON.stringify({ product_id: productId })
-      });
-
-      if (response.ok) {
-        await fetchCart();
-      } else {
-        console.error('Error en respuesta:', response.status, response.statusText);
-      }
-    } catch (err) {
-      console.error('Error removing item:', err);
-    } finally {
-      setUpdatingItem(null);
-    }
-  };
-
-  const clearCart = async () => {
-    try {
-      const apiBaseUrl = getApiBaseUrl();
-      console.log('📡 Vaciando carrito:', `${apiBaseUrl}/carrito/simple/clear/`);
-        
-      const response = await fetch(`${apiBaseUrl}/carrito/simple/clear/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
-      });
-
-      if (response.ok) {
-        await fetchCart();
-      } else {
-        console.error('Error en respuesta:', response.status, response.statusText);
-      }
-    } catch (err) {
-      console.error('Error clearing cart:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchCart();
-  }, []);
 
   if (loading) {
     return (
@@ -179,7 +27,7 @@ const CartPage = () => {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Error de Conexión</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <button 
-            onClick={fetchCart}
+            onClick={refreshCart}
             className="bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-800 transition"
           >
             Reintentar
@@ -248,7 +96,15 @@ const CartPage = () => {
                   {/* Quantity Controls - Full width on mobile */}
                   <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4 sm:ml-0">
                     <button
-                      onClick={() => updateQuantity(item.producto.id, item.quantity - 1)}
+                      onClick={async () => {
+                        if (item.quantity <= 1) return;
+                        setUpdatingItem(item.producto.id);
+                        try {
+                          await updateQuantity(item.producto.id, item.quantity - 1);
+                        } finally {
+                          setUpdatingItem(null);
+                        }
+                      }}
                       disabled={updatingItem === item.producto.id || item.quantity <= 1}
                       className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center text-lg"
                     >
@@ -256,14 +112,28 @@ const CartPage = () => {
                     </button>
                     <span className="w-10 sm:w-12 text-center font-medium text-sm sm:text-base">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.producto.id, item.quantity + 1)}
+                      onClick={async () => {
+                        setUpdatingItem(item.producto.id);
+                        try {
+                          await updateQuantity(item.producto.id, item.quantity + 1);
+                        } finally {
+                          setUpdatingItem(null);
+                        }
+                      }}
                       disabled={updatingItem === item.producto.id}
                       className="w-8 h-8 rounded-full border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center text-lg"
                     >
                       +
                     </button>
                     <button
-                      onClick={() => removeItem(item.producto.id)}
+                      onClick={async () => {
+                        setUpdatingItem(item.producto.id);
+                        try {
+                          await removeFromCart(item.producto.id);
+                        } finally {
+                          setUpdatingItem(null);
+                        }
+                      }}
                       disabled={updatingItem === item.producto.id}
                       className="ml-auto text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
