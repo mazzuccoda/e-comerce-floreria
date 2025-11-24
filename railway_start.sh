@@ -16,10 +16,17 @@ python healthcheck.py || {
 # 2. Migrations
 echo "📋 Step 2: Running Migrations"
 echo "🔍 Checking pending migrations..."
-python manage.py showmigrations
+python manage.py showmigrations pedidos
 echo "🚀 Applying migrations..."
+python manage.py migrate pedidos --noinput || {
+    echo "⚠️ Pedidos migrations failed, trying force script..."
+    python force_migrate.py || {
+        echo "❌ Force migration also failed"
+        exit 1
+    }
+}
 python manage.py migrate --noinput || {
-    echo "❌ Migrations failed"
+    echo "❌ General migrations failed"
     exit 1
 }
 echo "✅ Migrations completed successfully"
