@@ -32,7 +32,7 @@ interface DirectCart {
 
 const MultiStepCheckoutPage = () => {
   const { token } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [directCart, setDirectCart] = useState<DirectCart>({
     items: [],
     total_price: 0,
@@ -156,17 +156,20 @@ const MultiStepCheckoutPage = () => {
   });
 
   // Steps se adaptan según el tipo de envío para simplificar el flujo
+  // Paso 0 es común: elegir método de envío
   const pickupSteps = [
+    { id: 0, title: 'Método de envío', icon: '🚚' },
     { id: 1, title: 'Remitente', icon: '👤' },
     { id: 2, title: 'Dedicatoria', icon: '💌' },
     { id: 3, title: 'Pago', icon: '💳' },
   ];
 
   const deliverySteps = [
+    { id: 0, title: 'Método de envío', icon: '🚚' },
     { id: 1, title: 'Destinatario', icon: '📍' },
     { id: 2, title: 'Remitente', icon: '👤' },
     { id: 3, title: 'Dedicatoria', icon: '💌' },
-    { id: 4, title: 'Envío y pago', icon: '🚚' },
+    { id: 4, title: 'Pago', icon: '💳' },
   ];
 
   const isPickup = formData.metodoEnvio === 'retiro';
@@ -242,6 +245,10 @@ const MultiStepCheckoutPage = () => {
 
   // Validar todos los campos relevantes para el paso actual
   const validateCurrentStep = (): boolean => {
+    // Paso 0: elegir método de envío (siempre válido, ya tiene default)
+    if (currentStep === 0) {
+      return true;
+    }
     console.log(`🔍 Validando paso ${currentStep}...`);
     const errors: Record<string, string> = {};
     
@@ -349,7 +356,7 @@ const MultiStepCheckoutPage = () => {
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
       // Al retroceder, no es necesario validar
       setFormSubmitted(false);
@@ -404,7 +411,7 @@ const MultiStepCheckoutPage = () => {
     try {
       console.log('🚀 INICIANDO CREACIÓN DE PEDIDO');
       alert('🚀 Iniciando creación de pedido...');
-
+      
       // Usar directamente el carrito ya cargado en el checkout (directCart)
       if (!directCart.items || directCart.items.length === 0) {
         console.log('❌ CARRITO VACÍO EN directCart - items:', directCart.items);
@@ -740,7 +747,7 @@ const MultiStepCheckoutPage = () => {
             <span className="text-green-500">Florería</span> Cristina
           </h1>
           <p className="text-lg text-gray-600">
-            Paso {currentStep} de 6: <span className="font-medium text-green-600">{steps[currentStep-1].title}</span>
+            Paso {currentStep + 1} de {steps.length}: <span className="font-medium text-green-600">{steps[currentStep].title}</span>
           </p>
         </div>
 
@@ -782,6 +789,124 @@ const MultiStepCheckoutPage = () => {
 
         {/* Step Content */}
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-4 sm:p-8 shadow-xl mb-8">
+          {/* PASO 0: ELEGIR MÉTODO DE ENVÍO (común para ambos flujos) */}
+          {currentStep === 0 && (
+            <div>
+              <h2 className="text-2xl font-light mb-6">🚚 ¿Cómo deseas recibir tu pedido?</h2>
+              <p className="text-gray-600 mb-6">Selecciona el método de envío que prefieras</p>
+              
+              <div className="space-y-4">
+                {/* Retiro en Tienda */}
+                <label 
+                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.metodoEnvio === 'retiro' 
+                      ? 'bg-purple-50 border-2 border-purple-500 shadow-lg' 
+                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoEnvio" 
+                      value="retiro"
+                      checked={formData.metodoEnvio === 'retiro'}
+                      onChange={handleInputChange}
+                      className="mr-4 mt-1 w-5 h-5 text-purple-600" 
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-lg">🏪 Retiro en Tienda</span>
+                        <span className="text-purple-600 font-semibold">Sin cargo</span>
+                      </div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="font-medium">Solano Vera 480 – Yerba Buena</span>
+                        </div>
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Retiro en horario comercial
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Envío Express */}
+                <label 
+                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.metodoEnvio === 'express' 
+                      ? 'bg-green-50 border-2 border-green-500 shadow-lg' 
+                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoEnvio" 
+                      value="express"
+                      checked={formData.metodoEnvio === 'express'}
+                      onChange={handleInputChange}
+                      className="mr-4 mt-1 w-5 h-5 text-green-600" 
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-lg">⚡ Envío Express <span className="text-sm text-gray-500">(Solo en Yerba Buena)</span></span>
+                        <span className="text-green-600 font-semibold">$10.000</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Entrega el mismo día (2-4 horas)
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-sm bg-green-50 p-3 rounded-lg text-green-700 border border-green-200">
+                    <strong>Recomendado:</strong> Ideal para ocasiones especiales y entregas urgentes.
+                  </div>
+                </label>
+
+                {/* Envío Programado */}
+                <label 
+                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
+                    formData.metodoEnvio === 'programado' 
+                      ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' 
+                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <input 
+                      type="radio" 
+                      name="metodoEnvio" 
+                      value="programado"
+                      checked={formData.metodoEnvio === 'programado'}
+                      onChange={handleInputChange}
+                      className="mr-4 mt-1 w-5 h-5 text-blue-600" 
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-lg">📅 Envío Programado</span>
+                        <span className="text-blue-600 font-semibold">$10.000</span>
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-blue-600">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Elige fecha y franja horaria
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* FLUJO RETIRO EN TIENDA */}
           {isPickup && currentStep === 1 && (
             <div>
@@ -1342,10 +1467,10 @@ const MultiStepCheckoutPage = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">📅 Envío Programado <span className="text-sm text-gray-500">(Solo en Yerba Buena)</span></span>
-                        <span className="text-blue-600 font-semibold">$5.000</span>
+                        <span className="font-medium text-lg">📅 Envío Programado</span>
+                        <span className="text-blue-600 font-semibold">$10.000</span>
                       </div>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
+                      <div className="flex items-center text-sm text-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-blue-600">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -1597,7 +1722,7 @@ const MultiStepCheckoutPage = () => {
 
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
-          {currentStep > 1 ? (
+          {currentStep > 0 ? (
             <button
               onClick={prevStep}
               className="px-6 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-all shadow-sm hover:shadow"
