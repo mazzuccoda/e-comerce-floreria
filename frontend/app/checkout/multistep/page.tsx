@@ -572,6 +572,7 @@ const MultiStepCheckoutPage = () => {
           franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
           metodo_envio_id: 1,
           metodo_envio: formData.metodoEnvio, // 'retiro', 'express', 'programado'
+          costo_envio: getShippingCost(), // Costo de envío calculado
           
           // Datos adicionales - opcionales
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
@@ -615,10 +616,13 @@ const MultiStepCheckoutPage = () => {
         alert(`🎉 ¡Pedido #${result.numero_pedido} creado exitosamente! ID: ${result.pedido_id}`);
         
         // Guardar datos del pedido en localStorage SIEMPRE (para todos los métodos de pago)
+        const costoEnvio = getShippingCost();
+        const totalConEnvio = parseFloat(result.total) + costoEnvio;
+        
         const pedidoData = {
           pedido_id: result.pedido_id,
           numero_pedido: result.numero_pedido,
-          total: result.total,
+          total: totalConEnvio.toString(), // Total incluyendo envío
           items: directCart.items,
           comprador: {
             nombre: formData.nombre,
@@ -639,7 +643,7 @@ const MultiStepCheckoutPage = () => {
           fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
           franja_horaria: formData.metodoEnvio === 'programado' ? formData.franjaHoraria : 'mañana',
           metodo_envio: formData.metodoEnvio,
-          costo_envio: getShippingCost(),
+          costo_envio: costoEnvio, // Usar la variable ya calculada
           medio_pago: formData.metodoPago
         };
         
