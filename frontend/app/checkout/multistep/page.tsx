@@ -210,6 +210,16 @@ const MultiStepCheckoutPage = () => {
   useEffect(() => {
     // Buscar en el carrito si hay productos adicionales
     const cartItems = directCart.items || [];
+    
+    console.log('🔍 DIAGNÓSTICO DE EXTRAS:');
+    console.log('   Total items en carrito:', cartItems.length);
+    console.log('   Productos en carrito:', cartItems.map(item => ({
+      id: item.producto.id,
+      nombre: item.producto.nombre,
+      precio: item.price,
+      cantidad: item.quantity
+    })));
+    
     const hasTarjeta = cartItems.some(item => 
       item.producto.nombre?.toLowerCase().includes('tarjeta')
     );
@@ -224,7 +234,12 @@ const MultiStepCheckoutPage = () => {
       osoDePerluche: hasOso
     }));
     
-    console.log('🎁 Extras detectados en carrito:', { hasTarjeta, hasOso, cartItems: cartItems.length });
+    console.log('🎁 Extras detectados:', { 
+      hasTarjeta, 
+      hasOso, 
+      formData_tarjeta: hasTarjeta,
+      formData_oso: hasOso
+    });
   }, [directCart.items]);
 
   // Handler para ExtrasSelector
