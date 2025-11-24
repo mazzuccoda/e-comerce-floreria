@@ -33,6 +33,8 @@ interface Pedido {
   franja_horaria: string;
   dedicatoria: string;
   instrucciones: string;
+  metodo_envio?: string;
+  costo_envio?: string | number;
   items: PedidoItem[];
 }
 
@@ -221,16 +223,35 @@ const PedidoDetallePage: React.FC = () => {
 
         <div className="border-t pt-4">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600">Subtotal:</span>
-            <span className="font-medium">${subtotal.toFixed(2)}</span>
+            <span className="text-gray-600">Subtotal productos:</span>
+            <span className="font-medium">${subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
+          
+          {/* Mostrar costo de envío si existe */}
+          {pedido.costo_envio !== undefined && pedido.costo_envio !== null && (
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600">
+                {pedido.metodo_envio === 'retiro' && '🏪 Retiro en tienda'}
+                {pedido.metodo_envio === 'express' && '⚡ Envío Express'}
+                {pedido.metodo_envio === 'programado' && '📅 Envío Programado'}
+                {!pedido.metodo_envio && 'Envío'}:
+              </span>
+              <span className="font-medium">
+                {parseFloat(pedido.costo_envio.toString()) === 0 
+                  ? 'Gratis ✓' 
+                  : `$${parseFloat(pedido.costo_envio.toString()).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                }
+              </span>
+            </div>
+          )}
+          
           <div className="flex justify-between items-center mb-2">
             <span className="text-gray-600">Método de pago:</span>
             <span className="font-medium">{pedido.medio_pago_display || pedido.medio_pago}</span>
           </div>
           <div className="flex justify-between items-center text-xl font-bold mt-4 pt-4 border-t">
             <span>Total:</span>
-            <span className="text-green-700">${parseFloat(pedido.total).toFixed(2)}</span>
+            <span className="text-green-700">${parseFloat(pedido.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
       </div>
