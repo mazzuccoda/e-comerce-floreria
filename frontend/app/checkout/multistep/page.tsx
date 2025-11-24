@@ -931,7 +931,7 @@ const MultiStepCheckoutPage = () => {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex justify-center mb-12 overflow-hidden">
+        <div className="flex justify-center mb-6 overflow-hidden">
           <div className="hidden md:flex relative max-w-3xl w-full px-10">
             {/* Línea conectora */}
             <div className="absolute top-5 left-0 w-full h-0.5 bg-gray-200 z-0"></div>
@@ -962,6 +962,102 @@ const MultiStepCheckoutPage = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Resumen del pedido - Movido aquí para mejor UX en mobile */}
+        <div className="mb-8 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 sm:p-6 shadow-xl border-2 border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                <path d="M16.5 9.4 7.55 4.24"/>
+                <polyline points="3.29 7 12 12 20.71 7"/>
+                <line x1="12" y1="22" x2="12" y2="12"/>
+                <circle cx="18.5" cy="15.5" r="2.5"/>
+                <path d="M20.27 17.27 22 19"/>
+              </svg>
+              <span>Resumen del pedido</span>
+            </h3>
+            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs sm:text-sm font-semibold">
+              {directCart?.total_items || 0} {directCart?.total_items === 1 ? 'producto' : 'productos'}
+            </span>
+          </div>
+          
+          {/* Productos del carrito */}
+          {directCart?.items && directCart.items.length > 0 ? (
+            <div className="space-y-2 mb-4">
+              {directCart.items.map((item, index) => (
+                <div key={index} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                  <div className="flex gap-3 items-center">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {item.producto.imagen_principal ? (
+                        <img
+                          src={item.producto.imagen_principal}
+                          alt={item.producto.nombre}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xl">🌸</span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-900 text-sm truncate">{item.producto.nombre}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          × {item.quantity}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ${Number(item.price).toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base sm:text-lg font-bold text-green-600">
+                        ${(Number(item.price) * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-red-500 mb-4 p-3 bg-red-50 rounded-lg text-sm">
+              ⚠️ No hay productos en el carrito
+            </div>
+          )}
+          
+          {/* Totales */}
+          <div className="border-t border-gray-200 pt-3 space-y-2">
+            <div className="flex justify-between text-gray-700 text-sm">
+              <span>Subtotal productos</span>
+              <span className="font-semibold">${directCart.total_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            
+            {/* Costo de envío */}
+            <div className="flex justify-between text-gray-700 text-sm">
+              <span className="flex items-center gap-1">
+                {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
+                {formData.metodoEnvio === 'express' && '⚡ Envío Express'}
+                {formData.metodoEnvio === 'programado' && '📅 Envío Programado'}
+              </span>
+              <span className="font-semibold">
+                {formData.metodoEnvio === 'retiro' && 'Sin cargo'}
+                {formData.metodoEnvio === 'express' && '+$10.000,00'}
+                {formData.metodoEnvio === 'programado' && '+$5.000,00'}
+              </span>
+            </div>
+            
+            {/* Total */}
+            <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-200 pt-2">
+              <span>Total a Pagar</span>
+              <span className="text-green-600">
+                ${(() => {
+                  const costoEnvio = formData.metodoEnvio === 'express' ? 10000 : formData.metodoEnvio === 'programado' ? 5000 : 0;
+                  return (directCart.total_price + costoEnvio).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+                })()}
+              </span>
             </div>
           </div>
         </div>
@@ -1008,6 +1104,17 @@ const MultiStepCheckoutPage = () => {
                   <div>
                     <span className="font-medium text-gray-700">Remitente:</span>
                     <span className="ml-2 text-gray-900">{formData.nombre}</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Dedicatoria */}
+              {((isPickup && currentStep > 2) || (!isPickup && currentStep > 3)) && formData.mensaje && (
+                <div className="bg-white p-3 rounded-lg flex items-start gap-2">
+                  <span className="text-green-600">✓</span>
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-700">Dedicatoria:</span>
+                    <p className="ml-2 text-gray-900 text-sm italic mt-1">"{formData.mensaje}"</p>
                   </div>
                 </div>
               )}
@@ -1930,7 +2037,7 @@ const MultiStepCheckoutPage = () => {
                             <line x1="12" y1="16" x2="12" y2="12"/>
                             <line x1="12" y1="8" x2="12.01" y2="8"/>
                           </svg>
-                          <span>Envía el comprobante de transferencia por WhatsApp al <strong>381-5551234</strong> para confirmar tu pedido.</span>
+                          <span>Envía el comprobante de transferencia por WhatsApp al <strong>3813671352</strong> para confirmar tu pedido.</span>
                         </p>
                       </div>
                     </div>
@@ -2019,134 +2126,6 @@ const MultiStepCheckoutPage = () => {
               </button>
             </div>
           )}
-        </div>
-
-        {/* Summary Card mejorado */}
-        <div className="mt-6 sm:mt-8 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 sm:p-8 shadow-2xl border-2 border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
-                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
-                <path d="M16.5 9.4 7.55 4.24"/>
-                <polyline points="3.29 7 12 12 20.71 7"/>
-                <line x1="12" y1="22" x2="12" y2="12"/>
-                <circle cx="18.5" cy="15.5" r="2.5"/>
-                <path d="M20.27 17.27 22 19"/>
-              </svg>
-              <span>Resumen del pedido</span>
-            </h3>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-              {directCart?.total_items || 0} {directCart?.total_items === 1 ? 'producto' : 'productos'}
-            </span>
-          </div>
-          
-          {/* Productos del carrito con diseño mejorado */}
-          {directCart?.items && directCart.items.length > 0 ? (
-            <div className="space-y-3 mb-6">
-              {directCart.items.map((item, index) => (
-                <div key={index} className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-                  <div className="flex gap-4 items-center">
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-16 h-16 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
-                      {item.producto.imagen_principal ? (
-                        <img
-                          src={item.producto.imagen_principal}
-                          alt={item.producto.nombre}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-3xl">🌸</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 text-base sm:text-lg truncate">{item.producto.nombre}</h4>
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          × {item.quantity}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          ${Number(item.price).toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg sm:text-xl font-bold text-green-600">
-                        ${(Number(item.price) * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-red-500 mb-4 p-3 bg-red-50 rounded-lg">
-              ⚠️ No hay productos en el carrito
-              <br />
-              <button 
-                onClick={() => window.location.href = '/'} 
-                className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-              >
-                Ir a agregar productos
-              </button>
-            </div>
-          )}
-          
-          {/* Subtotal y extras */}
-          <div className="border-t border-gray-100 pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-2 sm:space-y-3">
-            <div className="flex justify-between text-gray-700 font-medium text-sm sm:text-base">
-              <span>Subtotal productos</span>
-              <span>${directCart.total_price.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            
-            {/* Mostrar extras detectados en el carrito */}
-            {formData.tarjetaPersonalizada && (() => {
-              const tarjetaItem = directCart.items.find(item => 
-                item.producto.nombre?.toLowerCase().includes('tarjeta')
-              );
-              return tarjetaItem ? (
-                <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
-                  <span>📝 {tarjetaItem.producto.nombre}</span>
-                  <span className="font-medium">Incluido en subtotal</span>
-                </div>
-              ) : null;
-            })()}
-            
-            {formData.osoDePerluche && (() => {
-              const osoItem = directCart.items.find(item => {
-                const nombre = item.producto.nombre?.toLowerCase() || '';
-                return nombre.includes('oso') || nombre.includes('peluche');
-              });
-              return osoItem ? (
-                <div className="flex justify-between text-gray-600 text-xs sm:text-sm pl-2 sm:pl-4">
-                  <span>🧸 {osoItem.producto.nombre}</span>
-                  <span className="font-medium">Incluido en subtotal</span>
-                </div>
-              ) : null;
-            })()}
-            
-            {/* Costo de envío dinámico */}
-            <div className="flex justify-between text-gray-700 font-medium border-t border-gray-100 pt-2 sm:pt-3 text-sm sm:text-base">
-              <span className="flex items-center gap-1">
-                <span className="hidden sm:inline">
-                  {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
-                  {formData.metodoEnvio === 'express' && '⚡ Envío Express'}
-                  {formData.metodoEnvio === 'programado' && '📅 Envío Programado'}
-                </span>
-                <span className="sm:hidden">
-                  {formData.metodoEnvio === 'retiro' && '🏪 Retiro'}
-                  {formData.metodoEnvio === 'express' && '⚡ Express'}
-                  {formData.metodoEnvio === 'programado' && '📅 Programado'}
-                </span>
-              </span>
-              <span className={getShippingCost() === 0 ? 'text-green-600 font-bold' : 'font-medium'}>
-                {getShippingCost() === 0 ? 'Gratis ✓' : `+ $${getShippingCost().toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-              </span>
-            </div>
-            
-            <div className="flex justify-between font-bold text-lg sm:text-xl text-green-700 pt-2 sm:pt-3 border-t-2 border-green-200 bg-green-50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 sm:py-3 rounded-b-xl">
-              <span>Total a Pagar</span>
-              <span>${calculateTotal().toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
