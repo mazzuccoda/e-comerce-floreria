@@ -6,6 +6,18 @@ import { useAuth } from '@/context/AuthContext';
 import ExtrasSelector from '@/app/components/ExtrasSelector';
 import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
+import dynamic from 'next/dynamic';
+
+// Importar componente de datos de transferencia dinámicamente
+const TransferPaymentData = dynamic(() => import('@/components/TransferPaymentData'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100 animate-pulse">
+      <div className="h-6 bg-green-200 rounded w-1/3 mb-4"></div>
+      <div className="h-32 bg-green-200 rounded"></div>
+    </div>
+  )
+});
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -1594,25 +1606,10 @@ const MultiStepCheckoutPage = () => {
               </div>
               
               {formData.metodoPago === 'transferencia' && (
-                <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100">
-                  <h4 className="font-medium mb-2 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Datos para transferencia:
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600"><strong>Banco:</strong> Mercado Pago</p>
-                      <p className="text-gray-600"><strong>Alias:</strong> eleososatuc</p>
-                      <p className="text-gray-600"><strong>Titular:</strong> Monica Eleonora Sosa</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600"><strong>CVU:</strong> 0000003100095405777972</p>
-                      <p className="text-gray-600"><strong>CUIT:</strong> 27-26676582-2</p>
-                    </div>
-                  </div>
-                </div>
+                <TransferPaymentData 
+                  total={calculateTotal()} 
+                  showQR={true}
+                />
               )}
               
               <div className="mt-6">
