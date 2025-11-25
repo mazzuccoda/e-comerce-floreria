@@ -201,81 +201,30 @@ const PaymentSuccessPage = () => {
           </p>
         </div>
 
-        {/* Timeline de Estado del Pedido */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Estado del Pedido
-          </h2>
-          
-          <div className="relative">
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-green-500 via-green-300 to-gray-200"></div>
-            
-            <div className="space-y-8">
-              <div className="relative flex items-start gap-4">
-                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg flex-shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div className="flex-1 pt-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Pedido Confirmado</h3>
-                  <p className="text-sm text-gray-500 mt-1">Tu pedido ha sido recibido y confirmado</p>
-                  <span className="inline-block mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Completado ✓</span>
-                </div>
+        {/* Estado Simple */}
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 sm:p-8 shadow-lg border border-green-200 mb-8">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-14 h-14 bg-green-500 rounded-full shadow-lg">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
-
-              <div className="relative flex items-start gap-4">
-                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-green-400 rounded-full shadow-lg flex-shrink-0 animate-pulse">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="flex-1 pt-2">
-                  <h3 className="text-lg font-semibold text-gray-900">En Preparación</h3>
-                  <p className="text-sm text-gray-500 mt-1">Estamos preparando tu pedido con cuidado</p>
-                  <span className="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">En proceso...</span>
-                </div>
-              </div>
-
-              <div className="relative flex items-start gap-4">
-                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full shadow flex-shrink-0">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                  </svg>
-                </div>
-                <div className="flex-1 pt-2">
-                  <h3 className="text-lg font-semibold text-gray-400">Listo para Envío</h3>
-                  <p className="text-sm text-gray-400 mt-1">Te avisaremos cuando esté listo</p>
-                </div>
-              </div>
-
-              <div className="relative flex items-start gap-4">
-                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full shadow flex-shrink-0">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                  </svg>
-                </div>
-                <div className="flex-1 pt-2">
-                  <h3 className="text-lg font-semibold text-gray-400">En Camino</h3>
-                  <p className="text-sm text-gray-400 mt-1">{pedidoData?.metodo_envio === 'retiro' ? 'Listo para retiro' : `Fecha estimada: ${pedidoData?.fecha_entrega || 'Por confirmar'}`}</p>
-                </div>
-              </div>
-
-              <div className="relative flex items-start gap-4">
-                <div className="relative z-10 flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full shadow flex-shrink-0">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                  </svg>
-                </div>
-                <div className="flex-1 pt-2">
-                  <h3 className="text-lg font-semibold text-gray-400">Entregado</h3>
-                  <p className="text-sm text-gray-400 mt-1">Te confirmaremos la entrega</p>
-                </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Estado: Confirmado</h2>
+                <p className="text-sm text-gray-600 mt-1">Tu pedido ha sido recibido exitosamente</p>
               </div>
             </div>
+            <Link 
+              href={`/pedido/${pedidoData?.pedido_id}`}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-green-700 font-semibold rounded-xl hover:bg-green-50 transition-all duration-200 shadow-md hover:shadow-lg border-2 border-green-200"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Seguir mi pedido
+            </Link>
           </div>
         </div>
 
@@ -428,14 +377,14 @@ const PaymentSuccessPage = () => {
             ¿Qué sigue ahora?
           </h2>
           
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg">
                 1
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Confirmación por email</h3>
-                <p className="text-gray-600">Recibirás un mail de confirmación. También puedes <Link href={`/pedido/${pedidoData?.pedido_id}`} className="font-medium text-blue-600 hover:text-blue-700 underline">ver tu pedido aquí</Link></p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Recibirás confirmación por email</h3>
+                <p className="text-gray-600">Te enviaremos todos los detalles de tu pedido</p>
               </div>
             </div>
             
@@ -444,18 +393,18 @@ const PaymentSuccessPage = () => {
                 2
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Nos contactaremos a la brevedad</h3>
-                <p className="text-gray-600">También puedes comunicarte con nosotros por WhatsApp</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Nos contactaremos contigo</h3>
+                <p className="text-gray-600">Te confirmaremos los detalles de entrega a la brevedad</p>
               </div>
             </div>
             
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg">
                 3
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Confirmación de entrega</h3>
-                <p className="text-gray-600">Te confirmaremos cuando tu pedido esté entregado</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Seguimiento en tiempo real</h3>
+                <p className="text-gray-600">Podrás ver el progreso de tu pedido en cualquier momento desde la página de seguimiento</p>
               </div>
             </div>
           </div>
