@@ -9,8 +9,6 @@ interface TransferPaymentDataProps {
 }
 
 export default function TransferPaymentData({ total, showQR = true, pedidoId }: TransferPaymentDataProps) {
-  console.log('🔍 TransferPaymentData renderizado:', { total, showQR, pedidoId })
-  
   const [qrImage, setQrImage] = useState<string>('')
   const [mpQrData, setMpQrData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -105,12 +103,6 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId }: 
         </svg>
         Datos para transferencia
       </h4>
-      
-      {/* DEBUG: Mostrar que el componente se renderiza */}
-      <div className="bg-yellow-100 border-2 border-yellow-500 p-3 mb-4 rounded">
-        <p className="text-sm font-bold">✅ Componente TransferPaymentData cargado correctamente</p>
-        <p className="text-xs">Total: ${total} | ShowQR: {showQR ? 'Sí' : 'No'}</p>
-      </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Datos de transferencia */}
