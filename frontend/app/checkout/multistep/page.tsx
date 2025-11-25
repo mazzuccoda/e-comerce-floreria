@@ -6,18 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import ExtrasSelector from '@/app/components/ExtrasSelector';
 import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
-import dynamic from 'next/dynamic';
-
-// Importar componente de datos de transferencia dinámicamente
-const TransferPaymentData = dynamic(() => import('@/components/TransferPaymentData'), {
-  ssr: false,
-  loading: () => (
-    <div className="bg-green-50 p-4 rounded-lg mb-6 border border-green-100 animate-pulse">
-      <div className="h-6 bg-green-200 rounded w-1/3 mb-4"></div>
-      <div className="h-32 bg-green-200 rounded"></div>
-    </div>
-  )
-});
+import TransferPaymentData from '@/components/TransferPaymentData';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
