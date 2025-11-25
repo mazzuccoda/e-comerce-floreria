@@ -1609,6 +1609,7 @@ const MultiStepCheckoutPage = () => {
                 <TransferPaymentData 
                   total={calculateTotal()} 
                   showQR={true}
+                  pedidoId={undefined}
                 />
               )}
               

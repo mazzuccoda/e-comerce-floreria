@@ -5,12 +5,16 @@ import { useState, useEffect } from 'react'
 interface TransferPaymentDataProps {
   total: number
   showQR?: boolean
+  pedidoId?: string
 }
 
-export default function TransferPaymentData({ total, showQR = true }: TransferPaymentDataProps) {
+export default function TransferPaymentData({ total, showQR = true, pedidoId }: TransferPaymentDataProps) {
   const [qrImage, setQrImage] = useState<string>('')
+  const [mpQrData, setMpQrData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingMpQr, setLoadingMpQr] = useState(false)
   const [copiedField, setCopiedField] = useState<string>('')
+  const [showMpQr, setShowMpQr] = useState(false)
 
   // Datos de transferencia
   const transferData = {
@@ -23,10 +27,10 @@ export default function TransferPaymentData({ total, showQR = true }: TransferPa
 
   // Generar QR simple con los datos de transferencia
   useEffect(() => {
-    if (showQR) {
+    if (showQR && !showMpQr) {
       generateSimpleQR()
     }
-  }, [showQR, total])
+  }, [showQR, total, showMpQr])
 
   const generateSimpleQR = async () => {
     setLoading(true)
@@ -53,6 +57,53 @@ export default function TransferPaymentData({ total, showQR = true }: TransferPa
       // Si falla, simplemente no mostramos el QR
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Generar QR de Mercado Pago dinámico
+  const generateMercadoPagoQR = async () => {
+    if (!pedidoId) {
+      alert('No se puede generar QR sin ID de pedido')
+      return
+    }
+
+    setLoadingMpQr(true)
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app'
+      
+      const response = await fetch(`${API_URL}/api/pedidos/${pedidoId}/generate-transfer-qr/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMpQrData(data)
+        setShowMpQr(true)
+        
+        // Generar imagen QR desde la URL de Mercado Pago
+        const QRCode = (await import('qrcode')).default
+        const qrCodeDataUrl = await QRCode.toDataURL(data.init_point, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        })
+        
+        setQrImage(qrCodeDataUrl)
+      } else {
+        alert(data.error || 'No se pudo generar el QR de Mercado Pago')
+      }
+    } catch (err) {
+      console.error('Error al generar QR de MP:', err)
+      alert('Error al conectar con el servidor')
+    } finally {
+      setLoadingMpQr(false)
     }
   }
 
@@ -140,46 +191,93 @@ export default function TransferPaymentData({ total, showQR = true }: TransferPa
           </div>
         </div>
 
-        {/* QR Code */}
+        {/* QR Code - Opciones */}
         {showQR && (
-          <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border border-green-100">
-            {loading ? (
-              <div className="flex flex-col items-center gap-3">
-                <svg className="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p className="text-sm text-gray-600">Generando QR...</p>
-              </div>
-            ) : qrImage ? (
-              <>
-                <h5 className="text-sm font-semibold text-gray-900 mb-3 text-center">Escanea para copiar datos</h5>
-                <img 
-                  src={qrImage} 
-                  alt="QR con datos de transferencia" 
-                  className="w-64 h-64 border-4 border-gray-200 rounded-lg shadow-md"
-                />
-                <p className="text-xs text-gray-600 mt-3 text-center">
-                  Escanea con tu app bancaria para copiar los datos automáticamente
-                </p>
-              </>
-            ) : (
-              <div className="text-center text-gray-500 text-sm">
-                <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                </svg>
-                <p>QR no disponible</p>
-              </div>
-            )}
+          <div className="flex flex-col bg-white p-6 rounded-lg shadow-sm border border-green-100">
+            {/* Tabs para elegir tipo de QR */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setShowMpQr(false)}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${
+                  !showMpQr 
+                    ? 'bg-green-600 text-white shadow-md' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                📋 Datos manuales
+              </button>
+              <button
+                onClick={() => {
+                  if (!showMpQr && pedidoId) {
+                    generateMercadoPagoQR()
+                  }
+                }}
+                disabled={!pedidoId || loadingMpQr}
+                title={!pedidoId ? 'Disponible después de confirmar el pedido' : ''}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${
+                  showMpQr 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed'
+                }`}
+              >
+                {loadingMpQr ? '⏳ Generando...' : !pedidoId ? '💳 Pago directo MP 🔒' : '💳 Pago directo MP'}
+              </button>
+            </div>
+
+            {/* Contenido del QR */}
+            <div className="flex flex-col items-center justify-center">
+              {(loading || loadingMpQr) ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <svg className="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p className="text-sm text-gray-600">Generando QR...</p>
+                </div>
+              ) : qrImage ? (
+                <>
+                  <h5 className="text-sm font-semibold text-gray-900 mb-3 text-center">
+                    {showMpQr ? '💳 Escanea para pagar con Mercado Pago' : '📋 Escanea para copiar datos'}
+                  </h5>
+                  <img 
+                    src={qrImage} 
+                    alt={showMpQr ? "QR de pago Mercado Pago" : "QR con datos de transferencia"} 
+                    className="w-64 h-64 border-4 border-gray-200 rounded-lg shadow-md"
+                  />
+                  <p className="text-xs text-gray-600 mt-3 text-center max-w-xs">
+                    {showMpQr 
+                      ? '✅ Paga directamente con Mercado Pago o tu banco. Confirmación automática.'
+                      : 'Escanea con tu app bancaria para copiar los datos automáticamente'
+                    }
+                  </p>
+                  {showMpQr && (
+                    <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 w-full">
+                      <p className="text-xs text-blue-800 text-center">
+                        <strong>✨ Ventaja:</strong> No necesitas enviar comprobante, el pago se confirma solo
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center text-gray-500 text-sm py-8">
+                  <svg className="w-16 h-16 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                  </svg>
+                  <p>QR no disponible</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <p className="text-xs text-yellow-800">
-          <strong>⚠️ Importante:</strong> Después de realizar la transferencia, envíanos el comprobante por WhatsApp para confirmar tu pedido.
-        </p>
-      </div>
+      {!showMpQr && (
+        <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p className="text-xs text-yellow-800">
+            <strong>⚠️ Importante:</strong> Después de realizar la transferencia, envíanos el comprobante por WhatsApp para confirmar tu pedido.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
