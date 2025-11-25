@@ -4,15 +4,15 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 
 // Importar componente de QR de forma dinámica (opcional)
-const TransferQROptional = dynamic(() => import('@/components/TransferQROptional'), {
+const TransferQROptional = dynamicImport(() => import('@/components/TransferQROptional'), {
   ssr: false,
   loading: () => null // No mostrar nada mientras carga
 });
 
-export const dynamic_route = 'force-dynamic';
+export const dynamic = 'force-dynamic';
 
 interface PedidoItem {
   producto: {
