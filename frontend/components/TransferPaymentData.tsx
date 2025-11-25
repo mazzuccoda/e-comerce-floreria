@@ -35,21 +35,11 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId }: 
   const generateSimpleQR = async () => {
     setLoading(true)
     try {
-      // Importar dinámicamente la librería QRCode solo cuando se necesita
-      const QRCode = (await import('qrcode')).default
-      
       // Crear texto con datos de transferencia
       const qrText = `CVU: ${transferData.cvu}\nAlias: ${transferData.alias}\nTitular: ${transferData.titular}\nMonto: $${total.toLocaleString('es-AR')}`
       
-      // Generar QR
-      const qrDataUrl = await QRCode.toDataURL(qrText, {
-        width: 280,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      })
+      // Usar API pública de QR Code (fallback si qrcode no está instalado)
+      const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrText)}`
       
       setQrImage(qrDataUrl)
     } catch (err) {
@@ -84,16 +74,8 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId }: 
         setMpQrData(data)
         setShowMpQr(true)
         
-        // Generar imagen QR desde la URL de Mercado Pago
-        const QRCode = (await import('qrcode')).default
-        const qrCodeDataUrl = await QRCode.toDataURL(data.init_point, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        })
+        // Generar imagen QR desde la URL de Mercado Pago usando API pública
+        const qrCodeDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.init_point)}`
         
         setQrImage(qrCodeDataUrl)
       } else {
