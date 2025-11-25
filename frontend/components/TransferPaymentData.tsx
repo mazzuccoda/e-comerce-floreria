@@ -104,9 +104,9 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId }: 
         Datos para transferencia
       </h4>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Datos de transferencia */}
-        <div className="space-y-3">
+        <div className="flex-1 space-y-3">
           <div className="bg-white p-4 rounded-lg shadow-sm border border-green-100">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-gray-600 font-medium">Alias</p>
@@ -175,7 +175,7 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId }: 
 
         {/* QR Code - Opciones */}
         {showQR && (
-          <div className="flex flex-col bg-white p-6 rounded-lg shadow-sm border border-green-100">
+          <div className="flex-1 flex flex-col bg-white p-6 rounded-lg shadow-sm border border-green-100">
             {/* Tabs para elegir tipo de QR */}
             <div className="flex gap-2 mb-4">
               <button
