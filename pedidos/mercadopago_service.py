@@ -251,3 +251,82 @@ class MercadoPagoService:
                 'success': False,
                 'error': f'Error interno: {str(e)}'
             }
+    
+    def create_qr_for_transfer(self, pedido):
+        """
+        Crear QR dinámico de Mercado Pago para transferencia bancaria
+        OPCIONAL: Solo se usa si el método de pago es 'transferencia'
+        """
+        try:
+            logger.info(f"🔄 Generando QR de transferencia para pedido #{pedido.id}")
+            
+            # Crear preferencia específica para transferencia
+            preference_data = {
+                "items": [{
+                    "id": str(pedido.id),
+                    "title": f"Pedido #{pedido.numero_pedido}",
+                    "description": f"Pago de pedido de Florería Cristina",
+                    "quantity": 1,
+                    "currency_id": "ARS",
+                    "unit_price": float(pedido.total)
+                }],
+                "payment_methods": {
+                    # Solo permitir transferencia bancaria
+                    "excluded_payment_types": [
+                        {"id": "credit_card"},
+                        {"id": "debit_card"},
+                        {"id": "ticket"}
+                    ],
+                    "excluded_payment_methods": [],
+                    "installments": 1
+                },
+                "back_urls": {
+                    "success": f"{os.getenv('BACKEND_URL')}/api/pedidos/{pedido.id}/payment/success/",
+                    "failure": f"{os.getenv('BACKEND_URL')}/api/pedidos/{pedido.id}/payment/failure/",
+                    "pending": f"{os.getenv('BACKEND_URL')}/api/pedidos/{pedido.id}/payment/pending/"
+                },
+                "auto_return": "approved",
+                "external_reference": str(pedido.id),
+                "statement_descriptor": "FLORERIA CRISTINA",
+                "notification_url": f"{os.getenv('BACKEND_URL')}/api/pedidos/webhook/mercadopago/",
+                "metadata": {
+                    "pedido_id": str(pedido.id),
+                    "tipo_pago": "transferencia_qr"
+                }
+            }
+            
+            # Crear preferencia
+            preference_response = self.sdk.preference().create(preference_data)
+            
+            if preference_response["status"] == 201:
+                preference_id = preference_response["response"]["id"]
+                
+                # Generar QR usando la API de QR de Mercado Pago
+                # El QR se puede generar desde el init_point
+                qr_data = {
+                    "preference_id": preference_id,
+                    "init_point": preference_response["response"]["init_point"],
+                    "qr_code_url": f"https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id={preference_id}"
+                }
+                
+                logger.info(f"✅ QR de transferencia generado para pedido #{pedido.id}")
+                
+                return {
+                    'success': True,
+                    'preference_id': preference_id,
+                    'qr_data': qr_data,
+                    'init_point': preference_response["response"]["init_point"]
+                }
+            else:
+                logger.error(f"❌ Error al generar QR: {preference_response}")
+                return {
+                    'success': False,
+                    'error': 'No se pudo generar el QR de pago'
+                }
+                
+        except Exception as e:
+            logger.error(f"Exception in create_qr_for_transfer: {str(e)}")
+            return {
+                'success': False,
+                'error': f'Error al generar QR: {str(e)}'
+            }

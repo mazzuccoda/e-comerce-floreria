@@ -225,3 +225,57 @@ class CheckoutSummaryView(APIView):
             'metodo_envio': MetodoEnvioSerializer(metodo_envio).data,
             'items_count': len(cart)
         }, status=status.HTTP_200_OK)
+
+
+class GenerateTransferQRView(APIView):
+    """
+    Vista OPCIONAL para generar QR de Mercado Pago para transferencia bancaria
+    Solo se usa si el usuario elige pagar por transferencia y quiere usar QR
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request, pedido_id):
+        """
+        Generar QR de transferencia para un pedido específico
+        """
+        from .mercadopago_service import MercadoPagoService
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Obtener el pedido
+            pedido = get_object_or_404(Pedido, id=pedido_id)
+            
+            # Verificar que el método de pago sea transferencia
+            if pedido.metodo_pago != 'transferencia':
+                return Response({
+                    'success': False,
+                    'error': 'Este pedido no usa transferencia como método de pago'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Generar QR usando el servicio de Mercado Pago
+            mp_service = MercadoPagoService()
+            result = mp_service.create_qr_for_transfer(pedido)
+            
+            if result['success']:
+                logger.info(f"✅ QR generado exitosamente para pedido #{pedido_id}")
+                return Response({
+                    'success': True,
+                    'qr_data': result['qr_data'],
+                    'preference_id': result['preference_id'],
+                    'init_point': result['init_point']
+                }, status=status.HTTP_200_OK)
+            else:
+                logger.error(f"❌ Error al generar QR para pedido #{pedido_id}: {result.get('error')}")
+                return Response({
+                    'success': False,
+                    'error': result.get('error', 'Error al generar QR')
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            logger.error(f"❌ Exception en GenerateTransferQRView: {str(e)}")
+            return Response({
+                'success': False,
+                'error': f'Error interno: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -4,8 +4,15 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 
-export const dynamic = 'force-dynamic';
+// Importar componente de QR de forma dinámica (opcional)
+const TransferQROptional = dynamic(() => import('@/components/TransferQROptional'), {
+  ssr: false,
+  loading: () => null // No mostrar nada mientras carga
+});
+
+export const dynamic_route = 'force-dynamic';
 
 interface PedidoItem {
   producto: {
@@ -409,6 +416,13 @@ const PaymentSuccessPage = () => {
             </div>
           </div>
         </div>
+
+        {/* QR de Transferencia (OPCIONAL) */}
+        <TransferQROptional 
+          pedidoId={pedidoId || ''} 
+          metodoPago={pedidoData?.medio_pago || ''}
+          enabled={false}  // Cambiar a true para habilitar QR de Mercado Pago
+        />
 
         {/* Botón de WhatsApp */}
         <div className="mb-6 sm:mb-8 px-4 sm:px-0">

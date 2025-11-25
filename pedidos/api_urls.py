@@ -7,7 +7,8 @@ from .api_views import (
     MetodoEnvioListView,
     ValidateStockView,
     StockStatusView,
-    CheckoutSummaryView
+    CheckoutSummaryView,
+    GenerateTransferQRView
 )
 from .simple_checkout import simple_checkout, test_cart
 from .simple_views import simple_checkout_with_items
@@ -47,6 +48,9 @@ urlpatterns = [
     path('<int:pedido_id>/payment/success/', PaymentSuccessView.as_view(), name='payment-success'),
     path('<int:pedido_id>/payment/failure/', PaymentFailureView.as_view(), name='payment-failure'),
     path('<int:pedido_id>/payment/pending/', PaymentPendingView.as_view(), name='payment-pending'),
+    
+    # QR de transferencia (OPCIONAL)
+    path('<int:pedido_id>/generate-transfer-qr/', GenerateTransferQRView.as_view(), name='generate-transfer-qr'),
     
     # Zonas de entrega
     path('validate-zone/', validate_delivery_zone, name='validate-zone'),
