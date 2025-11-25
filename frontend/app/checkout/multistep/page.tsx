@@ -1945,90 +1945,11 @@ const MultiStepCheckoutPage = () => {
                 </div>
                 
                 {formData.metodoPago === 'transferencia' && (
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl mb-6 border-2 border-green-200 shadow-lg">
-                    <h4 className="font-semibold text-lg mb-4 flex items-center text-green-800">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Datos para transferencia
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-500">Alias</span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard('eleososatuc', 'alias')}
-                            className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-all"
-                          >
-                            {copiedField === 'alias' ? (
-                              <>✓ Copiado</>
-                            ) : (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                                Copiar
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-xl font-bold text-gray-800">eleososatuc</p>
-                      </div>
-                      
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-500">CVU</span>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard('0000003100095405777972', 'cvu')}
-                            className="flex items-center gap-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-all"
-                          >
-                            {copiedField === 'cvu' ? (
-                              <>✓ Copiado</>
-                            ) : (
-                              <>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                                Copiar
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        <p className="text-lg font-mono font-semibold text-gray-800">0000003100095405777972</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-white p-3 rounded-lg shadow-sm">
-                          <span className="text-xs font-medium text-gray-500">Banco</span>
-                          <p className="font-semibold text-gray-800">Mercado Pago</p>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg shadow-sm">
-                          <span className="text-xs font-medium text-gray-500">CUIT</span>
-                          <p className="font-semibold text-gray-800">27-26676582-2</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white p-3 rounded-lg shadow-sm">
-                        <span className="text-xs font-medium text-gray-500">Titular</span>
-                        <p className="font-semibold text-gray-800">Monica Eleonora Sosa</p>
-                      </div>
-                      
-                      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-800 flex items-start gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="16" x2="12" y2="12"/>
-                            <line x1="12" y1="8" x2="12.01" y2="8"/>
-                          </svg>
-                          <span>Envía el comprobante de transferencia por WhatsApp al <strong>3813671352</strong> para confirmar tu pedido.</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <TransferPaymentData 
+                    total={calculateTotal()} 
+                    showQR={true}
+                    pedidoId={undefined}
+                  />
                 )}
                 
                 <div className="mt-6">
