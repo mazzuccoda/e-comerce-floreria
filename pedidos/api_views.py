@@ -248,7 +248,7 @@ class GenerateTransferQRView(APIView):
             pedido = get_object_or_404(Pedido, id=pedido_id)
             
             # Verificar que el método de pago sea transferencia
-            if pedido.metodo_pago != 'transferencia':
+            if pedido.medio_pago != 'transferencia':
                 return Response({
                     'success': False,
                     'error': 'Este pedido no usa transferencia como método de pago'
