@@ -247,29 +247,31 @@ const PaymentSuccessPage = () => {
             
             <div className="space-y-4">
               {pedidoData.items.map((item, index) => (
-                <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                  {item.producto.imagen_principal && (
-                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm">
-                      <Image
-                        src={item.producto.imagen_principal}
-                        alt={item.producto.nombre}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{item.producto.nombre}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium">Cantidad:</span>
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">{item.quantity}</span>
-                      </span>
-                      <span className="font-medium text-gray-900">${item.price.toLocaleString('es-AR')} c/u</span>
+                <div key={index} className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                  <div className="flex gap-4 flex-1">
+                    {item.producto.imagen_principal && (
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden shadow-sm">
+                        <Image
+                          src={item.producto.imagen_principal}
+                          alt={item.producto.nombre}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{item.producto.nombre}</h3>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <span className="font-medium">Cantidad:</span>
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">{item.quantity}</span>
+                        </span>
+                        <span className="font-medium text-gray-900">${item.price.toLocaleString('es-AR')} c/u</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right flex flex-col justify-center">
-                    <span className="text-xs text-gray-500 mb-1">Subtotal</span>
+                  <div className="flex justify-between sm:justify-end sm:flex-col sm:text-right sm:min-w-[120px] border-t sm:border-t-0 pt-3 sm:pt-0">
+                    <span className="text-xs text-gray-500 sm:mb-1">Subtotal</span>
                     <span className="text-lg sm:text-xl font-bold text-green-600">${(item.price * item.quantity).toLocaleString('es-AR')}</span>
                   </div>
                 </div>
