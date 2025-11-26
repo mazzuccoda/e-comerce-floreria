@@ -761,12 +761,12 @@ const MultiStepCheckoutPage = () => {
         
         // Guardar datos del pedido en localStorage SIEMPRE (para todos los métodos de pago)
         const costoEnvio = getShippingCost();
-        const totalConEnvio = parseFloat(result.total) + costoEnvio;
+        // NOTA: result.total YA incluye el costo de envío (calculado en el backend)
         
         const pedidoData = {
           pedido_id: result.pedido_id,
           numero_pedido: result.numero_pedido,
-          total: totalConEnvio.toString(), // Total incluyendo envío
+          total: result.total, // Total ya incluye envío (viene del backend)
           items: directCart.items,
           comprador: {
             nombre: formData.nombre,
