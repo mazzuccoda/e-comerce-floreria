@@ -100,9 +100,11 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId, on
   // Función auxiliar para generar QR con un pedidoId específico
   const generateMercadoPagoQRWithId = async (id: string) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app'
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api'
+      // Remover /api del final si existe para evitar duplicación
+      const baseUrl = API_URL.replace(/\/api$/, '')
       
-      const response = await fetch(`${API_URL}/api/pedidos/${id}/generate-transfer-qr/`, {
+      const response = await fetch(`${baseUrl}/api/pedidos/${id}/generate-transfer-qr/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
