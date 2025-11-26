@@ -543,6 +543,86 @@ const MultiStepCheckoutPage = () => {
     return total;
   };
 
+  // Función auxiliar para crear pedido y retornar el ID (para usar en TransferPaymentData)
+  const createOrderAndGetId = async (): Promise<string | null> => {
+    try {
+      // Validar antes de crear
+      const isValid = validateCurrentStep();
+      if (!isValid) {
+        console.log('❌ Error de validación');
+        return null;
+      }
+
+      // Verificar carrito
+      if (!directCart.items || directCart.items.length === 0) {
+        alert('❌ El carrito está vacío');
+        return null;
+      }
+
+      // Preparar fecha de entrega
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1);
+      const fechaEntrega = tomorrow.toISOString().split('T')[0];
+
+      // Preparar items
+      const items = directCart.items.map((item: any) => ({
+        producto_id: item.producto.id,
+        cantidad: item.quantity
+      }));
+
+      // Preparar headers
+      const apiBaseUrl = API_URL.replace('/api', '');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Token ${token}`;
+
+      // Crear pedido
+      const response = await fetch(`${apiBaseUrl}/api/pedidos/checkout-with-items/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({
+          nombre_comprador: formData.nombre?.trim() || "Cliente Web",
+          email_comprador: formData.email?.trim() || "cliente@floreriacristina.com",
+          telefono_comprador: formData.telefono?.trim() || "1123456789",
+          nombre_destinatario: formData.nombreDestinatario?.trim() || "Destinatario",
+          telefono_destinatario: formData.telefonoDestinatario?.trim() || "1123456789",
+          direccion: formData.direccion?.trim() || "Dirección de prueba 123",
+          ciudad: formData.ciudad?.trim() || "Buenos Aires",
+          codigo_postal: formData.codigoPostal?.trim() || "1000",
+          fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
+          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
+          metodo_envio_id: 1,
+          metodo_envio: formData.metodoEnvio,
+          costo_envio: getShippingCost(),
+          dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
+          instrucciones: formData.instrucciones || "",
+          regalo_anonimo: false,
+          medio_pago: formData.metodoPago,
+          items: items
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorMsg = result.error || result.message || 'Error desconocido';
+        alert(`❌ Error al crear pedido: ${errorMsg}`);
+        return null;
+      }
+
+      // Retornar el pedido_id
+      return result.pedido_id?.toString() || null;
+    } catch (error) {
+      console.error('Error al crear pedido:', error);
+      alert('❌ Error al crear el pedido');
+      return null;
+    }
+  };
+
   // Función para crear el pedido usando el endpoint simple
   const handleFinalizarPedido = async () => {
     // Validar el último paso antes de finalizar
@@ -1599,6 +1679,7 @@ const MultiStepCheckoutPage = () => {
                   total={calculateTotal()} 
                   showQR={true}
                   pedidoId={undefined}
+                  onCreateOrder={createOrderAndGetId}
                 />
               )}
               
@@ -1949,6 +2030,7 @@ const MultiStepCheckoutPage = () => {
                     total={calculateTotal()} 
                     showQR={true}
                     pedidoId={undefined}
+                    onCreateOrder={createOrderAndGetId}
                   />
                 )}
                 
