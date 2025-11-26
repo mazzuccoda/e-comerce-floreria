@@ -31,8 +31,11 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId, on
   useEffect(() => {
     if (showQR && !showMpQr) {
       generateSimpleQR()
+    } else if (showMpQr && !createdPedidoId) {
+      // Limpiar QR cuando estamos en tab de MP pero no hay pedido creado
+      setQrImage('')
     }
-  }, [showQR, total, showMpQr])
+  }, [showQR, total, showMpQr, createdPedidoId])
 
   const generateSimpleQR = async () => {
     setLoading(true)
