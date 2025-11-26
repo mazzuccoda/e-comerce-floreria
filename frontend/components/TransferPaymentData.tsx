@@ -227,20 +227,15 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId, on
                 📋 Datos manuales
               </button>
               <button
-                onClick={() => {
-                  if (!showMpQr && pedidoId) {
-                    generateMercadoPagoQR()
-                  }
-                }}
-                disabled={!pedidoId || loadingMpQr}
-                title={!pedidoId ? 'Disponible después de confirmar el pedido' : ''}
+                onClick={() => setShowMpQr(true)}
+                disabled={loadingMpQr}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${
                   showMpQr 
                     ? 'bg-blue-600 text-white shadow-md' 
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed'
                 }`}
               >
-                {loadingMpQr ? '⏳ Generando...' : !pedidoId ? '💳 Pago directo MP 🔒' : '💳 Pago directo MP'}
+                {loadingMpQr ? '⏳ Generando...' : '💳 Pago directo MP'}
               </button>
             </div>
 
