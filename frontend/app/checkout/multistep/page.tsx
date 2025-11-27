@@ -1635,6 +1635,7 @@ const MultiStepCheckoutPage = () => {
               <h2 className="text-2xl font-light mb-6">💳 Método de Pago</h2>
               <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
               
+              {/* PayPal Integration v1.0 - 4 payment methods */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <label 
                   className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'mercadopago' ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' : 'bg-white/50 hover:bg-blue-50/30 hover:shadow-md border-2 border-transparent'}`}
