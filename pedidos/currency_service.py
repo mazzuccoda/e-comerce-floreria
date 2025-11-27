@@ -124,11 +124,16 @@ class CurrencyService:
             # Obtener cotización oficial
             official_rate = self.get_usd_rate()
             
-            # Aplicar margen si corresponde
-            effective_rate = official_rate * self.margin if apply_margin else official_rate
+            # Calcular monto en USD: (ARS / cotización_oficial) * margen
+            # Ejemplo: $60,000 ARS / $1,000 = $60 USD → $60 * 1.15 = $69 USD
+            amount_usd = amount_ars / official_rate
             
-            # Calcular monto en USD
-            amount_usd = amount_ars / effective_rate
+            # Aplicar margen si corresponde (aumenta el precio en USD)
+            if apply_margin:
+                amount_usd = amount_usd * self.margin
+            
+            # Calcular tasa efectiva para información
+            effective_rate = official_rate / self.margin if apply_margin else official_rate
             
             # Redondear a 2 decimales (requerimiento de PayPal)
             amount_usd = amount_usd.quantize(Decimal('0.01'))
@@ -157,7 +162,8 @@ class CurrencyService:
             dict: Información de cotización y margen
         """
         official_rate = self.get_usd_rate()
-        effective_rate = official_rate * self.margin
+        # Tasa efectiva es MENOR porque dividimos por ella después de aplicar margen
+        effective_rate = official_rate / self.margin
         
         return {
             'official_rate': official_rate,
