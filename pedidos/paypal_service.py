@@ -184,6 +184,7 @@ class PayPalService:
                     'conversion_info': {
                         'total_ars': float(total_ars),
                         'total_usd': float(total_usd),
+                        'official_rate': float(conversion_info['official_rate']),
                         'exchange_rate': float(conversion_info['official_rate']),
                         'effective_rate': float(conversion_info['effective_rate']),
                         'margin_percentage': float(conversion_info['margin_percentage'])

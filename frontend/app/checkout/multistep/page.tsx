@@ -894,7 +894,7 @@ const MultiStepCheckoutPage = () => {
               alert(`💱 Conversión USD:\n` +
                     `Total ARS: $${convInfo.total_ars.toFixed(2)}\n` +
                     `Total USD: $${convInfo.total_usd.toFixed(2)}\n` +
-                    `Tasa: $${convInfo.effective_rate.toFixed(2)} ARS/USD\n` +
+                    `TC Oficial: $${convInfo.official_rate.toFixed(2)} ARS/USD\n` +
                     `(Incluye ${convInfo.margin_percentage.toFixed(0)}% de margen)`);
               
               // Redirigir a PayPal
