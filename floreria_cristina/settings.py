@@ -376,6 +376,13 @@ MERCADOPAGO = {
     'SANDBOX': os.getenv('MP_SANDBOX_MODE', 'false').lower() == 'true'  # false by default for production
 }
 
+# Configuración PayPal
+PAYPAL = {
+    'MODE': os.getenv('PAYPAL_MODE', 'sandbox'),  # 'sandbox' o 'live'
+    'CLIENT_ID': os.getenv('PAYPAL_CLIENT_ID', ''),
+    'CLIENT_SECRET': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+}
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 

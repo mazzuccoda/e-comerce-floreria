@@ -17,7 +17,10 @@ from .payment_views import (
     MercadoPagoWebhookView,
     PaymentSuccessView,
     PaymentFailureView,
-    PaymentPendingView
+    PaymentPendingView,
+    CreatePayPalPaymentView,
+    PayPalSuccessView,
+    PayPalCancelView
 )
 from .views_debug import test_mercadopago_view
 from .views_zones import validate_delivery_zone, get_delivery_zones
@@ -42,12 +45,17 @@ urlpatterns = [
     path('<int:pedido_id>/', PedidoDetailView.as_view(), name='pedido-detail'),
     path('mis-pedidos/', PedidoListView.as_view(), name='mis-pedidos'),
     
-    # Pagos
+    # Pagos - MercadoPago
     path('<int:pedido_id>/payment/', CreatePaymentView.as_view(), name='create-payment'),
     path('webhook/mercadopago/', MercadoPagoWebhookView.as_view(), name='mp-webhook'),
     path('<int:pedido_id>/payment/success/', PaymentSuccessView.as_view(), name='payment-success'),
     path('<int:pedido_id>/payment/failure/', PaymentFailureView.as_view(), name='payment-failure'),
     path('<int:pedido_id>/payment/pending/', PaymentPendingView.as_view(), name='payment-pending'),
+    
+    # Pagos - PayPal
+    path('<int:pedido_id>/payment/paypal/', CreatePayPalPaymentView.as_view(), name='create-paypal-payment'),
+    path('<int:pedido_id>/payment/paypal/success/', PayPalSuccessView.as_view(), name='paypal-success'),
+    path('<int:pedido_id>/payment/paypal/cancel/', PayPalCancelView.as_view(), name='paypal-cancel'),
     
     # QR de transferencia (OPCIONAL)
     path('<int:pedido_id>/generate-transfer-qr/', GenerateTransferQRView.as_view(), name='generate-transfer-qr'),

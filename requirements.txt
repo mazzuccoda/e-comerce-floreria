@@ -33,6 +33,7 @@ python-dateutil==2.8.2
 python-stdnum==1.19
 stripe==7.6.0
 mercadopago==2.3.0
+paypalrestsdk==1.13.1
 reportlab==4.0.7
 
 # Storage

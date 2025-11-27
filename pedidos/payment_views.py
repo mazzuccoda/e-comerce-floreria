@@ -225,3 +225,127 @@ class PaymentPendingView(APIView):
             logger.error(f"❌ Error in payment pending: {str(e)}")
             frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
             return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
+
+
+# ==============================================================================
+# PAYPAL PAYMENT VIEWS
+# ==============================================================================
+
+class CreatePayPalPaymentView(APIView):
+    """
+    Vista para crear pago con PayPal (en USD)
+    """
+    permission_classes = [AllowAny]
+    
+    def post(self, request, pedido_id):
+        try:
+            from .paypal_service import PayPalService
+            
+            pedido = get_object_or_404(Pedido, id=pedido_id)
+            
+            # Verificar que el pedido esté en estado correcto
+            if pedido.estado_pago != 'pendiente':
+                return Response({
+                    'error': 'El pedido ya ha sido procesado'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Crear pago en PayPal
+            paypal_service = PayPalService()
+            payment_result = paypal_service.create_payment(pedido, request)
+            
+            if payment_result['success']:
+                logger.info(f"✅ Pago PayPal creado para pedido #{pedido_id}")
+                return Response({
+                    'success': True,
+                    'payment_id': payment_result['payment_id'],
+                    'approval_url': payment_result['approval_url'],
+                    'conversion_info': payment_result['conversion_info'],
+                    'pedido': PedidoReadSerializer(pedido).data
+                }, status=status.HTTP_200_OK)
+            else:
+                logger.error(f"❌ Error creando pago PayPal: {payment_result.get('error')}")
+                return Response({
+                    'error': payment_result['error']
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+        except Exception as e:
+            logger.error(f"❌ Error creating PayPal payment: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return Response({
+                'error': 'Error interno del servidor'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class PayPalSuccessView(APIView):
+    """
+    Vista para manejar el retorno exitoso de PayPal
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request, pedido_id):
+        try:
+            from .paypal_service import PayPalService
+            
+            pedido = get_object_or_404(Pedido, id=pedido_id)
+            
+            # Obtener parámetros de PayPal
+            payment_id = request.GET.get('paymentId')
+            payer_id = request.GET.get('PayerID')
+            
+            logger.info(f"✅ Retorno exitoso de PayPal para pedido #{pedido_id}")
+            logger.info(f"💳 Payment ID: {payment_id}, Payer ID: {payer_id}")
+            
+            if payment_id and payer_id:
+                # Ejecutar el pago
+                paypal_service = PayPalService()
+                execute_result = paypal_service.execute_payment(payment_id, payer_id)
+                
+                if execute_result['success']:
+                    # Actualizar estado del pedido
+                    with transaction.atomic():
+                        pedido.estado_pago = 'aprobado'
+                        pedido.confirmado = True
+                        pedido.save()
+                        logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado (PayPal)")
+                else:
+                    logger.error(f"❌ Error ejecutando pago PayPal: {execute_result.get('error')}")
+            
+            # Redirigir al frontend
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=success&payment_id={payment_id or ''}&provider=paypal"
+            
+            logger.info(f"🔄 Redirigiendo a: {redirect_url}")
+            return redirect(redirect_url)
+            
+        except Exception as e:
+            logger.error(f"❌ Error in PayPal success: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
+
+
+class PayPalCancelView(APIView):
+    """
+    Vista para manejar la cancelación de PayPal
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request, pedido_id):
+        try:
+            pedido = get_object_or_404(Pedido, id=pedido_id)
+            
+            logger.warning(f"⚠️ Pago PayPal cancelado para pedido #{pedido_id}")
+            
+            # Redirigir al frontend
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=cancelled&provider=paypal"
+            
+            logger.info(f"🔄 Redirigiendo a: {redirect_url}")
+            return redirect(redirect_url)
+            
+        except Exception as e:
+            logger.error(f"❌ Error in PayPal cancel: {str(e)}")
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
