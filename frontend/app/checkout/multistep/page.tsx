@@ -101,22 +101,6 @@ const MultiStepCheckoutPage = () => {
     }
   };
 
-  // Detectar si viene de una cancelación de PayPal
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const cancelled = urlParams.get('cancelled');
-    const error = urlParams.get('error');
-    
-    if (cancelled === 'true') {
-      alert('⚠️ Pago cancelado\n\nHas cancelado el pago de PayPal. Puedes intentar nuevamente o elegir otro método de pago.');
-      // Limpiar URL
-      window.history.replaceState({}, '', '/checkout/multistep');
-    } else if (error === 'payment_cancelled') {
-      alert('❌ Error en el pago\n\nHubo un problema al procesar la cancelación. Por favor, intenta nuevamente.');
-      window.history.replaceState({}, '', '/checkout/multistep');
-    }
-  }, []);
-
   // Carga inicial del carrito: primero localStorage, luego API si hace falta
   useEffect(() => {
     const init = async () => {

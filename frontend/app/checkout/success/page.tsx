@@ -56,6 +56,8 @@ interface PedidoData {
 const PaymentSuccessPage = () => {
   const searchParams = useSearchParams();
   const pedidoId = searchParams.get('pedido');
+  const paymentStatus = searchParams.get('payment');
+  const provider = searchParams.get('provider');
   const [pedidoData, setPedidoData] = useState<PedidoData | null>(null);
 
   useEffect(() => {
@@ -192,20 +194,41 @@ const PaymentSuccessPage = () => {
         
         {/* Hero Section - Limpio y elegante */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-6 shadow-xl animate-scaleIn">
-            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-            ¡Pedido Confirmado!
-          </h1>
-          <p className="text-lg text-gray-600 mb-2">
-            Pedido <span className="font-mono font-semibold text-green-600">#{pedidoData?.numero_pedido || pedidoId}</span>
-          </p>
-          <p className="text-base text-gray-500">
-            Tu pedido está siendo preparado con amor 💚
-          </p>
+          {paymentStatus === 'cancelled' ? (
+            <>
+              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full mb-6 shadow-xl animate-scaleIn">
+                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1-1.964-1-2.732 0L3.732 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                Pago Cancelado
+              </h1>
+              <p className="text-lg text-gray-600 mb-2">
+                Pedido <span className="font-mono font-semibold text-orange-600">#{pedidoData?.numero_pedido || pedidoId}</span>
+              </p>
+              <p className="text-base text-gray-500">
+                Has cancelado el pago de {provider === 'paypal' ? 'PayPal' : 'tu pedido'}. El pedido está creado pero pendiente de pago.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-6 shadow-xl animate-scaleIn">
+                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                ¡Pedido Confirmado!
+              </h1>
+              <p className="text-lg text-gray-600 mb-2">
+                Pedido <span className="font-mono font-semibold text-green-600">#{pedidoData?.numero_pedido || pedidoId}</span>
+              </p>
+              <p className="text-base text-gray-500">
+                Tu pedido está siendo preparado con amor 💚
+              </p>
+            </>
+          )}
         </div>
 
         {/* Estado Simple */}

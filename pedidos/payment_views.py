@@ -338,14 +338,14 @@ class PayPalCancelView(APIView):
             
             logger.warning(f"⚠️ Pago PayPal cancelado para pedido #{pedido_id}")
             
-            # Redirigir al checkout con mensaje de cancelación
+            # Redirigir a la página de éxito con parámetro de cancelación (igual que MercadoPago)
             frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
-            redirect_url = f"{frontend_url}/checkout/multistep?cancelled=true&pedido={pedido_id}"
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=cancelled&provider=paypal"
             
-            logger.info(f"🔄 Redirigiendo a checkout: {redirect_url}")
+            logger.info(f"🔄 Redirigiendo a: {redirect_url}")
             return redirect(redirect_url)
             
         except Exception as e:
             logger.error(f"❌ Error in PayPal cancel: {str(e)}")
             frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
-            return redirect(f"{frontend_url}/checkout/multistep?error=payment_cancelled")
+            return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error&provider=paypal")
