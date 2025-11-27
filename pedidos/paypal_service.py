@@ -55,10 +55,11 @@ class PayPalService:
             }
         """
         try:
-            # URLs de retorno
-            backend_url = os.getenv('BACKEND_URL', 'http://localhost:8000')
+            # URLs de retorno - usar la URL del backend en producción
+            backend_url = os.getenv('BACKEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
             
             logger.info(f"💳 Creando pago PayPal para pedido #{pedido.id}")
+            logger.info(f"🔗 Backend URL: {backend_url}")
             
             # Items del pedido (convertir a USD)
             items = []
