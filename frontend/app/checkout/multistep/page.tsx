@@ -2028,7 +2028,8 @@ const MultiStepCheckoutPage = () => {
               <h2 className="text-2xl font-light mb-6">💳 Método de Pago</h2>
               <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* PayPal Integration v1.0 - 4 payment methods (Delivery) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                   <label 
                     className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'mercadopago' ? 'bg-blue-50 border-2 border-blue-500 shadow-lg' : 'bg-white/50 hover:bg-blue-50/30 hover:shadow-md border-2 border-transparent'}`}
                   >
@@ -2049,7 +2050,31 @@ const MultiStepCheckoutPage = () => {
                       <img src="/images/mercadopago.png" alt="MercadoPago" className="h-10" onError={(e) => {e.currentTarget.src = 'https://imgmp.mlstatic.com/org-img/banners/ar/medios/online/468X60.jpg'; e.currentTarget.className='h-8'}} />
                     </div>
                     <div className="mt-3 text-xs text-gray-600 text-center">
-                      Tarjetas de crédito/débito
+                      Tarjetas (ARS)
+                    </div>
+                  </label>
+                  
+                  <label 
+                    className={`flex flex-col h-full p-5 rounded-xl cursor-pointer transition-all duration-200 ${formData.metodoPago === 'paypal' ? 'bg-blue-100 border-2 border-blue-600 shadow-lg' : 'bg-white/50 hover:bg-blue-100/30 hover:shadow-md border-2 border-transparent'}`}
+                  >
+                    <div className="flex items-start">
+                      <input 
+                        type="radio" 
+                        name="metodoPago" 
+                        value="paypal"
+                        checked={formData.metodoPago === 'paypal'}
+                        onChange={handleInputChange}
+                        className="mr-3 mt-1" 
+                      />
+                      <div>
+                        <div className="font-medium">PayPal</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex justify-center text-3xl">
+                      🅿️
+                    </div>
+                    <div className="mt-3 text-xs text-gray-600 text-center">
+                      Pago en USD
                     </div>
                   </label>
                   
@@ -2101,6 +2126,23 @@ const MultiStepCheckoutPage = () => {
                     </div>
                   </label>
                 </div>
+                
+                {formData.metodoPago === 'paypal' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">💱</span>
+                      <div>
+                        <h3 className="font-medium text-blue-900 mb-2">Pago en Dólares (USD)</h3>
+                        <p className="text-sm text-blue-800">
+                          El pago se procesará en dólares estadounidenses (USD) usando la cotización oficial del día + 15% de margen.
+                        </p>
+                        <p className="text-xs text-blue-700 mt-2">
+                          Se te mostrará el monto exacto en USD antes de confirmar el pago en PayPal.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {formData.metodoPago === 'transferencia' && (
                   <TransferPaymentData 
