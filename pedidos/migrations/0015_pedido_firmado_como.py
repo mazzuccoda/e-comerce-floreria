@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pedidos', '0008_alter_pedido_tipo_envio'),
+        ('pedidos', '0014_add_costo_envio_safe'),
     ]
 
     operations = [
