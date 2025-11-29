@@ -43,6 +43,8 @@ interface DirectCart {
 const MultiStepCheckoutPage = () => {
   const { token } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [savedProgressAge, setSavedProgressAge] = useState<string | null>(null);
   const [directCart, setDirectCart] = useState<DirectCart>({
     items: [],
     total_price: 0,
@@ -107,6 +109,35 @@ const MultiStepCheckoutPage = () => {
     } catch (error) {
       console.error('❌ Error recargando carrito:', error);
     }
+  };
+
+  // Cargar progreso guardado al iniciar
+  useEffect(() => {
+    const savedProgress = loadCheckoutProgress();
+    if (savedProgress && hasCheckoutProgress()) {
+      console.log('💾 Progreso del checkout encontrado');
+      setShowRestorePrompt(true);
+      setSavedProgressAge(formatProgressAge());
+    }
+  }, []);
+
+  // Función para restaurar progreso
+  const restoreProgress = () => {
+    const savedProgress = loadCheckoutProgress();
+    if (savedProgress) {
+      setFormData(savedProgress.formData);
+      setCurrentStep(savedProgress.currentStep);
+      setSelectedExtras(savedProgress.selectedExtras);
+      setShowRestorePrompt(false);
+      console.log('✅ Progreso restaurado');
+    }
+  };
+
+  // Función para descartar progreso
+  const discardProgress = () => {
+    clearCheckoutProgress();
+    setShowRestorePrompt(false);
+    console.log('🗑️ Progreso descartado');
   };
 
   // Carga inicial del carrito: primero localStorage, luego API si hace falta
@@ -227,6 +258,21 @@ const MultiStepCheckoutPage = () => {
   
   // Estado para autocompletar
   const [useSameAsRemitente, setUseSameAsRemitente] = useState(false);
+
+  // Guardar progreso automáticamente cuando cambian los datos
+  useEffect(() => {
+    // No guardar si estamos en el paso de pago o si el formulario está vacío
+    const isPaymentStep = (isPickup && currentStep === 3) || (!isPickup && currentStep === 4);
+    const hasData = formData.nombre || formData.email || formData.nombreDestinatario;
+    
+    if (!isPaymentStep && hasData) {
+      saveCheckoutProgress({
+        formData,
+        currentStep,
+        selectedExtras
+      });
+    }
+  }, [formData, currentStep, selectedExtras, isPickup]);
 
   // Sincronizar selectedExtras con formData
   // Los extras se identifican por estar en el carrito, no por IDs hardcodeados
