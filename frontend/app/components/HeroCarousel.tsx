@@ -4,43 +4,70 @@ import { useState, useEffect } from 'react';
 
 interface Slide {
   id: number;
-  image: string;
-  title: string;
-  subtitle: string;
-  buttonText?: string;
-  buttonLink?: string;
+  imagen: string;
+  titulo: string;
+  subtitulo: string;
+  texto_boton?: string;
+  enlace_boton?: string;
 }
 
-const slides: Slide[] = [
+// Slides por defecto (fallback si la API falla)
+const defaultSlides: Slide[] = [
   {
     id: 1,
-    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567953/Carrucel_1.png',
-    title: 'FLORERÍA CRISTINA',
-    subtitle: 'Ramos de flores Naturales',
-    buttonText: 'Ver Productos',
-    buttonLink: '/productos'
+    imagen: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567953/Carrucel_1.png',
+    titulo: 'FLORERÍA CRISTINA',
+    subtitulo: 'Ramos de flores Naturales',
+    texto_boton: 'Ver Productos',
+    enlace_boton: '/productos'
   },
   {
     id: 2,
-    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567952/Imagen26_aeywu7.png',
-    title: 'Entrega a domicilios',
-    subtitle: 'Yerba Buena y alrededores',
-    buttonText: 'Comprar Ahora',
-    buttonLink: '/productos'
+    imagen: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567952/Imagen26_aeywu7.png',
+    titulo: 'Entrega a domicilios',
+    subtitulo: 'Yerba Buena y alrededores',
+    texto_boton: 'Comprar Ahora',
+    enlace_boton: '/productos'
   },
   {
     id: 3,
-    image: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567952/Imagen17_ozu8fo.png',
-    title: 'Tenemos el ramo que buscas',
-    subtitle: 'Diseños únicos para cada ocasión',
-    buttonText: 'Explorar',
-    buttonLink: '/productos'
+    imagen: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1760567952/Imagen17_ozu8fo.png',
+    titulo: 'Tenemos el ramo que buscas',
+    subtitulo: 'Diseños únicos para cada ocasión',
+    texto_boton: 'Explorar',
+    enlace_boton: '/productos'
   }
 ];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+
 export default function HeroCarousel() {
+  const [slides, setSlides] = useState<Slide[]>(defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar slides desde la API
+  useEffect(() => {
+    const fetchSlides = async () => {
+      try {
+        const response = await fetch(`${API_URL}/catalogo/hero-slides/`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setSlides(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando slides del hero:', error);
+        // Mantener slides por defecto en caso de error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSlides();
+  }, []);
 
   // Auto-play del carrusel
   useEffect(() => {
@@ -85,8 +112,8 @@ export default function HeroCarousel() {
           <div className="relative w-full h-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={slide.image}
-              alt={slide.title}
+              src={slide.imagen}
+              alt={slide.titulo}
               className="w-full h-full object-cover"
             />
             {/* Overlay oscuro para mejorar legibilidad del texto */}
@@ -97,17 +124,17 @@ export default function HeroCarousel() {
           <div className="absolute inset-0 flex items-center justify-center z-20">
             <div className="text-center px-4 max-w-4xl mx-auto">
               <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-light mb-4 tracking-wide animate-fade-in-up">
-                {slide.title}
+                {slide.titulo}
               </h2>
               <p className="text-white text-lg md:text-xl lg:text-2xl font-light mb-8 animate-fade-in-up-delay">
-                {slide.subtitle}
+                {slide.subtitulo}
               </p>
-              {slide.buttonText && slide.buttonLink && (
+              {slide.texto_boton && slide.enlace_boton && (
                 <a
-                  href={slide.buttonLink}
+                  href={slide.enlace_boton}
                   className="inline-block bg-white text-gray-900 px-8 py-3 md:px-10 md:py-4 rounded-full text-base md:text-lg font-medium hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg animate-fade-in-up-delay-2"
                 >
-                  {slide.buttonText}
+                  {slide.texto_boton}
                 </a>
               )}
             </div>

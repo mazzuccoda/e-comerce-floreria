@@ -258,3 +258,35 @@ class ProductoImagen(models.Model):
         if self.is_primary:
             ProductoImagen.objects.filter(producto=self.producto).exclude(pk=self.pk).update(is_primary=False)
         super().save(*args, **kwargs)
+
+
+class HeroSlide(models.Model):
+    """Modelo para los slides del carrusel Hero de la página principal"""
+    titulo = models.CharField(max_length=200, verbose_name='Título')
+    subtitulo = models.CharField(max_length=200, verbose_name='Subtítulo')
+    imagen = models.ImageField(upload_to='hero/%Y/%m/', verbose_name='Imagen')
+    texto_boton = models.CharField(max_length=50, blank=True, verbose_name='Texto del botón')
+    enlace_boton = models.CharField(max_length=200, default='/productos', verbose_name='Enlace del botón')
+    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+
+    class Meta:
+        verbose_name = 'Slide del Hero'
+        verbose_name_plural = 'Slides del Hero'
+        ordering = ['orden', 'created_at']
+
+    def __str__(self):
+        return f"{self.titulo} - {self.subtitulo}"
+
+    def save(self, *args, **kwargs):
+        # Optimizar imagen antes de guardar
+        if self.imagen and not self.pk:  # Solo en creación
+            self.imagen = optimize_image(
+                self.imagen,
+                max_width=1920,
+                max_height=1080,
+                quality=85
+            )
+        super().save(*args, **kwargs)

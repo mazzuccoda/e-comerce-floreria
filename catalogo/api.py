@@ -2,10 +2,10 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Producto, Categoria, TipoFlor, Ocasion, ZonaEntrega
+from .models import Producto, Categoria, TipoFlor, Ocasion, ZonaEntrega, HeroSlide
 from .serializers import (
     ProductoSerializer, CategoriaSerializer, TipoFlorSerializer, 
-    OcasionSerializer, ZonaEntregaSerializer
+    OcasionSerializer, ZonaEntregaSerializer, HeroSlideSerializer
 )
 
 
@@ -138,4 +138,14 @@ class ZonaEntregaViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = ZonaEntrega.objects.filter(is_active=True)
     serializer_class = ZonaEntregaSerializer
+    permission_classes = [AllowAny]
+
+
+class HeroSlideViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint que permite ver los slides del Hero.
+    Se puede acceder a la lista en `/api/catalogo/hero-slides/`.
+    """
+    queryset = HeroSlide.objects.filter(is_active=True).order_by('orden', 'created_at')
+    serializer_class = HeroSlideSerializer
     permission_classes = [AllowAny]

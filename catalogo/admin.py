@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Categoria, Producto, ProductoImagen, TipoFlor, Ocasion, ZonaEntrega
+from .models import Categoria, Producto, ProductoImagen, TipoFlor, Ocasion, ZonaEntrega, HeroSlide
 
 
 class ProductoImagenInline(admin.TabularInline):
@@ -159,3 +159,45 @@ class ProductoImagenAdmin(admin.ModelAdmin):
             )
         return "(No hay imagen)"
     imagen_preview.short_description = 'Vista previa'
+
+
+@admin.register(HeroSlide)
+class HeroSlideAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'subtitulo', 'orden', 'is_active', 'imagen_preview_small', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('titulo', 'subtitulo')
+    list_editable = ('orden', 'is_active')
+    readonly_fields = ('imagen_preview', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Contenido', {
+            'fields': ('titulo', 'subtitulo', 'texto_boton', 'enlace_boton')
+        }),
+        ('Imagen', {
+            'fields': ('imagen', 'imagen_preview')
+        }),
+        ('Configuración', {
+            'fields': ('orden', 'is_active')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def imagen_preview(self, obj):
+        if obj.imagen:
+            return format_html(
+                '<img src="{}" style="max-width: 600px; height: auto;" />',
+                obj.imagen.url
+            )
+        return "(No hay imagen)"
+    imagen_preview.short_description = 'Vista previa'
+
+    def imagen_preview_small(self, obj):
+        if obj.imagen:
+            return format_html(
+                '<img src="{}" style="max-height: 50px; max-width: 80px; object-fit: cover;" />',
+                obj.imagen.url
+            )
+        return "(No hay imagen)"
+    imagen_preview_small.short_description = 'Imagen'

@@ -10,6 +10,7 @@ router.register(r'categorias', api.CategoriaViewSet, basename='categoria-api')
 router.register(r'tipos-flor', api.TipoFlorViewSet, basename='tipoflor-api')
 router.register(r'ocasiones', api.OcasionViewSet, basename='ocasion-api')
 router.register(r'zonas', api.ZonaEntregaViewSet, basename='zonaentrega-api')
+router.register(r'hero-slides', api.HeroSlideViewSet, basename='heroslide-api')
 
 app_name = 'catalogo-api'
 
