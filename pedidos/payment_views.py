@@ -157,7 +157,8 @@ class PaymentSuccessView(APIView):
                     payment_info = payment_result['payment']
                     # Actualizar estado del pedido según el estado del pago
                     if payment_info.get('status') == 'approved':
-                        pedido.estado_pago = 'aprobado'
+                        pedido.estado_pago = 'approved'
+                        pedido.confirmado = True
                         pedido.save()
                         logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado")
             
@@ -304,7 +305,7 @@ class PayPalSuccessView(APIView):
                 if execute_result['success']:
                     # Actualizar estado del pedido
                     with transaction.atomic():
-                        pedido.estado_pago = 'aprobado'
+                        pedido.estado_pago = 'approved'
                         pedido.confirmado = True
                         pedido.save()
                         logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado (PayPal)")

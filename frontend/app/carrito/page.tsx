@@ -1,12 +1,36 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCartRobust } from '@/context/CartContextRobust';
+import { trackViewCart, trackRemoveFromCart } from '@/utils/analytics';
 
 const CartPage = () => {
   const { cart, loading, error, updateQuantity, removeFromCart, clearCart, refreshCart } = useCartRobust();
   const [updatingItem, setUpdatingItem] = useState<number | null>(null);
+
+  // Trackear vista del carrito cuando se carga
+  useEffect(() => {
+    if (cart && cart.items && cart.items.length > 0) {
+      trackViewCart(cart.items, cart.total_price);
+    }
+  }, [cart?.total_items]);
+
+  const handleRemoveItem = async (productId: number) => {
+    const itemToRemove = cart?.items.find(item => item.producto.id === productId);
+    
+    if (itemToRemove) {
+      // Trackear remoción antes de eliminar
+      trackRemoveFromCart({
+        id: itemToRemove.producto.id,
+        nombre: itemToRemove.producto.nombre,
+        precio: parseFloat(itemToRemove.producto.precio),
+        cantidad: itemToRemove.quantity
+      });
+    }
+    
+    await removeFromCart(productId);
+  };
 
   if (loading) {
     return (
@@ -129,7 +153,7 @@ const CartPage = () => {
                       onClick={async () => {
                         setUpdatingItem(item.producto.id);
                         try {
-                          await removeFromCart(item.producto.id);
+                          await handleRemoveItem(item.producto.id);
                         } finally {
                           setUpdatingItem(null);
                         }

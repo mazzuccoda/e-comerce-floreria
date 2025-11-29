@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import ProductImageGallery from '@/app/components/ProductImageGallery';
+import { trackProductView, trackAddToCart } from '@/utils/analytics';
 
 interface ProductPageParams {
   params: Promise<{
@@ -65,6 +66,15 @@ export default function ProductPage({ params }: ProductPageParams) {
     try {
       // Delegar el manejo de toasts de éxito al contexto de carrito
       await addToCart(product, quantity);
+      
+      // Trackear agregar al carrito
+      trackAddToCart({
+        id: product.id,
+        nombre: product.nombre,
+        precio: parseFloat(product.precio),
+        cantidad: quantity,
+        categoria: product.categoria?.nombre
+      });
     } catch (error: any) {
       toast.error(`Error: ${error.message || 'No se pudo agregar al carrito'}`);
     } finally {
@@ -114,6 +124,14 @@ export default function ProductPage({ params }: ProductPageParams) {
         const data = await res.json();
         console.log('✅ Product loaded:', data.nombre);
         setProduct(data);
+        
+        // Trackear vista de producto
+        trackProductView({
+          id: data.id,
+          nombre: data.nombre,
+          precio: parseFloat(data.precio),
+          categoria: data.categoria?.nombre
+        });
       } catch (err: any) {
         console.error('💥 Error completo:', err);
         setError(err.message || 'Error al cargar el producto');

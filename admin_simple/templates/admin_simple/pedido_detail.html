@@ -272,17 +272,17 @@
             <div class="space-y-3">
                 <div>
                     <label class="text-sm font-semibold text-gray-700 block mb-1">Estado</label>
-                    {% if pedido.estado_pago == 'pendiente' %}
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-700">
-                            <i class="fas fa-clock mr-2"></i>Pendiente
-                        </span>
-                    {% elif pedido.estado_pago == 'approved' %}
+                    {% if pedido.estado_pago == 'approved' %}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700">
                             <i class="fas fa-check mr-2"></i>Aprobado
                         </span>
-                    {% else %}
+                    {% elif pedido.estado_pago == 'rejected' %}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">
                             <i class="fas fa-times mr-2"></i>Rechazado
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-orange-100 text-orange-700">
+                            <i class="fas fa-clock mr-2"></i>Pendiente
                         </span>
                     {% endif %}
                 </div>
@@ -314,9 +314,9 @@
             
             <div class="space-y-3">
                 {% if pedido.estado != 'cancelado' %}
-                <!-- Cambiar Estado -->
+                <!-- Cambiar Estado del Pedido -->
                 <div>
-                    <label class="text-sm font-semibold text-gray-700 block mb-2">Cambiar Estado:</label>
+                    <label class="text-sm font-semibold text-gray-700 block mb-2">Cambiar Estado del Pedido:</label>
                     <select id="estadoSelect" class="input-field mb-2">
                         <option value="recibido" {% if pedido.estado == 'recibido' %}selected{% endif %}>🆕 Recibido</option>
                         <option value="preparando" {% if pedido.estado == 'preparando' %}selected{% endif %}>⚙️ Preparando</option>
@@ -326,6 +326,19 @@
                     </select>
                     <button onclick="cambiarEstado()" class="w-full btn-secondary">
                         <i class="fas fa-exchange-alt mr-2"></i> Actualizar Estado
+                    </button>
+                </div>
+                
+                <!-- Cambiar Estado del Pago -->
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 block mb-2">Cambiar Estado del Pago:</label>
+                    <select id="estadoPagoSelect" class="input-field mb-2">
+                        <option value="pendiente" {% if pedido.estado_pago == 'pendiente' %}selected{% endif %}>🕐 Pendiente</option>
+                        <option value="approved" {% if pedido.estado_pago == 'approved' %}selected{% endif %}>✅ Aprobado</option>
+                        <option value="rejected" {% if pedido.estado_pago == 'rejected' %}selected{% endif %}>❌ Rechazado</option>
+                    </select>
+                    <button onclick="cambiarEstadoPago()" class="w-full btn-secondary">
+                        <i class="fas fa-credit-card mr-2"></i> Actualizar Estado Pago
                     </button>
                 </div>
                 {% endif %}
@@ -408,6 +421,37 @@ function cambiarEstado() {
     .catch(error => {
         console.error('Error:', error);
         alert('Error al cambiar el estado');
+    });
+}
+
+function cambiarEstadoPago() {
+    const nuevoEstadoPago = document.getElementById('estadoPagoSelect').value;
+    const csrftoken = getCookie('csrftoken');
+    
+    if (!confirm('¿Estás seguro de cambiar el estado del pago?')) {
+        return;
+    }
+    
+    fetch('{% url "admin_simple:pedido-cambiar-estado-pago" pedido.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken
+        },
+        body: `estado_pago=${nuevoEstadoPago}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al cambiar el estado del pago');
     });
 }
 

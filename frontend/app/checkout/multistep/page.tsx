@@ -7,6 +7,7 @@ import ExtrasSelector from '@/app/components/ExtrasSelector';
 import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
+import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -118,6 +119,11 @@ const MultiStepCheckoutPage = () => {
     };
 
     init();
+    
+    // Trackear inicio de checkout cuando el carrito esté cargado
+    if (directCart.items.length > 0) {
+      trackBeginCheckout(directCart.items, directCart.total_price);
+    }
 
     // Listener para cambios en localStorage (cuando se actualiza el carrito desde otra pestaña o componente)
     const handleStorageChange = (e: StorageEvent) => {
@@ -268,6 +274,14 @@ const MultiStepCheckoutPage = () => {
       }));
     }
   }, [useSameAsRemitente, formData.nombre, formData.apellido, formData.telefono]);
+
+  // Trackear cuando selecciona método de pago
+  useEffect(() => {
+    if (formData.metodoPago && formData.metodoPago !== 'mercadopago') {
+      // Solo trackear si cambió de mercadopago (valor por defecto)
+      trackAddPaymentInfo(formData.metodoPago, calculateTotal());
+    }
+  }, [formData.metodoPago]);
 
   // Validar un campo específico
   const validateField = (name: string, value: any): string => {
@@ -489,7 +503,13 @@ const MultiStepCheckoutPage = () => {
     const maxStep = isPickup ? 3 : 4;
 
     if (isValid && currentStep < maxStep) {
-      setCurrentStep(currentStep + 1);
+      const nextStepNumber = currentStep + 1;
+      setCurrentStep(nextStepNumber);
+      
+      // Trackear progreso del checkout
+      const stepName = steps[nextStepNumber]?.title || `Paso ${nextStepNumber}`;
+      trackCheckoutProgress(nextStepNumber, stepName, calculateTotal());
+      
       // Al cambiar de paso, reiniciar el estado de envío del formulario
       setFormSubmitted(false);
     } else {

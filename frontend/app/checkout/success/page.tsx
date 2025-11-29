@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import dynamicImport from 'next/dynamic';
+import { trackPurchase } from '@/utils/analytics';
 
 // Importar componente de QR de forma dinámica (opcional)
 const TransferQROptional = dynamicImport(() => import('@/components/TransferQROptional'), {
@@ -68,11 +69,23 @@ const PaymentSuccessPage = () => {
         const data = JSON.parse(storedData);
         setPedidoData(data);
         console.log('📦 Datos del pedido cargados:', data);
+        
+        // Trackear compra completada en Google Analytics
+        if (data && paymentStatus === 'success') {
+          trackPurchase({
+            pedido_id: data.pedido_id.toString(),
+            numero_pedido: data.numero_pedido,
+            total: parseFloat(data.total),
+            items: data.items,
+            medio_pago: data.medio_pago,
+            costo_envio: data.costo_envio || 0
+          });
+        }
       } catch (error) {
         console.error('Error al parsear datos del pedido:', error);
       }
     }
-  }, []);
+  }, [paymentStatus]);
 
   // Función para generar mensaje de WhatsApp completo
   const generateWhatsAppMessage = () => {

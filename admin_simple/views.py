@@ -629,6 +629,42 @@ def pedido_cambiar_estado(request, pk):
 @login_required
 @user_passes_test(is_superuser, login_url='/admin/')
 @require_http_methods(["POST"])
+def pedido_cambiar_estado_pago(request, pk):
+    """
+    Cambiar el estado de pago de un pedido
+    """
+    pedido = get_object_or_404(Pedido, pk=pk)
+    nuevo_estado_pago = request.POST.get('estado_pago')
+    
+    # Validar que el estado de pago sea válido
+    estados_validos = ['pendiente', 'approved', 'rejected']
+    if nuevo_estado_pago not in estados_validos:
+        return JsonResponse({
+            'success': False,
+            'error': 'Estado de pago no válido'
+        }, status=400)
+    
+    estado_anterior = pedido.estado_pago
+    pedido.estado_pago = nuevo_estado_pago
+    
+    # Si se marca como aprobado, también confirmar el pedido
+    if nuevo_estado_pago == 'approved':
+        pedido.confirmado = True
+    
+    pedido.save()
+    
+    logger.info(f'Pedido {pedido.id} cambió estado de pago: {estado_anterior} → {nuevo_estado_pago} por {request.user.username}')
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Estado de pago actualizado a {pedido.get_estado_pago_display()}',
+        'nuevo_estado_pago': nuevo_estado_pago
+    })
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_http_methods(["POST"])
 def pedido_confirmar(request, pk):
     """
     Confirmar un pedido y reducir stock

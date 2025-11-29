@@ -7,6 +7,8 @@ import { AuthProvider } from '../context/AuthContext';
 import { CartProviderRobust } from '../context/CartContextRobust';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import GoogleAnalytics from './components/GoogleAnalytics';
+import AnalyticsProvider from './components/AnalyticsProvider';
 // import CartDebugMonitor from './components/CartDebugMonitor'; // Disabled for production 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -62,18 +64,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+      <head>
+        <GoogleAnalytics />
+      </head>
       <body className={`${inter.className} bg-gray-50`}>
         <AuthProvider>
           <CartProviderRobust>
-            <div className="flex flex-col min-h-screen">
-              <Navbar />
-              <Toaster />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-              {/* <CartDebugMonitor /> */}
-            </div>
+            <AnalyticsProvider>
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <Toaster />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+                {/* <CartDebugMonitor /> */}
+              </div>
+            </AnalyticsProvider>
           </CartProviderRobust>
         </AuthProvider>
       </body>
