@@ -36,6 +36,7 @@ interface Pedido {
   fecha_entrega: string;
   franja_horaria: string;
   dedicatoria: string;
+  firmado_como?: string;
   instrucciones: string;
   metodo_envio?: string;
   tipo_envio?: string;
@@ -185,6 +186,11 @@ const PedidoDetallePage: React.FC = () => {
             <h3 className="text-lg font-semibold mb-3">Dedicatoria</h3>
             <div className="bg-green-50 p-4 rounded-lg border border-green-100">
               <p className="italic">{pedido.dedicatoria}</p>
+              {pedido.firmado_como && (
+                <p className="text-sm text-gray-600 mt-2 text-right">
+                  — {pedido.firmado_como}
+                </p>
+              )}
             </div>
           </div>
         )}
