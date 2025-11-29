@@ -844,6 +844,7 @@ const MultiStepCheckoutPage = () => {
             
             if (paymentResult.success) {
               console.log('✅ Preferencia creada, redirigiendo a MercadoPago...');
+              clearCheckoutProgress(); // Limpiar progreso guardado
               // Redirigir a MercadoPago
               window.location.href = paymentResult.init_point;
             } else {
@@ -881,6 +882,7 @@ const MultiStepCheckoutPage = () => {
                     `TC Oficial: $${convInfo.official_rate.toFixed(2)} ARS/USD\n` +
                     `(Incluye ${convInfo.margin_percentage.toFixed(0)}% de margen)`);
               
+              clearCheckoutProgress(); // Limpiar progreso guardado
               // Redirigir a PayPal
               window.location.href = paymentResult.approval_url;
             } else {
@@ -893,6 +895,7 @@ const MultiStepCheckoutPage = () => {
           }
         } else {
           // Para otros métodos de pago (transferencia), redirigir directamente a la página de éxito
+          clearCheckoutProgress(); // Limpiar progreso guardado
           window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
         }
       } else {
@@ -1024,8 +1027,47 @@ const MultiStepCheckoutPage = () => {
     );
   }
 
+  // Prompt para restaurar progreso guardado
+  const RestoreProgressPrompt = () => {
+    if (!showRestorePrompt) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="flex items-center mb-4">
+            <span className="text-3xl mr-3">💾</span>
+            <h3 className="text-xl font-bold text-gray-800">Continuar pedido anterior</h3>
+          </div>
+          <p className="text-gray-600 mb-2">
+            Encontramos un pedido sin completar guardado {savedProgressAge}.
+          </p>
+          <p className="text-gray-600 mb-6">
+            ¿Deseas continuar donde lo dejaste?
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={restoreProgress}
+              className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition font-medium"
+            >
+              ✅ Continuar pedido
+            </button>
+            <button
+              onClick={discardProgress}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-400 transition font-medium"
+            >
+              🗑️ Empezar de nuevo
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 sm:pt-28">
+      {/* Prompt para restaurar progreso */}
+      <RestoreProgressPrompt />
+      
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl">
         {/* Header mejorado */}
         <div className="text-center mb-8 sm:mb-12">
