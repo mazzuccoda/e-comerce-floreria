@@ -404,6 +404,7 @@ def simple_checkout_with_items(request):
                 tipo_envio=data.get('metodo_envio'),  # 'retiro', 'express', 'programado'
                 costo_envio=costo_envio,  # Guardar costo de envío
                 dedicatoria=data.get('dedicatoria', ''),
+                firmado_como=data.get('firmado_como', ''),  # Guardar firma de la dedicatoria
                 instrucciones=data.get('instrucciones', ''),
                 regalo_anonimo=data.get('regalo_anonimo', False),
                 medio_pago=data.get('medio_pago', 'mercadopago'),

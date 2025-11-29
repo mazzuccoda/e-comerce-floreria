@@ -20,7 +20,7 @@ class PedidoAdmin(admin.ModelAdmin):
     search_fields = ('id', 'nombre_destinatario', 'cliente__username', 'cliente__email')
     date_hierarchy = 'creado'
     inlines = [PedidoItemInline]
-    readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'tipo_envio', 'instrucciones', 'regalo_anonimo', 'medio_pago')
+    readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'firmado_como', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'tipo_envio', 'instrucciones', 'regalo_anonimo', 'medio_pago')
     exclude = ('metodo_envio',)  # Ocultar el campo legacy
 
     def save_model(self, request, obj, form, change):

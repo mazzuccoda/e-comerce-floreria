@@ -25,6 +25,7 @@ class Pedido(models.Model):
     telefono_comprador = models.CharField(max_length=20, help_text="Teléfono de quien realiza la compra para notificaciones (si es invitado)", blank=True, null=True)
     anonimo = models.BooleanField(default=False)
     dedicatoria = models.TextField()
+    firmado_como = models.CharField(max_length=100, blank=True, null=True, help_text="Nombre con el que se firma la dedicatoria")
     email_comprador = models.EmailField(max_length=254, help_text="Email de quien realiza la compra (si es invitado)", blank=True, null=True)
     nombre_destinatario = models.CharField(max_length=100)
     direccion = models.CharField(max_length=255)

@@ -672,6 +672,7 @@ const MultiStepCheckoutPage = () => {
           metodo_envio: formData.metodoEnvio,
           costo_envio: getShippingCost(),
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
+          firmado_como: formData.firmadoComo || "",
           instrucciones: formData.instrucciones || "",
           regalo_anonimo: false,
           medio_pago: formData.metodoPago,
@@ -793,6 +794,7 @@ const MultiStepCheckoutPage = () => {
           
           // Datos adicionales - opcionales
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
+          firmado_como: formData.firmadoComo || "",
           instrucciones: formData.instrucciones || "",
           regalo_anonimo: false,
           medio_pago: formData.metodoPago,
