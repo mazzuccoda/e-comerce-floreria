@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 
 interface Slide {
   id: number;
-  imagen: string;
+  tipo_media?: string;
+  imagen?: string;
+  video?: string;
+  video_url?: string;
   titulo: string;
   subtitulo: string;
   texto_boton?: string;
@@ -108,14 +111,42 @@ export default function HeroCarousel() {
             index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
         >
-          {/* Imagen de fondo */}
+          {/* Media de fondo (Imagen o Video) */}
           <div className="relative w-full h-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={slide.imagen}
-              alt={slide.titulo}
-              className="w-full h-full object-cover"
-            />
+            {slide.tipo_media === 'video' ? (
+              <>
+                {slide.video_url ? (
+                  // Video externo (YouTube, Vimeo, etc)
+                  <iframe
+                    src={slide.video_url}
+                    className="w-full h-full object-cover"
+                    allow="autoplay; loop; muted"
+                    style={{ border: 'none' }}
+                  />
+                ) : slide.video ? (
+                  // Video subido
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover"
+                  >
+                    <source src={slide.video} type="video/mp4" />
+                  </video>
+                ) : null}
+              </>
+            ) : (
+              // Imagen
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={slide.imagen || ''}
+                  alt={slide.titulo}
+                  className="w-full h-full object-cover"
+                />
+              </>
+            )}
             {/* Overlay oscuro para mejorar legibilidad del texto */}
             <div className="absolute inset-0 bg-black/30" />
           </div>

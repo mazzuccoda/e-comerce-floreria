@@ -262,9 +262,17 @@ class ProductoImagen(models.Model):
 
 class HeroSlide(models.Model):
     """Modelo para los slides del carrusel Hero de la página principal"""
+    TIPO_MEDIA = [
+        ('imagen', 'Imagen'),
+        ('video', 'Video'),
+    ]
+    
     titulo = models.CharField(max_length=200, verbose_name='Título')
     subtitulo = models.CharField(max_length=200, verbose_name='Subtítulo')
-    imagen = models.ImageField(upload_to='hero/%Y/%m/', verbose_name='Imagen')
+    tipo_media = models.CharField(max_length=10, choices=TIPO_MEDIA, default='imagen', verbose_name='Tipo de contenido')
+    imagen = models.ImageField(upload_to='hero/%Y/%m/', blank=True, null=True, verbose_name='Imagen')
+    video = models.FileField(upload_to='hero/videos/%Y/%m/', blank=True, null=True, verbose_name='Video', help_text='Formatos: MP4, WebM. Máx 50MB')
+    video_url = models.URLField(blank=True, null=True, verbose_name='URL del video', help_text='URL de YouTube, Vimeo o video externo (opcional)')
     texto_boton = models.CharField(max_length=50, blank=True, verbose_name='Texto del botón')
     enlace_boton = models.CharField(max_length=200, default='/productos', verbose_name='Enlace del botón')
     orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
@@ -278,11 +286,12 @@ class HeroSlide(models.Model):
         ordering = ['orden', 'created_at']
 
     def __str__(self):
-        return f"{self.titulo} - {self.subtitulo}"
+        tipo = '📹' if self.tipo_media == 'video' else '🖼️'
+        return f"{tipo} {self.titulo} - {self.subtitulo}"
 
     def save(self, *args, **kwargs):
         # Optimizar imagen antes de guardar
-        if self.imagen and not self.pk:  # Solo en creación
+        if self.tipo_media == 'imagen' and self.imagen and not self.pk:  # Solo en creación
             self.imagen = optimize_image(
                 self.imagen,
                 max_width=1920,

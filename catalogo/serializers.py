@@ -91,10 +91,11 @@ class ProductoSerializer(serializers.ModelSerializer):
 
 class HeroSlideSerializer(serializers.ModelSerializer):
     imagen = serializers.SerializerMethodField()
+    video = serializers.SerializerMethodField()
     
     class Meta:
         model = HeroSlide
-        fields = ['id', 'titulo', 'subtitulo', 'imagen', 'texto_boton', 'enlace_boton', 'orden']
+        fields = ['id', 'titulo', 'subtitulo', 'tipo_media', 'imagen', 'video', 'video_url', 'texto_boton', 'enlace_boton', 'orden']
     
     def get_imagen(self, obj):
         """Convert relative image URLs to absolute URLs"""
@@ -103,4 +104,13 @@ class HeroSlideSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.imagen.url)
             return obj.imagen.url
+        return None
+    
+    def get_video(self, obj):
+        """Convert relative video URLs to absolute URLs"""
+        if obj.video:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.video.url)
+            return obj.video.url
         return None

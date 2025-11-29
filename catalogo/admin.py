@@ -163,17 +163,18 @@ class ProductoImagenAdmin(admin.ModelAdmin):
 
 @admin.register(HeroSlide)
 class HeroSlideAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'subtitulo', 'orden', 'is_active', 'imagen_preview_small', 'created_at')
-    list_filter = ('is_active', 'created_at')
+    list_display = ('titulo', 'tipo_media', 'subtitulo', 'orden', 'is_active', 'media_preview_small', 'created_at')
+    list_filter = ('is_active', 'tipo_media', 'created_at')
     search_fields = ('titulo', 'subtitulo')
     list_editable = ('orden', 'is_active')
-    readonly_fields = ('imagen_preview', 'created_at', 'updated_at')
+    readonly_fields = ('media_preview', 'created_at', 'updated_at')
     fieldsets = (
         ('Contenido', {
             'fields': ('titulo', 'subtitulo', 'texto_boton', 'enlace_boton')
         }),
-        ('Imagen', {
-            'fields': ('imagen', 'imagen_preview')
+        ('Media', {
+            'fields': ('tipo_media', 'imagen', 'video', 'video_url', 'media_preview'),
+            'description': 'Selecciona el tipo de contenido y sube la imagen o video correspondiente. Para videos, puedes subir un archivo o usar una URL externa.'
         }),
         ('Configuración', {
             'fields': ('orden', 'is_active')
@@ -184,20 +185,36 @@ class HeroSlideAdmin(admin.ModelAdmin):
         }),
     )
 
-    def imagen_preview(self, obj):
-        if obj.imagen:
-            return format_html(
-                '<img src="{}" style="max-width: 600px; height: auto;" />',
-                obj.imagen.url
-            )
-        return "(No hay imagen)"
-    imagen_preview.short_description = 'Vista previa'
+    def media_preview(self, obj):
+        if obj.tipo_media == 'video':
+            if obj.video:
+                return format_html(
+                    '<video controls style="max-width: 600px; height: auto;"><source src="{}" type="video/mp4">Tu navegador no soporta video.</video>',
+                    obj.video.url
+                )
+            elif obj.video_url:
+                return format_html(
+                    '<p>🔗 Video externo: <a href="{}" target="_blank">{}</a></p>',
+                    obj.video_url, obj.video_url
+                )
+            return "(No hay video)"
+        else:
+            if obj.imagen:
+                return format_html(
+                    '<img src="{}" style="max-width: 600px; height: auto;" />',
+                    obj.imagen.url
+                )
+            return "(No hay imagen)"
+    media_preview.short_description = 'Vista previa'
 
-    def imagen_preview_small(self, obj):
-        if obj.imagen:
-            return format_html(
-                '<img src="{}" style="max-height: 50px; max-width: 80px; object-fit: cover;" />',
-                obj.imagen.url
-            )
-        return "(No hay imagen)"
-    imagen_preview_small.short_description = 'Imagen'
+    def media_preview_small(self, obj):
+        if obj.tipo_media == 'video':
+            return format_html('<span style="font-size: 24px;">📹</span>')
+        else:
+            if obj.imagen:
+                return format_html(
+                    '<img src="{}" style="max-height: 50px; max-width: 80px; object-fit: cover;" />',
+                    obj.imagen.url
+                )
+            return "🖼️"
+    media_preview_small.short_description = 'Media'
