@@ -45,7 +45,7 @@ const defaultSlides: Slide[] = [
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
 export default function HeroCarousel() {
-  const [slides, setSlides] = useState<Slide[]>(defaultSlides);
+  const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -59,11 +59,18 @@ export default function HeroCarousel() {
           const data = await response.json();
           if (data && data.length > 0) {
             setSlides(data);
+          } else {
+            // Si no hay slides en la DB, usar los por defecto
+            setSlides(defaultSlides);
           }
+        } else {
+          // Si la API falla, usar slides por defecto
+          setSlides(defaultSlides);
         }
       } catch (error) {
         console.error('Error cargando slides del hero:', error);
-        // Mantener slides por defecto en caso de error
+        // En caso de error, usar slides por defecto
+        setSlides(defaultSlides);
       } finally {
         setLoading(false);
       }
@@ -100,6 +107,20 @@ export default function HeroCarousel() {
     setIsAutoPlaying(false);
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
+
+  // Mostrar loading mientras carga
+  if (loading) {
+    return (
+      <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-gray-900 z-10 flex items-center justify-center">
+        <div className="text-white text-xl">Cargando...</div>
+      </div>
+    );
+  }
+
+  // Si no hay slides, no mostrar nada
+  if (slides.length === 0) {
+    return null;
+  }
 
   return (
     <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden bg-gray-900 z-10">
