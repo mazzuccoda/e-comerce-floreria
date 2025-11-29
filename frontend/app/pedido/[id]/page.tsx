@@ -176,7 +176,7 @@ const PedidoDetallePage: React.FC = () => {
               {pedido.ciudad && <p><span className="font-medium">Ciudad:</span> {pedido.ciudad}</p>}
               <p><span className="font-medium">Teléfono:</span> {pedido.telefono_destinatario}</p>
               <p><span className="font-medium">Fecha:</span> {new Date(pedido.fecha_entrega).toLocaleDateString('es-AR')}</p>
-              <p><span className="font-medium">Horario:</span> {pedido.franja_horaria === 'mañana' ? 'Mañana (9-12hs)' : 'Tarde (16-20hs)'}</p>
+              <p><span className="font-medium">Horario:</span> {pedido.franja_horaria === 'mañana' ? 'Mañana (9-12hs)' : (pedido.franja_horaria === 'tarde' ? 'Tarde (16-20hs)' : 'Durante el día')}</p>
             </div>
           </div>
         </div>

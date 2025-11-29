@@ -633,10 +633,18 @@ const MultiStepCheckoutPage = () => {
       }
 
       // Preparar fecha de entrega
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1);
-      const fechaEntrega = tomorrow.toISOString().split('T')[0];
+      let fechaEntrega: string;
+      if (formData.metodoEnvio === 'express') {
+        // Express: entrega el mismo día
+        const today = new Date();
+        fechaEntrega = today.toISOString().split('T')[0];
+      } else {
+        // Retiro: mañana (o lunes si mañana es domingo)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1);
+        fechaEntrega = tomorrow.toISOString().split('T')[0];
+      }
 
       // Preparar items
       const items = directCart.items.map((item: any) => ({
@@ -667,7 +675,7 @@ const MultiStepCheckoutPage = () => {
           ciudad: formData.ciudad?.trim() || "Buenos Aires",
           codigo_postal: formData.codigoPostal?.trim() || "1000",
           fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
+          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
           metodo_envio_id: 1,
           metodo_envio: formData.metodoEnvio,
           costo_envio: getShippingCost(),
@@ -725,17 +733,22 @@ const MultiStepCheckoutPage = () => {
 
       // Crear pedido usando el endpoint API existente
       console.log('📡 Enviando pedido a simple-checkout...');
-      // Asegurarnos de que la fecha es futura (al menos mañana)
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
       
-      // Si cae domingo, moverla al lunes
-      if (tomorrow.getDay() === 0) { // 0 = domingo
+      // Preparar fecha de entrega según tipo de envío
+      let fechaEntrega: string;
+      if (formData.metodoEnvio === 'express') {
+        // Express: entrega el mismo día
+        const today = new Date();
+        fechaEntrega = today.toISOString().split('T')[0];
+      } else {
+        // Retiro: mañana (o lunes si mañana es domingo)
+        const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
+        if (tomorrow.getDay() === 0) { // 0 = domingo
+          tomorrow.setDate(tomorrow.getDate() + 1);
+        }
+        fechaEntrega = tomorrow.toISOString().split('T')[0];
       }
-      
-      // Formato YYYY-MM-DD para la fecha
-      const fechaEntrega = tomorrow.toISOString().split('T')[0];
       
       // Determinar la URL base de la API correctamente para evitar problemas CORS
       const apiBaseUrl = API_URL.replace('/api', '');  // Remove /api suffix for pedidos endpoint
@@ -787,7 +800,7 @@ const MultiStepCheckoutPage = () => {
           
           // Datos de entrega - obligatorios
           fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
+          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
           metodo_envio_id: 1,
           metodo_envio: formData.metodoEnvio, // 'retiro', 'express', 'programado'
           costo_envio: getShippingCost(), // Costo de envío calculado

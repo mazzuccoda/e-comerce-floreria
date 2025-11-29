@@ -180,7 +180,7 @@ def generar_pdf_pedido(pedido):
         ['Teléfono:', pedido.telefono_destinatario],
         ['Dirección:', pedido.direccion],
         ['Fecha:', pedido.fecha_entrega.strftime('%d/%m/%Y')],
-        ['Horario:', 'Mañana (9-12hs)' if pedido.franja_horaria == 'mañana' else 'Tarde (16-20hs)'],
+        ['Horario:', 'Mañana (9-12hs)' if pedido.franja_horaria == 'mañana' else ('Tarde (16-20hs)' if pedido.franja_horaria == 'tarde' else 'Durante el día')],
     ]
     
     if pedido.tipo_envio:
