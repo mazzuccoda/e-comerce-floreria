@@ -1540,7 +1540,7 @@ const MultiStepCheckoutPage = () => {
                         }`}
                       >
                         <option value="">Selecciona una franja</option>
-                        <option value="manana">🌅 Mañana (9:00 a 12:00)</option>
+                        <option value="mañana">🌅 Mañana (9:00 a 12:00)</option>
                         <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
                       </select>
                       {formErrors.franjaHoraria && (
@@ -1553,6 +1553,25 @@ const MultiStepCheckoutPage = () => {
                           {formErrors.franjaHoraria}
                         </span>
                       )}
+                    </div>
+
+                    {/* Campo de instrucciones adicionales */}
+                    <div className="flex flex-col">
+                      <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        📝 Instrucciones adicionales (opcional)
+                      </label>
+                      <textarea
+                        name="instrucciones"
+                        value={formData.instrucciones}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Tocar timbre 2 veces, dejar con el portero, etc."
+                        rows={3}
+                        maxLength={200}
+                        className="p-4 rounded-xl bg-white border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
+                      />
+                      <span className="text-xs text-gray-500 mt-1">
+                        {formData.instrucciones.length}/200 caracteres
+                      </span>
                     </div>
                   </div>
                   <div className="mt-4 space-y-2">
