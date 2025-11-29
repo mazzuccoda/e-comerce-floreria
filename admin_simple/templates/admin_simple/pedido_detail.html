@@ -200,6 +200,11 @@
                 </label>
                 <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded">
                     <p class="text-gray-900 italic">"{{ pedido.dedicatoria }}"</p>
+                    {% if pedido.firmado_como %}
+                    <p class="text-gray-700 text-sm mt-2 text-right">
+                        — {{ pedido.firmado_como }}
+                    </p>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

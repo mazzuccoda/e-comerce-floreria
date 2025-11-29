@@ -212,8 +212,25 @@ def generar_pdf_pedido(pedido):
         story.append(Spacer(1, 0.3*cm))
         story.append(Paragraph("DEDICATORIA", subtitulo_style))
         
-        dedicatoria_data = [[Paragraph(f'"{pedido.dedicatoria}"', normal_style)]]
-        dedicatoria_table = Table(dedicatoria_data, colWidths=[16*cm])
+        # Crear contenido de dedicatoria con firma si existe
+        dedicatoria_text = f'"{pedido.dedicatoria}"'
+        if pedido.firmado_como:
+            # Estilo para la firma (alineado a la derecha)
+            firma_style = ParagraphStyle(
+                'Firma',
+                parent=normal_style,
+                alignment=TA_RIGHT,
+                fontSize=9,
+                textColor=colors.HexColor('#4a5568')
+            )
+            dedicatoria_content = [
+                [Paragraph(dedicatoria_text, normal_style)],
+                [Paragraph(f'— {pedido.firmado_como}', firma_style)]
+            ]
+            dedicatoria_table = Table(dedicatoria_content, colWidths=[16*cm])
+        else:
+            dedicatoria_table = Table([[Paragraph(dedicatoria_text, normal_style)]], colWidths=[16*cm])
+        
         dedicatoria_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fef5f5')),
             ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#feb2b2')),
