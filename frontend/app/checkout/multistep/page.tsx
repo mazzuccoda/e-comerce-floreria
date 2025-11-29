@@ -1440,6 +1440,29 @@ const MultiStepCheckoutPage = () => {
                   </div>
                 </label>
 
+                {/* Campo de instrucciones para Envío Express */}
+                {formData.metodoEnvio === 'express' && (
+                  <div className="mt-4 bg-gradient-to-br from-green-50 to-green-100/50 p-6 rounded-xl border-2 border-green-200 shadow-sm">
+                    <div className="flex flex-col">
+                      <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        📝 Instrucciones de entrega (opcional)
+                      </label>
+                      <textarea
+                        name="instrucciones"
+                        value={formData.instrucciones}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Tocar timbre 2 veces, dejar con el portero, etc."
+                        rows={3}
+                        maxLength={200}
+                        className="p-4 rounded-xl bg-white border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all resize-none"
+                      />
+                      <span className="text-xs text-gray-500 mt-1">
+                        {formData.instrucciones.length}/200 caracteres
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Envío Programado */}
                 <label 
                   className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
