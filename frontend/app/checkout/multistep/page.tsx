@@ -8,6 +8,13 @@ import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
+import { 
+  saveCheckoutProgress, 
+  loadCheckoutProgress, 
+  clearCheckoutProgress, 
+  hasCheckoutProgress,
+  formatProgressAge 
+} from '@/utils/checkoutStorage';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
