@@ -1,10 +1,11 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
-from django.core.validators import MinValueValidator
-from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from django.utils import timezone
 from .utils import optimize_image
+from .storage import VideoMediaCloudinaryStorage
 
 
 class TipoFlor(models.Model):
@@ -271,7 +272,7 @@ class HeroSlide(models.Model):
     subtitulo = models.CharField(max_length=200, verbose_name='Subtítulo')
     tipo_media = models.CharField(max_length=10, choices=TIPO_MEDIA, default='imagen', verbose_name='Tipo de contenido')
     imagen = models.ImageField(upload_to='hero/%Y/%m/', blank=True, null=True, verbose_name='Imagen')
-    video = models.FileField(upload_to='hero/videos/%Y/%m/', blank=True, null=True, verbose_name='Video (archivo)', help_text='RECOMENDADO: Sube tu video en formato MP4. Máx 100MB. El autoplay funcionará perfectamente.')
+    video = models.FileField(upload_to='hero/videos/%Y/%m/', storage=VideoMediaCloudinaryStorage(), blank=True, null=True, verbose_name='Video (archivo)', help_text='RECOMENDADO: Sube tu video en formato MP4. Máx 100MB. El autoplay funcionará perfectamente.')
     video_url = models.URLField(blank=True, null=True, verbose_name='URL del video (YouTube)', help_text='⚠️ NO RECOMENDADO: YouTube bloquea autoplay. Solo usar si subes el archivo no funciona.')
     texto_boton = models.CharField(max_length=50, blank=True, verbose_name='Texto del botón')
     enlace_boton = models.CharField(max_length=200, default='/productos', verbose_name='Enlace del botón')
