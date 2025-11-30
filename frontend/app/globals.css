@@ -1,8 +1,18 @@
 /* Estilos Florería Palermo - Réplica exacta */
-@import url('https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Prevenir flash de contenido sin estilo (FOUC) */
+html {
+  visibility: visible;
+  opacity: 1;
+}
+
+body {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
 
 /* Utilidades adicionales para line-clamp */
 @layer utilities {

@@ -11,7 +11,11 @@ import GoogleAnalytics from './components/GoogleAnalytics';
 import AnalyticsProvider from './components/AnalyticsProvider';
 // import CartDebugMonitor from './components/CartDebugMonitor'; // Disabled for production 
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap', // Evita el flash de texto sin estilo
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: "Florería Cristina - Ramos de flores a domicilio",
