@@ -272,7 +272,7 @@ class HeroSlide(models.Model):
     tipo_media = models.CharField(max_length=10, choices=TIPO_MEDIA, default='imagen', verbose_name='Tipo de contenido')
     imagen = models.ImageField(upload_to='hero/%Y/%m/', blank=True, null=True, verbose_name='Imagen')
     video = models.FileField(upload_to='hero/videos/%Y/%m/', blank=True, null=True, verbose_name='Video', help_text='Formatos: MP4, WebM. Máx 50MB')
-    video_url = models.URLField(blank=True, null=True, verbose_name='URL del video', help_text='URL de YouTube, Vimeo o video externo (opcional)')
+    video_url = models.URLField(blank=True, null=True, verbose_name='URL del video', help_text='Usar formato embed de YouTube: https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1&loop=1&playlist=VIDEO_ID')
     texto_boton = models.CharField(max_length=50, blank=True, verbose_name='Texto del botón')
     enlace_boton = models.CharField(max_length=200, default='/productos', verbose_name='Enlace del botón')
     orden = models.PositiveIntegerField(default=0, verbose_name='Orden')

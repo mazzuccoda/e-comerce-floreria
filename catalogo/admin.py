@@ -174,7 +174,15 @@ class HeroSlideAdmin(admin.ModelAdmin):
         }),
         ('Media', {
             'fields': ('tipo_media', 'imagen', 'video', 'video_url', 'media_preview'),
-            'description': 'Selecciona el tipo de contenido y sube la imagen o video correspondiente. Para videos, puedes subir un archivo o usar una URL externa.'
+            'description': '''Selecciona el tipo de contenido y sube la imagen o video correspondiente.
+            
+            Para videos de YouTube:
+            1. Ve al video en YouTube
+            2. Click en "Compartir" → "Insertar"
+            3. Copia la URL que aparece en src="..." (ejemplo: https://www.youtube.com/embed/VIDEO_ID)
+            4. Para autoplay agrega: ?autoplay=1&mute=1&loop=1&playlist=VIDEO_ID
+            
+            Ejemplo completo: https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ'''
         }),
         ('Configuración', {
             'fields': ('orden', 'is_active')
