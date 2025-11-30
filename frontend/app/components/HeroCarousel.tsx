@@ -138,14 +138,16 @@ export default function HeroCarousel() {
               <>
                 {slide.video_url ? (
                   // Video externo (YouTube, Vimeo, etc)
-                  <iframe
-                    src={slide.video_url}
-                    className="w-full h-full"
-                    style={{ border: 'none', pointerEvents: 'none' }}
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    allowFullScreen
-                    title={slide.titulo}
-                  />
+                  <div className="relative w-full h-full">
+                    <iframe
+                      src={`${slide.video_url}${slide.video_url.includes('?') ? '&' : '?'}autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`}
+                      className="w-full h-full"
+                      style={{ border: 'none', pointerEvents: 'none' }}
+                      allow="autoplay; encrypted-media; picture-in-picture; accelerometer; gyroscope"
+                      allowFullScreen
+                      title={slide.titulo}
+                    />
+                  </div>
                 ) : slide.video ? (
                   // Video subido
                   <video
