@@ -54,21 +54,31 @@ export default function HeroCarousel() {
   useEffect(() => {
     const fetchSlides = async () => {
       try {
-        const response = await fetch(`${API_URL}/catalogo/hero-slides/`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 segundos
+
+        const response = await fetch(`${API_URL}/catalogo/hero-slides/`, {
+          signal: controller.signal,
+          cache: 'no-cache'
+        });
+        
+        clearTimeout(timeoutId);
+
         if (response.ok) {
           const data = await response.json();
+          console.log('🎬 Hero slides cargados:', data);
           if (data && data.length > 0) {
             setSlides(data);
           } else {
-            // Si no hay slides en la DB, usar los por defecto
+            console.log('⚠️ No hay slides en la DB, usando por defecto');
             setSlides(defaultSlides);
           }
         } else {
-          // Si la API falla, usar slides por defecto
+          console.error('❌ Error en respuesta de API:', response.status);
           setSlides(defaultSlides);
         }
       } catch (error) {
-        console.error('Error cargando slides del hero:', error);
+        console.error('❌ Error cargando slides del hero:', error);
         // En caso de error, usar slides por defecto
         setSlides(defaultSlides);
       } finally {
@@ -81,14 +91,14 @@ export default function HeroCarousel() {
 
   // Auto-play del carrusel
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || slides.length === 0) return;
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000); // Cambia cada 5 segundos
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying]);
+  }, [isAutoPlaying, slides.length]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -134,43 +144,32 @@ export default function HeroCarousel() {
         >
           {/* Media de fondo (Imagen o Video) */}
           <div className="relative w-full h-full">
-            {slide.tipo_media === 'video' ? (
-              <>
-                {slide.video_url ? (
-                  // Video externo (YouTube, Vimeo, etc)
-                  <div className="relative w-full h-full">
-                    <iframe
-                      src={`${slide.video_url}${slide.video_url.includes('?') ? '&' : '?'}autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1`}
-                      className="w-full h-full"
-                      style={{ border: 'none', pointerEvents: 'none' }}
-                      allow="autoplay; encrypted-media; picture-in-picture; accelerometer; gyroscope"
-                      allowFullScreen
-                      title={slide.titulo}
-                    />
-                  </div>
-                ) : slide.video ? (
-                  // Video subido
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  >
-                    <source src={slide.video} type="video/mp4" />
-                  </video>
-                ) : null}
-              </>
-            ) : (
-              // Imagen
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={slide.imagen || ''}
-                  alt={slide.titulo}
+            {slide.tipo_media === 'video' && slide.video ? (
+              // Video subido - Solo cargar si es el slide actual
+              index === currentSlide ? (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                   className="w-full h-full object-cover"
-                />
-              </>
+                  preload="auto"
+                >
+                  <source src={slide.video} type="video/mp4" />
+                  Tu navegador no soporta video.
+                </video>
+              ) : (
+                // Placeholder para slides no activos
+                <div className="w-full h-full bg-gray-800" />
+              )
+            ) : (
+              // Imagen (por defecto)
+              <img
+                src={slide.imagen || ''}
+                alt={slide.titulo}
+                className="w-full h-full object-cover"
+                loading={index === currentSlide ? 'eager' : 'lazy'}
+              />
             )}
             {/* Overlay oscuro para mejorar legibilidad del texto */}
             <div className="absolute inset-0 bg-black/30" />
