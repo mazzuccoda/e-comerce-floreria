@@ -290,12 +290,17 @@ class HeroSlide(models.Model):
         return f"{tipo} {self.titulo} - {self.subtitulo}"
 
     def save(self, *args, **kwargs):
-        # Optimizar imagen antes de guardar
-        if self.tipo_media == 'imagen' and self.imagen and not self.pk:  # Solo en creación
-            self.imagen = optimize_image(
-                self.imagen,
-                max_width=1920,
-                max_height=1080,
-                quality=85
-            )
+        # Optimizar imagen antes de guardar (solo si es imagen y es nueva)
+        try:
+            if self.tipo_media == 'imagen' and self.imagen and not self.pk:
+                self.imagen = optimize_image(
+                    self.imagen,
+                    max_width=1920,
+                    max_height=1080,
+                    quality=85
+                )
+        except Exception as e:
+            # Si falla la optimización, continuar sin optimizar
+            print(f"⚠️ Error optimizando imagen: {e}")
+        
         super().save(*args, **kwargs)
