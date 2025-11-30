@@ -423,9 +423,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # File upload settings
-# Aumentar límites para permitir imágenes más grandes
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB en bytes
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB en bytes
+# Aumentar límites para permitir imágenes y videos
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB en bytes (para videos)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB en bytes (para videos)
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'

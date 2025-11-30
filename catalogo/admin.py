@@ -174,15 +174,19 @@ class HeroSlideAdmin(admin.ModelAdmin):
         }),
         ('Media', {
             'fields': ('tipo_media', 'imagen', 'video', 'video_url', 'media_preview'),
-            'description': '''Selecciona el tipo de contenido y sube la imagen o video correspondiente.
+            'description': '''
+            📸 IMÁGENES: Sube una imagen JPG/PNG
             
-            Para videos de YouTube:
-            1. Ve al video en YouTube
-            2. Click en "Compartir" → "Insertar"
-            3. Copia la URL que aparece en src="..." (ejemplo: https://www.youtube.com/embed/VIDEO_ID)
-            4. Para autoplay agrega: ?autoplay=1&mute=1&loop=1&playlist=VIDEO_ID
+            🎬 VIDEOS (RECOMENDADO): 
+            1. Selecciona "Video" en tipo de contenido
+            2. Sube tu video en formato MP4 (máx 100MB)
+            3. El video se reproducirá automáticamente en loop
             
-            Ejemplo completo: https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ'''
+            ⚠️ YouTube NO funciona con autoplay por restricciones del navegador.
+            Si necesitas usar YouTube, el usuario deberá hacer click para reproducir.
+            
+            💡 TIP: Descarga el video de YouTube y súbelo como archivo MP4 para que funcione el autoplay.
+            '''
         }),
         ('Configuración', {
             'fields': ('orden', 'is_active')
