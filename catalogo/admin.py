@@ -163,30 +163,19 @@ class ProductoImagenAdmin(admin.ModelAdmin):
 
 @admin.register(HeroSlide)
 class HeroSlideAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'tipo_media', 'subtitulo', 'orden', 'is_active', 'media_preview_small', 'created_at')
+    list_display = ('titulo', 'subtitulo', 'tipo_media', 'orden', 'is_active', 'created_at')
     list_filter = ('is_active', 'tipo_media', 'created_at')
     search_fields = ('titulo', 'subtitulo')
     list_editable = ('orden', 'is_active')
-    readonly_fields = ('media_preview', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
+    
     fieldsets = (
         ('Contenido', {
             'fields': ('titulo', 'subtitulo', 'texto_boton', 'enlace_boton')
         }),
         ('Media', {
-            'fields': ('tipo_media', 'imagen', 'video', 'video_url', 'media_preview'),
-            'description': '''
-            📸 IMÁGENES: Sube una imagen JPG/PNG
-            
-            🎬 VIDEOS (RECOMENDADO): 
-            1. Selecciona "Video" en tipo de contenido
-            2. Sube tu video en formato MP4 (máx 100MB)
-            3. El video se reproducirá automáticamente en loop
-            
-            ⚠️ YouTube NO funciona con autoplay por restricciones del navegador.
-            Si necesitas usar YouTube, el usuario deberá hacer click para reproducir.
-            
-            💡 TIP: Descarga el video de YouTube y súbelo como archivo MP4 para que funcione el autoplay.
-            '''
+            'fields': ('tipo_media', 'imagen', 'video', 'video_url'),
+            'description': 'Selecciona el tipo de contenido y sube la imagen o video correspondiente.'
         }),
         ('Configuración', {
             'fields': ('orden', 'is_active')
@@ -196,6 +185,27 @@ class HeroSlideAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Agregar media_preview solo cuando el objeto ya existe"""
+        if obj:  # Si el objeto ya existe
+            return self.readonly_fields + ('media_preview',)
+        return self.readonly_fields
+    
+    def get_fieldsets(self, request, obj=None):
+        """Agregar media_preview al fieldset solo cuando el objeto ya existe"""
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj:  # Si el objeto ya existe, agregar vista previa
+            fieldsets = list(fieldsets)
+            # Agregar media_preview al fieldset de Media
+            media_fieldset = list(fieldsets[1])
+            media_fields = list(media_fieldset[1]['fields'])
+            if 'media_preview' not in media_fields:
+                media_fields.append('media_preview')
+            media_fieldset[1]['fields'] = tuple(media_fields)
+            fieldsets[1] = tuple(media_fieldset)
+            return tuple(fieldsets)
+        return fieldsets
 
     def media_preview(self, obj):
         if not obj.pk:
