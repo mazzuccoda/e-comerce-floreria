@@ -144,8 +144,8 @@ export default function HeroCarousel() {
         >
           {/* Media de fondo (Imagen o Video) */}
           <div className="relative w-full h-full">
-            {slide.tipo_media === 'video' && slide.video ? (
-              // Video subido - Solo cargar si es el slide actual
+            {slide.tipo_media === 'video' && (slide.video || slide.video_url) ? (
+              // Video - Solo cargar si es el slide actual
               index === currentSlide ? (
                 <video
                   autoPlay
@@ -154,8 +154,9 @@ export default function HeroCarousel() {
                   playsInline
                   className="w-full h-full object-cover"
                   preload="auto"
+                  key={slide.video || slide.video_url}
                 >
-                  <source src={slide.video} type="video/mp4" />
+                  <source src={slide.video || slide.video_url} type="video/mp4" />
                   Tu navegador no soporta video.
                 </video>
               ) : (

@@ -175,7 +175,16 @@ class HeroSlideAdmin(admin.ModelAdmin):
         }),
         ('Media', {
             'fields': ('tipo_media', 'imagen', 'video', 'video_url'),
-            'description': 'Selecciona el tipo de contenido y sube la imagen o video correspondiente.'
+            'description': '''
+            📸 IMÁGENES: Sube una imagen JPG/PNG
+            
+            🎬 VIDEOS: 
+            Opción 1 (Recomendado): Sube el video manualmente a Cloudinary y pega la URL aquí
+            Opción 2: Sube el archivo MP4 directamente (máx 100MB)
+            
+            Ejemplo de URL de Cloudinary:
+            https://res.cloudinary.com/tu-cloud/video/upload/v123456/video.mp4
+            '''
         }),
         ('Configuración', {
             'fields': ('orden', 'is_active')

@@ -273,7 +273,7 @@ class HeroSlide(models.Model):
     tipo_media = models.CharField(max_length=10, choices=TIPO_MEDIA, default='imagen', verbose_name='Tipo de contenido')
     imagen = models.ImageField(upload_to='hero/%Y/%m/', blank=True, null=True, verbose_name='Imagen')
     video = models.FileField(upload_to='hero/videos/%Y/%m/', storage=VideoMediaCloudinaryStorage(), blank=True, null=True, verbose_name='Video (archivo)', help_text='RECOMENDADO: Sube tu video en formato MP4. Máx 100MB. El autoplay funcionará perfectamente.')
-    video_url = models.URLField(blank=True, null=True, verbose_name='URL del video (YouTube)', help_text='⚠️ NO RECOMENDADO: YouTube bloquea autoplay. Solo usar si subes el archivo no funciona.')
+    video_url = models.URLField(blank=True, null=True, verbose_name='URL del video', help_text='URL de Cloudinary o video externo. Ejemplo: https://res.cloudinary.com/.../video.mp4')
     texto_boton = models.CharField(max_length=50, blank=True, verbose_name='Texto del botón')
     enlace_boton = models.CharField(max_length=200, default='/productos', verbose_name='Enlace del botón')
     orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
