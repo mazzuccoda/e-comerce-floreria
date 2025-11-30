@@ -198,12 +198,18 @@ class HeroSlideAdmin(admin.ModelAdmin):
     )
 
     def media_preview(self, obj):
+        if not obj.pk:
+            return "(Guarda primero para ver la vista previa)"
+        
         if obj.tipo_media == 'video':
             if obj.video:
-                return format_html(
-                    '<video controls style="max-width: 600px; height: auto;"><source src="{}" type="video/mp4">Tu navegador no soporta video.</video>',
-                    obj.video.url
-                )
+                try:
+                    return format_html(
+                        '<video controls style="max-width: 600px; height: auto;"><source src="{}" type="video/mp4">Tu navegador no soporta video.</video>',
+                        obj.video.url
+                    )
+                except:
+                    return "(Error al cargar video)"
             elif obj.video_url:
                 return format_html(
                     '<p>🔗 Video externo: <a href="{}" target="_blank">{}</a></p>',
@@ -212,21 +218,30 @@ class HeroSlideAdmin(admin.ModelAdmin):
             return "(No hay video)"
         else:
             if obj.imagen:
-                return format_html(
-                    '<img src="{}" style="max-width: 600px; height: auto;" />',
-                    obj.imagen.url
-                )
+                try:
+                    return format_html(
+                        '<img src="{}" style="max-width: 600px; height: auto;" />',
+                        obj.imagen.url
+                    )
+                except:
+                    return "(Error al cargar imagen)"
             return "(No hay imagen)"
     media_preview.short_description = 'Vista previa'
 
     def media_preview_small(self, obj):
+        if not obj.pk:
+            return "💾"
+        
         if obj.tipo_media == 'video':
             return format_html('<span style="font-size: 24px;">📹</span>')
         else:
             if obj.imagen:
-                return format_html(
-                    '<img src="{}" style="max-height: 50px; max-width: 80px; object-fit: cover;" />',
-                    obj.imagen.url
-                )
+                try:
+                    return format_html(
+                        '<img src="{}" style="max-height: 50px; max-width: 80px; object-fit: cover;" />',
+                        obj.imagen.url
+                    )
+                except:
+                    return "🖼️"
             return "🖼️"
     media_preview_small.short_description = 'Media'
