@@ -115,17 +115,8 @@ const MultiStepCheckoutPage = () => {
   
   // Verificar si Express está disponible según día y hora
   const isExpressAvailable = () => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentDay = now.getDay(); // 0=Domingo, 6=Sábado
-    
-    // Domingos: solo de 9:00 a 13:00
-    if (currentDay === 0) {
-      return currentHour >= 9 && currentHour < 13;
-    }
-    
-    // Lunes a Sábado: de 9:00 a 18:00
-    return currentHour >= 9 && currentHour < 18;
+    // Express SIEMPRE está disponible (HOY o MAÑANA)
+    return true;
   };
 
   // Obtener mensaje de disponibilidad de Express
@@ -134,26 +125,68 @@ const MultiStepCheckoutPage = () => {
     const currentHour = now.getHours();
     const currentDay = now.getDay();
     
+    // Determinar día de mañana para mensajes
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDay = tomorrow.getDay();
+    const tomorrowName = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][tomorrowDay];
+    
     if (currentDay === 0) {
       // Domingo
-      if (currentHour < 9) {
-        return { available: false, message: "⏰ Express disponible hoy desde las 9:00 hasta las 13:00 hs" };
+      if (currentHour >= 9 && currentHour < 13) {
+        // Express HOY disponible
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY en 2-4 horas",
+          detail: `Recibirás tu pedido hoy entre ${currentHour + 2}:00 y ${currentHour + 4}:00 hs`
+        };
+      } else if (currentHour >= 13 || currentHour < 9) {
+        // Express MAÑANA disponible
+        return { 
+          available: true, 
+          deliveryType: 'tomorrow',
+          message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
+          detail: "Tu pedido llegará mañana por la mañana"
+        };
       }
-      if (currentHour >= 13) {
-        return { available: false, message: "❌ Express no disponible (Domingos hasta las 13:00 hs). Disponible mañana desde las 9:00 hs" };
-      }
-      return { available: true, message: "✅ Entrega en 2-4 horas (disponible hasta las 13:00 hs)" };
     } else {
       // Lunes a Sábado
-      if (currentHour < 9) {
-        return { available: false, message: "⏰ Express disponible desde las 9:00 hasta las 18:00 hs" };
+      if (currentHour >= 9 && currentHour < 18) {
+        // Express HOY disponible
+        const endHour = Math.min(currentHour + 4, 22);
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY en 2-4 horas",
+          detail: `Recibirás tu pedido hoy entre ${currentHour + 2}:00 y ${endHour}:00 hs`
+        };
+      } else if (currentHour >= 19 || currentHour < 9) {
+        // Express MAÑANA disponible (desde las 19:00)
+        return { 
+          available: true, 
+          deliveryType: 'tomorrow',
+          message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
+          detail: "Tu pedido llegará mañana por la mañana"
+        };
+      } else {
+        // Ventana 18:00-18:59 (transición)
+        return { 
+          available: true, 
+          deliveryType: 'tomorrow',
+          message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
+          detail: "Disponible desde las 19:00 hs para entrega mañana"
+        };
       }
-      if (currentHour >= 18) {
-        const tomorrow = currentDay === 6 ? "el domingo desde las 9:00 hasta las 13:00 hs" : "mañana desde las 9:00 hs";
-        return { available: false, message: `❌ Express no disponible (horario hasta las 18:00 hs). Disponible ${tomorrow}` };
-      }
-      return { available: true, message: "✅ Entrega en 2-4 horas (disponible hasta las 18:00 hs)" };
     }
+    
+    // Fallback (nunca debería llegar aquí)
+    return { 
+      available: true, 
+      deliveryType: 'tomorrow',
+      message: "✅ Entrega disponible",
+      detail: ""
+    };
   };
 
   // Obtener franjas horarias disponibles para una fecha
@@ -1516,20 +1549,19 @@ const MultiStepCheckoutPage = () => {
                               $10.000
                             </span>
                           </div>
-                          <div className="flex items-center text-sm text-gray-600 mb-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className={`mr-2 ${isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Entrega en 2-4 horas
-                          </div>
-                          
-                          {/* Mensaje de disponibilidad */}
-                          <div className={`text-sm p-3 rounded-lg border ${
-                            isAvailable 
-                              ? 'bg-green-50 text-green-700 border-green-200' 
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}>
-                            {expressStatus.message}
+                          {/* Mensaje de disponibilidad principal */}
+                          <div className="bg-green-50 text-green-700 border border-green-200 p-3 rounded-lg mb-2">
+                            <div className="font-semibold flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {expressStatus.message}
+                            </div>
+                            {expressStatus.detail && (
+                              <div className="text-xs mt-1 text-green-600">
+                                {expressStatus.detail}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
