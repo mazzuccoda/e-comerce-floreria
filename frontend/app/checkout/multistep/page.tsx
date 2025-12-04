@@ -200,8 +200,8 @@ const MultiStepCheckoutPage = () => {
     tomorrow.setHours(0, 0, 0, 0);
     selected.setHours(0, 0, 0, 0);
     
-    // Si la fecha seleccionada es mañana Y son más de las 18:00
-    if (selected.getTime() === tomorrow.getTime() && now.getHours() >= 18) {
+    // Si la fecha seleccionada es mañana Y son más de las 19:00
+    if (selected.getTime() === tomorrow.getTime() && now.getHours() >= 19) {
       return ['tarde']; // Solo tarde disponible
     }
     
@@ -1722,7 +1722,7 @@ const MultiStepCheckoutPage = () => {
                         if (formData.fecha && availableSlots.length === 1 && availableSlots[0] === 'tarde') {
                           return (
                             <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
-                              ⚠️ Solo disponible franja TARDE para esta fecha (son más de las 18:00 hs)
+                              ⚠️ Solo disponible franja TARDE para esta fecha (son más de las 19:00 hs)
                             </div>
                           );
                         }
