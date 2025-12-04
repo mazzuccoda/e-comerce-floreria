@@ -1744,7 +1744,9 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('nombre')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formErrors.nombre 
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.nombre 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.nombre && formData.nombre.trim()
                         ? 'border-2 border-green-500 bg-green-50'
@@ -1762,7 +1764,11 @@ const MultiStepCheckoutPage = () => {
                   name="apellido"
                   value={formData.apellido}
                   onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-2 border-transparent focus:border-green-300 transition-all" 
+                  className={`p-4 rounded-xl transition-all ${
+                    formData.envioAnonimo
+                      ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                      : 'bg-white/50 border-2 border-transparent focus:border-green-300'
+                  }`}
                   placeholder="Apellido" 
                   disabled={formData.envioAnonimo}
                 />
@@ -1776,7 +1782,9 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('email')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formErrors.email 
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.email 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.email && formData.email.trim() && !formErrors.email
                         ? 'border-2 border-green-500 bg-green-50'
@@ -1803,7 +1811,9 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('telefono')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formErrors.telefono 
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.telefono 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.telefono && formData.telefono.trim() && !formErrors.telefono
                         ? 'border-2 border-green-500 bg-green-50'
@@ -2156,7 +2166,13 @@ const MultiStepCheckoutPage = () => {
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.nombre ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    className={`p-4 rounded-xl transition-all ${
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.nombre 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : 'bg-white/50 border-0'
+                    }`} 
                     placeholder="Nombre" 
                     disabled={formData.envioAnonimo}
                   />
@@ -2166,8 +2182,13 @@ const MultiStepCheckoutPage = () => {
                   name="apellido"
                   value={formData.apellido}
                   onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
+                  className={`p-4 rounded-xl transition-all ${
+                    formData.envioAnonimo
+                      ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                      : 'bg-white/50 border-0'
+                  }`}
                   placeholder="Apellido" 
+                  disabled={formData.envioAnonimo}
                 />
                 <div className="flex flex-col">
                   <label htmlFor="email" className="sr-only">Email</label>
@@ -2177,7 +2198,13 @@ const MultiStepCheckoutPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.email ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    className={`p-4 rounded-xl transition-all ${
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.email 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : 'bg-white/50 border-0'
+                    }`} 
                     placeholder="Email" 
                     disabled={formData.envioAnonimo}
                     aria-required="true"
@@ -2194,7 +2221,13 @@ const MultiStepCheckoutPage = () => {
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.telefono ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    className={`p-4 rounded-xl transition-all ${
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.telefono 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : 'bg-white/50 border-0'
+                    }`} 
                     placeholder="Teléfono (solo números, mínimo 7 dígitos)" 
                     disabled={formData.envioAnonimo}
                     aria-required="true"
