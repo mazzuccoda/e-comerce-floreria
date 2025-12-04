@@ -134,26 +134,34 @@ const MultiStepCheckoutPage = () => {
     if (currentDay === 0) {
       // Domingo
       if (currentHour >= 9 && currentHour < 13) {
-        // Express HOY disponible
+        // Express HOY disponible (9-13hs)
         return { 
           available: true, 
           deliveryType: 'today',
           message: "✅ Entrega HOY en 2-4 horas",
           detail: `Recibirás tu pedido hoy entre ${currentHour + 2}:00 y ${currentHour + 4}:00 hs`
         };
-      } else if (currentHour >= 13 || currentHour < 9) {
-        // Express MAÑANA disponible
+      } else if (currentHour >= 13 && currentHour < 24) {
+        // Express para MAÑANA (13-23:59hs domingo)
         return { 
           available: true, 
           deliveryType: 'tomorrow',
           message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
           detail: "Tu pedido llegará mañana por la mañana"
         };
+      } else {
+        // Express para HOY (0-8:59hs domingo)
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY desde las 8:00 am",
+          detail: "Tu pedido llegará hoy por la mañana"
+        };
       }
     } else {
       // Lunes a Sábado
       if (currentHour >= 9 && currentHour < 18) {
-        // Express HOY disponible
+        // Express HOY disponible (9-18hs)
         const endHour = Math.min(currentHour + 4, 22);
         return { 
           available: true, 
@@ -161,13 +169,21 @@ const MultiStepCheckoutPage = () => {
           message: "✅ Entrega HOY en 2-4 horas",
           detail: `Recibirás tu pedido hoy entre ${currentHour + 2}:00 y ${endHour}:00 hs`
         };
-      } else if (currentHour >= 19 || currentHour < 9) {
-        // Express MAÑANA disponible (desde las 19:00)
+      } else if (currentHour >= 19) {
+        // Express para MAÑANA (19-23:59hs)
         return { 
           available: true, 
           deliveryType: 'tomorrow',
           message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
           detail: "Tu pedido llegará mañana por la mañana"
+        };
+      } else if (currentHour < 9) {
+        // Express para HOY (0-8:59hs)
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY desde las 8:00 am",
+          detail: "Tu pedido llegará hoy por la mañana"
         };
       } else {
         // Ventana 18:00-18:59 (transición)
