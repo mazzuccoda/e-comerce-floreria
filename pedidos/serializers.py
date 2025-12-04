@@ -50,7 +50,7 @@ class PedidoReadSerializer(serializers.ModelSerializer):
             'id', 'numero_pedido', 'nombre_comprador', 'email_comprador', 'telefono_comprador',
             'nombre_destinatario', 'direccion', 'ciudad', 'codigo_postal',
             'telefono_destinatario', 'fecha_entrega', 'franja_horaria',
-            'dedicatoria', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre', 'tipo_envio',
+            'dedicatoria', 'firmado_como', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre', 'tipo_envio',
             'estado', 'estado_display', 'estado_pago', 'estado_pago_display',
             'medio_pago', 'medio_pago_display', 'costo_envio', 'total', 'creado', 'items'
         ]
@@ -86,6 +86,7 @@ class CheckoutSerializer(serializers.Serializer):
     
     # Datos adicionales
     dedicatoria = serializers.CharField(required=False, allow_blank=True)
+    firmado_como = serializers.CharField(max_length=100, required=False, allow_blank=True)
     instrucciones = serializers.CharField(max_length=200, required=False, allow_blank=True)
     regalo_anonimo = serializers.BooleanField(default=False)
     medio_pago = serializers.ChoiceField(

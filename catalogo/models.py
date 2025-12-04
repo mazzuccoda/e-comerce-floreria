@@ -1,10 +1,11 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
-from django.core.validators import MinValueValidator
-from django.utils import timezone
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from django.utils import timezone
 from .utils import optimize_image
+from .storage import VideoMediaCloudinaryStorage
 
 
 class TipoFlor(models.Model):
@@ -257,4 +258,50 @@ class ProductoImagen(models.Model):
         # Si se marca como imagen principal, desmarcar las demás
         if self.is_primary:
             ProductoImagen.objects.filter(producto=self.producto).exclude(pk=self.pk).update(is_primary=False)
+        super().save(*args, **kwargs)
+
+
+class HeroSlide(models.Model):
+    """Modelo para los slides del carrusel Hero de la página principal"""
+    TIPO_MEDIA = [
+        ('imagen', 'Imagen'),
+        ('video', 'Video'),
+    ]
+    
+    titulo = models.CharField(max_length=200, verbose_name='Título')
+    subtitulo = models.CharField(max_length=200, verbose_name='Subtítulo')
+    tipo_media = models.CharField(max_length=10, choices=TIPO_MEDIA, default='imagen', verbose_name='Tipo de contenido')
+    imagen = models.ImageField(upload_to='hero/%Y/%m/', blank=True, null=True, verbose_name='Imagen')
+    video = models.FileField(upload_to='hero/videos/%Y/%m/', storage=VideoMediaCloudinaryStorage(), blank=True, null=True, verbose_name='Video (archivo)', help_text='RECOMENDADO: Sube tu video en formato MP4. Máx 100MB. El autoplay funcionará perfectamente.')
+    video_url = models.URLField(blank=True, null=True, verbose_name='URL del video', help_text='URL de Cloudinary o video externo. Ejemplo: https://res.cloudinary.com/.../video.mp4')
+    texto_boton = models.CharField(max_length=50, blank=True, verbose_name='Texto del botón')
+    enlace_boton = models.CharField(max_length=200, default='/productos', verbose_name='Enlace del botón')
+    orden = models.PositiveIntegerField(default=0, verbose_name='Orden')
+    is_active = models.BooleanField(default=True, verbose_name='Activo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
+
+    class Meta:
+        verbose_name = 'Slide del Hero'
+        verbose_name_plural = 'Slides del Hero'
+        ordering = ['orden', 'created_at']
+
+    def __str__(self):
+        tipo = '📹' if self.tipo_media == 'video' else '🖼️'
+        return f"{tipo} {self.titulo} - {self.subtitulo}"
+
+    def save(self, *args, **kwargs):
+        # Optimizar imagen antes de guardar (solo si es imagen y es nueva)
+        try:
+            if self.tipo_media == 'imagen' and self.imagen and not self.pk:
+                self.imagen = optimize_image(
+                    self.imagen,
+                    max_width=1920,
+                    max_height=1080,
+                    quality=85
+                )
+        except Exception as e:
+            # Si falla la optimización, continuar sin optimizar
+            print(f"⚠️ Error optimizando imagen: {e}")
+        
         super().save(*args, **kwargs)

@@ -25,6 +25,7 @@ class Pedido(models.Model):
     telefono_comprador = models.CharField(max_length=20, help_text="Teléfono de quien realiza la compra para notificaciones (si es invitado)", blank=True, null=True)
     anonimo = models.BooleanField(default=False)
     dedicatoria = models.TextField()
+    firmado_como = models.CharField(max_length=100, blank=True, null=True, help_text="Nombre con el que se firma la dedicatoria")
     email_comprador = models.EmailField(max_length=254, help_text="Email de quien realiza la compra (si es invitado)", blank=True, null=True)
     nombre_destinatario = models.CharField(max_length=100)
     direccion = models.CharField(max_length=255)
@@ -32,7 +33,7 @@ class Pedido(models.Model):
     codigo_postal = models.CharField(max_length=20, blank=True, null=True)
     telefono_destinatario = models.CharField(max_length=30)
     fecha_entrega = models.DateField()
-    franja_horaria = models.CharField(max_length=20, choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)')])
+    franja_horaria = models.CharField(max_length=20, choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)'), ('durante_el_dia', 'Durante el día')])
     instrucciones = models.CharField(max_length=200, blank=True)
     metodo_envio = models.ForeignKey('MetodoEnvio', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Método de envío (legacy)")
     tipo_envio = models.CharField(

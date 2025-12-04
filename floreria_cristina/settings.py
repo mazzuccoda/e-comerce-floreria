@@ -414,6 +414,7 @@ CLOUDINARY_STORAGE = {
     'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME', default='dmxc6odsi'),
     'API_KEY': env('CLOUDINARY_API_KEY', default='854653671796364'),
     'API_SECRET': env('CLOUDINARY_API_SECRET', default='xWX_oc_i0E5B-50CxlfkX8C09lk'),
+    'RESOURCE_TYPE': 'auto',  # Permite imágenes y videos automáticamente
 }
 
 # Media files configuration
@@ -423,9 +424,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # File upload settings
-# Aumentar límites para permitir imágenes más grandes
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB en bytes
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB en bytes
+# Aumentar límites para permitir imágenes y videos
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB en bytes (para videos)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB en bytes (para videos)
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'

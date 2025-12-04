@@ -36,6 +36,7 @@ interface Pedido {
   fecha_entrega: string;
   franja_horaria: string;
   dedicatoria: string;
+  firmado_como?: string;
   instrucciones: string;
   metodo_envio?: string;
   tipo_envio?: string;
@@ -175,7 +176,7 @@ const PedidoDetallePage: React.FC = () => {
               {pedido.ciudad && <p><span className="font-medium">Ciudad:</span> {pedido.ciudad}</p>}
               <p><span className="font-medium">Teléfono:</span> {pedido.telefono_destinatario}</p>
               <p><span className="font-medium">Fecha:</span> {new Date(pedido.fecha_entrega).toLocaleDateString('es-AR')}</p>
-              <p><span className="font-medium">Horario:</span> {pedido.franja_horaria === 'mañana' ? 'Mañana (9-12hs)' : 'Tarde (16-20hs)'}</p>
+              <p><span className="font-medium">Horario:</span> {pedido.franja_horaria === 'mañana' ? 'Mañana (9-12hs)' : (pedido.franja_horaria === 'tarde' ? 'Tarde (16-20hs)' : 'Durante el día')}</p>
             </div>
           </div>
         </div>
@@ -185,6 +186,11 @@ const PedidoDetallePage: React.FC = () => {
             <h3 className="text-lg font-semibold mb-3">Dedicatoria</h3>
             <div className="bg-green-50 p-4 rounded-lg border border-green-100">
               <p className="italic">{pedido.dedicatoria}</p>
+              {pedido.firmado_como && (
+                <p className="text-sm text-gray-600 mt-2 text-right">
+                  — {pedido.firmado_como}
+                </p>
+              )}
             </div>
           </div>
         )}

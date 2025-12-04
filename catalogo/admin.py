@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Categoria, Producto, ProductoImagen, TipoFlor, Ocasion, ZonaEntrega
+from .models import Categoria, Producto, ProductoImagen, TipoFlor, Ocasion, ZonaEntrega, HeroSlide
 
 
 class ProductoImagenInline(admin.TabularInline):
@@ -159,3 +159,108 @@ class ProductoImagenAdmin(admin.ModelAdmin):
             )
         return "(No hay imagen)"
     imagen_preview.short_description = 'Vista previa'
+
+
+@admin.register(HeroSlide)
+class HeroSlideAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'subtitulo', 'tipo_media', 'orden', 'is_active', 'created_at')
+    list_filter = ('is_active', 'tipo_media', 'created_at')
+    search_fields = ('titulo', 'subtitulo')
+    list_editable = ('orden', 'is_active')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Contenido', {
+            'fields': ('titulo', 'subtitulo', 'texto_boton', 'enlace_boton')
+        }),
+        ('Media', {
+            'fields': ('tipo_media', 'imagen', 'video', 'video_url'),
+            'description': '''
+            📸 IMÁGENES: Sube una imagen JPG/PNG
+            
+            🎬 VIDEOS: 
+            Opción 1 (Recomendado): Sube el video manualmente a Cloudinary y pega la URL aquí
+            Opción 2: Sube el archivo MP4 directamente (máx 100MB)
+            
+            Ejemplo de URL de Cloudinary:
+            https://res.cloudinary.com/tu-cloud/video/upload/v123456/video.mp4
+            '''
+        }),
+        ('Configuración', {
+            'fields': ('orden', 'is_active')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Agregar media_preview solo cuando el objeto ya existe"""
+        if obj:  # Si el objeto ya existe
+            return self.readonly_fields + ('media_preview',)
+        return self.readonly_fields
+    
+    def get_fieldsets(self, request, obj=None):
+        """Agregar media_preview al fieldset solo cuando el objeto ya existe"""
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj:  # Si el objeto ya existe, agregar vista previa
+            fieldsets = list(fieldsets)
+            # Agregar media_preview al fieldset de Media
+            media_fieldset = list(fieldsets[1])
+            media_fields = list(media_fieldset[1]['fields'])
+            if 'media_preview' not in media_fields:
+                media_fields.append('media_preview')
+            media_fieldset[1]['fields'] = tuple(media_fields)
+            fieldsets[1] = tuple(media_fieldset)
+            return tuple(fieldsets)
+        return fieldsets
+
+    def media_preview(self, obj):
+        if not obj.pk:
+            return "(Guarda primero para ver la vista previa)"
+        
+        if obj.tipo_media == 'video':
+            if obj.video:
+                try:
+                    return format_html(
+                        '<video controls style="max-width: 600px; height: auto;"><source src="{}" type="video/mp4">Tu navegador no soporta video.</video>',
+                        obj.video.url
+                    )
+                except:
+                    return "(Error al cargar video)"
+            elif obj.video_url:
+                return format_html(
+                    '<p>🔗 Video externo: <a href="{}" target="_blank">{}</a></p>',
+                    obj.video_url, obj.video_url
+                )
+            return "(No hay video)"
+        else:
+            if obj.imagen:
+                try:
+                    return format_html(
+                        '<img src="{}" style="max-width: 600px; height: auto;" />',
+                        obj.imagen.url
+                    )
+                except:
+                    return "(Error al cargar imagen)"
+            return "(No hay imagen)"
+    media_preview.short_description = 'Vista previa'
+
+    def media_preview_small(self, obj):
+        if not obj.pk:
+            return "💾"
+        
+        if obj.tipo_media == 'video':
+            return format_html('<span style="font-size: 24px;">📹</span>')
+        else:
+            if obj.imagen:
+                try:
+                    return format_html(
+                        '<img src="{}" style="max-height: 50px; max-width: 80px; object-fit: cover;" />',
+                        obj.imagen.url
+                    )
+                except:
+                    return "🖼️"
+            return "🖼️"
+    media_preview_small.short_description = 'Media'

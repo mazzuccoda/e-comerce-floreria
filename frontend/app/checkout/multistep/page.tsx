@@ -111,6 +111,35 @@ const MultiStepCheckoutPage = () => {
     }
   };
 
+  // Cargar progreso guardado al iniciar
+  useEffect(() => {
+    const savedProgress = loadCheckoutProgress();
+    if (savedProgress && hasCheckoutProgress()) {
+      console.log('💾 Progreso del checkout encontrado');
+      setShowRestorePrompt(true);
+      setSavedProgressAge(formatProgressAge());
+    }
+  }, []);
+
+  // Función para restaurar progreso
+  const restoreProgress = () => {
+    const savedProgress = loadCheckoutProgress();
+    if (savedProgress) {
+      setFormData(savedProgress.formData);
+      setCurrentStep(savedProgress.currentStep);
+      setSelectedExtras(savedProgress.selectedExtras);
+      setShowRestorePrompt(false);
+      console.log('✅ Progreso restaurado');
+    }
+  };
+
+  // Función para descartar progreso
+  const discardProgress = () => {
+    clearCheckoutProgress();
+    setShowRestorePrompt(false);
+    console.log('🗑️ Progreso descartado');
+  };
+
   // Carga inicial del carrito: primero localStorage, luego API si hace falta
   // Cargar progreso guardado al iniciar
   useEffect(() => {
@@ -633,10 +662,18 @@ const MultiStepCheckoutPage = () => {
       }
 
       // Preparar fecha de entrega
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1);
-      const fechaEntrega = tomorrow.toISOString().split('T')[0];
+      let fechaEntrega: string;
+      if (formData.metodoEnvio === 'express') {
+        // Express: entrega el mismo día
+        const today = new Date();
+        fechaEntrega = today.toISOString().split('T')[0];
+      } else {
+        // Retiro: mañana (o lunes si mañana es domingo)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1);
+        fechaEntrega = tomorrow.toISOString().split('T')[0];
+      }
 
       // Preparar items
       const items = directCart.items.map((item: any) => ({
@@ -667,11 +704,12 @@ const MultiStepCheckoutPage = () => {
           ciudad: formData.ciudad?.trim() || "Buenos Aires",
           codigo_postal: formData.codigoPostal?.trim() || "1000",
           fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
+          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
           metodo_envio_id: 1,
           metodo_envio: formData.metodoEnvio,
           costo_envio: getShippingCost(),
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
+          firmado_como: formData.firmadoComo || "",
           instrucciones: formData.instrucciones || "",
           regalo_anonimo: false,
           medio_pago: formData.metodoPago,
@@ -724,17 +762,22 @@ const MultiStepCheckoutPage = () => {
 
       // Crear pedido usando el endpoint API existente
       console.log('📡 Enviando pedido a simple-checkout...');
-      // Asegurarnos de que la fecha es futura (al menos mañana)
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
       
-      // Si cae domingo, moverla al lunes
-      if (tomorrow.getDay() === 0) { // 0 = domingo
+      // Preparar fecha de entrega según tipo de envío
+      let fechaEntrega: string;
+      if (formData.metodoEnvio === 'express') {
+        // Express: entrega el mismo día
+        const today = new Date();
+        fechaEntrega = today.toISOString().split('T')[0];
+      } else {
+        // Retiro: mañana (o lunes si mañana es domingo)
+        const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
+        if (tomorrow.getDay() === 0) { // 0 = domingo
+          tomorrow.setDate(tomorrow.getDate() + 1);
+        }
+        fechaEntrega = tomorrow.toISOString().split('T')[0];
       }
-      
-      // Formato YYYY-MM-DD para la fecha
-      const fechaEntrega = tomorrow.toISOString().split('T')[0];
       
       // Determinar la URL base de la API correctamente para evitar problemas CORS
       const apiBaseUrl = API_URL.replace('/api', '');  // Remove /api suffix for pedidos endpoint
@@ -786,13 +829,14 @@ const MultiStepCheckoutPage = () => {
           
           // Datos de entrega - obligatorios
           fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : 'mañana',
+          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
           metodo_envio_id: 1,
           metodo_envio: formData.metodoEnvio, // 'retiro', 'express', 'programado'
           costo_envio: getShippingCost(), // Costo de envío calculado
           
           // Datos adicionales - opcionales
           dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
+          firmado_como: formData.firmadoComo || "",
           instrucciones: formData.instrucciones || "",
           regalo_anonimo: false,
           medio_pago: formData.metodoPago,
@@ -917,6 +961,7 @@ const MultiStepCheckoutPage = () => {
             
             if (paymentResult.success) {
               console.log('✅ Preferencia creada, redirigiendo a MercadoPago...');
+              clearCheckoutProgress(); // Limpiar progreso guardado
               // Redirigir a MercadoPago
               window.location.href = paymentResult.init_point;
             } else {
@@ -954,6 +999,7 @@ const MultiStepCheckoutPage = () => {
                     `TC Oficial: $${convInfo.official_rate.toFixed(2)} ARS/USD\n` +
                     `(Incluye ${convInfo.margin_percentage.toFixed(0)}% de margen)`);
               
+              clearCheckoutProgress(); // Limpiar progreso guardado
               // Redirigir a PayPal
               window.location.href = paymentResult.approval_url;
             } else {
@@ -966,6 +1012,7 @@ const MultiStepCheckoutPage = () => {
           }
         } else {
           // Para otros métodos de pago (transferencia), redirigir directamente a la página de éxito
+          clearCheckoutProgress(); // Limpiar progreso guardado
           window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
         }
       } else {
@@ -1097,8 +1144,47 @@ const MultiStepCheckoutPage = () => {
     );
   }
 
+  // Prompt para restaurar progreso guardado
+  const RestoreProgressPrompt = () => {
+    if (!showRestorePrompt) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="flex items-center mb-4">
+            <span className="text-3xl mr-3">💾</span>
+            <h3 className="text-xl font-bold text-gray-800">Continuar pedido anterior</h3>
+          </div>
+          <p className="text-gray-600 mb-2">
+            Encontramos un pedido sin completar guardado {savedProgressAge}.
+          </p>
+          <p className="text-gray-600 mb-6">
+            ¿Deseas continuar donde lo dejaste?
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={restoreProgress}
+              className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition font-medium"
+            >
+              ✅ Continuar pedido
+            </button>
+            <button
+              onClick={discardProgress}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-400 transition font-medium"
+            >
+              🗑️ Empezar de nuevo
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 sm:pt-28">
+      {/* Prompt para restaurar progreso */}
+      <RestoreProgressPrompt />
+      
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl">
         {/* Header mejorado */}
         <div className="text-center mb-8 sm:mb-12">
@@ -1396,6 +1482,29 @@ const MultiStepCheckoutPage = () => {
                   </div>
                 </label>
 
+                {/* Campo de instrucciones para Envío Express */}
+                {formData.metodoEnvio === 'express' && (
+                  <div className="mt-4 bg-gradient-to-br from-green-50 to-green-100/50 p-6 rounded-xl border-2 border-green-200 shadow-sm">
+                    <div className="flex flex-col">
+                      <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        📝 Instrucciones de entrega (opcional)
+                      </label>
+                      <textarea
+                        name="instrucciones"
+                        value={formData.instrucciones}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Tocar timbre 2 veces, dejar con el portero, etc."
+                        rows={3}
+                        maxLength={200}
+                        className="p-4 rounded-xl bg-white border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all resize-none"
+                      />
+                      <span className="text-xs text-gray-500 mt-1">
+                        {formData.instrucciones.length}/200 caracteres
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Envío Programado */}
                 <label 
                   className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
@@ -1492,7 +1601,7 @@ const MultiStepCheckoutPage = () => {
                         }`}
                       >
                         <option value="">Selecciona una franja</option>
-                        <option value="manana">🌅 Mañana (9:00 a 12:00)</option>
+                        <option value="mañana">🌅 Mañana (9:00 a 12:00)</option>
                         <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
                       </select>
                       {formErrors.franjaHoraria && (
@@ -1505,6 +1614,25 @@ const MultiStepCheckoutPage = () => {
                           {formErrors.franjaHoraria}
                         </span>
                       )}
+                    </div>
+
+                    {/* Campo de instrucciones adicionales */}
+                    <div className="flex flex-col">
+                      <label className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                        📝 Instrucciones adicionales (opcional)
+                      </label>
+                      <textarea
+                        name="instrucciones"
+                        value={formData.instrucciones}
+                        onChange={handleInputChange}
+                        placeholder="Ej: Tocar timbre 2 veces, dejar con el portero, etc."
+                        rows={3}
+                        maxLength={200}
+                        className="p-4 rounded-xl bg-white border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all resize-none"
+                      />
+                      <span className="text-xs text-gray-500 mt-1">
+                        {formData.instrucciones.length}/200 caracteres
+                      </span>
                     </div>
                   </div>
                   <div className="mt-4 space-y-2">

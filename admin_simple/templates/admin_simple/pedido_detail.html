@@ -177,8 +177,12 @@
                     <p class="text-gray-900">
                         {% if pedido.franja_horaria == 'mañana' %}
                             <i class="fas fa-sun text-yellow-500 mr-1"></i> Mañana (9-12hs)
-                        {% else %}
+                        {% elif pedido.franja_horaria == 'tarde' %}
                             <i class="fas fa-moon text-blue-500 mr-1"></i> Tarde (16-20hs)
+                        {% elif pedido.franja_horaria == 'durante_el_dia' %}
+                            <i class="fas fa-clock text-green-500 mr-1"></i> Durante el día
+                        {% else %}
+                            {{ pedido.get_franja_horaria_display }}
                         {% endif %}
                     </p>
                 </div>
@@ -200,6 +204,11 @@
                 </label>
                 <div class="bg-pink-50 border-l-4 border-pink-500 p-4 rounded">
                     <p class="text-gray-900 italic">"{{ pedido.dedicatoria }}"</p>
+                    {% if pedido.firmado_como %}
+                    <p class="text-gray-700 text-sm mt-2 text-right">
+                        — {{ pedido.firmado_como }}
+                    </p>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
