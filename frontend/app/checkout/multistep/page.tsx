@@ -8,6 +8,13 @@ import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
+import { 
+  saveCheckoutProgress, 
+  loadCheckoutProgress, 
+  clearCheckoutProgress, 
+  hasCheckoutProgress,
+  formatProgressAge 
+} from '@/utils/checkoutStorage';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -36,6 +43,8 @@ interface DirectCart {
 const MultiStepCheckoutPage = () => {
   const { token } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [savedProgressAge, setSavedProgressAge] = useState<string | null>(null);
   const [directCart, setDirectCart] = useState<DirectCart>({
     items: [],
     total_price: 0,
@@ -103,6 +112,35 @@ const MultiStepCheckoutPage = () => {
   };
 
   // Carga inicial del carrito: primero localStorage, luego API si hace falta
+  // Cargar progreso guardado al iniciar
+  useEffect(() => {
+    const savedProgress = loadCheckoutProgress();
+    if (savedProgress && hasCheckoutProgress()) {
+      console.log('💾 Progreso del checkout encontrado');
+      setShowRestorePrompt(true);
+      setSavedProgressAge(formatProgressAge());
+    }
+  }, []);
+
+  // Función para restaurar progreso
+  const restoreProgress = () => {
+    const savedProgress = loadCheckoutProgress();
+    if (savedProgress) {
+      setFormData(savedProgress.formData);
+      setCurrentStep(savedProgress.currentStep);
+      setSelectedExtras(savedProgress.selectedExtras);
+      setShowRestorePrompt(false);
+      console.log('✅ Progreso restaurado');
+    }
+  };
+
+  // Función para descartar progreso
+  const discardProgress = () => {
+    clearCheckoutProgress();
+    setShowRestorePrompt(false);
+    console.log('🗑️ Progreso descartado');
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -220,6 +258,21 @@ const MultiStepCheckoutPage = () => {
   
   // Estado para autocompletar
   const [useSameAsRemitente, setUseSameAsRemitente] = useState(false);
+
+  // Guardar progreso automáticamente cuando cambian los datos
+  useEffect(() => {
+    // No guardar si estamos en el paso de pago o si el formulario está vacío
+    const isPaymentStep = (isPickup && currentStep === 3) || (!isPickup && currentStep === 4);
+    const hasData = formData.nombre || formData.email || formData.nombreDestinatario;
+    
+    if (!isPaymentStep && hasData) {
+      saveCheckoutProgress({
+        formData,
+        currentStep,
+        selectedExtras
+      });
+    }
+  }, [formData, currentStep, selectedExtras, isPickup]);
 
   // Sincronizar selectedExtras con formData
   // Los extras se identifican por estar en el carrito, no por IDs hardcodeados
@@ -1398,14 +1451,10 @@ const MultiStepCheckoutPage = () => {
                         onChange={handleInputChange}
                         min={(() => {
                           const now = new Date();
-                          const currentHour = now.getHours();
-                          // Si son más de las 17:00, la fecha mínima es mañana
-                          if (currentHour >= 17) {
-                            const tomorrow = new Date(now.getTime() + 86400000);
-                            return tomorrow.toISOString().split('T')[0];
-                          }
-                          // Si son menos de las 17:00, puede ser hoy
-                          return now.toISOString().split('T')[0];
+                          // Para envíos programados, la fecha mínima es siempre mañana
+                          // (el mismo día solo está disponible para Express)
+                          const tomorrow = new Date(now.getTime() + 86400000);
+                          return tomorrow.toISOString().split('T')[0];
                         })()}
                         required
                         className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
@@ -1471,14 +1520,14 @@ const MultiStepCheckoutPage = () => {
                     </div>
                     {(() => {
                       const currentHour = new Date().getHours();
-                      if (currentHour >= 17) {
+                      if (currentHour >= 18) {
                         return (
                           <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                             <p className="text-sm text-amber-800 flex items-start gap-2">
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
                                 <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                               </svg>
-                              <span>Son más de las 17:00 hs. Los envíos programados están disponibles a partir de mañana.</span>
+                              <span>Son más de las 18:00 hs. Los envíos programados están disponibles a partir de mañana a la tarde.</span>
                             </p>
                           </div>
                         );
