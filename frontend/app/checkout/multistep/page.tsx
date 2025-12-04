@@ -1654,8 +1654,14 @@ const MultiStepCheckoutPage = () => {
                           const now = new Date();
                           // Para envíos programados, la fecha mínima es siempre mañana
                           // (el mismo día solo está disponible para Express)
-                          const tomorrow = new Date(now.getTime() + 86400000);
-                          return tomorrow.toISOString().split('T')[0];
+                          const tomorrow = new Date(now);
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          
+                          // Formatear como YYYY-MM-DD en zona horaria local
+                          const year = tomorrow.getFullYear();
+                          const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                          const day = String(tomorrow.getDate()).padStart(2, '0');
+                          return `${year}-${month}-${day}`;
                         })()}
                         required
                         className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
