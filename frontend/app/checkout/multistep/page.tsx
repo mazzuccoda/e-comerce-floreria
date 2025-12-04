@@ -140,36 +140,6 @@ const MultiStepCheckoutPage = () => {
     console.log('🗑️ Progreso descartado');
   };
 
-  // Carga inicial del carrito: primero localStorage, luego API si hace falta
-  // Cargar progreso guardado al iniciar
-  useEffect(() => {
-    const savedProgress = loadCheckoutProgress();
-    if (savedProgress && hasCheckoutProgress()) {
-      console.log('💾 Progreso del checkout encontrado');
-      setShowRestorePrompt(true);
-      setSavedProgressAge(formatProgressAge());
-    }
-  }, []);
-
-  // Función para restaurar progreso
-  const restoreProgress = () => {
-    const savedProgress = loadCheckoutProgress();
-    if (savedProgress) {
-      setFormData(savedProgress.formData);
-      setCurrentStep(savedProgress.currentStep);
-      setSelectedExtras(savedProgress.selectedExtras);
-      setShowRestorePrompt(false);
-      console.log('✅ Progreso restaurado');
-    }
-  };
-
-  // Función para descartar progreso
-  const discardProgress = () => {
-    clearCheckoutProgress();
-    setShowRestorePrompt(false);
-    console.log('🗑️ Progreso descartado');
-  };
-
   useEffect(() => {
     const init = async () => {
       try {
