@@ -111,6 +111,70 @@ const MultiStepCheckoutPage = () => {
     }
   };
 
+  // ===== FUNCIONES DE DISPONIBILIDAD DE ENVÍOS =====
+  
+  // Verificar si Express está disponible según día y hora
+  const isExpressAvailable = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay(); // 0=Domingo, 6=Sábado
+    
+    // Domingos: solo de 9:00 a 13:00
+    if (currentDay === 0) {
+      return currentHour >= 9 && currentHour < 13;
+    }
+    
+    // Lunes a Sábado: de 9:00 a 18:00
+    return currentHour >= 9 && currentHour < 18;
+  };
+
+  // Obtener mensaje de disponibilidad de Express
+  const getExpressAvailabilityMessage = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay();
+    
+    if (currentDay === 0) {
+      // Domingo
+      if (currentHour < 9) {
+        return { available: false, message: "⏰ Express disponible hoy desde las 9:00 hasta las 13:00 hs" };
+      }
+      if (currentHour >= 13) {
+        return { available: false, message: "❌ Express no disponible (Domingos hasta las 13:00 hs). Disponible mañana desde las 9:00 hs" };
+      }
+      return { available: true, message: "✅ Entrega en 2-4 horas (disponible hasta las 13:00 hs)" };
+    } else {
+      // Lunes a Sábado
+      if (currentHour < 9) {
+        return { available: false, message: "⏰ Express disponible desde las 9:00 hasta las 18:00 hs" };
+      }
+      if (currentHour >= 18) {
+        const tomorrow = currentDay === 6 ? "el domingo desde las 9:00 hasta las 13:00 hs" : "mañana desde las 9:00 hs";
+        return { available: false, message: `❌ Express no disponible (horario hasta las 18:00 hs). Disponible ${tomorrow}` };
+      }
+      return { available: true, message: "✅ Entrega en 2-4 horas (disponible hasta las 18:00 hs)" };
+    }
+  };
+
+  // Obtener franjas horarias disponibles para una fecha
+  const getAvailableTimeSlots = (selectedDate: string) => {
+    if (!selectedDate) return ['mañana', 'tarde'];
+    
+    const now = new Date();
+    const selected = new Date(selectedDate);
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    selected.setHours(0, 0, 0, 0);
+    
+    // Si la fecha seleccionada es mañana Y son más de las 18:00
+    if (selected.getTime() === tomorrow.getTime() && now.getHours() >= 18) {
+      return ['tarde']; // Solo tarde disponible
+    }
+    
+    return ['mañana', 'tarde']; // Ambas disponibles
+  };
+
   // Cargar progreso guardado al iniciar
   useEffect(() => {
     const savedProgress = loadCheckoutProgress();
@@ -1418,39 +1482,65 @@ const MultiStepCheckoutPage = () => {
                 </label>
 
                 {/* Envío Express */}
-                <label 
-                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
-                    formData.metodoEnvio === 'express' 
-                      ? 'bg-green-50 border-2 border-green-500 shadow-lg' 
-                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <input 
-                      type="radio" 
-                      name="metodoEnvio" 
-                      value="express"
-                      checked={formData.metodoEnvio === 'express'}
-                      onChange={handleInputChange}
-                      className="mr-4 mt-1 w-5 h-5 text-green-600" 
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">⚡ Envío Express <span className="text-sm text-gray-500">(Solo en Yerba Buena)</span></span>
-                        <span className="text-green-600 font-semibold">$10.000</span>
+                {(() => {
+                  const expressStatus = getExpressAvailabilityMessage();
+                  const isAvailable = expressStatus.available;
+                  
+                  return (
+                    <label 
+                      className={`flex flex-col p-6 rounded-xl transition-all duration-200 ${
+                        !isAvailable 
+                          ? 'opacity-60 cursor-not-allowed bg-gray-100 border-2 border-gray-300' 
+                          : formData.metodoEnvio === 'express' 
+                            ? 'bg-green-50 border-2 border-green-500 shadow-lg cursor-pointer' 
+                            : 'bg-white/50 hover:shadow-md border-2 border-transparent cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-start">
+                        <input 
+                          type="radio" 
+                          name="metodoEnvio" 
+                          value="express"
+                          checked={formData.metodoEnvio === 'express'}
+                          onChange={handleInputChange}
+                          disabled={!isAvailable}
+                          className="mr-4 mt-1 w-5 h-5 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-lg">
+                              ⚡ Envío Express 
+                              <span className="text-sm text-gray-500 ml-1">(Solo en Yerba Buena)</span>
+                            </span>
+                            <span className={`font-semibold ${isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
+                              $10.000
+                            </span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className={`mr-2 ${isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Entrega en 2-4 horas
+                          </div>
+                          
+                          {/* Mensaje de disponibilidad */}
+                          <div className={`text-sm p-3 rounded-lg border ${
+                            isAvailable 
+                              ? 'bg-green-50 text-green-700 border-green-200' 
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {expressStatus.message}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Entrega el mismo día (2-4 horas)
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-3 text-sm bg-green-50 p-3 rounded-lg text-green-700 border border-green-200">
-                    <strong>Recomendado:</strong> Ideal para ocasiones especiales y entregas urgentes.
-                  </div>
-                </label>
+                      {isAvailable && (
+                        <div className="mt-3 text-sm bg-green-50 p-3 rounded-lg text-green-700 border border-green-200">
+                          <strong>Recomendado:</strong> Ideal para ocasiones especiales y entregas urgentes.
+                        </div>
+                      )}
+                    </label>
+                  );
+                })()}
 
                 {/* Campo de instrucciones para Envío Express */}
                 {formData.metodoEnvio === 'express' && (
@@ -1571,8 +1661,19 @@ const MultiStepCheckoutPage = () => {
                         }`}
                       >
                         <option value="">Selecciona una franja</option>
-                        <option value="mañana">🌅 Mañana (9:00 a 12:00)</option>
-                        <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
+                        {(() => {
+                          const availableSlots = getAvailableTimeSlots(formData.fecha);
+                          return (
+                            <>
+                              {availableSlots.includes('mañana') && (
+                                <option value="mañana">🌅 Mañana (9:00 a 12:00)</option>
+                              )}
+                              {availableSlots.includes('tarde') && (
+                                <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
+                              )}
+                            </>
+                          );
+                        })()}
                       </select>
                       {formErrors.franjaHoraria && (
                         <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
@@ -1584,6 +1685,17 @@ const MultiStepCheckoutPage = () => {
                           {formErrors.franjaHoraria}
                         </span>
                       )}
+                      {(() => {
+                        const availableSlots = getAvailableTimeSlots(formData.fecha);
+                        if (formData.fecha && availableSlots.length === 1 && availableSlots[0] === 'tarde') {
+                          return (
+                            <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                              ⚠️ Solo disponible franja TARDE para esta fecha (son más de las 18:00 hs)
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     {/* Campo de instrucciones adicionales */}
@@ -1605,33 +1717,15 @@ const MultiStepCheckoutPage = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    <div className="p-3 bg-blue-100 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-800 flex items-start gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="12" y1="16" x2="12" y2="12"/>
-                          <line x1="12" y1="8" x2="12.01" y2="8"/>
-                        </svg>
-                        <span>El envío programado se realizará en la fecha y franja horaria seleccionada. Asegúrate de que haya alguien disponible para recibir el pedido.</span>
-                      </p>
-                    </div>
-                    {(() => {
-                      const currentHour = new Date().getHours();
-                      if (currentHour >= 18) {
-                        return (
-                          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                            <p className="text-sm text-amber-800 flex items-start gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
-                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                              </svg>
-                              <span>Son más de las 18:00 hs. Los envíos programados están disponibles a partir de mañana a la tarde.</span>
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
+                  <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      <span>El envío programado se realizará en la fecha y franja horaria seleccionada. Asegúrate de que haya alguien disponible para recibir el pedido.</span>
+                    </p>
                   </div>
                 </div>
               )}
