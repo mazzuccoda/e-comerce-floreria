@@ -191,17 +191,25 @@ const MultiStepCheckoutPage = () => {
 
   // Obtener franjas horarias disponibles para una fecha
   const getAvailableTimeSlots = (selectedDate: string) => {
-    if (!selectedDate) return ['mañana', 'tarde'];
+    if (!selectedDate) return ['tarde']; // Por defecto solo tarde si no hay fecha
     
     const now = new Date();
-    const selected = new Date(selectedDate);
+    const currentHour = now.getHours();
+    
+    // Parsear la fecha seleccionada (formato YYYY-MM-DD)
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const selected = new Date(year, month - 1, day);
+    
+    // Calcular mañana
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    selected.setHours(0, 0, 0, 0);
+    
+    // Comparar solo año, mes y día (ignorar hora)
+    const selectedDateStr = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
+    const tomorrowDateStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     
     // Si la fecha seleccionada es mañana Y son más de las 19:00
-    if (selected.getTime() === tomorrow.getTime() && now.getHours() >= 19) {
+    if (selectedDateStr === tomorrowDateStr && currentHour >= 19) {
       return ['tarde']; // Solo tarde disponible
     }
     
@@ -608,6 +616,20 @@ const MultiStepCheckoutPage = () => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     const newValue = type === 'checkbox' ? checked : value;
+    
+    // Si cambia la fecha, verificar si la franja horaria sigue siendo válida
+    if (name === 'fecha') {
+      const availableSlots = getAvailableTimeSlots(value);
+      // Si la franja actual no está disponible, limpiarla
+      if (formData.franjaHoraria && !availableSlots.includes(formData.franjaHoraria)) {
+        setFormData(prev => ({
+          ...prev,
+          fecha: value,
+          franjaHoraria: '' // Limpiar franja si ya no está disponible
+        }));
+        return;
+      }
+    }
     
     // Validación en tiempo real si el campo ya fue tocado
     if (touchedFields[name] && type !== 'checkbox') {
