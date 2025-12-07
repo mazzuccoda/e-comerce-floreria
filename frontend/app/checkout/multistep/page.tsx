@@ -498,6 +498,12 @@ const MultiStepCheckoutPage = () => {
           error = 'Selecciona una fecha para el envío programado';
         } else if (formData.metodoEnvio === 'retiro' && !value) {
           error = 'Selecciona una fecha para el retiro';
+        } else if (formData.metodoEnvio === 'retiro' && value) {
+          // Validar que no sea domingo
+          const selectedDate = new Date(value + 'T00:00:00');
+          if (selectedDate.getDay() === 0) {
+            error = 'No se puede retirar los domingos. Selecciona de lunes a sábado.';
+          }
         }
         break;
       
@@ -507,20 +513,9 @@ const MultiStepCheckoutPage = () => {
         } else if (formData.metodoEnvio === 'retiro' && value && formData.fecha) {
           const [hours, minutes] = value.split(':').map(Number);
           
-          // Verificar si la fecha seleccionada es domingo
-          const selectedDate = new Date(formData.fecha + 'T00:00:00');
-          const isDomingo = selectedDate.getDay() === 0;
-          
-          if (isDomingo) {
-            // Domingos: solo 9:00 a 13:00
-            if (hours < 9 || hours > 13 || (hours === 13 && minutes > 0)) {
-              error = 'Los domingos el horario es de 9:00 a 13:00 hs';
-            }
-          } else {
-            // Lunes a Sábado: 9:00 a 20:00
-            if (hours < 9 || hours > 20 || (hours === 20 && minutes > 0)) {
-              error = 'De lunes a sábado el horario es de 9:00 a 20:00 hs';
-            }
+          // Lunes a Sábado: 9:00 a 20:00 (domingos están bloqueados en la fecha)
+          if (hours < 9 || hours > 20 || (hours === 20 && minutes > 0)) {
+            error = 'El horario de retiro es de 9:00 a 20:00 hs';
           }
         }
         break;
@@ -677,22 +672,6 @@ const MultiStepCheckoutPage = () => {
         return;
       }
       
-      // Si es retiro y cambia la fecha, verificar si la hora sigue siendo válida
-      if (formData.metodoEnvio === 'retiro' && formData.hora) {
-        const selectedDate = new Date(value + 'T00:00:00');
-        const isDomingo = selectedDate.getDay() === 0;
-        const [hours] = formData.hora.split(':').map(Number);
-        
-        // Si es domingo y la hora es mayor a 13:00, limpiar la hora
-        if (isDomingo && hours > 13) {
-          setFormData(prev => ({
-            ...prev,
-            fecha: value,
-            hora: '' // Limpiar hora si ya no es válida para domingo
-          }));
-          return;
-        }
-      }
     }
     
     // Validación en tiempo real si el campo ya fue tocado
@@ -1656,12 +1635,7 @@ const MultiStepCheckoutPage = () => {
                           value={formData.hora}
                           onChange={handleInputChange}
                           min="09:00"
-                          max={(() => {
-                            if (!formData.fecha) return "20:00";
-                            const selectedDate = new Date(formData.fecha + 'T00:00:00');
-                            const isDomingo = selectedDate.getDay() === 0;
-                            return isDomingo ? "13:00" : "20:00";
-                          })()}
+                          max="20:00"
                           required
                           className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
                             formErrors.hora 
@@ -1688,7 +1662,7 @@ const MultiStepCheckoutPage = () => {
                           <line x1="12" y1="16" x2="12" y2="12"/>
                           <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <span>Horario de retiro: De lunes a sábado de 9:00 a 20:00 hs. Domingos de 9:00 a 13:00 hs.</span>
+                        <span>Horario de retiro: De lunes a sábado de 9:00 a 20:00 hs. Domingos cerrado.</span>
                       </p>
                     </div>
                   </div>
