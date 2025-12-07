@@ -496,6 +496,20 @@ const MultiStepCheckoutPage = () => {
       case 'fecha':
         if (formData.metodoEnvio === 'programado' && !value) {
           error = 'Selecciona una fecha para el envío programado';
+        } else if (formData.metodoEnvio === 'retiro' && !value) {
+          error = 'Selecciona una fecha para el retiro';
+        }
+        break;
+      
+      case 'hora':
+        if (formData.metodoEnvio === 'retiro' && !value) {
+          error = 'Selecciona una hora para el retiro';
+        } else if (formData.metodoEnvio === 'retiro' && value) {
+          // Validar que la hora esté entre 9:00 y 20:00
+          const [hours, minutes] = value.split(':').map(Number);
+          if (hours < 9 || hours > 20 || (hours === 20 && minutes > 0)) {
+            error = 'La hora debe estar entre 9:00 y 20:00 hs';
+          }
         }
         break;
       
@@ -548,6 +562,11 @@ const MultiStepCheckoutPage = () => {
     if (isPickup) {
       // Flujo simple de retiro en tienda: 3 pasos
       switch (currentStep) {
+        case 0: // Método de envío + fecha/hora de retiro
+          console.log('🏪 [Retiro] Validando fecha y hora de retiro');
+          errors.fecha = validateField('fecha', formData.fecha);
+          errors.hora = validateField('hora', formData.hora);
+          break;
         case 1: // Remitente
           console.log('👤 [Retiro] Validando datos del remitente');
           if (!formData.envioAnonimo) {
@@ -1545,12 +1564,101 @@ const MultiStepCheckoutPage = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Retiro en horario comercial
+                          Programa tu retiro (9:00 a 20:00 hs)
                         </div>
                       </div>
                     </div>
                   </div>
                 </label>
+
+                {/* Campos de fecha y hora para Retiro Programado */}
+                {formData.metodoEnvio === 'retiro' && (
+                  <div className="mt-4 bg-gradient-to-br from-purple-50 to-purple-100/50 p-6 rounded-xl border-2 border-purple-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-purple-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <h3 className="font-semibold text-lg text-purple-900">Programa tu retiro</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                          📅 Fecha de retiro
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          type="date" 
+                          name="fecha"
+                          value={formData.fecha}
+                          onChange={handleInputChange}
+                          min={(() => {
+                            const now = new Date();
+                            const year = now.getFullYear();
+                            const month = String(now.getMonth() + 1).padStart(2, '0');
+                            const day = String(now.getDate()).padStart(2, '0');
+                            return `${year}-${month}-${day}`;
+                          })()}
+                          required
+                          className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
+                            formErrors.fecha 
+                              ? 'border-red-400 bg-red-50 focus:border-red-500' 
+                              : 'border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200'
+                          }`}
+                        />
+                        {formErrors.fecha && (
+                          <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {formErrors.fecha}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                          ⏰ Hora de retiro
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          type="time" 
+                          name="hora"
+                          value={formData.hora}
+                          onChange={handleInputChange}
+                          min="09:00"
+                          max="20:00"
+                          required
+                          className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
+                            formErrors.hora 
+                              ? 'border-red-400 bg-red-50 focus:border-red-500' 
+                              : 'border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200'
+                          }`}
+                        />
+                        {formErrors.hora && (
+                          <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {formErrors.hora}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-purple-100 rounded-lg border border-purple-200">
+                      <p className="text-sm text-purple-800 flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="16" x2="12" y2="12"/>
+                          <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span>Horario de retiro: Lunes a Sábado de 9:00 a 20:00 hs. Domingos de 9:00 a 13:00 hs.</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Envío Express */}
                 {(() => {
