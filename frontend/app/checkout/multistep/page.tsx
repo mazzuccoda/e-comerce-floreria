@@ -1654,7 +1654,7 @@ const MultiStepCheckoutPage = () => {
                           <line x1="12" y1="16" x2="12" y2="12"/>
                           <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <span>Horario de retiro: Lunes a Sábado de 9:00 a 20:00 hs. Domingos de 9:00 a 13:00 hs.</span>
+                        <span>Horario de retiro: De lunes a sábado de 9:00 a 20:00 hs. Domingos de 9:00 a 13:00 hs.</span>
                       </p>
                     </div>
                   </div>
