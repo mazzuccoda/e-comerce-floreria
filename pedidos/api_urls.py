@@ -24,6 +24,13 @@ from .payment_views import (
 )
 from .views_debug import test_mercadopago_view
 from .views_zones import validate_delivery_zone, get_delivery_zones
+from .shipping_views import (
+    get_shipping_config,
+    get_shipping_zones,
+    calculate_shipping_cost,
+    update_shipping_config,
+    create_or_update_zone
+)
 
 app_name = 'pedidos-api'
 
@@ -60,7 +67,14 @@ urlpatterns = [
     # QR de transferencia (OPCIONAL)
     path('<int:pedido_id>/generate-transfer-qr/', GenerateTransferQRView.as_view(), name='generate-transfer-qr'),
     
-    # Zonas de entrega
+    # Zonas de entrega (legacy)
     path('validate-zone/', validate_delivery_zone, name='validate-zone'),
     path('delivery-zones/', get_delivery_zones, name='delivery-zones'),
+    
+    # Sistema de zonas con Distance Matrix
+    path('shipping/config/', get_shipping_config, name='shipping-config'),
+    path('shipping/zones/<str:method>/', get_shipping_zones, name='shipping-zones'),
+    path('shipping/calculate/', calculate_shipping_cost, name='shipping-calculate'),
+    path('shipping/config/update/', update_shipping_config, name='shipping-config-update'),
+    path('shipping/zones/save/', create_or_update_zone, name='shipping-zone-save'),
 ]

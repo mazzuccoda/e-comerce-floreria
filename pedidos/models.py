@@ -299,3 +299,100 @@ class PedidoProducto(models.Model):
 
     def __str__(self):
         return f"{self.cantidad}x {self.producto.nombre} (Pedido #{self.pedido.id})"
+
+
+# ============================================
+# SISTEMA DE ZONAS DE ENVÍO CON DISTANCE MATRIX
+# ============================================
+
+class ShippingConfig(models.Model):
+    """Configuración general del sistema de envíos"""
+    store_name = models.CharField(max_length=255, default='Florería Cristina', verbose_name='Nombre del negocio')
+    store_address = models.CharField(max_length=500, verbose_name='Dirección del negocio')
+    store_lat = models.DecimalField(max_digits=10, decimal_places=8, verbose_name='Latitud')
+    store_lng = models.DecimalField(max_digits=11, decimal_places=8, verbose_name='Longitud')
+    max_distance_express_km = models.DecimalField(max_digits=5, decimal_places=2, default=10.00, verbose_name='Distancia máxima Express (km)')
+    max_distance_programado_km = models.DecimalField(max_digits=5, decimal_places=2, default=25.00, verbose_name='Distancia máxima Programado (km)')
+    use_distance_matrix = models.BooleanField(default=True, verbose_name='Usar Distance Matrix API')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Configuración de Envíos'
+        verbose_name_plural = 'Configuración de Envíos'
+    
+    def __str__(self):
+        return f"{self.store_name} - {self.store_address}"
+    
+    @classmethod
+    def get_config(cls):
+        """Obtiene la configuración activa (siempre la más reciente)"""
+        return cls.objects.order_by('-id').first()
+
+
+class ShippingZone(models.Model):
+    """Zonas de envío con rangos de distancia y precios"""
+    SHIPPING_METHODS = [
+        ('express', 'Express'),
+        ('programado', 'Programado'),
+    ]
+    
+    shipping_method = models.CharField(max_length=50, choices=SHIPPING_METHODS, verbose_name='Método de envío')
+    zone_name = models.CharField(max_length=100, verbose_name='Nombre de la zona')
+    min_distance_km = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name='Distancia mínima (km)')
+    max_distance_km = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Distancia máxima (km)')
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Precio base')
+    price_per_km = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Precio por km adicional')
+    zone_order = models.IntegerField(verbose_name='Orden de la zona')
+    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Zona de Envío'
+        verbose_name_plural = 'Zonas de Envío'
+        unique_together = ['shipping_method', 'zone_order']
+        ordering = ['shipping_method', 'zone_order']
+    
+    def __str__(self):
+        return f"{self.get_shipping_method_display()} - {self.zone_name} ({self.min_distance_km}-{self.max_distance_km} km) - ${self.base_price}"
+    
+    def calculate_price(self, distance_km):
+        """Calcula el precio para una distancia dada"""
+        if distance_km < self.min_distance_km or distance_km >= self.max_distance_km:
+            return None
+        
+        # Precio base + precio por km adicional
+        extra_km = max(0, distance_km - self.min_distance_km)
+        total_price = float(self.base_price) + (float(self.price_per_km) * extra_km)
+        return round(total_price, 2)
+
+
+class ShippingPricingRule(models.Model):
+    """Reglas de precios especiales (ej: envío gratis)"""
+    RULE_TYPES = [
+        ('fixed', 'Precio fijo'),
+        ('per_km', 'Por kilómetro'),
+        ('tiered', 'Por niveles'),
+    ]
+    
+    SHIPPING_METHODS = [
+        ('express', 'Express'),
+        ('programado', 'Programado'),
+    ]
+    
+    shipping_method = models.CharField(max_length=50, choices=SHIPPING_METHODS, verbose_name='Método de envío')
+    rule_type = models.CharField(max_length=50, choices=RULE_TYPES, verbose_name='Tipo de regla')
+    free_shipping_threshold = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Monto para envío gratis')
+    minimum_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Cargo mínimo')
+    is_active = models.BooleanField(default=True, verbose_name='Activa')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Regla de Precio de Envío'
+        verbose_name_plural = 'Reglas de Precios de Envío'
+    
+    def __str__(self):
+        if self.free_shipping_threshold:
+            return f"{self.get_shipping_method_display()} - Envío gratis > ${self.free_shipping_threshold}"
+        return f"{self.get_shipping_method_display()} - {self.get_rule_type_display()}"

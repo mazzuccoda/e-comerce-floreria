@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pedido, PedidoItem
+from .models import Pedido, PedidoItem, ShippingConfig, ShippingZone, ShippingPricingRule
 from .notificaciones import enviar_whatsapp_actualizacion_estado
 
 
@@ -39,5 +39,95 @@ class PedidoAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False # No permitir crear pedidos desde el admin
+
+
+# ============================================
+# ADMIN PARA SISTEMA DE ZONAS DE ENVÍO
+# ============================================
+
+@admin.register(ShippingConfig)
+class ShippingConfigAdmin(admin.ModelAdmin):
+    list_display = ('store_name', 'store_address', 'max_distance_express_km', 'max_distance_programado_km', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        ('Información del Negocio', {
+            'fields': ('store_name', 'store_address')
+        }),
+        ('Ubicación GPS', {
+            'fields': ('store_lat', 'store_lng'),
+            'description': 'Coordenadas GPS de tu tienda. Puedes obtenerlas desde Google Maps.'
+        }),
+        ('Distancias Máximas', {
+            'fields': ('max_distance_express_km', 'max_distance_programado_km'),
+            'description': 'Distancia máxima de cobertura para cada método de envío (en kilómetros).'
+        }),
+        ('Configuración Técnica', {
+            'fields': ('use_distance_matrix', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        # Solo permitir una configuración
+        return not ShippingConfig.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        # No permitir eliminar la configuración
+        return False
+
+
+@admin.register(ShippingZone)
+class ShippingZoneAdmin(admin.ModelAdmin):
+    list_display = ('shipping_method', 'zone_name', 'min_distance_km', 'max_distance_km', 'base_price', 'price_per_km', 'zone_order', 'is_active')
+    list_filter = ('shipping_method', 'is_active')
+    list_editable = ('base_price', 'price_per_km', 'is_active')
+    search_fields = ('zone_name',)
+    ordering = ('shipping_method', 'zone_order')
+    
+    fieldsets = (
+        ('Información de la Zona', {
+            'fields': ('shipping_method', 'zone_name', 'zone_order')
+        }),
+        ('Rango de Distancia (km)', {
+            'fields': ('min_distance_km', 'max_distance_km'),
+            'description': 'Define el rango de distancia para esta zona. Ejemplo: 0-5 km, 5-10 km, etc.'
+        }),
+        ('Precios', {
+            'fields': ('base_price', 'price_per_km'),
+            'description': 'Precio base + precio adicional por km (opcional). Si price_per_km = 0, solo se cobra el precio base.'
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+    )
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editando
+            return ('created_at', 'updated_at')
+        return ()
+
+
+@admin.register(ShippingPricingRule)
+class ShippingPricingRuleAdmin(admin.ModelAdmin):
+    list_display = ('shipping_method', 'rule_type', 'free_shipping_threshold', 'minimum_charge', 'is_active')
+    list_filter = ('shipping_method', 'rule_type', 'is_active')
+    list_editable = ('is_active',)
+    
+    fieldsets = (
+        ('Configuración de la Regla', {
+            'fields': ('shipping_method', 'rule_type')
+        }),
+        ('Envío Gratis', {
+            'fields': ('free_shipping_threshold',),
+            'description': 'Monto mínimo de compra para obtener envío gratis. Dejar en blanco para desactivar.'
+        }),
+        ('Cargo Mínimo', {
+            'fields': ('minimum_charge',),
+            'description': 'Cargo mínimo de envío (opcional).'
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+    )
 
 

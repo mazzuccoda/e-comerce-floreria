@@ -1,0 +1,176 @@
+═══════════════════════════════════════════════════════════════
+🚀 COMANDOS PARA DEPLOY - Sistema de Zonas de Envío
+═══════════════════════════════════════════════════════════════
+
+📋 PASO 1: EJECUTAR MIGRACIONES LOCALMENTE (Docker)
+───────────────────────────────────────────────────────────────
+
+# Opción A: Script automático (RECOMENDADO)
+.\deploy_shipping_zones.ps1
+
+# Opción B: Comandos manuales
+docker compose exec web python manage.py makemigrations pedidos
+docker compose exec web python manage.py migrate
+docker compose exec web python setup_shipping_zones.py
+docker compose restart web
+
+───────────────────────────────────────────────────────────────
+
+📋 PASO 2: VERIFICAR LOCAL
+───────────────────────────────────────────────────────────────
+
+# Probar endpoint
+curl http://localhost:8000/api/pedidos/shipping/config/
+
+# O abrir en navegador
+http://localhost:8000/admin/
+
+───────────────────────────────────────────────────────────────
+
+📋 PASO 3: GIT - COMMIT Y PUSH (UN SOLO COMMIT)
+───────────────────────────────────────────────────────────────
+
+# Ver archivos modificados
+git status
+
+# Agregar todos los archivos
+git add .
+
+# Commit con mensaje descriptivo
+git commit -m "feat: Sistema de zonas de envío con Distance Matrix API
+
+- Modelos: ShippingConfig, ShippingZone, ShippingPricingRule
+- API REST: 5 endpoints para gestión de zonas
+- Admin Django configurado con fieldsets personalizados
+- Script de inicialización con datos de Tucumán
+- Zonas Express (3) y Programado (4) configuradas
+- Reglas de envío gratis implementadas
+- Scripts de deploy y documentación completa"
+
+# Push a master
+git push origin master
+
+───────────────────────────────────────────────────────────────
+
+📋 PASO 4: RAILWAY - DEPLOY AUTOMÁTICO
+───────────────────────────────────────────────────────────────
+
+# Railway detectará el push automáticamente y ejecutará:
+# ✅ railway_start.sh (incluye migraciones)
+# ✅ Build del proyecto
+# ✅ Deploy
+
+# Monitorear logs
+railway logs
+
+───────────────────────────────────────────────────────────────
+
+📋 PASO 5: RAILWAY - INICIALIZAR DATOS (SOLO PRIMERA VEZ)
+───────────────────────────────────────────────────────────────
+
+# Ejecutar script de inicialización
+railway run python setup_shipping_zones.py
+
+───────────────────────────────────────────────────────────────
+
+📋 PASO 6: VERIFICAR EN RAILWAY
+───────────────────────────────────────────────────────────────
+
+# Ver logs
+railway logs --tail 100
+
+# Probar endpoint en producción
+curl https://tu-app.railway.app/api/pedidos/shipping/config/
+
+# Acceder al admin
+https://tu-app.railway.app/admin/
+
+───────────────────────────────────────────────────────────────
+
+✅ CHECKLIST DE VERIFICACIÓN
+───────────────────────────────────────────────────────────────
+
+LOCAL:
+□ Migraciones ejecutadas
+□ Datos inicializados
+□ Endpoint /shipping/config/ funciona
+□ Admin muestra 3 nuevas secciones
+
+GIT:
+□ Commit realizado
+□ Push exitoso
+
+RAILWAY:
+□ Build exitoso
+□ Deploy completado
+□ Logs sin errores
+□ Endpoint en producción funciona
+□ Admin accesible
+
+───────────────────────────────────────────────────────────────
+
+🔧 COMANDOS ÚTILES
+───────────────────────────────────────────────────────────────
+
+# Ver migraciones aplicadas
+docker compose exec web python manage.py showmigrations pedidos
+
+# Acceder a shell Django
+docker compose exec web python manage.py shell
+
+# Ver logs de Docker
+docker compose logs web -f
+
+# Reiniciar servicios
+docker compose restart
+
+# Railway - Ver variables
+railway variables
+
+# Railway - Ejecutar comando
+railway run <comando>
+
+───────────────────────────────────────────────────────────────
+
+🐛 TROUBLESHOOTING
+───────────────────────────────────────────────────────────────
+
+Error: "No such table: pedidos_shippingconfig"
+→ docker compose exec web python manage.py migrate
+
+Error: "No shipping config found"
+→ docker compose exec web python setup_shipping_zones.py
+
+Error: Docker no responde
+→ docker compose restart
+→ docker compose down && docker compose up -d
+
+Error: Railway no aplica migraciones
+→ railway run python manage.py migrate
+→ railway run python setup_shipping_zones.py
+
+───────────────────────────────────────────────────────────────
+
+📞 ENDPOINTS CREADOS
+───────────────────────────────────────────────────────────────
+
+GET  /api/pedidos/shipping/config/
+GET  /api/pedidos/shipping/zones/express/
+GET  /api/pedidos/shipping/zones/programado/
+POST /api/pedidos/shipping/calculate/
+PUT  /api/pedidos/shipping/config/update/
+POST /api/pedidos/shipping/zones/save/
+
+───────────────────────────────────────────────────────────────
+
+📚 DOCUMENTACIÓN
+───────────────────────────────────────────────────────────────
+
+RESUMEN_FASE_1.md              → Resumen ejecutivo
+DEPLOY_INSTRUCTIONS.md         → Instrucciones detalladas
+SISTEMA_ZONAS_ENVIO_README.md  → Documentación técnica
+RAILWAY_SHIPPING_DEPLOY.md     → Guía específica Railway
+
+═══════════════════════════════════════════════════════════════
+¡Todo listo para deploy! 🚀
+═══════════════════════════════════════════════════════════════
