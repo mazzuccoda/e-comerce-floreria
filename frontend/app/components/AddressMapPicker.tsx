@@ -68,6 +68,7 @@ export default function AddressMapPicker({
   
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const hasCalculatedInitialDistance = useRef(false);
 
   // Actualizar centro del mapa cuando se carga la config
   useEffect(() => {
@@ -77,10 +78,19 @@ export default function AddressMapPicker({
     }
   }, [config, map]);
 
-  // Calcular distancia automáticamente si hay coordenadas iniciales
+  // Calcular distancia automáticamente si hay coordenadas iniciales (solo una vez)
   useEffect(() => {
-    if (config && onDistanceCalculated && initialLat && initialLng && initialLat !== 0 && initialLng !== 0) {
+    if (
+      config && 
+      onDistanceCalculated && 
+      initialLat && 
+      initialLng && 
+      initialLat !== 0 && 
+      initialLng !== 0 &&
+      !hasCalculatedInitialDistance.current
+    ) {
       console.log('🔄 Calculando distancia para dirección inicial:', { lat: initialLat, lng: initialLng });
+      hasCalculatedInitialDistance.current = true;
       calculateDistanceToStore(initialLat, initialLng);
     }
   }, [config, onDistanceCalculated, initialLat, initialLng]);
