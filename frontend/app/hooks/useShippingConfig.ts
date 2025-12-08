@@ -112,6 +112,11 @@ export function useShippingConfig() {
     orderAmount: number
   ): Promise<ShippingCalculation> => {
     try {
+      console.log('🌐 Llamando a API de cálculo de costo:', {
+        url: `${API_BASE_URL}/pedidos/shipping/calculate/`,
+        body: { distance_km: distanceKm, shipping_method: shippingMethod, order_amount: orderAmount }
+      });
+      
       const response = await fetch(`${API_BASE_URL}/pedidos/shipping/calculate/`, {
         method: 'POST',
         headers: {
@@ -124,14 +129,23 @@ export function useShippingConfig() {
         }),
       });
 
+      console.log('📡 Respuesta de API:', {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
+
       if (!response.ok) {
-        throw new Error('Error al calcular costo de envío');
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta:', errorText);
+        throw new Error(`Error al calcular costo de envío: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('✅ Datos recibidos de API:', data);
       return data;
     } catch (err) {
-      console.error('Error calculating shipping cost:', err);
+      console.error('❌ Error calculating shipping cost:', err);
       throw err;
     }
   };
