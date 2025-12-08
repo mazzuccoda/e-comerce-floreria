@@ -5,7 +5,7 @@ import { GoogleMap, Marker, useLoadScript, Autocomplete, Circle } from '@react-g
 import { MapPin, Search, AlertCircle, CheckCircle, Navigation, Clock } from 'lucide-react';
 import { AddressData, MapCenter } from '@/types/Address';
 import { useShippingConfig } from '@/app/hooks/useShippingConfig';
-import { calculateDistance } from '@/app/services/distanceService';
+import { calculateDistance, calculateStraightLineDistance } from '@/app/services/distanceService';
 
 interface AddressMapPickerProps {
   onAddressSelect: (address: AddressData) => void;
