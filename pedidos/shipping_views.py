@@ -120,12 +120,28 @@ def calculate_shipping_cost(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Buscar zona correspondiente
+        logger.info(f"Buscando zona para {shipping_method}, distancia: {distance_km} km")
+        
+        # Debug: listar todas las zonas disponibles
+        all_zones = ShippingZone.objects.filter(
+            shipping_method=shipping_method,
+            is_active=True
+        )
+        logger.info(f"Zonas disponibles para {shipping_method}:")
+        for z in all_zones:
+            logger.info(f"  - {z.zone_name}: {z.min_distance_km}-{z.max_distance_km} km")
+        
         zone = ShippingZone.objects.filter(
             shipping_method=shipping_method,
             min_distance_km__lte=distance_km,
             max_distance_km__gt=distance_km,
             is_active=True
         ).first()
+        
+        if zone:
+            logger.info(f"Zona encontrada: {zone.zone_name}")
+        else:
+            logger.warning(f"No se encontró zona para {distance_km} km")
         
         if not zone:
             # Fuera de cobertura
