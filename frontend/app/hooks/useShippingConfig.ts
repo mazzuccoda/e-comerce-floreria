@@ -59,34 +59,48 @@ export function useShippingConfig() {
       setError(null);
 
       // Obtener configuración general
-      const configResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/config/`);
+      const configResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/config/`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
       if (!configResponse.ok) {
-        throw new Error('Error al obtener configuración de envíos');
+        console.warn('Shipping config no disponible, usando modo básico');
+        setLoading(false);
+        return; // No lanzar error, simplemente no cargar config
       }
+      
       const configData = await configResponse.json();
       setConfig(configData);
 
       // Obtener zonas Express
-      const expressResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/zones/express/`);
-      if (!expressResponse.ok) {
-        throw new Error('Error al obtener zonas Express');
+      const expressResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/zones/express/`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (expressResponse.ok) {
+        const expressData = await expressResponse.json();
+        setZones(prev => ({ ...prev, express: expressData }));
       }
-      const expressData = await expressResponse.json();
 
       // Obtener zonas Programado
-      const programadoResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/zones/programado/`);
-      if (!programadoResponse.ok) {
-        throw new Error('Error al obtener zonas Programado');
-      }
-      const programadoData = await programadoResponse.json();
-
-      setZones({
-        express: expressData,
-        programado: programadoData,
+      const programadoResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/zones/programado/`, {
+        headers: {
+          'Accept': 'application/json',
+        },
       });
+      
+      if (programadoResponse.ok) {
+        const programadoData = await programadoResponse.json();
+        setZones(prev => ({ ...prev, programado: programadoData }));
+      }
     } catch (err) {
-      console.error('Error fetching shipping config:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.warn('Shipping zones no disponibles:', err);
+      // No setear error, simplemente no cargar la config
+      // El componente funcionará sin las features de shipping zones
     } finally {
       setLoading(false);
     }

@@ -46,7 +46,8 @@ export default function AddressMapPicker({
   shippingMethod = 'programado',
   onDistanceCalculated,
 }: AddressMapPickerProps) {
-  const { config, loading: configLoading } = useShippingConfig();
+  // Hook opcional - si falla, el componente sigue funcionando
+  const { config, loading: configLoading, error: configError } = useShippingConfig();
   
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<MapCenter>(defaultCenter);
@@ -121,7 +122,8 @@ export default function AddressMapPicker({
   };
 
   const calculateDistanceToStore = async (lat: number, lng: number) => {
-    if (!config) return;
+    // Solo calcular si hay config y callback
+    if (!config || !onDistanceCalculated) return;
 
     setIsCalculatingDistance(true);
     try {
@@ -168,9 +170,14 @@ export default function AddressMapPicker({
     setValidationMessage('✓ Dirección seleccionada correctamente');
     onAddressSelect(addressData);
 
-    // Calcular distancia si hay config disponible
-    if (config) {
-      await calculateDistanceToStore(addressData.lat, addressData.lng);
+    // Calcular distancia solo si hay config y callback
+    if (config && onDistanceCalculated) {
+      try {
+        await calculateDistanceToStore(addressData.lat, addressData.lng);
+      } catch (error) {
+        console.error('Error calculando distancia:', error);
+        // No bloquear el flujo si falla el cálculo
+      }
     }
   };
 
