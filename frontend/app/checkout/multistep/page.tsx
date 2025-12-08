@@ -604,6 +604,17 @@ const MultiStepCheckoutPage = () => {
           errors.telefonoDestinatario = validateField('telefonoDestinatario', formData.telefonoDestinatario);
           errors.direccion = validateField('direccion', formData.direccion);
           errors.ciudad = validateField('ciudad', formData.ciudad);
+          
+          // Validar cobertura si hay distancia calculada
+          if (distanceKm > 0 && shippingConfig) {
+            const maxDistance = formData.metodoEnvio === 'express' 
+              ? shippingConfig.max_distance_express_km 
+              : shippingConfig.max_distance_programado_km;
+            
+            if (distanceKm > maxDistance) {
+              errors.direccion = `Esta dirección está fuera del área de cobertura ${formData.metodoEnvio} (máx: ${maxDistance} km, distancia: ${distanceKm} km)`;
+            }
+          }
           break;
         case 2: // Remitente
           console.log('👤 [Envío] Validando datos del remitente');
@@ -2308,35 +2319,61 @@ const MultiStepCheckoutPage = () => {
               </div>
 
               {/* Info de distancia y costo */}
-              {distanceKm > 0 && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-lg">📍</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-blue-900 mb-1">Información de envío</h4>
-                      <div className="space-y-1 text-sm">
-                        <p className="text-blue-800">
-                          <span className="font-medium">Distancia:</span> {distanceKm} km
-                        </p>
-                        <p className="text-blue-800">
-                          <span className="font-medium">Tiempo estimado:</span> {shippingDuration}
-                        </p>
-                        {isCalculatingShipping ? (
-                          <p className="text-blue-600 flex items-center gap-2">
-                            <span className="animate-spin">⏳</span> Calculando costo...
+              {distanceKm > 0 && (() => {
+                const maxDistance = formData.metodoEnvio === 'express' 
+                  ? (shippingConfig?.max_distance_express_km || 10)
+                  : (shippingConfig?.max_distance_programado_km || 25);
+                const isOutOfCoverage = distanceKm > maxDistance;
+                
+                return (
+                  <div className={`mb-6 p-4 rounded-xl border-2 ${
+                    isOutOfCoverage 
+                      ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300' 
+                      : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                        isOutOfCoverage ? 'bg-red-500' : 'bg-blue-500'
+                      }`}>
+                        <span className="text-white text-lg">{isOutOfCoverage ? '⚠️' : '📍'}</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className={`font-semibold mb-1 ${
+                          isOutOfCoverage ? 'text-red-900' : 'text-blue-900'
+                        }`}>
+                          {isOutOfCoverage ? 'Fuera de cobertura' : 'Información de envío'}
+                        </h4>
+                        <div className="space-y-1 text-sm">
+                          <p className={isOutOfCoverage ? 'text-red-800' : 'text-blue-800'}>
+                            <span className="font-medium">Distancia:</span> {distanceKm} km
                           </p>
-                        ) : calculatedShippingCost > 0 ? (
-                          <p className="text-blue-900 font-semibold text-base mt-2">
-                            <span className="font-medium">Costo de envío:</span> ${calculatedShippingCost.toLocaleString('es-AR')}
+                          <p className={isOutOfCoverage ? 'text-red-800' : 'text-blue-800'}>
+                            <span className="font-medium">Tiempo estimado:</span> {shippingDuration}
                           </p>
-                        ) : null}
+                          {isOutOfCoverage ? (
+                            <p className="text-red-900 font-semibold text-sm mt-2 bg-red-100 p-2 rounded">
+                              ❌ Esta dirección supera la distancia máxima de {maxDistance} km para envío {formData.metodoEnvio}.
+                              Por favor, selecciona otra dirección o cambia el método de envío.
+                            </p>
+                          ) : (
+                            <>
+                              {isCalculatingShipping ? (
+                                <p className="text-blue-600 flex items-center gap-2">
+                                  <span className="animate-spin">⏳</span> Calculando costo...
+                                </p>
+                              ) : calculatedShippingCost > 0 ? (
+                                <p className="text-blue-900 font-semibold text-base mt-2">
+                                  <span className="font-medium">Costo de envío:</span> ${calculatedShippingCost.toLocaleString('es-AR')}
+                                </p>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
