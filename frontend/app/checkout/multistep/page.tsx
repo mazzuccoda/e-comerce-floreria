@@ -60,6 +60,20 @@ const MultiStepCheckoutPage = () => {
   // Estado para shipping zones
   const { config: shippingConfig, calculateShippingCost, isWithinCoverage } = useShippingConfig();
   const [distanceKm, setDistanceKm] = useState<number>(0);
+  
+  // Debug: Log shipping config cuando cambia
+  useEffect(() => {
+    if (shippingConfig) {
+      console.log('📦 Shipping Config cargada:', {
+        express_max: shippingConfig.max_distance_express_km,
+        programado_max: shippingConfig.max_distance_programado_km,
+        store_lat: shippingConfig.store_lat,
+        store_lng: shippingConfig.store_lng,
+      });
+    } else {
+      console.warn('⚠️ Shipping Config no disponible');
+    }
+  }, [shippingConfig]);
   const [calculatedShippingCost, setCalculatedShippingCost] = useState<number>(0);
   const [shippingDuration, setShippingDuration] = useState<string>('');
   const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
@@ -2319,11 +2333,18 @@ const MultiStepCheckoutPage = () => {
               </div>
 
               {/* Info de distancia y costo */}
-              {distanceKm > 0 && (() => {
+              {distanceKm > 0 && shippingConfig && (() => {
                 const maxDistance = formData.metodoEnvio === 'express' 
-                  ? (shippingConfig?.max_distance_express_km || 10)
-                  : (shippingConfig?.max_distance_programado_km || 25);
+                  ? shippingConfig.max_distance_express_km
+                  : shippingConfig.max_distance_programado_km;
                 const isOutOfCoverage = distanceKm > maxDistance;
+                
+                console.log('🎯 Validando cobertura:', {
+                  metodo: formData.metodoEnvio,
+                  distancia: distanceKm,
+                  maxDistance,
+                  isOutOfCoverage
+                });
                 
                 return (
                   <div className={`mb-6 p-4 rounded-xl border-2 ${
