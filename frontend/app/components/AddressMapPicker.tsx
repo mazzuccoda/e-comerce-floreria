@@ -11,6 +11,8 @@ interface AddressMapPickerProps {
   onAddressSelect: (address: AddressData) => void;
   defaultCenter?: MapCenter;
   initialAddress?: string;
+  initialLat?: number;
+  initialLng?: number;
   shippingMethod?: 'express' | 'programado';
   onDistanceCalculated?: (distance: number, duration: string) => void;
 }
@@ -43,6 +45,8 @@ export default function AddressMapPicker({
   onAddressSelect,
   defaultCenter = DEFAULT_CENTER,
   initialAddress = '',
+  initialLat,
+  initialLng,
   shippingMethod = 'programado',
   onDistanceCalculated,
 }: AddressMapPickerProps) {
@@ -72,6 +76,14 @@ export default function AddressMapPicker({
       map.panTo(storeCenter);
     }
   }, [config, map]);
+
+  // Calcular distancia automáticamente si hay coordenadas iniciales
+  useEffect(() => {
+    if (config && onDistanceCalculated && initialLat && initialLng && initialLat !== 0 && initialLng !== 0) {
+      console.log('🔄 Calculando distancia para dirección inicial:', { lat: initialLat, lng: initialLng });
+      calculateDistanceToStore(initialLat, initialLng);
+    }
+  }, [config, onDistanceCalculated, initialLat, initialLng]);
 
   // Debug: Verificar API Key
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';

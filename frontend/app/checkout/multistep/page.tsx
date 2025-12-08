@@ -2303,6 +2303,8 @@ const MultiStepCheckoutPage = () => {
                     });
                   }}
                   shippingMethod={formData.metodoEnvio as 'express' | 'programado'}
+                  initialLat={formData.lat}
+                  initialLng={formData.lng}
                   onDistanceCalculated={async (distance: number, duration: string) => {
                     console.log(`📏 Distancia calculada: ${distance} km (${duration})`);
                     console.log(`🔍 Debug - calculateShippingCost existe:`, !!calculateShippingCost);
