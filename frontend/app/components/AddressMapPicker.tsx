@@ -1,20 +1,24 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { GoogleMap, Marker, useLoadScript, Autocomplete } from '@react-google-maps/api';
-import { MapPin, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { GoogleMap, Marker, useLoadScript, Autocomplete, Circle } from '@react-google-maps/api';
+import { MapPin, Search, AlertCircle, CheckCircle, Navigation, Clock } from 'lucide-react';
 import { AddressData, MapCenter } from '@/types/Address';
+import { useShippingConfig } from '@/app/hooks/useShippingConfig';
+import { calculateDistance } from '@/app/services/distanceService';
 
 interface AddressMapPickerProps {
   onAddressSelect: (address: AddressData) => void;
   defaultCenter?: MapCenter;
   initialAddress?: string;
+  shippingMethod?: 'express' | 'programado';
+  onDistanceCalculated?: (distance: number, duration: string) => void;
 }
 
 const libraries: ("places")[] = ["places"];
 
-// Centro por defecto: Buenos Aires
-const DEFAULT_CENTER: MapCenter = { lat: -34.6037, lng: -58.3816 };
+// Centro por defecto: Yerba Buena, Tucumán (se actualizará con config del backend)
+const DEFAULT_CENTER: MapCenter = { lat: -26.8167, lng: -65.3167 };
 
 const mapContainerStyle = {
   width: '100%',
@@ -39,16 +43,34 @@ export default function AddressMapPicker({
   onAddressSelect,
   defaultCenter = DEFAULT_CENTER,
   initialAddress = '',
+  shippingMethod = 'programado',
+  onDistanceCalculated,
 }: AddressMapPickerProps) {
+  const { config, loading: configLoading } = useShippingConfig();
+  
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<MapCenter>(defaultCenter);
   const [selectedAddress, setSelectedAddress] = useState<string>(initialAddress);
   const [isValidating, setIsValidating] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string>('');
-  const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error' | 'warning'>('idle');
+  const [distanceInfo, setDistanceInfo] = useState<{
+    distance: number;
+    duration: string;
+    withinCoverage: boolean;
+  } | null>(null);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
   
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Actualizar centro del mapa cuando se carga la config
+  useEffect(() => {
+    if (config && map) {
+      const storeCenter = { lat: config.store_lat, lng: config.store_lng };
+      map.panTo(storeCenter);
+    }
+  }, [config, map]);
 
   // Debug: Verificar API Key
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -98,11 +120,58 @@ export default function AddressMapPicker({
     };
   };
 
-  const handleAddressData = (addressData: AddressData) => {
+  const calculateDistanceToStore = async (lat: number, lng: number) => {
+    if (!config) return;
+
+    setIsCalculatingDistance(true);
+    try {
+      const result = await calculateDistance({
+        origin: { lat: config.store_lat, lng: config.store_lng },
+        destination: { lat, lng },
+      });
+
+      if (result.status === 'OK') {
+        const maxDistance =
+          shippingMethod === 'express'
+            ? config.max_distance_express_km
+            : config.max_distance_programado_km;
+
+        const withinCoverage = result.distance_km <= maxDistance;
+
+        setDistanceInfo({
+          distance: result.distance_km,
+          duration: result.duration_text,
+          withinCoverage,
+        });
+
+        if (onDistanceCalculated) {
+          onDistanceCalculated(result.distance_km, result.duration_text);
+        }
+
+        if (!withinCoverage) {
+          setValidationStatus('warning');
+          setValidationMessage(
+            `⚠️ Esta dirección está a ${result.distance_km} km (${result.duration_text}). Fuera del área de cobertura ${shippingMethod} (máx: ${maxDistance} km)`
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error calculando distancia:', error);
+    } finally {
+      setIsCalculatingDistance(false);
+    }
+  };
+
+  const handleAddressData = async (addressData: AddressData) => {
     setSelectedAddress(addressData.formatted_address);
     setValidationStatus('success');
     setValidationMessage('✓ Dirección seleccionada correctamente');
     onAddressSelect(addressData);
+
+    // Calcular distancia si hay config disponible
+    if (config) {
+      await calculateDistanceToStore(addressData.lat, addressData.lng);
+    }
   };
 
   const onPlaceChanged = () => {
@@ -221,19 +290,27 @@ export default function AddressMapPicker({
           className={`p-3 rounded-lg border ${
             validationStatus === 'success'
               ? 'bg-green-50 border-green-200'
+              : validationStatus === 'warning'
+              ? 'bg-yellow-50 border-yellow-200'
               : 'bg-red-50 border-red-200'
           }`}
         >
           <div className="flex items-start gap-2">
             {validationStatus === 'success' ? (
               <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            ) : validationStatus === 'warning' ? (
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
               <p
                 className={`text-sm font-medium ${
-                  validationStatus === 'success' ? 'text-green-800' : 'text-red-800'
+                  validationStatus === 'success'
+                    ? 'text-green-800'
+                    : validationStatus === 'warning'
+                    ? 'text-yellow-800'
+                    : 'text-red-800'
                 }`}
               >
                 {validationMessage}
@@ -249,6 +326,55 @@ export default function AddressMapPicker({
         </div>
       )}
 
+      {/* Información de distancia */}
+      {distanceInfo && (
+        <div className={`p-3 rounded-lg border ${
+          distanceInfo.withinCoverage
+            ? 'bg-blue-50 border-blue-200'
+            : 'bg-orange-50 border-orange-200'
+        }`}>
+          <div className="flex items-start gap-3">
+            <Navigation className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+              distanceInfo.withinCoverage ? 'text-blue-600' : 'text-orange-600'
+            }`} />
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${
+                distanceInfo.withinCoverage ? 'text-blue-900' : 'text-orange-900'
+              }`}>
+                Distancia desde la tienda
+              </p>
+              <div className="flex items-center gap-4 mt-1">
+                <span className={`text-lg font-bold ${
+                  distanceInfo.withinCoverage ? 'text-blue-700' : 'text-orange-700'
+                }`}>
+                  {distanceInfo.distance} km
+                </span>
+                <span className={`text-sm flex items-center gap-1 ${
+                  distanceInfo.withinCoverage ? 'text-blue-600' : 'text-orange-600'
+                }`}>
+                  <Clock className="w-4 h-4" />
+                  {distanceInfo.duration}
+                </span>
+              </div>
+              {distanceInfo.withinCoverage && (
+                <p className="text-xs text-blue-600 mt-1">
+                  ✓ Dentro del área de cobertura {shippingMethod}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isCalculatingDistance && (
+        <div className="text-center py-2">
+          <div className="inline-flex items-center gap-2 text-gray-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+            <span className="text-sm">Calculando distancia...</span>
+          </div>
+        </div>
+      )}
+
       {/* Mapa */}
       <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
         <GoogleMap
@@ -259,6 +385,54 @@ export default function AddressMapPicker({
           onClick={onMapClick}
           options={mapOptions}
         >
+          {/* Círculos de cobertura */}
+          {config && (
+            <>
+              {/* Círculo de cobertura Express (más pequeño) */}
+              <Circle
+                center={{ lat: config.store_lat, lng: config.store_lng }}
+                radius={config.max_distance_express_km * 1000} // Convertir km a metros
+                options={{
+                  fillColor: '#10b981',
+                  fillOpacity: 0.1,
+                  strokeColor: '#10b981',
+                  strokeOpacity: 0.4,
+                  strokeWeight: 2,
+                }}
+              />
+              
+              {/* Círculo de cobertura Programado (más grande) */}
+              <Circle
+                center={{ lat: config.store_lat, lng: config.store_lng }}
+                radius={config.max_distance_programado_km * 1000}
+                options={{
+                  fillColor: '#3b82f6',
+                  fillOpacity: 0.05,
+                  strokeColor: '#3b82f6',
+                  strokeOpacity: 0.3,
+                  strokeWeight: 2,
+                }}
+              />
+
+              {/* Marcador de la tienda */}
+              <Marker
+                position={{ lat: config.store_lat, lng: config.store_lng }}
+                icon={{
+                  url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                      <circle cx="12" cy="10" r="3" fill="#059669"/>
+                    </svg>
+                  `),
+                  scaledSize: new google.maps.Size(40, 40),
+                  anchor: new google.maps.Point(20, 40),
+                }}
+                title={config.store_name}
+              />
+            </>
+          )}
+
+          {/* Marcador del destino */}
           <Marker
             position={marker}
             draggable={true}
@@ -267,6 +441,27 @@ export default function AddressMapPicker({
           />
         </GoogleMap>
       </div>
+
+      {/* Leyenda de círculos */}
+      {config && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-gray-700 mb-2">Áreas de cobertura:</p>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-green-500 opacity-30"></div>
+              <span className="text-gray-600">Express (hasta {config.max_distance_express_km} km)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500 opacity-20"></div>
+              <span className="text-gray-600">Programado (hasta {config.max_distance_programado_km} km)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+              <span className="text-gray-600">{config.store_name}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Instrucciones */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
