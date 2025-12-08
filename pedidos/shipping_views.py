@@ -302,7 +302,7 @@ def init_shipping_data(request):
         ]
         
         for zone_data in express_zones:
-            zone, created = ShippingZone.objects.get_or_create(
+            zone, created = ShippingZone.objects.update_or_create(
                 shipping_method='express',
                 zone_order=zone_data['zone_order'],
                 defaults=zone_data
@@ -341,7 +341,7 @@ def init_shipping_data(request):
         ]
         
         for zone_data in programado_zones:
-            zone, created = ShippingZone.objects.get_or_create(
+            zone, created = ShippingZone.objects.update_or_create(
                 shipping_method='programado',
                 zone_order=zone_data['zone_order'],
                 defaults=zone_data
