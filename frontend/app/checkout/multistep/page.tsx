@@ -2305,11 +2305,21 @@ const MultiStepCheckoutPage = () => {
                   shippingMethod={formData.metodoEnvio as 'express' | 'programado'}
                   onDistanceCalculated={async (distance: number, duration: string) => {
                     console.log(`📏 Distancia calculada: ${distance} km (${duration})`);
+                    console.log(`🔍 Debug - calculateShippingCost existe:`, !!calculateShippingCost);
+                    console.log(`🔍 Debug - directCart.total_price:`, directCart.total_price);
+                    console.log(`🔍 Debug - metodoEnvio:`, formData.metodoEnvio);
+                    
                     setDistanceKm(distance);
                     setShippingDuration(duration);
                     
                     // Calcular costo de envío
                     if (distance > 0 && calculateShippingCost) {
+                      console.log(`💸 Llamando a calculateShippingCost con:`, {
+                        distance,
+                        method: formData.metodoEnvio,
+                        orderAmount: directCart.total_price
+                      });
+                      
                       setIsCalculatingShipping(true);
                       try {
                         const result = await calculateShippingCost(
@@ -2321,10 +2331,15 @@ const MultiStepCheckoutPage = () => {
                         console.log('💰 Costo de envío calculado:', result);
                         setCalculatedShippingCost(result.shipping_cost);
                       } catch (error) {
-                        console.error('Error calculando costo de envío:', error);
+                        console.error('❌ Error calculando costo de envío:', error);
                       } finally {
                         setIsCalculatingShipping(false);
                       }
+                    } else {
+                      console.warn('⚠️ No se puede calcular costo:', {
+                        distance,
+                        hasCalculateFunction: !!calculateShippingCost
+                      });
                     }
                   }}
                   defaultCenter={shippingConfig ? { lat: shippingConfig.store_lat, lng: shippingConfig.store_lng } : { lat: -26.8167, lng: -65.3167 }}
