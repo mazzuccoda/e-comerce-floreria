@@ -170,14 +170,29 @@ export default function AddressMapPicker({
     setValidationMessage('✓ Dirección seleccionada correctamente');
     onAddressSelect(addressData);
 
+    // Debug: verificar estado
+    console.log('🗺️ handleAddressData:', {
+      hasConfig: !!config,
+      hasCallback: !!onDistanceCalculated,
+      address: addressData.formatted_address,
+      lat: addressData.lat,
+      lng: addressData.lng
+    });
+
     // Calcular distancia solo si hay config y callback
     if (config && onDistanceCalculated) {
+      console.log('✅ Calculando distancia...');
       try {
         await calculateDistanceToStore(addressData.lat, addressData.lng);
       } catch (error) {
-        console.error('Error calculando distancia:', error);
+        console.error('❌ Error calculando distancia:', error);
         // No bloquear el flujo si falla el cálculo
       }
+    } else {
+      console.warn('⚠️ No se puede calcular distancia:', {
+        config: config ? 'OK' : 'NULL',
+        callback: onDistanceCalculated ? 'OK' : 'NULL'
+      });
     }
   };
 
