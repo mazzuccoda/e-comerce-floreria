@@ -127,38 +127,59 @@ export default function AddressMapPicker({
 
     setIsCalculatingDistance(true);
     try {
-      const result = await calculateDistance({
-        origin: { lat: config.store_lat, lng: config.store_lng },
-        destination: { lat, lng },
-      });
-
-      if (result.status === 'OK') {
-        const maxDistance =
-          shippingMethod === 'express'
-            ? config.max_distance_express_km
-            : config.max_distance_programado_km;
-
-        const withinCoverage = result.distance_km <= maxDistance;
-
-        setDistanceInfo({
-          distance: result.distance_km,
-          duration: result.duration_text,
-          withinCoverage,
+      let distanceKm = 0;
+      let durationText = '';
+      
+      // Intentar con Distance Matrix API
+      try {
+        const result = await calculateDistance({
+          origin: { lat: config.store_lat, lng: config.store_lng },
+          destination: { lat, lng },
         });
 
-        if (onDistanceCalculated) {
-          onDistanceCalculated(result.distance_km, result.duration_text);
+        if (result.status === 'OK') {
+          distanceKm = result.distance_km;
+          durationText = result.duration_text;
+        } else {
+          throw new Error('Distance Matrix no disponible');
         }
+      } catch (distanceMatrixError) {
+        // Fallback: usar Haversine (distancia en línea recta)
+        console.warn('⚠️ Distance Matrix API falló, usando Haversine fallback:', distanceMatrixError);
+        distanceKm = calculateStraightLineDistance(
+          { lat: config.store_lat, lng: config.store_lng },
+          { lat, lng }
+        );
+        // Estimar duración: ~30 km/h promedio en ciudad
+        const durationMinutes = Math.round((distanceKm / 30) * 60);
+        durationText = `~${durationMinutes} min (estimado)`;
+      }
 
-        if (!withinCoverage) {
-          setValidationStatus('warning');
-          setValidationMessage(
-            `⚠️ Esta dirección está a ${result.distance_km} km (${result.duration_text}). Fuera del área de cobertura ${shippingMethod} (máx: ${maxDistance} km)`
-          );
-        }
+      const maxDistance =
+        shippingMethod === 'express'
+          ? config.max_distance_express_km
+          : config.max_distance_programado_km;
+
+      const withinCoverage = distanceKm <= maxDistance;
+
+      setDistanceInfo({
+        distance: distanceKm,
+        duration: durationText,
+        withinCoverage,
+      });
+
+      if (onDistanceCalculated) {
+        onDistanceCalculated(distanceKm, durationText);
+      }
+
+      if (!withinCoverage) {
+        setValidationStatus('warning');
+        setValidationMessage(
+          `⚠️ Esta dirección está a ${distanceKm} km (${durationText}). Fuera del área de cobertura ${shippingMethod} (máx: ${maxDistance} km)`
+        );
       }
     } catch (error) {
-      console.error('Error calculando distancia:', error);
+      console.error('❌ Error calculando distancia:', error);
     } finally {
       setIsCalculatingDistance(false);
     }
