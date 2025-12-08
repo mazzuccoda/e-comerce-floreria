@@ -251,3 +251,114 @@ def create_or_update_zone(request):
         return Response({
             'error': 'Error al guardar zona'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def init_shipping_data(request):
+    """
+    Endpoint temporal para inicializar datos de shipping zones
+    POST /api/pedidos/shipping/init/
+    """
+    try:
+        # Crear o actualizar configuración principal
+        config, created = ShippingConfig.objects.get_or_create(
+            id=1,
+            defaults={
+                'store_name': 'Florería Cristina',
+                'store_address': 'Av. Solano Vera 480, Yerba Buena, Tucumán',
+                'store_lat': Decimal('-26.8167'),
+                'store_lng': Decimal('-65.3167'),
+                'max_distance_express_km': Decimal('5.00'),
+                'max_distance_programado_km': Decimal('11.00'),
+                'use_distance_matrix': True,
+            }
+        )
+        
+        result = {
+            'config_created': created,
+            'express_zones': [],
+            'programado_zones': []
+        }
+        
+        # Crear zonas Express
+        express_zones = [
+            {
+                'zone_name': 'Yerba Buena Centro',
+                'min_distance_km': Decimal('0'),
+                'max_distance_km': Decimal('3'),
+                'base_price': Decimal('5000.00'),
+                'price_per_km': Decimal('0'),
+                'zone_order': 1,
+            },
+            {
+                'zone_name': 'Yerba Buena Extendido',
+                'min_distance_km': Decimal('3'),
+                'max_distance_km': Decimal('5'),
+                'base_price': Decimal('7000.00'),
+                'price_per_km': Decimal('500.00'),
+                'zone_order': 2,
+            },
+        ]
+        
+        for zone_data in express_zones:
+            zone, created = ShippingZone.objects.get_or_create(
+                shipping_method='express',
+                zone_order=zone_data['zone_order'],
+                defaults=zone_data
+            )
+            result['express_zones'].append({
+                'name': zone.zone_name,
+                'created': created
+            })
+        
+        # Crear zonas Programado
+        programado_zones = [
+            {
+                'zone_name': 'Yerba Buena',
+                'min_distance_km': Decimal('0'),
+                'max_distance_km': Decimal('5'),
+                'base_price': Decimal('5000.00'),
+                'price_per_km': Decimal('0'),
+                'zone_order': 1,
+            },
+            {
+                'zone_name': 'San Miguel Centro',
+                'min_distance_km': Decimal('5'),
+                'max_distance_km': Decimal('8'),
+                'base_price': Decimal('7000.00'),
+                'price_per_km': Decimal('500.00'),
+                'zone_order': 2,
+            },
+            {
+                'zone_name': 'San Miguel Extendido',
+                'min_distance_km': Decimal('8'),
+                'max_distance_km': Decimal('11'),
+                'base_price': Decimal('10000.00'),
+                'price_per_km': Decimal('800.00'),
+                'zone_order': 3,
+            },
+        ]
+        
+        for zone_data in programado_zones:
+            zone, created = ShippingZone.objects.get_or_create(
+                shipping_method='programado',
+                zone_order=zone_data['zone_order'],
+                defaults=zone_data
+            )
+            result['programado_zones'].append({
+                'name': zone.zone_name,
+                'created': created
+            })
+        
+        return Response({
+            'success': True,
+            'message': 'Datos de shipping inicializados correctamente',
+            'details': result
+        })
+        
+    except Exception as e:
+        logger.error(f"Error al inicializar shipping data: {str(e)}")
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -29,7 +29,8 @@ from .shipping_views import (
     get_shipping_zones,
     calculate_shipping_cost,
     update_shipping_config,
-    create_or_update_zone
+    create_or_update_zone,
+    init_shipping_data
 )
 
 app_name = 'pedidos-api'
@@ -77,4 +78,5 @@ urlpatterns = [
     path('shipping/calculate/', calculate_shipping_cost, name='shipping-calculate'),
     path('shipping/config/update/', update_shipping_config, name='shipping-config-update'),
     path('shipping/zones/save/', create_or_update_zone, name='shipping-zone-save'),
+    path('shipping/init/', init_shipping_data, name='shipping-init'),  # Endpoint temporal
 ]
