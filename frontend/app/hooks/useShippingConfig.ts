@@ -59,7 +59,7 @@ export function useShippingConfig() {
       setError(null);
 
       // Obtener configuración general
-      const configResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/config/`, {
+      const configResponse = await fetch(`${API_BASE_URL}/pedidos/shipping/config/`, {
         headers: {
           'Accept': 'application/json',
         },
@@ -75,7 +75,7 @@ export function useShippingConfig() {
       setConfig(configData);
 
       // Obtener zonas Express
-      const expressResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/zones/express/`, {
+      const expressResponse = await fetch(`${API_BASE_URL}/pedidos/shipping/zones/express/`, {
         headers: {
           'Accept': 'application/json',
         },
@@ -87,7 +87,7 @@ export function useShippingConfig() {
       }
 
       // Obtener zonas Programado
-      const programadoResponse = await fetch(`${API_BASE_URL}/api/pedidos/shipping/zones/programado/`, {
+      const programadoResponse = await fetch(`${API_BASE_URL}/pedidos/shipping/zones/programado/`, {
         headers: {
           'Accept': 'application/json',
         },
@@ -112,7 +112,7 @@ export function useShippingConfig() {
     orderAmount: number
   ): Promise<ShippingCalculation> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/pedidos/shipping/calculate/`, {
+      const response = await fetch(`${API_BASE_URL}/pedidos/shipping/calculate/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
