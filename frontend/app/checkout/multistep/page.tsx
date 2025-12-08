@@ -15,6 +15,7 @@ import {
   hasCheckoutProgress,
   formatProgressAge 
 } from '@/utils/checkoutStorage';
+import { useShippingConfig } from '@/app/hooks/useShippingConfig';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -55,6 +56,13 @@ const MultiStepCheckoutPage = () => {
   const [hasError, setHasError] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Estado para shipping zones
+  const { config: shippingConfig, calculateShippingCost, isWithinCoverage } = useShippingConfig();
+  const [distanceKm, setDistanceKm] = useState<number>(0);
+  const [calculatedShippingCost, setCalculatedShippingCost] = useState<number>(0);
+  const [shippingDuration, setShippingDuration] = useState<string>('');
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
 
   // Función para recargar el carrito desde localStorage y, si es necesario, desde el backend
   const reloadCart = async () => {
@@ -751,9 +759,9 @@ const MultiStepCheckoutPage = () => {
       case 'retiro':
         return 0;
       case 'express':
-        return 10000;
       case 'programado':
-        return 5000;
+        // Usar el costo calculado si está disponible, sino usar valores por defecto
+        return calculatedShippingCost > 0 ? calculatedShippingCost : (formData.metodoEnvio === 'express' ? 10000 : 5000);
       default:
         return 0;
     }
@@ -2258,7 +2266,7 @@ const MultiStepCheckoutPage = () => {
               {/* Mapa interactivo para seleccionar dirección */}
               <div className="mb-6">
                 <AddressMapPicker
-                  onAddressSelect={(addressData: AddressData) => {
+                  onAddressSelect={async (addressData: AddressData) => {
                     console.log('Dirección seleccionada:', addressData);
                     setFormData({
                       ...formData,
@@ -2269,10 +2277,66 @@ const MultiStepCheckoutPage = () => {
                       lng: addressData.lng,
                     });
                   }}
-                  defaultCenter={{ lat: -34.6037, lng: -58.3816 }}
+                  shippingMethod={formData.metodoEnvio as 'express' | 'programado'}
+                  onDistanceCalculated={async (distance: number, duration: string) => {
+                    console.log(`📏 Distancia calculada: ${distance} km (${duration})`);
+                    setDistanceKm(distance);
+                    setShippingDuration(duration);
+                    
+                    // Calcular costo de envío
+                    if (distance > 0 && calculateShippingCost) {
+                      setIsCalculatingShipping(true);
+                      try {
+                        const result = await calculateShippingCost(
+                          distance,
+                          formData.metodoEnvio as 'express' | 'programado',
+                          directCart.total_price
+                        );
+                        
+                        console.log('💰 Costo de envío calculado:', result);
+                        setCalculatedShippingCost(result.shipping_cost);
+                      } catch (error) {
+                        console.error('Error calculando costo de envío:', error);
+                      } finally {
+                        setIsCalculatingShipping(false);
+                      }
+                    }
+                  }}
+                  defaultCenter={shippingConfig ? { lat: shippingConfig.store_lat, lng: shippingConfig.store_lng } : { lat: -26.8167, lng: -65.3167 }}
                   initialAddress={formData.direccion}
                 />
               </div>
+
+              {/* Info de distancia y costo */}
+              {distanceKm > 0 && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-lg">📍</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 mb-1">Información de envío</h4>
+                      <div className="space-y-1 text-sm">
+                        <p className="text-blue-800">
+                          <span className="font-medium">Distancia:</span> {distanceKm} km
+                        </p>
+                        <p className="text-blue-800">
+                          <span className="font-medium">Tiempo estimado:</span> {shippingDuration}
+                        </p>
+                        {isCalculatingShipping ? (
+                          <p className="text-blue-600 flex items-center gap-2">
+                            <span className="animate-spin">⏳</span> Calculando costo...
+                          </p>
+                        ) : calculatedShippingCost > 0 ? (
+                          <p className="text-blue-900 font-semibold text-base mt-2">
+                            <span className="font-medium">Costo de envío:</span> ${calculatedShippingCost.toLocaleString('es-AR')}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
