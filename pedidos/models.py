@@ -359,12 +359,17 @@ class ShippingZone(models.Model):
     
     def calculate_price(self, distance_km):
         """Calcula el precio para una distancia dada"""
+        from decimal import Decimal
+        
+        # Convertir distance_km a Decimal para evitar errores de tipo
+        distance_km = Decimal(str(distance_km))
+        
         if distance_km < self.min_distance_km or distance_km >= self.max_distance_km:
             return None
         
         # Precio base + precio por km adicional
-        extra_km = max(0, distance_km - self.min_distance_km)
-        total_price = float(self.base_price) + (float(self.price_per_km) * extra_km)
+        extra_km = max(Decimal('0'), distance_km - self.min_distance_km)
+        total_price = float(self.base_price) + (float(self.price_per_km) * float(extra_km))
         return round(total_price, 2)
 
 
