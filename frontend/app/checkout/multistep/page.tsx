@@ -2327,9 +2327,17 @@ const MultiStepCheckoutPage = () => {
                         );
                         
                         console.log('💰 Costo de envío calculado:', result);
-                        setCalculatedShippingCost(result.shipping_cost);
+                        
+                        // Solo actualizar si está disponible y tiene costo
+                        if (result.available && result.shipping_cost !== undefined && result.shipping_cost !== null) {
+                          setCalculatedShippingCost(result.shipping_cost);
+                        } else {
+                          console.warn('⚠️ Envío no disponible o sin costo:', result);
+                          setCalculatedShippingCost(0);
+                        }
                       } catch (error) {
                         console.error('❌ Error calculando costo de envío:', error);
+                        setCalculatedShippingCost(0);
                       } finally {
                         setIsCalculatingShipping(false);
                       }
