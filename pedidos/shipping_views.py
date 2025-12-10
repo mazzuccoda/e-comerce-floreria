@@ -157,6 +157,7 @@ def calculate_shipping_cost(request):
         
         # Calcular precio
         shipping_cost = zone.calculate_price(distance_km)
+        logger.info(f"Costo calculado por zona: {shipping_cost}")
         
         # Verificar envío gratis
         is_free_shipping = False
@@ -165,10 +166,18 @@ def calculate_shipping_cost(request):
             is_active=True
         ).first()
         
+        logger.info(f"Regla de envío gratis: {rule}")
+        if rule:
+            logger.info(f"  - Umbral: {rule.free_shipping_threshold}")
+            logger.info(f"  - Monto pedido: {order_amount}")
+        
         if rule and rule.free_shipping_threshold:
             if order_amount >= float(rule.free_shipping_threshold):
                 is_free_shipping = True
                 shipping_cost = 0
+                logger.info(f"✅ ENVÍO GRATIS APLICADO (pedido ${order_amount} >= ${rule.free_shipping_threshold})")
+            else:
+                logger.info(f"❌ No califica para envío gratis (pedido ${order_amount} < ${rule.free_shipping_threshold})")
         
         return Response({
             'available': True,
