@@ -1967,9 +1967,9 @@ const MultiStepCheckoutPage = () => {
           {/* FLUJO RETIRO EN TIENDA */}
           {isPickup && currentStep === 1 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
+              <h2 className="text-2xl font-light mb-6">👤 ¿Quién retira el pedido?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col relative">
+                <div className="flex flex-col relative md:col-span-2">
                   <input 
                     name="nombre"
                     value={formData.nombre}
@@ -1984,7 +1984,7 @@ const MultiStepCheckoutPage = () => {
                         ? 'border-2 border-green-500 bg-green-50'
                         : 'bg-white/50 border-2 border-transparent focus:border-green-300'
                     }`} 
-                    placeholder="Nombre *" 
+                    placeholder="Nombre completo de quien retira *" 
                     disabled={formData.envioAnonimo}
                   />
                   {touchedFields.nombre && formData.nombre.trim() && !formErrors.nombre && (
@@ -1992,18 +1992,7 @@ const MultiStepCheckoutPage = () => {
                   )}
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
                 </div>
-                <input 
-                  name="apellido"
-                  value={formData.apellido}
-                  onChange={handleInputChange}
-                  className={`p-4 rounded-xl transition-all ${
-                    formData.envioAnonimo
-                      ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                      : 'bg-white/50 border-2 border-transparent focus:border-green-300'
-                  }`}
-                  placeholder="Apellido" 
-                  disabled={formData.envioAnonimo}
-                />
+                <input type="hidden" name="apellido" value={formData.apellido} />
                 <div className="flex flex-col relative">
                   <label htmlFor="email" className="sr-only">Email</label>
                   <input 
@@ -2445,7 +2434,7 @@ const MultiStepCheckoutPage = () => {
 
           {!isPickup && currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
+              <h2 className="text-2xl font-light mb-6">💝 ¿Quién envía este regalo?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col md:col-span-2">
                   <input 
@@ -2459,7 +2448,7 @@ const MultiStepCheckoutPage = () => {
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : 'bg-white/50 border-0'
                     }`} 
-                    placeholder="Nombre completo" 
+                    placeholder={isPickup ? "Nombre de quien retira" : "Nombre de quien envía"} 
                     disabled={formData.envioAnonimo}
                   />
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
