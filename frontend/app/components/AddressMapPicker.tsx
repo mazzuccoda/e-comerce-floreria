@@ -432,45 +432,7 @@ export default function AddressMapPicker({
         </div>
       )}
 
-      {/* Información de distancia */}
-      {distanceInfo && (
-        <div className={`p-3 rounded-lg border ${
-          distanceInfo.withinCoverage
-            ? 'bg-blue-50 border-blue-200'
-            : 'bg-orange-50 border-orange-200'
-        }`}>
-          <div className="flex items-start gap-3">
-            <Navigation className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-              distanceInfo.withinCoverage ? 'text-blue-600' : 'text-orange-600'
-            }`} />
-            <div className="flex-1">
-              <p className={`text-sm font-semibold ${
-                distanceInfo.withinCoverage ? 'text-blue-900' : 'text-orange-900'
-              }`}>
-                Distancia desde la tienda
-              </p>
-              <div className="flex items-center gap-4 mt-1">
-                <span className={`text-lg font-bold ${
-                  distanceInfo.withinCoverage ? 'text-blue-700' : 'text-orange-700'
-                }`}>
-                  {distanceInfo.distance} km
-                </span>
-                <span className={`text-sm flex items-center gap-1 ${
-                  distanceInfo.withinCoverage ? 'text-blue-600' : 'text-orange-600'
-                }`}>
-                  <Clock className="w-4 h-4" />
-                  {distanceInfo.duration}
-                </span>
-              </div>
-              {distanceInfo.withinCoverage && (
-                <p className="text-xs text-blue-600 mt-1">
-                  ✓ Dentro del área de cobertura {shippingMethod}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Información de distancia - OCULTA para no confundir al cliente */}
 
       {isCalculatingDistance && (
         <div className="text-center py-2">
