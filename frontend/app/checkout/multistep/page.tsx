@@ -1487,7 +1487,7 @@ const MultiStepCheckoutPage = () => {
                 {formData.metodoEnvio !== 'retiro' && (
                   isCalculatingShipping ? (
                     <span className="text-gray-400">Calculando...</span>
-                  ) : calculatedShippingCost !== null ? (
+                  ) : (calculatedShippingCost !== null && calculatedShippingCost !== undefined && calculatedShippingCost > 0) ? (
                     `+$${calculatedShippingCost.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                   ) : (
                     <span className="text-gray-400">-</span>
