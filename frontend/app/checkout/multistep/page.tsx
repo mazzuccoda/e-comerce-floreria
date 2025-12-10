@@ -1744,10 +1744,26 @@ const MultiStepCheckoutPage = () => {
                               ⚡ Envío Express 
                               <span className="text-sm text-gray-500 ml-1">(Solo en Yerba Buena)</span>
                             </span>
-                            <span className={`font-semibold ${isAvailable ? 'text-green-600' : 'text-gray-400'}`}>
-                              $10.000
-                            </span>
+                            <div className="text-right">
+                              {isCalculatingShipping && formData.metodoEnvio === 'express' ? (
+                                <span className="text-blue-600 text-sm">🔄 Calculando...</span>
+                              ) : calculatedShippingCost !== null && calculatedShippingCost > 0 && formData.metodoEnvio === 'express' ? (
+                                <span className="font-semibold text-green-600">
+                                  ${calculatedShippingCost.toLocaleString('es-AR')}
+                                </span>
+                              ) : calculatedShippingCost === 0 && formData.metodoEnvio === 'express' ? (
+                                <span className="font-semibold text-green-600">✅ GRATIS</span>
+                              ) : (
+                                <span className="text-gray-600 text-sm">Desde $5,000</span>
+                              )}
+                            </div>
                           </div>
+                          {/* Info de envío gratis */}
+                          {formData.metodoEnvio !== 'express' && (
+                            <div className="text-xs text-gray-500 mb-2">
+                              💡 Gratis con productos seleccionados o pedidos grandes
+                            </div>
+                          )}
                           {/* Mensaje de disponibilidad principal */}
                           <div className="bg-green-50 text-green-700 border border-green-200 p-3 rounded-lg mb-2">
                             <div className="font-semibold flex items-center gap-2">
@@ -1816,8 +1832,26 @@ const MultiStepCheckoutPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-lg">📅 Envío Programado</span>
-                        <span className="text-blue-600 font-semibold">$5.000</span>
+                        <div className="text-right">
+                          {isCalculatingShipping && formData.metodoEnvio === 'programado' ? (
+                            <span className="text-blue-600 text-sm">🔄 Calculando...</span>
+                          ) : calculatedShippingCost !== null && calculatedShippingCost > 0 && formData.metodoEnvio === 'programado' ? (
+                            <span className="font-semibold text-blue-600">
+                              ${calculatedShippingCost.toLocaleString('es-AR')}
+                            </span>
+                          ) : calculatedShippingCost === 0 && formData.metodoEnvio === 'programado' ? (
+                            <span className="font-semibold text-green-600">✅ GRATIS</span>
+                          ) : (
+                            <span className="text-gray-600 text-sm">Desde $5,000</span>
+                          )}
+                        </div>
                       </div>
+                      {/* Info de envío gratis */}
+                      {formData.metodoEnvio !== 'programado' && (
+                        <div className="text-xs text-gray-500 mb-2">
+                          💡 Gratis con productos seleccionados o pedidos grandes
+                        </div>
+                      )}
                       <div className="flex items-center text-sm text-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-blue-600">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
