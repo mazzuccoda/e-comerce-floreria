@@ -70,34 +70,29 @@ class MercadoPagoService:
             
             # Debug: Log del tipo de envío
             logger.info(f"🚚 DEBUG - Pedido #{pedido.id}")
-            logger.info(f"🚚 DEBUG - tipo_envio: '{pedido.tipo_envio}' (type: {type(pedido.tipo_envio)})")
-            logger.info(f"🚚 DEBUG - tipo_envio repr: {repr(pedido.tipo_envio)}")
-            logger.info(f"🚚 DEBUG - metodo_envio: {pedido.metodo_envio}")
+            logger.info(f"🚚 DEBUG - tipo_envio: '{pedido.tipo_envio}'")
+            logger.info(f"🚚 DEBUG - costo_envio: {pedido.costo_envio}")
             
-            # Normalizar tipo_envio (eliminar espacios y convertir a minúsculas)
-            tipo_envio_normalizado = str(pedido.tipo_envio).strip().lower() if pedido.tipo_envio else None
-            logger.info(f"🚚 DEBUG - tipo_envio_normalizado: '{tipo_envio_normalizado}'")
-            
-            # Determinar costo de envío según tipo_envio
-            if tipo_envio_normalizado == 'express':
-                shipping_cost = 10000  # $10.000
-                shipping_name = "Envío Express (2-4 horas)"
-                logger.info(f"✅ Detectado envío EXPRESS: ${shipping_cost}")
-            elif tipo_envio_normalizado == 'programado':
-                shipping_cost = 5000  # $5.000
-                shipping_name = "Envío Programado"
-                logger.info(f"✅ Detectado envío PROGRAMADO: ${shipping_cost}")
-            elif tipo_envio_normalizado == 'retiro':
+            # Usar el costo de envío calculado dinámicamente
+            if pedido.costo_envio and pedido.costo_envio > 0:
+                shipping_cost = float(pedido.costo_envio)
+                
+                # Determinar nombre según tipo_envio
+                tipo_envio_normalizado = str(pedido.tipo_envio).strip().lower() if pedido.tipo_envio else None
+                if tipo_envio_normalizado == 'express':
+                    shipping_name = "Envío Express (2-4 horas)"
+                elif tipo_envio_normalizado == 'programado':
+                    shipping_name = "Envío Programado"
+                else:
+                    shipping_name = "Envío"
+                
+                logger.info(f"✅ Usando costo de envío calculado: ${shipping_cost} ({shipping_name})")
+            elif pedido.tipo_envio and str(pedido.tipo_envio).strip().lower() == 'retiro':
                 shipping_cost = 0
                 shipping_name = "Retiro en tienda"
-                logger.info(f"✅ Detectado RETIRO en tienda: ${shipping_cost}")
-            # Fallback: si usa metodo_envio legacy
-            elif pedido.metodo_envio and pedido.metodo_envio.costo > 0:
-                shipping_cost = float(pedido.metodo_envio.costo)
-                shipping_name = pedido.metodo_envio.nombre
-                logger.info(f"✅ Usando método de envío legacy: ${shipping_cost}")
+                logger.info(f"✅ Retiro en tienda: sin costo")
             else:
-                logger.warning(f"⚠️ No se pudo determinar costo de envío. tipo_envio='{tipo_envio_normalizado}', metodo_envio={pedido.metodo_envio}")
+                logger.warning(f"⚠️ No hay costo de envío definido para pedido #{pedido.id}")
             
             # Agregar item de envío si tiene costo
             if shipping_cost > 0:

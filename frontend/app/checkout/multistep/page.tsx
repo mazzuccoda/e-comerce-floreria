@@ -2370,54 +2370,30 @@ const MultiStepCheckoutPage = () => {
                   isOutOfCoverage
                 });
                 
-                return (
-                  <div className={`mb-6 p-4 rounded-xl border-2 ${
-                    isOutOfCoverage 
-                      ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-300' 
-                      : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                        isOutOfCoverage ? 'bg-red-500' : 'bg-blue-500'
-                      }`}>
-                        <span className="text-white text-lg">{isOutOfCoverage ? '⚠️' : '📍'}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className={`font-semibold mb-1 ${
-                          isOutOfCoverage ? 'text-red-900' : 'text-blue-900'
-                        }`}>
-                          {isOutOfCoverage ? 'Fuera de cobertura' : 'Información de envío'}
-                        </h4>
-                        <div className="space-y-1 text-sm">
-                          <p className={isOutOfCoverage ? 'text-red-800' : 'text-blue-800'}>
-                            <span className="font-medium">Distancia:</span> {distanceKm} km
+                // Solo mostrar mensaje si está fuera de cobertura
+                if (isOutOfCoverage) {
+                  return (
+                    <div className="mb-6 p-4 rounded-xl border-2 bg-gradient-to-r from-red-50 to-orange-50 border-red-300">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-500">
+                          <span className="text-white text-lg">⚠️</span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-1 text-red-900">
+                            Fuera de cobertura
+                          </h4>
+                          <p className="text-red-900 font-semibold text-sm mt-2 bg-red-100 p-2 rounded">
+                            ❌ Esta dirección supera la distancia máxima de {maxDistance} km para envío {formData.metodoEnvio}.
+                            Por favor, selecciona otra dirección o cambia el método de envío.
                           </p>
-                          <p className={isOutOfCoverage ? 'text-red-800' : 'text-blue-800'}>
-                            <span className="font-medium">Tiempo estimado:</span> {shippingDuration}
-                          </p>
-                          {isOutOfCoverage ? (
-                            <p className="text-red-900 font-semibold text-sm mt-2 bg-red-100 p-2 rounded">
-                              ❌ Esta dirección supera la distancia máxima de {maxDistance} km para envío {formData.metodoEnvio}.
-                              Por favor, selecciona otra dirección o cambia el método de envío.
-                            </p>
-                          ) : (
-                            <>
-                              {isCalculatingShipping ? (
-                                <p className="text-blue-600 flex items-center gap-2">
-                                  <span className="animate-spin">⏳</span> Calculando costo...
-                                </p>
-                              ) : calculatedShippingCost > 0 ? (
-                                <p className="text-blue-900 font-semibold text-base mt-2">
-                                  <span className="font-medium">Costo de envío:</span> ${calculatedShippingCost.toLocaleString('es-AR')}
-                                </p>
-                              ) : null}
-                            </>
-                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
+                  );
+                }
+                
+                // No mostrar nada si está dentro de cobertura
+                return null;
               })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
