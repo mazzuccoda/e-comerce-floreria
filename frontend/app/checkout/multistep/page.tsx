@@ -1484,8 +1484,15 @@ const MultiStepCheckoutPage = () => {
               </span>
               <span className="font-semibold">
                 {formData.metodoEnvio === 'retiro' && 'Sin cargo'}
-                {formData.metodoEnvio === 'express' && '+$10.000,00'}
-                {formData.metodoEnvio === 'programado' && '+$5.000,00'}
+                {formData.metodoEnvio !== 'retiro' && (
+                  isCalculatingShipping ? (
+                    <span className="text-gray-400">Calculando...</span>
+                  ) : calculatedShippingCost !== null ? (
+                    `+$${calculatedShippingCost.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )
+                )}
               </span>
             </div>
             
@@ -1494,8 +1501,8 @@ const MultiStepCheckoutPage = () => {
               <span>Total a Pagar</span>
               <span className="text-green-600">
                 ${(() => {
-                  const costoEnvio = formData.metodoEnvio === 'express' ? 10000 : formData.metodoEnvio === 'programado' ? 5000 : 0;
-                  return (directCart.total_price + costoEnvio).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+                  const costoEnvio = formData.metodoEnvio === 'retiro' ? 0 : (calculatedShippingCost || 0);
+                  return (directCart.total_price + costoEnvio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 })()}
               </span>
             </div>
