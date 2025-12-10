@@ -109,12 +109,24 @@ export function useShippingConfig() {
   const calculateShippingCost = async (
     distanceKm: number,
     shippingMethod: 'express' | 'programado',
-    orderAmount: number
+    orderAmount: number,
+    cartItems?: any[]
   ): Promise<ShippingCalculation> => {
     try {
+      const body: any = {
+        distance_km: distanceKm,
+        shipping_method: shippingMethod,
+        order_amount: orderAmount,
+      };
+      
+      // Agregar items del carrito si están disponibles
+      if (cartItems && cartItems.length > 0) {
+        body.cart_items = cartItems;
+      }
+      
       console.log('🌐 Llamando a API de cálculo de costo:', {
         url: `${API_BASE_URL}/pedidos/shipping/calculate/`,
-        body: { distance_km: distanceKm, shipping_method: shippingMethod, order_amount: orderAmount }
+        body
       });
       
       const response = await fetch(`${API_BASE_URL}/pedidos/shipping/calculate/`, {
@@ -122,11 +134,7 @@ export function useShippingConfig() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          distance_km: distanceKm,
-          shipping_method: shippingMethod,
-          order_amount: orderAmount,
-        }),
+        body: JSON.stringify(body),
       });
 
       console.log('📡 Respuesta de API:', {

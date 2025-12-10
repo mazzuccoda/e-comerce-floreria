@@ -2329,7 +2329,8 @@ const MultiStepCheckoutPage = () => {
                         const result = await calculateShippingCost(
                           distance,
                           formData.metodoEnvio as 'express' | 'programado',
-                          directCart.total_price
+                          directCart.total_price,
+                          directCart.items // Pasar items del carrito para verificar envío gratis
                         );
                         
                         console.log('💰 Costo de envío calculado:', result);

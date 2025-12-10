@@ -92,13 +92,15 @@ def calculate_shipping_cost(request):
     Body: {
         "distance_km": 7.5,
         "shipping_method": "express",
-        "order_amount": 25000  (opcional)
+        "order_amount": 25000  (opcional),
+        "cart_items": [...]  (opcional, para verificar envío gratis por producto)
     }
     """
     try:
         distance_km = request.data.get('distance_km')
         shipping_method = request.data.get('shipping_method')
         order_amount = request.data.get('order_amount', 0)
+        cart_items = request.data.get('cart_items', [])
         
         # Validaciones
         if not distance_km or not shipping_method:
@@ -159,25 +161,56 @@ def calculate_shipping_cost(request):
         shipping_cost = zone.calculate_price(distance_km)
         logger.info(f"Costo calculado por zona: {shipping_cost}")
         
-        # Verificar envío gratis
+        # Verificar envío gratis POR PRODUCTO
         is_free_shipping = False
-        rule = ShippingPricingRule.objects.filter(
-            shipping_method=shipping_method,
-            is_active=True
-        ).first()
+        free_shipping_reason = None
         
-        logger.info(f"Regla de envío gratis: {rule}")
-        if rule:
-            logger.info(f"  - Umbral: {rule.free_shipping_threshold}")
-            logger.info(f"  - Monto pedido: {order_amount}")
-        
-        if rule and rule.free_shipping_threshold:
-            if order_amount >= float(rule.free_shipping_threshold):
+        # 1. Verificar si TODOS los productos en el carrito tienen envío gratis
+        if cart_items:
+            from catalogo.models import Producto
+            logger.info(f"📦 Verificando envío gratis para {len(cart_items)} items")
+            
+            all_products_free_shipping = True
+            for item in cart_items:
+                producto_id = item.get('producto_id') or item.get('producto', {}).get('id')
+                if producto_id:
+                    try:
+                        producto = Producto.objects.get(id=producto_id)
+                        logger.info(f"  - Producto #{producto_id} ({producto.nombre}): envio_gratis={producto.envio_gratis}")
+                        if not producto.envio_gratis:
+                            all_products_free_shipping = False
+                            break
+                    except Producto.DoesNotExist:
+                        logger.warning(f"  - Producto #{producto_id} no encontrado")
+                        all_products_free_shipping = False
+                        break
+            
+            if all_products_free_shipping and len(cart_items) > 0:
                 is_free_shipping = True
                 shipping_cost = 0
-                logger.info(f"✅ ENVÍO GRATIS APLICADO (pedido ${order_amount} >= ${rule.free_shipping_threshold})")
-            else:
-                logger.info(f"❌ No califica para envío gratis (pedido ${order_amount} < ${rule.free_shipping_threshold})")
+                free_shipping_reason = "Todos los productos tienen envío gratis"
+                logger.info(f"✅ ENVÍO GRATIS APLICADO: {free_shipping_reason}")
+        
+        # 2. Si no hay envío gratis por producto, verificar regla por monto
+        if not is_free_shipping:
+            rule = ShippingPricingRule.objects.filter(
+                shipping_method=shipping_method,
+                is_active=True
+            ).first()
+            
+            logger.info(f"Regla de envío gratis por monto: {rule}")
+            if rule:
+                logger.info(f"  - Umbral: {rule.free_shipping_threshold}")
+                logger.info(f"  - Monto pedido: {order_amount}")
+            
+            if rule and rule.free_shipping_threshold:
+                if order_amount >= float(rule.free_shipping_threshold):
+                    is_free_shipping = True
+                    shipping_cost = 0
+                    free_shipping_reason = f"Monto del pedido supera umbral (${order_amount} >= ${rule.free_shipping_threshold})"
+                    logger.info(f"✅ ENVÍO GRATIS APLICADO: {free_shipping_reason}")
+                else:
+                    logger.info(f"❌ No califica para envío gratis (pedido ${order_amount} < ${rule.free_shipping_threshold})")
         
         return Response({
             'available': True,
