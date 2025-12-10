@@ -372,8 +372,8 @@ class ShippingZone(models.Model):
         extra_km = max(Decimal('0'), distance_km - self.min_distance_km)
         total_price = float(self.base_price) + (float(self.price_per_km) * float(extra_km))
         
-        # Redondear a múltiplos de $0.50 para mostrar precios más limpios
-        return math.ceil(total_price * 2) / 2
+        # Redondear hacia arriba a múltiplos de $100 para mostrar precios más limpios
+        return math.ceil(total_price / 100) * 100
 
 
 class ShippingPricingRule(models.Model):
