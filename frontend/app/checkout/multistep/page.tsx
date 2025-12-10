@@ -1504,11 +1504,13 @@ const MultiStepCheckoutPage = () => {
                 {formData.metodoEnvio === 'retiro' && 'Sin cargo'}
                 {formData.metodoEnvio !== 'retiro' && (
                   isCalculatingShipping ? (
-                    <span className="text-gray-400">Calculando...</span>
-                  ) : (calculatedShippingCost !== null && calculatedShippingCost !== undefined && calculatedShippingCost > 0) ? (
+                    <span className="text-blue-600">Calculando...</span>
+                  ) : calculatedShippingCost !== null && calculatedShippingCost !== undefined && calculatedShippingCost > 0 ? (
                     `+$${calculatedShippingCost.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ) : calculatedShippingCost === 0 ? (
+                    <span className="text-green-600">GRATIS</span>
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className="text-gray-500 italic">A calcular</span>
                   )
                 )}
               </span>
