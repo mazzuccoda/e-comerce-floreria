@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { GoogleMap, Marker, useLoadScript, Autocomplete, Circle } from '@react-google-maps/api';
+import { GoogleMap, Marker, useLoadScript, Autocomplete, Circle, Polyline } from '@react-google-maps/api';
 import { MapPin, Search, AlertCircle, CheckCircle, Navigation, Clock } from 'lucide-react';
 import { AddressData, MapCenter } from '@/types/Address';
 import { useShippingConfig } from '@/app/hooks/useShippingConfig';
@@ -65,6 +65,7 @@ export default function AddressMapPicker({
     withinCoverage: boolean;
   } | null>(null);
   const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
   
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -152,29 +153,69 @@ export default function AddressMapPicker({
       let distanceKm = 0;
       let durationText = '';
       
-      // Intentar con Distance Matrix API
+      // Intentar obtener la ruta con Directions API
       try {
-        const result = await calculateDistance({
+        const directionsService = new google.maps.DirectionsService();
+        const directionsResult = await directionsService.route({
           origin: { lat: config.store_lat, lng: config.store_lng },
           destination: { lat, lng },
+          travelMode: google.maps.TravelMode.DRIVING,
         });
 
-        if (result.status === 'OK') {
-          distanceKm = result.distance_km;
-          durationText = result.duration_text;
+        if (directionsResult.routes && directionsResult.routes[0]) {
+          const route = directionsResult.routes[0];
+          const leg = route.legs[0];
+          
+          // Extraer distancia y duración
+          distanceKm = (leg.distance?.value || 0) / 1000;
+          durationText = leg.duration?.text || '';
+          
+          // Extraer path de la ruta
+          const path: google.maps.LatLng[] = [];
+          route.overview_path.forEach((point) => {
+            path.push(point);
+          });
+          setRoutePath(path);
         } else {
-          throw new Error('Distance Matrix no disponible');
+          throw new Error('Directions API no disponible');
         }
-      } catch (distanceMatrixError) {
-        // Fallback: usar Haversine (distancia en línea recta)
-        console.warn('⚠️ Distance Matrix API falló, usando Haversine fallback:', distanceMatrixError);
-        distanceKm = calculateStraightLineDistance(
-          { lat: config.store_lat, lng: config.store_lng },
-          { lat, lng }
-        );
-        // Estimar duración: ~30 km/h promedio en ciudad
-        const durationMinutes = Math.round((distanceKm / 30) * 60);
-        durationText = `~${durationMinutes} min (estimado)`;
+      } catch (directionsError) {
+        console.warn('⚠️ Directions API falló, usando Distance Matrix fallback:', directionsError);
+        
+        // Fallback: usar Distance Matrix API
+        try {
+          const result = await calculateDistance({
+            origin: { lat: config.store_lat, lng: config.store_lng },
+            destination: { lat, lng },
+          });
+
+          if (result.status === 'OK') {
+            distanceKm = result.distance_km;
+            durationText = result.duration_text;
+            // Crear línea recta como fallback visual
+            setRoutePath([
+              new google.maps.LatLng(config.store_lat, config.store_lng),
+              new google.maps.LatLng(lat, lng)
+            ]);
+          } else {
+            throw new Error('Distance Matrix no disponible');
+          }
+        } catch (distanceMatrixError) {
+          // Último fallback: usar Haversine (distancia en línea recta)
+          console.warn('⚠️ Distance Matrix API falló, usando Haversine fallback:', distanceMatrixError);
+          distanceKm = calculateStraightLineDistance(
+            { lat: config.store_lat, lng: config.store_lng },
+            { lat, lng }
+          );
+          // Estimar duración: ~30 km/h promedio en ciudad
+          const durationMinutes = Math.round((distanceKm / 30) * 60);
+          durationText = `~${durationMinutes} min (estimado)`;
+          // Crear línea recta como fallback visual
+          setRoutePath([
+            new google.maps.LatLng(config.store_lat, config.store_lng),
+            new google.maps.LatLng(lat, lng)
+          ]);
+        }
       }
 
       const maxDistance =
@@ -495,6 +536,19 @@ export default function AddressMapPicker({
                 title={config.store_name}
               />
             </>
+          )}
+
+          {/* Ruta desde tienda hasta destino */}
+          {routePath.length > 0 && (
+            <Polyline
+              path={routePath}
+              options={{
+                strokeColor: '#3b82f6',
+                strokeOpacity: 0.8,
+                strokeWeight: 4,
+                geodesic: true,
+              }}
+            />
           )}
 
           {/* Marcador del destino */}
