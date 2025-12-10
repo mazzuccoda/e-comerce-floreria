@@ -58,13 +58,26 @@ const MultiStepCheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   
   // Estado para shipping zones
-  const { config: shippingConfig, calculateShippingCost, isWithinCoverage } = useShippingConfig();
+  const { config: shippingConfig, zones: shippingZones, calculateShippingCost, isWithinCoverage } = useShippingConfig();
   const [distanceKm, setDistanceKm] = useState<number>(0);
   
   // Debug: Log cuando calculateShippingCost cambia
   useEffect(() => {
     console.log('🔍 calculateShippingCost disponible:', !!calculateShippingCost);
   }, [calculateShippingCost]);
+  
+  // Función para obtener el precio base mínimo de un método de envío
+  const getMinBasePrice = (method: 'express' | 'programado'): number => {
+    const zones = method === 'express' ? shippingZones.express : shippingZones.programado;
+    if (!zones || zones.length === 0) return method === 'express' ? 7000 : 5000; // Fallback
+    
+    // Obtener el precio base más bajo de todas las zonas activas
+    const activePrices = zones
+      .filter(z => z.is_active)
+      .map(z => z.base_price);
+    
+    return activePrices.length > 0 ? Math.min(...activePrices) : (method === 'express' ? 7000 : 5000);
+  };
   
   // Debug: Log shipping config cuando cambia
   useEffect(() => {
@@ -1754,7 +1767,9 @@ const MultiStepCheckoutPage = () => {
                               ) : calculatedShippingCost === 0 && formData.metodoEnvio === 'express' ? (
                                 <span className="font-semibold text-green-600">✅ GRATIS</span>
                               ) : (
-                                <span className="text-gray-600 text-sm">Desde $5,000</span>
+                                <span className="text-gray-600 text-sm">
+                                  Desde ${getMinBasePrice('express').toLocaleString('es-AR')}
+                                </span>
                               )}
                             </div>
                           </div>
@@ -1842,7 +1857,9 @@ const MultiStepCheckoutPage = () => {
                           ) : calculatedShippingCost === 0 && formData.metodoEnvio === 'programado' ? (
                             <span className="font-semibold text-green-600">✅ GRATIS</span>
                           ) : (
-                            <span className="text-gray-600 text-sm">Desde $5,000</span>
+                            <span className="text-gray-600 text-sm">
+                              Desde ${getMinBasePrice('programado').toLocaleString('es-AR')}
+                            </span>
                           )}
                         </div>
                       </div>
