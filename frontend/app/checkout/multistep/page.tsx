@@ -2397,61 +2397,33 @@ const MultiStepCheckoutPage = () => {
               })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2">
                   <input 
                     name="nombreDestinatario"
                     value={formData.nombreDestinatario}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.nombreDestinatario ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
-                    placeholder="Nombre destinatario" 
+                    placeholder="Nombre completo del destinatario" 
                   />
                   {formErrors.nombreDestinatario && <span className="text-red-600 text-sm mt-1">{formErrors.nombreDestinatario}</span>}
                 </div>
-                <input 
-                  name="apellidoDestinatario"
-                  value={formData.apellidoDestinatario}
-                  onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
-                  placeholder="Apellido destinatario" 
-                />
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2">
                   <input 
                     name="telefonoDestinatario"
                     value={formData.telefonoDestinatario}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.telefonoDestinatario ? 'border-2 border-red-300 bg-red-50/10' : ''}`} 
-                    placeholder="Teléfono" 
+                    placeholder="Teléfono (para coordinar la entrega)" 
                   />
                   {formErrors.telefonoDestinatario && <span className="text-red-600 text-sm mt-1">{formErrors.telefonoDestinatario}</span>}
                 </div>
-                <input 
-                  name="codigoPostal"
-                  value={formData.codigoPostal}
-                  onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
-                  placeholder="Código Postal" 
-                />
               </div>
-              <div className="flex flex-col w-full mt-4">
-                <input 
-                  name="direccion"
-                  value={formData.direccion}
-                  onChange={handleInputChange}
-                  className={`w-full p-4 rounded-xl bg-white/50 border-0 ${formErrors.direccion ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
-                  placeholder="Dirección completa" 
-                />
-                {formErrors.direccion && <span className="text-red-600 text-sm mt-1">{formErrors.direccion}</span>}
-              </div>
-              <div className="flex flex-col w-full mt-4">
-                <input 
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleInputChange}
-                  className={`w-full p-4 rounded-xl bg-white/50 border-0 ${formErrors.ciudad ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
-                  placeholder="Ciudad" 
-                />
-                {formErrors.ciudad && <span className="text-red-600 text-sm mt-1">{formErrors.ciudad}</span>}
-              </div>
+              
+              {/* Campos ocultos pero guardados */}
+              <input type="hidden" name="apellidoDestinatario" value={formData.apellidoDestinatario} />
+              <input type="hidden" name="codigoPostal" value={formData.codigoPostal} />
+              <input type="hidden" name="direccion" value={formData.direccion} />
+              <input type="hidden" name="ciudad" value={formData.ciudad} />
               
               {/* Checkbox para autocompletar con datos del remitente */}
               <div className="mt-6">
@@ -2475,7 +2447,7 @@ const MultiStepCheckoutPage = () => {
             <div>
               <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2">
                   <input 
                     name="nombre"
                     value={formData.nombre}
@@ -2487,23 +2459,12 @@ const MultiStepCheckoutPage = () => {
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : 'bg-white/50 border-0'
                     }`} 
-                    placeholder="Nombre" 
+                    placeholder="Nombre completo" 
                     disabled={formData.envioAnonimo}
                   />
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
                 </div>
-                <input 
-                  name="apellido"
-                  value={formData.apellido}
-                  onChange={handleInputChange}
-                  className={`p-4 rounded-xl transition-all ${
-                    formData.envioAnonimo
-                      ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                      : 'bg-white/50 border-0'
-                  }`}
-                  placeholder="Apellido" 
-                  disabled={formData.envioAnonimo}
-                />
+                <input type="hidden" name="apellido" value={formData.apellido} />
                 <div className="flex flex-col">
                   <label htmlFor="email" className="sr-only">Email</label>
                   <input 
