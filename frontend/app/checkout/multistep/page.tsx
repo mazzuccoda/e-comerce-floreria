@@ -61,6 +61,11 @@ const MultiStepCheckoutPage = () => {
   const { config: shippingConfig, calculateShippingCost, isWithinCoverage } = useShippingConfig();
   const [distanceKm, setDistanceKm] = useState<number>(0);
   
+  // Debug: Log cuando calculateShippingCost cambia
+  useEffect(() => {
+    console.log('🔍 calculateShippingCost disponible:', !!calculateShippingCost);
+  }, [calculateShippingCost]);
+  
   // Debug: Log shipping config cuando cambia
   useEffect(() => {
     if (shippingConfig) {
@@ -2288,7 +2293,8 @@ const MultiStepCheckoutPage = () => {
               <div className="mb-6">
                 <AddressMapPicker
                   onAddressSelect={async (addressData: AddressData) => {
-                    console.log('Dirección seleccionada:', addressData);
+                    console.log('📍 Dirección seleccionada:', addressData);
+                    console.log('🔍 Método de envío actual:', formData.metodoEnvio);
                     setFormData({
                       ...formData,
                       direccion: addressData.formatted_address,
