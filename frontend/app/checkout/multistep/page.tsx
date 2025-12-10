@@ -74,7 +74,7 @@ const MultiStepCheckoutPage = () => {
       console.warn('⚠️ Shipping Config no disponible');
     }
   }, [shippingConfig]);
-  const [calculatedShippingCost, setCalculatedShippingCost] = useState<number>(0);
+  const [calculatedShippingCost, setCalculatedShippingCost] = useState<number | null>(null);
   const [shippingDuration, setShippingDuration] = useState<string>('');
   const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
 
@@ -786,7 +786,7 @@ const MultiStepCheckoutPage = () => {
       case 'express':
       case 'programado':
         // Usar el costo calculado si está disponible, sino usar valores por defecto
-        return calculatedShippingCost > 0 ? calculatedShippingCost : (formData.metodoEnvio === 'express' ? 10000 : 5000);
+        return (calculatedShippingCost !== null && calculatedShippingCost > 0) ? calculatedShippingCost : (formData.metodoEnvio === 'express' ? 10000 : 5000);
       default:
         return 0;
     }
@@ -799,7 +799,7 @@ const MultiStepCheckoutPage = () => {
     const shippingCost = getShippingCost();
     
     // Solo sumar el costo de envío, los extras ya están en directCart.total_price
-    total += shippingCost;
+    total += (shippingCost || 0);
     
     console.log('💰 Cálculo de total:', {
       subtotal: directCart.total_price,
@@ -2330,14 +2330,15 @@ const MultiStepCheckoutPage = () => {
                         
                         // Solo actualizar si está disponible y tiene costo
                         if (result.available && result.shipping_cost !== undefined && result.shipping_cost !== null) {
+                          console.log('✅ Actualizando costo de envío:', result.shipping_cost);
                           setCalculatedShippingCost(result.shipping_cost);
                         } else {
                           console.warn('⚠️ Envío no disponible o sin costo:', result);
-                          setCalculatedShippingCost(0);
+                          setCalculatedShippingCost(null);
                         }
                       } catch (error) {
                         console.error('❌ Error calculando costo de envío:', error);
-                        setCalculatedShippingCost(0);
+                        setCalculatedShippingCost(null);
                       } finally {
                         setIsCalculatingShipping(false);
                       }
