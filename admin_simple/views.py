@@ -8,6 +8,14 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from datetime import timedelta
 import logging
+from io import BytesIO
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import requests
 
 from pedidos.models import Pedido
 from catalogo.models import Producto, Categoria, ProductoImagen
@@ -830,3 +838,137 @@ def imagen_set_primary(request, pk):
             'success': False,
             'error': str(e)
         }, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def generar_catalogo_pdf(request):
+    """
+    Genera un PDF con todos los productos activos para usar en el taller
+    """
+    try:
+        # Crear el objeto HttpResponse con el tipo de contenido PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="catalogo_productos_{timezone.now().strftime("%Y%m%d")}.pdf"'
+        
+        # Crear el buffer
+        buffer = BytesIO()
+        
+        # Crear el documento PDF en orientación horizontal
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), 
+                               rightMargin=1*cm, leftMargin=1*cm,
+                               topMargin=1.5*cm, bottomMargin=1*cm)
+        
+        # Contenedor para los elementos del PDF
+        elements = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#2c5f2d'),
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Título
+        elements.append(Paragraph(f"Catálogo de Productos - {timezone.now().strftime('%d/%m/%Y')}", title_style))
+        elements.append(Spacer(1, 0.5*cm))
+        
+        # Obtener productos activos ordenados por categoría
+        productos = Producto.objects.filter(is_active=True).select_related('categoria').order_by('categoria__nombre', 'nombre')
+        
+        if not productos.exists():
+            elements.append(Paragraph("No hay productos activos para mostrar", styles['Normal']))
+        else:
+            # Crear tabla de productos
+            data = [['Código', 'Nombre', 'Categoría', 'Precio', 'Stock', 'Descripción']]
+            
+            for producto in productos:
+                # Formatear precio
+                precio_str = f"${float(producto.precio):,.2f}".replace(',', '.')
+                
+                # Descripción corta (máximo 100 caracteres)
+                descripcion = producto.descripcion[:100] + '...' if len(producto.descripcion) > 100 else producto.descripcion
+                descripcion = descripcion.replace('\n', ' ').replace('\r', '')
+                
+                # Stock con indicador visual
+                stock_str = str(producto.stock)
+                if producto.stock == 0:
+                    stock_str = "SIN STOCK"
+                elif producto.stock < 5:
+                    stock_str = f"{producto.stock} ⚠️"
+                
+                data.append([
+                    str(producto.id),
+                    producto.nombre,
+                    producto.categoria.nombre if producto.categoria else '-',
+                    precio_str,
+                    stock_str,
+                    descripcion
+                ])
+            
+            # Crear tabla
+            table = Table(data, colWidths=[2*cm, 6*cm, 3.5*cm, 3*cm, 2.5*cm, 8*cm])
+            
+            # Estilo de la tabla
+            table.setStyle(TableStyle([
+                # Encabezado
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c5f2d')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                
+                # Contenido
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # Código centrado
+                ('ALIGN', (3, 1), (4, -1), 'CENTER'),  # Precio y Stock centrados
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                ('LEFTPADDING', (0, 1), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 1), (-1, -1), 5),
+                
+                # Bordes
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#2c5f2d')),
+                
+                # Alternar colores de filas
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f0f0')]),
+            ]))
+            
+            elements.append(table)
+            
+            # Agregar resumen al final
+            elements.append(Spacer(1, 1*cm))
+            resumen_style = ParagraphStyle(
+                'Resumen',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.HexColor('#2c5f2d'),
+                fontName='Helvetica-Bold'
+            )
+            elements.append(Paragraph(f"Total de productos: {productos.count()}", resumen_style))
+        
+        # Construir el PDF
+        doc.build(elements)
+        
+        # Obtener el valor del buffer y escribirlo en la respuesta
+        pdf = buffer.getvalue()
+        buffer.close()
+        response.write(pdf)
+        
+        logger.info(f'PDF de catálogo generado por {request.user.username}')
+        return response
+        
+    except Exception as e:
+        logger.error(f'Error generando PDF de catálogo: {str(e)}')
+        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        return redirect('admin_simple:dashboard')
