@@ -945,27 +945,54 @@ def generar_catalogo_pdf(request):
                     try:
                         # Descargar imagen desde Cloudinary
                         img_url = imagen_principal.imagen.url
-                        img_response = requests.get(img_url, timeout=10)
+                        
+                        # Agregar headers para evitar bloqueos
+                        headers = {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
+                        img_response = requests.get(img_url, timeout=15, headers=headers, verify=True)
                         img_response.raise_for_status()
                         
                         # Abrir imagen con PIL
                         pil_img = PILImage.open(BytesIO(img_response.content))
                         
-                        # Redimensionar manteniendo aspecto (máximo 6cm x 6cm)
-                        max_size = 6*cm
-                        pil_img.thumbnail((int(max_size * 2), int(max_size * 2)), PILImage.Resampling.LANCZOS)
+                        # Convertir a RGB si es necesario
+                        if pil_img.mode in ('RGBA', 'LA', 'P'):
+                            pil_img = pil_img.convert('RGB')
+                        
+                        # Calcular dimensiones manteniendo aspect ratio
+                        max_width = 7*cm
+                        max_height = 6*cm
+                        
+                        # Obtener dimensiones originales
+                        orig_width, orig_height = pil_img.size
+                        aspect_ratio = orig_width / orig_height
+                        
+                        # Calcular nuevas dimensiones
+                        if aspect_ratio > (max_width / max_height):
+                            # Imagen más ancha
+                            new_width = max_width
+                            new_height = max_width / aspect_ratio
+                        else:
+                            # Imagen más alta
+                            new_height = max_height
+                            new_width = max_height * aspect_ratio
+                        
+                        # Redimensionar manteniendo aspecto
+                        pil_img.thumbnail((int(new_width * 3), int(new_height * 3)), PILImage.Resampling.LANCZOS)
                         
                         # Guardar en buffer
                         img_buffer = BytesIO()
-                        pil_img.save(img_buffer, format='JPEG', quality=85)
+                        pil_img.save(img_buffer, format='JPEG', quality=90, optimize=True)
                         img_buffer.seek(0)
                         
-                        # Crear imagen para ReportLab
-                        img = RLImage(img_buffer, width=6*cm, height=6*cm)
+                        # Crear imagen para ReportLab con dimensiones calculadas
+                        img = RLImage(img_buffer, width=new_width, height=new_height)
                         producto_elements.append(img)
                     except Exception as e:
-                        logger.warning(f'Error cargando imagen para producto {producto.id}: {str(e)}')
+                        logger.warning(f'Error cargando imagen para producto {producto.id} ({img_url}): {str(e)}')
                         # Placeholder si falla la imagen
+                        producto_elements.append(Spacer(1, 2*cm))
                         producto_elements.append(Paragraph("📷 Imagen no disponible", product_desc_style))
                 
                 producto_elements.append(Spacer(1, 0.2*cm))
