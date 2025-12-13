@@ -8,6 +8,14 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from datetime import timedelta
 import logging
+from io import BytesIO
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import requests
 
 from pedidos.models import Pedido
 from catalogo.models import Producto, Categoria, ProductoImagen
@@ -830,3 +838,236 @@ def imagen_set_primary(request, pk):
             'success': False,
             'error': str(e)
         }, status=400)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def generar_catalogo_pdf(request):
+    """
+    Genera un PDF visual tipo catálogo con fotos y descripciones para el taller
+    """
+    try:
+        from reportlab.platypus import PageBreak, KeepTogether
+        from reportlab.lib.utils import ImageReader
+        from PIL import Image as PILImage
+        
+        # Crear el objeto HttpResponse con el tipo de contenido PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="catalogo_visual_{timezone.now().strftime("%Y%m%d")}.pdf"'
+        
+        # Crear el buffer
+        buffer = BytesIO()
+        
+        # Crear el documento PDF
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                               rightMargin=1.5*cm, leftMargin=1.5*cm,
+                               topMargin=1.5*cm, bottomMargin=1.5*cm)
+        
+        # Contenedor para los elementos del PDF
+        elements = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            textColor=colors.HexColor('#2c5f2d'),
+            spaceAfter=10,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'Subtitle',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.grey,
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            fontName='Helvetica'
+        )
+        
+        product_name_style = ParagraphStyle(
+            'ProductName',
+            parent=styles['Heading2'],
+            fontSize=12,
+            textColor=colors.HexColor('#2c5f2d'),
+            spaceAfter=5,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        product_desc_style = ParagraphStyle(
+            'ProductDesc',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.black,
+            spaceAfter=3,
+            alignment=TA_LEFT,
+            fontName='Helvetica',
+            leading=10
+        )
+        
+        product_price_style = ParagraphStyle(
+            'ProductPrice',
+            parent=styles['Normal'],
+            fontSize=11,
+            textColor=colors.HexColor('#2c5f2d'),
+            spaceAfter=5,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Título principal
+        elements.append(Paragraph("🌸 CATÁLOGO DE PRODUCTOS - TALLER", title_style))
+        elements.append(Paragraph(f"Generado el {timezone.now().strftime('%d/%m/%Y a las %H:%M')}", subtitle_style))
+        elements.append(Spacer(1, 0.3*cm))
+        
+        # Obtener productos activos con imágenes
+        productos = Producto.objects.filter(is_active=True).prefetch_related('imagenes').select_related('categoria').order_by('categoria__nombre', 'nombre')
+        
+        if not productos.exists():
+            elements.append(Paragraph("No hay productos activos para mostrar", styles['Normal']))
+        else:
+            # Crear cuadrícula de productos (2 columnas)
+            productos_por_fila = []
+            fila_actual = []
+            
+            for producto in productos:
+                # Crear tarjeta de producto
+                producto_elements = []
+                
+                # Obtener imagen principal
+                imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
+                
+                if imagen_principal and imagen_principal.imagen:
+                    try:
+                        # Descargar imagen desde Cloudinary
+                        img_url = imagen_principal.imagen.url
+                        
+                        # Agregar headers para evitar bloqueos
+                        headers = {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                        }
+                        img_response = requests.get(img_url, timeout=15, headers=headers, verify=True)
+                        img_response.raise_for_status()
+                        
+                        # Abrir imagen con PIL
+                        pil_img = PILImage.open(BytesIO(img_response.content))
+                        
+                        # Convertir a RGB si es necesario
+                        if pil_img.mode in ('RGBA', 'LA', 'P'):
+                            pil_img = pil_img.convert('RGB')
+                        
+                        # Calcular dimensiones manteniendo aspect ratio
+                        max_width = 7*cm
+                        max_height = 6*cm
+                        
+                        # Obtener dimensiones originales
+                        orig_width, orig_height = pil_img.size
+                        aspect_ratio = orig_width / orig_height
+                        
+                        # Calcular nuevas dimensiones
+                        if aspect_ratio > (max_width / max_height):
+                            # Imagen más ancha
+                            new_width = max_width
+                            new_height = max_width / aspect_ratio
+                        else:
+                            # Imagen más alta
+                            new_height = max_height
+                            new_width = max_height * aspect_ratio
+                        
+                        # Redimensionar manteniendo aspecto
+                        pil_img.thumbnail((int(new_width * 3), int(new_height * 3)), PILImage.Resampling.LANCZOS)
+                        
+                        # Guardar en buffer
+                        img_buffer = BytesIO()
+                        pil_img.save(img_buffer, format='JPEG', quality=90, optimize=True)
+                        img_buffer.seek(0)
+                        
+                        # Crear imagen para ReportLab con dimensiones calculadas
+                        img = RLImage(img_buffer, width=new_width, height=new_height)
+                        producto_elements.append(img)
+                    except Exception as e:
+                        logger.warning(f'Error cargando imagen para producto {producto.id} ({img_url}): {str(e)}')
+                        # Placeholder si falla la imagen
+                        producto_elements.append(Spacer(1, 2*cm))
+                        producto_elements.append(Paragraph("📷 Imagen no disponible", product_desc_style))
+                
+                producto_elements.append(Spacer(1, 0.2*cm))
+                
+                # Nombre del producto
+                producto_elements.append(Paragraph(f"<b>{producto.nombre}</b>", product_name_style))
+                
+                # Código y precio
+                precio_str = f"${float(producto.precio):,.0f}".replace(',', '.')
+                producto_elements.append(Paragraph(f"Código: {producto.id} | {precio_str}", product_price_style))
+                
+                producto_elements.append(Spacer(1, 0.1*cm))
+                
+                # Descripción (componentes)
+                if producto.descripcion:
+                    desc_lines = producto.descripcion.split('\n')
+                    desc_text = '<br/>'.join([line.strip() for line in desc_lines if line.strip()][:8])  # Máximo 8 líneas
+                    producto_elements.append(Paragraph(f"<b>Componentes:</b><br/>{desc_text}", product_desc_style))
+                
+                # Agregar a fila
+                fila_actual.append(producto_elements)
+                
+                # Si completamos 2 productos, crear tabla de fila
+                if len(fila_actual) == 2:
+                    # Crear tabla para esta fila (2 columnas)
+                    tabla_fila = Table([fila_actual], colWidths=[9*cm, 9*cm])
+                    tabla_fila.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                        ('TOPPADDING', (0, 0), (-1, -1), 5),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                        ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#2c5f2d')),
+                        ('LINEAFTER', (0, 0), (0, -1), 1, colors.HexColor('#2c5f2d')),
+                        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fdf9')),
+                    ]))
+                    
+                    elements.append(tabla_fila)
+                    elements.append(Spacer(1, 0.5*cm))
+                    fila_actual = []
+            
+            # Si queda un producto suelto
+            if fila_actual:
+                # Agregar celda vacía
+                fila_actual.append([])
+                tabla_fila = Table([fila_actual], colWidths=[9*cm, 9*cm])
+                tabla_fila.setStyle(TableStyle([
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+                    ('TOPPADDING', (0, 0), (-1, -1), 5),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                    ('BOX', (0, 0), (0, 0), 1, colors.HexColor('#2c5f2d')),
+                    ('BACKGROUND', (0, 0), (0, 0), colors.HexColor('#f9fdf9')),
+                ]))
+                elements.append(tabla_fila)
+            
+            # Resumen final
+            elements.append(Spacer(1, 0.5*cm))
+            elements.append(Paragraph(f"<b>Total de productos en catálogo: {productos.count()}</b>", product_price_style))
+        
+        # Construir el PDF
+        doc.build(elements)
+        
+        # Obtener el valor del buffer y escribirlo en la respuesta
+        pdf = buffer.getvalue()
+        buffer.close()
+        response.write(pdf)
+        
+        logger.info(f'PDF de catálogo visual generado por {request.user.username}')
+        return response
+        
+    except Exception as e:
+        logger.error(f'Error generando PDF de catálogo visual: {str(e)}')
+        messages.error(request, f'Error al generar el PDF: {str(e)}')
+        return redirect('admin_simple:dashboard')

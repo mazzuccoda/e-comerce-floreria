@@ -125,6 +125,23 @@
             </div>
         </div>
         {% endif %}
+        
+        <!-- Generar PDF de Catálogo -->
+        <a href="{% url 'admin_simple:catalogo-pdf' %}" 
+           class="group relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-xl p-4 sm:p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-purple-200">
+            <div class="flex items-start">
+                <div class="bg-purple-500 rounded-lg p-2.5 sm:p-3 group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas fa-file-pdf text-white text-xl sm:text-2xl"></i>
+                </div>
+                <div class="ml-3 sm:ml-4 flex-1">
+                    <p class="font-bold text-gray-900 text-base sm:text-lg">📄 Catálogo PDF para Taller</p>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-1">Descargar listado completo de productos</p>
+                    <div class="mt-2 inline-flex items-center px-2 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">
+                        <i class="fas fa-download mr-1"></i> Generar PDF
+                    </div>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
 

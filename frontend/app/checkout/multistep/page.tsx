@@ -15,6 +15,7 @@ import {
   hasCheckoutProgress,
   formatProgressAge 
 } from '@/utils/checkoutStorage';
+import { useShippingConfig } from '@/app/hooks/useShippingConfig';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -55,6 +56,45 @@ const MultiStepCheckoutPage = () => {
   const [hasError, setHasError] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Estado para shipping zones
+  const { config: shippingConfig, zones: shippingZones, calculateShippingCost, isWithinCoverage } = useShippingConfig();
+  const [distanceKm, setDistanceKm] = useState<number>(0);
+  
+  // Debug: Log cuando calculateShippingCost cambia
+  useEffect(() => {
+    console.log('🔍 calculateShippingCost disponible:', !!calculateShippingCost);
+  }, [calculateShippingCost]);
+  
+  // Función para obtener el precio base mínimo de un método de envío
+  const getMinBasePrice = (method: 'express' | 'programado'): number => {
+    const zones = method === 'express' ? shippingZones.express : shippingZones.programado;
+    if (!zones || zones.length === 0) return method === 'express' ? 7000 : 5000; // Fallback
+    
+    // Obtener el precio base más bajo de todas las zonas activas
+    const activePrices = zones
+      .filter(z => z.is_active)
+      .map(z => z.base_price);
+    
+    return activePrices.length > 0 ? Math.min(...activePrices) : (method === 'express' ? 7000 : 5000);
+  };
+  
+  // Debug: Log shipping config cuando cambia
+  useEffect(() => {
+    if (shippingConfig) {
+      console.log('📦 Shipping Config cargada:', {
+        express_max: shippingConfig.max_distance_express_km,
+        programado_max: shippingConfig.max_distance_programado_km,
+        store_lat: shippingConfig.store_lat,
+        store_lng: shippingConfig.store_lng,
+      });
+    } else {
+      console.warn('⚠️ Shipping Config no disponible');
+    }
+  }, [shippingConfig]);
+  const [calculatedShippingCost, setCalculatedShippingCost] = useState<number | null>(null);
+  const [shippingDuration, setShippingDuration] = useState<string>('');
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false);
 
   // Función para recargar el carrito desde localStorage y, si es necesario, desde el backend
   const reloadCart = async () => {
@@ -111,36 +151,127 @@ const MultiStepCheckoutPage = () => {
     }
   };
 
-  // Cargar progreso guardado al iniciar
-  useEffect(() => {
-    const savedProgress = loadCheckoutProgress();
-    if (savedProgress && hasCheckoutProgress()) {
-      console.log('💾 Progreso del checkout encontrado');
-      setShowRestorePrompt(true);
-      setSavedProgressAge(formatProgressAge());
-    }
-  }, []);
-
-  // Función para restaurar progreso
-  const restoreProgress = () => {
-    const savedProgress = loadCheckoutProgress();
-    if (savedProgress) {
-      setFormData(savedProgress.formData);
-      setCurrentStep(savedProgress.currentStep);
-      setSelectedExtras(savedProgress.selectedExtras);
-      setShowRestorePrompt(false);
-      console.log('✅ Progreso restaurado');
-    }
+  // ===== FUNCIONES DE DISPONIBILIDAD DE ENVÍOS =====
+  
+  // Verificar si Express está disponible según día y hora
+  const isExpressAvailable = () => {
+    // Express SIEMPRE está disponible (HOY o MAÑANA)
+    return true;
   };
 
-  // Función para descartar progreso
-  const discardProgress = () => {
-    clearCheckoutProgress();
-    setShowRestorePrompt(false);
-    console.log('🗑️ Progreso descartado');
+  // Obtener mensaje de disponibilidad de Express
+  const getExpressAvailabilityMessage = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay();
+    
+    // Determinar día de mañana para mensajes
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDay = tomorrow.getDay();
+    const tomorrowName = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][tomorrowDay];
+    
+    if (currentDay === 0) {
+      // Domingo
+      if (currentHour >= 9 && currentHour < 13) {
+        // Express HOY disponible (9-13hs)
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY en 2-4 horas",
+          detail: `Recibirás tu pedido hoy entre ${currentHour + 2}:00 y ${currentHour + 4}:00 hs`
+        };
+      } else if (currentHour >= 13 && currentHour < 24) {
+        // Express para MAÑANA (13-23:59hs domingo)
+        return { 
+          available: true, 
+          deliveryType: 'tomorrow',
+          message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
+          detail: "Tu pedido llegará mañana por la mañana"
+        };
+      } else {
+        // Express para HOY (0-8:59hs domingo)
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY desde las 8:00 am",
+          detail: "Tu pedido llegará hoy por la mañana"
+        };
+      }
+    } else {
+      // Lunes a Sábado
+      if (currentHour >= 9 && currentHour < 18) {
+        // Express HOY disponible (9-18hs)
+        const endHour = Math.min(currentHour + 4, 22);
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY en 2-4 horas",
+          detail: `Recibirás tu pedido hoy entre ${currentHour + 2}:00 y ${endHour}:00 hs`
+        };
+      } else if (currentHour >= 19) {
+        // Express para MAÑANA (19-23:59hs)
+        return { 
+          available: true, 
+          deliveryType: 'tomorrow',
+          message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
+          detail: "Tu pedido llegará mañana por la mañana"
+        };
+      } else if (currentHour < 9) {
+        // Express para HOY (0-8:59hs)
+        return { 
+          available: true, 
+          deliveryType: 'today',
+          message: "✅ Entrega HOY desde las 8:00 am",
+          detail: "Tu pedido llegará hoy por la mañana"
+        };
+      } else {
+        // Ventana 18:00-18:59 (transición)
+        return { 
+          available: true, 
+          deliveryType: 'tomorrow',
+          message: `✅ Entrega MAÑANA (${tomorrowName}) desde las 8:00 am`,
+          detail: "Disponible desde las 19:00 hs para entrega mañana"
+        };
+      }
+    }
+    
+    // Fallback (nunca debería llegar aquí)
+    return { 
+      available: true, 
+      deliveryType: 'tomorrow',
+      message: "✅ Entrega disponible",
+      detail: ""
+    };
   };
 
-  // Carga inicial del carrito: primero localStorage, luego API si hace falta
+  // Obtener franjas horarias disponibles para una fecha
+  const getAvailableTimeSlots = (selectedDate: string) => {
+    if (!selectedDate) return ['tarde']; // Por defecto solo tarde si no hay fecha
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Parsear la fecha seleccionada (formato YYYY-MM-DD)
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const selected = new Date(year, month - 1, day);
+    
+    // Calcular mañana
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Comparar solo año, mes y día (ignorar hora)
+    const selectedDateStr = `${selected.getFullYear()}-${String(selected.getMonth() + 1).padStart(2, '0')}-${String(selected.getDate()).padStart(2, '0')}`;
+    const tomorrowDateStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+    
+    // Si la fecha seleccionada es mañana Y son más de las 19:00
+    if (selectedDateStr === tomorrowDateStr && currentHour >= 19) {
+      return ['tarde']; // Solo tarde disponible
+    }
+    
+    return ['mañana', 'tarde']; // Ambas disponibles
+  };
+
   // Cargar progreso guardado al iniciar
   useEffect(() => {
     const savedProgress = loadCheckoutProgress();
@@ -405,6 +536,27 @@ const MultiStepCheckoutPage = () => {
       case 'fecha':
         if (formData.metodoEnvio === 'programado' && !value) {
           error = 'Selecciona una fecha para el envío programado';
+        } else if (formData.metodoEnvio === 'retiro' && !value) {
+          error = 'Selecciona una fecha para el retiro';
+        } else if (formData.metodoEnvio === 'retiro' && value) {
+          // Validar que no sea domingo
+          const selectedDate = new Date(value + 'T00:00:00');
+          if (selectedDate.getDay() === 0) {
+            error = 'No se puede retirar los domingos. Selecciona de lunes a sábado.';
+          }
+        }
+        break;
+      
+      case 'hora':
+        if (formData.metodoEnvio === 'retiro' && !value) {
+          error = 'Selecciona una hora para el retiro';
+        } else if (formData.metodoEnvio === 'retiro' && value && formData.fecha) {
+          const [hours, minutes] = value.split(':').map(Number);
+          
+          // Lunes a Sábado: 9:00 a 20:00 (domingos están bloqueados en la fecha)
+          if (hours < 9 || hours > 20 || (hours === 20 && minutes > 0)) {
+            error = 'El horario de retiro es de 9:00 a 20:00 hs';
+          }
         }
         break;
       
@@ -457,6 +609,11 @@ const MultiStepCheckoutPage = () => {
     if (isPickup) {
       // Flujo simple de retiro en tienda: 3 pasos
       switch (currentStep) {
+        case 0: // Método de envío + fecha/hora de retiro
+          console.log('🏪 [Retiro] Validando fecha y hora de retiro');
+          errors.fecha = validateField('fecha', formData.fecha);
+          errors.hora = validateField('hora', formData.hora);
+          break;
         case 1: // Remitente
           console.log('👤 [Retiro] Validando datos del remitente');
           if (!formData.envioAnonimo) {
@@ -479,6 +636,17 @@ const MultiStepCheckoutPage = () => {
           errors.telefonoDestinatario = validateField('telefonoDestinatario', formData.telefonoDestinatario);
           errors.direccion = validateField('direccion', formData.direccion);
           errors.ciudad = validateField('ciudad', formData.ciudad);
+          
+          // Validar cobertura si hay distancia calculada
+          if (distanceKm > 0 && shippingConfig) {
+            const maxDistance = formData.metodoEnvio === 'express' 
+              ? shippingConfig.max_distance_express_km 
+              : shippingConfig.max_distance_programado_km;
+            
+            if (distanceKm > maxDistance) {
+              errors.direccion = `Esta dirección está fuera del área de cobertura ${formData.metodoEnvio} (máx: ${maxDistance} km, distancia: ${distanceKm} km)`;
+            }
+          }
           break;
         case 2: // Remitente
           console.log('👤 [Envío] Validando datos del remitente');
@@ -541,6 +709,21 @@ const MultiStepCheckoutPage = () => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
     const newValue = type === 'checkbox' ? checked : value;
+    
+    // Si cambia la fecha, verificar si la franja horaria sigue siendo válida
+    if (name === 'fecha') {
+      const availableSlots = getAvailableTimeSlots(value);
+      // Si la franja actual no está disponible, limpiarla
+      if (formData.franjaHoraria && !availableSlots.includes(formData.franjaHoraria)) {
+        setFormData(prev => ({
+          ...prev,
+          fecha: value,
+          franjaHoraria: '' // Limpiar franja si ya no está disponible
+        }));
+        return;
+      }
+      
+    }
     
     // Validación en tiempo real si el campo ya fue tocado
     if (touchedFields[name] && type !== 'checkbox') {
@@ -619,9 +802,9 @@ const MultiStepCheckoutPage = () => {
       case 'retiro':
         return 0;
       case 'express':
-        return 10000;
       case 'programado':
-        return 5000;
+        // Usar el costo calculado si está disponible, sino usar valores por defecto
+        return (calculatedShippingCost !== null && calculatedShippingCost > 0) ? calculatedShippingCost : (formData.metodoEnvio === 'express' ? 10000 : 5000);
       default:
         return 0;
     }
@@ -634,7 +817,7 @@ const MultiStepCheckoutPage = () => {
     const shippingCost = getShippingCost();
     
     // Solo sumar el costo de envío, los extras ya están en directCart.total_price
-    total += shippingCost;
+    total += (shippingCost || 0);
     
     console.log('💰 Cálculo de total:', {
       subtotal: directCart.total_price,
@@ -1319,8 +1502,17 @@ const MultiStepCheckoutPage = () => {
               </span>
               <span className="font-semibold">
                 {formData.metodoEnvio === 'retiro' && 'Sin cargo'}
-                {formData.metodoEnvio === 'express' && '+$10.000,00'}
-                {formData.metodoEnvio === 'programado' && '+$5.000,00'}
+                {formData.metodoEnvio !== 'retiro' && (
+                  isCalculatingShipping ? (
+                    <span className="text-blue-600">Calculando...</span>
+                  ) : calculatedShippingCost !== null && calculatedShippingCost !== undefined && calculatedShippingCost > 0 ? (
+                    `+$${calculatedShippingCost.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ) : calculatedShippingCost === 0 ? (
+                    <span className="text-green-600">GRATIS</span>
+                  ) : (
+                    <span className="text-gray-500 italic">A calcular</span>
+                  )
+                )}
               </span>
             </div>
             
@@ -1329,8 +1521,8 @@ const MultiStepCheckoutPage = () => {
               <span>Total a Pagar</span>
               <span className="text-green-600">
                 ${(() => {
-                  const costoEnvio = formData.metodoEnvio === 'express' ? 10000 : formData.metodoEnvio === 'programado' ? 5000 : 0;
-                  return (directCart.total_price + costoEnvio).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+                  const costoEnvio = formData.metodoEnvio === 'retiro' ? 0 : (calculatedShippingCost || 0);
+                  return (directCart.total_price + costoEnvio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 })()}
               </span>
             </div>
@@ -1440,47 +1632,179 @@ const MultiStepCheckoutPage = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Retiro en horario comercial
+                          Programa tu retiro (9:00 a 20:00 hs)
                         </div>
                       </div>
                     </div>
                   </div>
                 </label>
 
-                {/* Envío Express */}
-                <label 
-                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
-                    formData.metodoEnvio === 'express' 
-                      ? 'bg-green-50 border-2 border-green-500 shadow-lg' 
-                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <input 
-                      type="radio" 
-                      name="metodoEnvio" 
-                      value="express"
-                      checked={formData.metodoEnvio === 'express'}
-                      onChange={handleInputChange}
-                      className="mr-4 mt-1 w-5 h-5 text-green-600" 
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-lg">⚡ Envío Express <span className="text-sm text-gray-500">(Solo en Yerba Buena)</span></span>
-                        <span className="text-green-600 font-semibold">$10.000</span>
+                {/* Campos de fecha y hora para Retiro Programado */}
+                {formData.metodoEnvio === 'retiro' && (
+                  <div className="mt-4 bg-gradient-to-br from-purple-50 to-purple-100/50 p-6 rounded-xl border-2 border-purple-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-purple-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <h3 className="font-semibold text-lg text-purple-900">Programa tu retiro</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                          📅 Fecha de retiro
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          type="date" 
+                          name="fecha"
+                          value={formData.fecha}
+                          onChange={handleInputChange}
+                          min={(() => {
+                            const now = new Date();
+                            const year = now.getFullYear();
+                            const month = String(now.getMonth() + 1).padStart(2, '0');
+                            const day = String(now.getDate()).padStart(2, '0');
+                            return `${year}-${month}-${day}`;
+                          })()}
+                          required
+                          className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
+                            formErrors.fecha 
+                              ? 'border-red-400 bg-red-50 focus:border-red-500' 
+                              : 'border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200'
+                          }`}
+                        />
+                        {formErrors.fecha && (
+                          <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {formErrors.fecha}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-green-600">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Entrega el mismo día (2-4 horas)
+                      <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                          ⏰ Hora de retiro
+                          <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          type="time" 
+                          name="hora"
+                          value={formData.hora}
+                          onChange={handleInputChange}
+                          min="09:00"
+                          max="20:00"
+                          required
+                          className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
+                            formErrors.hora 
+                              ? 'border-red-400 bg-red-50 focus:border-red-500' 
+                              : 'border-purple-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200'
+                          }`}
+                        />
+                        {formErrors.hora && (
+                          <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {formErrors.hora}
+                          </span>
+                        )}
                       </div>
                     </div>
+                    <div className="mt-4 p-3 bg-purple-100 rounded-lg border border-purple-200">
+                      <p className="text-sm text-purple-800 flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="16" x2="12" y2="12"/>
+                          <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        <span>Horario de retiro: De lunes a sábado de 9:00 a 20:00 hs. Domingos cerrado.</span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-3 text-sm bg-green-50 p-3 rounded-lg text-green-700 border border-green-200">
-                    <strong>Recomendado:</strong> Ideal para ocasiones especiales y entregas urgentes.
-                  </div>
-                </label>
+                )}
+
+                {/* Envío Express */}
+                {(() => {
+                  const expressStatus = getExpressAvailabilityMessage();
+                  const isAvailable = expressStatus.available;
+                  
+                  return (
+                    <label 
+                      className={`flex flex-col p-6 rounded-xl transition-all duration-200 ${
+                        !isAvailable 
+                          ? 'opacity-60 cursor-not-allowed bg-gray-100 border-2 border-gray-300' 
+                          : formData.metodoEnvio === 'express' 
+                            ? 'bg-green-50 border-2 border-green-500 shadow-lg cursor-pointer' 
+                            : 'bg-white/50 hover:shadow-md border-2 border-transparent cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-start">
+                        <input 
+                          type="radio" 
+                          name="metodoEnvio" 
+                          value="express"
+                          checked={formData.metodoEnvio === 'express'}
+                          onChange={handleInputChange}
+                          disabled={!isAvailable}
+                          className="mr-4 mt-1 w-5 h-5 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed" 
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-lg">
+                              ⚡ Envío Express 
+                              <span className="text-sm text-gray-500 ml-1">(Solo en Yerba Buena)</span>
+                            </span>
+                            <div className="text-right">
+                              {isCalculatingShipping && formData.metodoEnvio === 'express' ? (
+                                <span className="text-blue-600 text-sm">🔄 Calculando...</span>
+                              ) : calculatedShippingCost !== null && calculatedShippingCost > 0 && formData.metodoEnvio === 'express' ? (
+                                <span className="font-semibold text-green-600">
+                                  ${calculatedShippingCost.toLocaleString('es-AR')}
+                                </span>
+                              ) : calculatedShippingCost === 0 && formData.metodoEnvio === 'express' ? (
+                                <span className="font-semibold text-green-600">✅ GRATIS</span>
+                              ) : (
+                                <span className="text-gray-600 text-sm">
+                                  Desde ${getMinBasePrice('express').toLocaleString('es-AR')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {/* Info de envío gratis */}
+                          {formData.metodoEnvio !== 'express' && (
+                            <div className="text-xs text-gray-500 mb-2">
+                              💡 Gratis con productos seleccionados o pedidos grandes
+                            </div>
+                          )}
+                          {/* Mensaje de disponibilidad principal */}
+                          <div className="bg-green-50 text-green-700 border border-green-200 p-3 rounded-lg mb-2">
+                            <div className="font-semibold flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {expressStatus.message}
+                            </div>
+                            {expressStatus.detail && (
+                              <div className="text-xs mt-1 text-green-600">
+                                {expressStatus.detail}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {isAvailable && (
+                        <div className="mt-3 text-sm bg-green-50 p-3 rounded-lg text-green-700 border border-green-200">
+                          <strong>Recomendado:</strong> Ideal para ocasiones especiales y entregas urgentes.
+                        </div>
+                      )}
+                    </label>
+                  );
+                })()}
 
                 {/* Campo de instrucciones para Envío Express */}
                 {formData.metodoEnvio === 'express' && (
@@ -1525,8 +1849,28 @@ const MultiStepCheckoutPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-lg">📅 Envío Programado</span>
-                        <span className="text-blue-600 font-semibold">$5.000</span>
+                        <div className="text-right">
+                          {isCalculatingShipping && formData.metodoEnvio === 'programado' ? (
+                            <span className="text-blue-600 text-sm">🔄 Calculando...</span>
+                          ) : calculatedShippingCost !== null && calculatedShippingCost > 0 && formData.metodoEnvio === 'programado' ? (
+                            <span className="font-semibold text-blue-600">
+                              ${calculatedShippingCost.toLocaleString('es-AR')}
+                            </span>
+                          ) : calculatedShippingCost === 0 && formData.metodoEnvio === 'programado' ? (
+                            <span className="font-semibold text-green-600">✅ GRATIS</span>
+                          ) : (
+                            <span className="text-gray-600 text-sm">
+                              Desde ${getMinBasePrice('programado').toLocaleString('es-AR')}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      {/* Info de envío gratis */}
+                      {formData.metodoEnvio !== 'programado' && (
+                        <div className="text-xs text-gray-500 mb-2">
+                          💡 Gratis con productos seleccionados o pedidos grandes
+                        </div>
+                      )}
                       <div className="flex items-center text-sm text-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-blue-600">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1562,8 +1906,14 @@ const MultiStepCheckoutPage = () => {
                           const now = new Date();
                           // Para envíos programados, la fecha mínima es siempre mañana
                           // (el mismo día solo está disponible para Express)
-                          const tomorrow = new Date(now.getTime() + 86400000);
-                          return tomorrow.toISOString().split('T')[0];
+                          const tomorrow = new Date(now);
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          
+                          // Formatear como YYYY-MM-DD en zona horaria local
+                          const year = tomorrow.getFullYear();
+                          const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                          const day = String(tomorrow.getDate()).padStart(2, '0');
+                          return `${year}-${month}-${day}`;
                         })()}
                         required
                         className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
@@ -1601,8 +1951,19 @@ const MultiStepCheckoutPage = () => {
                         }`}
                       >
                         <option value="">Selecciona una franja</option>
-                        <option value="mañana">🌅 Mañana (9:00 a 12:00)</option>
-                        <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
+                        {(() => {
+                          const availableSlots = getAvailableTimeSlots(formData.fecha);
+                          return (
+                            <>
+                              {availableSlots.includes('mañana') && (
+                                <option value="mañana">🌅 Mañana (9:00 a 12:00)</option>
+                              )}
+                              {availableSlots.includes('tarde') && (
+                                <option value="tarde">🌆 Tarde (16:00 a 20:00)</option>
+                              )}
+                            </>
+                          );
+                        })()}
                       </select>
                       {formErrors.franjaHoraria && (
                         <span className="text-red-600 text-sm mt-1 flex items-center gap-1">
@@ -1614,6 +1975,17 @@ const MultiStepCheckoutPage = () => {
                           {formErrors.franjaHoraria}
                         </span>
                       )}
+                      {(() => {
+                        const availableSlots = getAvailableTimeSlots(formData.fecha);
+                        if (formData.fecha && availableSlots.length === 1 && availableSlots[0] === 'tarde') {
+                          return (
+                            <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                              ⚠️ Solo disponible franja TARDE para esta fecha (son más de las 19:00 hs)
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
 
                     {/* Campo de instrucciones adicionales */}
@@ -1635,33 +2007,15 @@ const MultiStepCheckoutPage = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    <div className="p-3 bg-blue-100 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-800 flex items-start gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="12" y1="16" x2="12" y2="12"/>
-                          <line x1="12" y1="8" x2="12.01" y2="8"/>
-                        </svg>
-                        <span>El envío programado se realizará en la fecha y franja horaria seleccionada. Asegúrate de que haya alguien disponible para recibir el pedido.</span>
-                      </p>
-                    </div>
-                    {(() => {
-                      const currentHour = new Date().getHours();
-                      if (currentHour >= 18) {
-                        return (
-                          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                            <p className="text-sm text-amber-800 flex items-start gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
-                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                              </svg>
-                              <span>Son más de las 18:00 hs. Los envíos programados están disponibles a partir de mañana a la tarde.</span>
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
+                  <div className="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      <span>El envío programado se realizará en la fecha y franja horaria seleccionada. Asegúrate de que haya alguien disponible para recibir el pedido.</span>
+                    </p>
                   </div>
                 </div>
               )}
@@ -1671,22 +2025,24 @@ const MultiStepCheckoutPage = () => {
           {/* FLUJO RETIRO EN TIENDA */}
           {isPickup && currentStep === 1 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
+              <h2 className="text-2xl font-light mb-6">👤 ¿Quién retira el pedido?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col relative">
+                <div className="flex flex-col relative md:col-span-2">
                   <input 
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('nombre')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formErrors.nombre 
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.nombre 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.nombre && formData.nombre.trim()
                         ? 'border-2 border-green-500 bg-green-50'
                         : 'bg-white/50 border-2 border-transparent focus:border-green-300'
                     }`} 
-                    placeholder="Nombre *" 
+                    placeholder="Nombre completo de quien retira *" 
                     disabled={formData.envioAnonimo}
                   />
                   {touchedFields.nombre && formData.nombre.trim() && !formErrors.nombre && (
@@ -1694,14 +2050,7 @@ const MultiStepCheckoutPage = () => {
                   )}
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
                 </div>
-                <input 
-                  name="apellido"
-                  value={formData.apellido}
-                  onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-2 border-transparent focus:border-green-300 transition-all" 
-                  placeholder="Apellido" 
-                  disabled={formData.envioAnonimo}
-                />
+                <input type="hidden" name="apellido" value={formData.apellido} />
                 <div className="flex flex-col relative">
                   <label htmlFor="email" className="sr-only">Email</label>
                   <input 
@@ -1712,7 +2061,9 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('email')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formErrors.email 
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.email 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.email && formData.email.trim() && !formErrors.email
                         ? 'border-2 border-green-500 bg-green-50'
@@ -1739,7 +2090,9 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('telefono')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formErrors.telefono 
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.telefono 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.telefono && formData.telefono.trim() && !formErrors.telefono
                         ? 'border-2 border-green-500 bg-green-50'
@@ -1992,8 +2345,9 @@ const MultiStepCheckoutPage = () => {
               {/* Mapa interactivo para seleccionar dirección */}
               <div className="mb-6">
                 <AddressMapPicker
-                  onAddressSelect={(addressData: AddressData) => {
-                    console.log('Dirección seleccionada:', addressData);
+                  onAddressSelect={async (addressData: AddressData) => {
+                    console.log('📍 Dirección seleccionada:', addressData);
+                    console.log('🔍 Método de envío actual:', formData.metodoEnvio);
                     setFormData({
                       ...formData,
                       direccion: addressData.formatted_address,
@@ -2003,67 +2357,131 @@ const MultiStepCheckoutPage = () => {
                       lng: addressData.lng,
                     });
                   }}
-                  defaultCenter={{ lat: -34.6037, lng: -58.3816 }}
+                  shippingMethod={formData.metodoEnvio as 'express' | 'programado'}
+                  initialLat={formData.lat}
+                  initialLng={formData.lng}
+                  onDistanceCalculated={async (distance: number, duration: string) => {
+                    console.log(`📏 Distancia calculada: ${distance} km (${duration})`);
+                    console.log(`🔍 Debug - calculateShippingCost existe:`, !!calculateShippingCost);
+                    console.log(`🔍 Debug - directCart.total_price:`, directCart.total_price);
+                    console.log(`🔍 Debug - metodoEnvio:`, formData.metodoEnvio);
+                    
+                    setDistanceKm(distance);
+                    setShippingDuration(duration);
+                    
+                    // Calcular costo de envío
+                    if (distance > 0 && calculateShippingCost) {
+                      console.log(`💸 Llamando a calculateShippingCost con:`, {
+                        distance,
+                        method: formData.metodoEnvio,
+                        orderAmount: directCart.total_price
+                      });
+                      
+                      setIsCalculatingShipping(true);
+                      try {
+                        const result = await calculateShippingCost(
+                          distance,
+                          formData.metodoEnvio as 'express' | 'programado',
+                          directCart.total_price,
+                          directCart.items // Pasar items del carrito para verificar envío gratis
+                        );
+                        
+                        console.log('💰 Costo de envío calculado:', result);
+                        
+                        // Solo actualizar si está disponible y tiene costo
+                        if (result.available && result.shipping_cost !== undefined && result.shipping_cost !== null) {
+                          console.log('✅ Actualizando costo de envío:', result.shipping_cost);
+                          setCalculatedShippingCost(result.shipping_cost);
+                        } else {
+                          console.warn('⚠️ Envío no disponible o sin costo:', result);
+                          setCalculatedShippingCost(null);
+                        }
+                      } catch (error) {
+                        console.error('❌ Error calculando costo de envío:', error);
+                        setCalculatedShippingCost(null);
+                      } finally {
+                        setIsCalculatingShipping(false);
+                      }
+                    } else {
+                      console.warn('⚠️ No se puede calcular costo:', {
+                        distance,
+                        hasCalculateFunction: !!calculateShippingCost
+                      });
+                    }
+                  }}
+                  defaultCenter={shippingConfig ? { lat: shippingConfig.store_lat, lng: shippingConfig.store_lng } : { lat: -26.8167, lng: -65.3167 }}
                   initialAddress={formData.direccion}
                 />
               </div>
 
+              {/* Info de distancia y costo */}
+              {distanceKm > 0 && shippingConfig && (() => {
+                const maxDistance = formData.metodoEnvio === 'express' 
+                  ? shippingConfig.max_distance_express_km
+                  : shippingConfig.max_distance_programado_km;
+                const isOutOfCoverage = distanceKm > maxDistance;
+                
+                console.log('🎯 Validando cobertura:', {
+                  metodo: formData.metodoEnvio,
+                  distancia: distanceKm,
+                  maxDistance,
+                  isOutOfCoverage
+                });
+                
+                // Solo mostrar mensaje si está fuera de cobertura
+                if (isOutOfCoverage) {
+                  return (
+                    <div className="mb-6 p-4 rounded-xl border-2 bg-gradient-to-r from-red-50 to-orange-50 border-red-300">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-500">
+                          <span className="text-white text-lg">⚠️</span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-1 text-red-900">
+                            Fuera de cobertura
+                          </h4>
+                          <p className="text-red-900 font-semibold text-sm mt-2 bg-red-100 p-2 rounded">
+                            ❌ Esta dirección supera la distancia máxima de {maxDistance} km para envío {formData.metodoEnvio}.
+                            Por favor, selecciona otra dirección o cambia el método de envío.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // No mostrar nada si está dentro de cobertura
+                return null;
+              })()}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2">
                   <input 
                     name="nombreDestinatario"
                     value={formData.nombreDestinatario}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.nombreDestinatario ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
-                    placeholder="Nombre destinatario" 
+                    placeholder="Nombre completo del destinatario" 
                   />
                   {formErrors.nombreDestinatario && <span className="text-red-600 text-sm mt-1">{formErrors.nombreDestinatario}</span>}
                 </div>
-                <input 
-                  name="apellidoDestinatario"
-                  value={formData.apellidoDestinatario}
-                  onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
-                  placeholder="Apellido destinatario" 
-                />
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2">
                   <input 
                     name="telefonoDestinatario"
                     value={formData.telefonoDestinatario}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.telefonoDestinatario ? 'border-2 border-red-300 bg-red-50/10' : ''}`} 
-                    placeholder="Teléfono" 
+                    placeholder="Teléfono (para coordinar la entrega)" 
                   />
                   {formErrors.telefonoDestinatario && <span className="text-red-600 text-sm mt-1">{formErrors.telefonoDestinatario}</span>}
                 </div>
-                <input 
-                  name="codigoPostal"
-                  value={formData.codigoPostal}
-                  onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
-                  placeholder="Código Postal" 
-                />
               </div>
-              <div className="flex flex-col w-full mt-4">
-                <input 
-                  name="direccion"
-                  value={formData.direccion}
-                  onChange={handleInputChange}
-                  className={`w-full p-4 rounded-xl bg-white/50 border-0 ${formErrors.direccion ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
-                  placeholder="Dirección completa" 
-                />
-                {formErrors.direccion && <span className="text-red-600 text-sm mt-1">{formErrors.direccion}</span>}
-              </div>
-              <div className="flex flex-col w-full mt-4">
-                <input 
-                  name="ciudad"
-                  value={formData.ciudad}
-                  onChange={handleInputChange}
-                  className={`w-full p-4 rounded-xl bg-white/50 border-0 ${formErrors.ciudad ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
-                  placeholder="Ciudad" 
-                />
-                {formErrors.ciudad && <span className="text-red-600 text-sm mt-1">{formErrors.ciudad}</span>}
-              </div>
+              
+              {/* Campos ocultos pero guardados */}
+              <input type="hidden" name="apellidoDestinatario" value={formData.apellidoDestinatario} />
+              <input type="hidden" name="codigoPostal" value={formData.codigoPostal} />
+              <input type="hidden" name="direccion" value={formData.direccion} />
+              <input type="hidden" name="ciudad" value={formData.ciudad} />
               
               {/* Checkbox para autocompletar con datos del remitente */}
               <div className="mt-6">
@@ -2085,26 +2503,26 @@ const MultiStepCheckoutPage = () => {
 
           {!isPickup && currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">👤 Datos del Remitente</h2>
+              <h2 className="text-2xl font-light mb-6">💝 ¿Quién envía este regalo?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col">
+                <div className="flex flex-col md:col-span-2">
                   <input 
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.nombre ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
-                    placeholder="Nombre" 
+                    className={`p-4 rounded-xl transition-all ${
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.nombre 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : 'bg-white/50 border-0'
+                    }`} 
+                    placeholder={isPickup ? "Nombre de quien retira" : "Nombre de quien envía"} 
                     disabled={formData.envioAnonimo}
                   />
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
                 </div>
-                <input 
-                  name="apellido"
-                  value={formData.apellido}
-                  onChange={handleInputChange}
-                  className="p-4 rounded-xl bg-white/50 border-0" 
-                  placeholder="Apellido" 
-                />
+                <input type="hidden" name="apellido" value={formData.apellido} />
                 <div className="flex flex-col">
                   <label htmlFor="email" className="sr-only">Email</label>
                   <input 
@@ -2113,7 +2531,13 @@ const MultiStepCheckoutPage = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.email ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    className={`p-4 rounded-xl transition-all ${
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.email 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : 'bg-white/50 border-0'
+                    }`} 
                     placeholder="Email" 
                     disabled={formData.envioAnonimo}
                     aria-required="true"
@@ -2130,7 +2554,13 @@ const MultiStepCheckoutPage = () => {
                     name="telefono"
                     value={formData.telefono}
                     onChange={handleInputChange}
-                    className={`p-4 rounded-xl ${formErrors.telefono ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' : 'bg-white/50 border-0'}`} 
+                    className={`p-4 rounded-xl transition-all ${
+                      formData.envioAnonimo
+                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
+                        : formErrors.telefono 
+                        ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
+                        : 'bg-white/50 border-0'
+                    }`} 
                     placeholder="Teléfono (solo números, mínimo 7 dígitos)" 
                     disabled={formData.envioAnonimo}
                     aria-required="true"

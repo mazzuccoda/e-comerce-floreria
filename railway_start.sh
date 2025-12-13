@@ -37,6 +37,12 @@ python manage.py collectstatic --noinput --clear || {
     echo "⚠️  Collectstatic failed (non-critical)"
 }
 
+# 3.5. Initialize Shipping Zones (if not exists)
+echo "📋 Step 3.5: Initializing Shipping Zones"
+python manage.py init_shipping_config || {
+    echo "⚠️  Shipping zones initialization failed (non-critical)"
+}
+
 # 4. Start Gunicorn
 echo "📋 Step 4: Starting Gunicorn"
 echo "   Port: ${PORT:-8000}"

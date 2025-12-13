@@ -1,20 +1,26 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { GoogleMap, Marker, useLoadScript, Autocomplete } from '@react-google-maps/api';
-import { MapPin, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { GoogleMap, Marker, useLoadScript, Autocomplete, Circle, Polyline } from '@react-google-maps/api';
+import { MapPin, Search, AlertCircle, CheckCircle, Navigation, Clock } from 'lucide-react';
 import { AddressData, MapCenter } from '@/types/Address';
+import { useShippingConfig } from '@/app/hooks/useShippingConfig';
+import { calculateDistance, calculateStraightLineDistance } from '@/app/services/distanceService';
 
 interface AddressMapPickerProps {
   onAddressSelect: (address: AddressData) => void;
   defaultCenter?: MapCenter;
   initialAddress?: string;
+  initialLat?: number;
+  initialLng?: number;
+  shippingMethod?: 'express' | 'programado';
+  onDistanceCalculated?: (distance: number, duration: string) => void;
 }
 
 const libraries: ("places")[] = ["places"];
 
-// Centro por defecto: Buenos Aires
-const DEFAULT_CENTER: MapCenter = { lat: -34.6037, lng: -58.3816 };
+// Centro por defecto: Yerba Buena, Tucumán (se actualizará con config del backend)
+const DEFAULT_CENTER: MapCenter = { lat: -26.8167, lng: -65.3167 };
 
 const mapContainerStyle = {
   width: '100%',
@@ -39,16 +45,56 @@ export default function AddressMapPicker({
   onAddressSelect,
   defaultCenter = DEFAULT_CENTER,
   initialAddress = '',
+  initialLat,
+  initialLng,
+  shippingMethod = 'programado',
+  onDistanceCalculated,
 }: AddressMapPickerProps) {
+  // Hook opcional - si falla, el componente sigue funcionando
+  const { config, loading: configLoading, error: configError } = useShippingConfig();
+  
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [marker, setMarker] = useState<MapCenter>(defaultCenter);
   const [selectedAddress, setSelectedAddress] = useState<string>(initialAddress);
   const [isValidating, setIsValidating] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string>('');
-  const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [validationStatus, setValidationStatus] = useState<'idle' | 'success' | 'error' | 'warning'>('idle');
+  const [distanceInfo, setDistanceInfo] = useState<{
+    distance: number;
+    duration: string;
+    withinCoverage: boolean;
+  } | null>(null);
+  const [isCalculatingDistance, setIsCalculatingDistance] = useState(false);
+  const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
   
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const hasCalculatedInitialDistance = useRef(false);
+
+  // Actualizar centro del mapa cuando se carga la config
+  useEffect(() => {
+    if (config && map) {
+      const storeCenter = { lat: config.store_lat, lng: config.store_lng };
+      map.panTo(storeCenter);
+    }
+  }, [config, map]);
+
+  // Calcular distancia automáticamente si hay coordenadas iniciales (solo una vez)
+  useEffect(() => {
+    if (
+      config && 
+      onDistanceCalculated && 
+      initialLat && 
+      initialLng && 
+      initialLat !== 0 && 
+      initialLng !== 0 &&
+      !hasCalculatedInitialDistance.current
+    ) {
+      console.log('🔄 Calculando distancia para dirección inicial:', { lat: initialLat, lng: initialLng });
+      hasCalculatedInitialDistance.current = true;
+      calculateDistanceToStore(initialLat, initialLng);
+    }
+  }, [config, onDistanceCalculated, initialLat, initialLng]);
 
   // Debug: Verificar API Key
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -98,11 +144,140 @@ export default function AddressMapPicker({
     };
   };
 
-  const handleAddressData = (addressData: AddressData) => {
+  const calculateDistanceToStore = async (lat: number, lng: number) => {
+    // Solo calcular si hay config y callback
+    if (!config || !onDistanceCalculated) return;
+
+    setIsCalculatingDistance(true);
+    try {
+      let distanceKm = 0;
+      let durationText = '';
+      
+      // Intentar obtener la ruta con Directions API
+      try {
+        const directionsService = new google.maps.DirectionsService();
+        const directionsResult = await directionsService.route({
+          origin: { lat: config.store_lat, lng: config.store_lng },
+          destination: { lat, lng },
+          travelMode: google.maps.TravelMode.DRIVING,
+        });
+
+        if (directionsResult.routes && directionsResult.routes[0]) {
+          const route = directionsResult.routes[0];
+          const leg = route.legs[0];
+          
+          // Extraer distancia y duración
+          distanceKm = (leg.distance?.value || 0) / 1000;
+          durationText = leg.duration?.text || '';
+          
+          // Extraer path de la ruta
+          const path: google.maps.LatLng[] = [];
+          route.overview_path.forEach((point) => {
+            path.push(point);
+          });
+          setRoutePath(path);
+        } else {
+          throw new Error('Directions API no disponible');
+        }
+      } catch (directionsError) {
+        console.warn('⚠️ Directions API falló, usando Distance Matrix fallback:', directionsError);
+        
+        // Fallback: usar Distance Matrix API
+        try {
+          const result = await calculateDistance({
+            origin: { lat: config.store_lat, lng: config.store_lng },
+            destination: { lat, lng },
+          });
+
+          if (result.status === 'OK') {
+            distanceKm = result.distance_km;
+            durationText = result.duration_text;
+            // Crear línea recta como fallback visual
+            setRoutePath([
+              new google.maps.LatLng(config.store_lat, config.store_lng),
+              new google.maps.LatLng(lat, lng)
+            ]);
+          } else {
+            throw new Error('Distance Matrix no disponible');
+          }
+        } catch (distanceMatrixError) {
+          // Último fallback: usar Haversine (distancia en línea recta)
+          console.warn('⚠️ Distance Matrix API falló, usando Haversine fallback:', distanceMatrixError);
+          distanceKm = calculateStraightLineDistance(
+            { lat: config.store_lat, lng: config.store_lng },
+            { lat, lng }
+          );
+          // Estimar duración: ~30 km/h promedio en ciudad
+          const durationMinutes = Math.round((distanceKm / 30) * 60);
+          durationText = `~${durationMinutes} min (estimado)`;
+          // Crear línea recta como fallback visual
+          setRoutePath([
+            new google.maps.LatLng(config.store_lat, config.store_lng),
+            new google.maps.LatLng(lat, lng)
+          ]);
+        }
+      }
+
+      const maxDistance =
+        shippingMethod === 'express'
+          ? config.max_distance_express_km
+          : config.max_distance_programado_km;
+
+      const withinCoverage = distanceKm <= maxDistance;
+
+      setDistanceInfo({
+        distance: distanceKm,
+        duration: durationText,
+        withinCoverage,
+      });
+
+      if (onDistanceCalculated) {
+        onDistanceCalculated(distanceKm, durationText);
+      }
+
+      if (!withinCoverage) {
+        setValidationStatus('warning');
+        setValidationMessage(
+          `⚠️ Esta dirección está a ${distanceKm} km (${durationText}). Fuera del área de cobertura ${shippingMethod} (máx: ${maxDistance} km)`
+        );
+      }
+    } catch (error) {
+      console.error('❌ Error calculando distancia:', error);
+    } finally {
+      setIsCalculatingDistance(false);
+    }
+  };
+
+  const handleAddressData = async (addressData: AddressData) => {
     setSelectedAddress(addressData.formatted_address);
     setValidationStatus('success');
     setValidationMessage('✓ Dirección seleccionada correctamente');
     onAddressSelect(addressData);
+
+    // Debug: verificar estado
+    console.log('🗺️ handleAddressData:', {
+      hasConfig: !!config,
+      hasCallback: !!onDistanceCalculated,
+      address: addressData.formatted_address,
+      lat: addressData.lat,
+      lng: addressData.lng
+    });
+
+    // Calcular distancia solo si hay config y callback
+    if (config && onDistanceCalculated) {
+      console.log('✅ Calculando distancia...');
+      try {
+        await calculateDistanceToStore(addressData.lat, addressData.lng);
+      } catch (error) {
+        console.error('❌ Error calculando distancia:', error);
+        // No bloquear el flujo si falla el cálculo
+      }
+    } else {
+      console.warn('⚠️ No se puede calcular distancia:', {
+        config: config ? 'OK' : 'NULL',
+        callback: onDistanceCalculated ? 'OK' : 'NULL'
+      });
+    }
   };
 
   const onPlaceChanged = () => {
@@ -221,19 +396,27 @@ export default function AddressMapPicker({
           className={`p-3 rounded-lg border ${
             validationStatus === 'success'
               ? 'bg-green-50 border-green-200'
+              : validationStatus === 'warning'
+              ? 'bg-yellow-50 border-yellow-200'
               : 'bg-red-50 border-red-200'
           }`}
         >
           <div className="flex items-start gap-2">
             {validationStatus === 'success' ? (
               <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            ) : validationStatus === 'warning' ? (
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             ) : (
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             )}
             <div className="flex-1">
               <p
                 className={`text-sm font-medium ${
-                  validationStatus === 'success' ? 'text-green-800' : 'text-red-800'
+                  validationStatus === 'success'
+                    ? 'text-green-800'
+                    : validationStatus === 'warning'
+                    ? 'text-yellow-800'
+                    : 'text-red-800'
                 }`}
               >
                 {validationMessage}
@@ -249,6 +432,17 @@ export default function AddressMapPicker({
         </div>
       )}
 
+      {/* Información de distancia - OCULTA para no confundir al cliente */}
+
+      {isCalculatingDistance && (
+        <div className="text-center py-2">
+          <div className="inline-flex items-center gap-2 text-gray-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
+            <span className="text-sm">Calculando distancia...</span>
+          </div>
+        </div>
+      )}
+
       {/* Mapa */}
       <div className="rounded-lg overflow-hidden border border-gray-300 shadow-sm">
         <GoogleMap
@@ -259,6 +453,67 @@ export default function AddressMapPicker({
           onClick={onMapClick}
           options={mapOptions}
         >
+          {/* Círculos de cobertura */}
+          {config && (
+            <>
+              {/* Círculo de cobertura Express (más pequeño) */}
+              <Circle
+                center={{ lat: config.store_lat, lng: config.store_lng }}
+                radius={config.max_distance_express_km * 1000} // Convertir km a metros
+                options={{
+                  fillColor: '#10b981',
+                  fillOpacity: 0.1,
+                  strokeColor: '#10b981',
+                  strokeOpacity: 0.4,
+                  strokeWeight: 2,
+                }}
+              />
+              
+              {/* Círculo de cobertura Programado (más grande) */}
+              <Circle
+                center={{ lat: config.store_lat, lng: config.store_lng }}
+                radius={config.max_distance_programado_km * 1000}
+                options={{
+                  fillColor: '#3b82f6',
+                  fillOpacity: 0.05,
+                  strokeColor: '#3b82f6',
+                  strokeOpacity: 0.3,
+                  strokeWeight: 2,
+                }}
+              />
+
+              {/* Marcador de la tienda */}
+              <Marker
+                position={{ lat: config.store_lat, lng: config.store_lng }}
+                icon={{
+                  url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                      <circle cx="12" cy="10" r="3" fill="#059669"/>
+                    </svg>
+                  `),
+                  scaledSize: new google.maps.Size(40, 40),
+                  anchor: new google.maps.Point(20, 40),
+                }}
+                title={config.store_name}
+              />
+            </>
+          )}
+
+          {/* Ruta desde tienda hasta destino */}
+          {routePath.length > 0 && (
+            <Polyline
+              path={routePath}
+              options={{
+                strokeColor: '#3b82f6',
+                strokeOpacity: 0.8,
+                strokeWeight: 4,
+                geodesic: true,
+              }}
+            />
+          )}
+
+          {/* Marcador del destino */}
           <Marker
             position={marker}
             draggable={true}
@@ -267,6 +522,27 @@ export default function AddressMapPicker({
           />
         </GoogleMap>
       </div>
+
+      {/* Leyenda de círculos */}
+      {config && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-gray-700 mb-2">Áreas de cobertura:</p>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-green-500 opacity-30"></div>
+              <span className="text-gray-600">Express (hasta {config.max_distance_express_km} km)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-blue-500 opacity-20"></div>
+              <span className="text-gray-600">Programado (hasta {config.max_distance_programado_km} km)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+              <span className="text-gray-600">{config.store_name}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Instrucciones */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

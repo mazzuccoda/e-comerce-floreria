@@ -15,6 +15,7 @@ urlpatterns = [
     path('productos/<int:pk>/toggle/', views.producto_toggle, name='producto-toggle'),
     path('productos/<int:pk>/toggle-destacado/', views.producto_toggle_destacado, name='producto-toggle-destacado'),
     path('productos/<int:pk>/update-field/', views.producto_update_field, name='producto-update-field'),
+    path('productos/catalogo-pdf/', views.generar_catalogo_pdf, name='catalogo-pdf'),
     
     # Imágenes de productos
     path('imagenes/<int:pk>/eliminar/', views.imagen_delete, name='imagen-delete'),
