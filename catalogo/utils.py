@@ -1,7 +1,7 @@
 """
 Utilidades para optimización de imágenes
 """
-from PIL import Image
+from PIL import Image, ExifTags
 from io import BytesIO
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
@@ -27,6 +27,24 @@ def optimize_image(image_field, max_width=1200, max_height=1200, quality=85):
     try:
         # Abrir la imagen
         img = Image.open(image_field)
+        
+        # Corregir orientación EXIF
+        try:
+            for orientation in ExifTags.TAGS.keys():
+                if ExifTags.TAGS[orientation] == 'Orientation':
+                    break
+            exif = img._getexif()
+            if exif is not None:
+                orientation_value = exif.get(orientation)
+                if orientation_value == 3:
+                    img = img.rotate(180, expand=True)
+                elif orientation_value == 6:
+                    img = img.rotate(270, expand=True)
+                elif orientation_value == 8:
+                    img = img.rotate(90, expand=True)
+        except (AttributeError, KeyError, IndexError):
+            # La imagen no tiene datos EXIF, continuar sin rotar
+            pass
         
         # Convertir RGBA a RGB si es necesario
         if img.mode in ('RGBA', 'LA', 'P'):
@@ -86,6 +104,24 @@ def create_thumbnail(image_field, size=(400, 400)):
     
     try:
         img = Image.open(image_field)
+        
+        # Corregir orientación EXIF
+        try:
+            for orientation in ExifTags.TAGS.keys():
+                if ExifTags.TAGS[orientation] == 'Orientation':
+                    break
+            exif = img._getexif()
+            if exif is not None:
+                orientation_value = exif.get(orientation)
+                if orientation_value == 3:
+                    img = img.rotate(180, expand=True)
+                elif orientation_value == 6:
+                    img = img.rotate(270, expand=True)
+                elif orientation_value == 8:
+                    img = img.rotate(90, expand=True)
+        except (AttributeError, KeyError, IndexError):
+            # La imagen no tiene datos EXIF, continuar sin rotar
+            pass
         
         # Convertir RGBA a RGB si es necesario
         if img.mode in ('RGBA', 'LA', 'P'):
