@@ -15,6 +15,7 @@ from .serializers import (
     ValidateStockSerializer
 )
 from carrito.cart import Cart
+from datetime import date
 
 
 class MetodoEnvioListView(APIView):
@@ -109,6 +110,40 @@ class CheckoutView(APIView):
             return Response({
                 'error': 'El carrito está vacío'
             }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Modo vacaciones: permitir solo pedidos con fecha_entrega >= reopen_date
+        try:
+            from core.models import SiteSettings
+            site_settings = SiteSettings.get_solo()
+            if site_settings.is_vacation_active():
+                tipo_envio_raw = request.data.get('metodo_envio') or request.data.get('tipo_envio')
+                if tipo_envio_raw in ('express', 'retiro'):
+                    return Response(
+                        {
+                            'error': site_settings.vacation_message,
+                            'detail': 'Durante el modo vacaciones solo está disponible el envío programado.',
+                            'reopen_date': site_settings.reopen_date.isoformat() if site_settings.reopen_date else None,
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+                fecha_entrega_raw = request.data.get('fecha_entrega')
+                if fecha_entrega_raw:
+                    try:
+                        fecha_entrega = date.fromisoformat(str(fecha_entrega_raw))
+                    except ValueError:
+                        fecha_entrega = None
+                    if fecha_entrega and site_settings.reopen_date and fecha_entrega < site_settings.reopen_date:
+                        return Response(
+                            {
+                                'error': site_settings.vacation_message,
+                                'reopen_date': site_settings.reopen_date.isoformat(),
+                            },
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+        except Exception:
+            # Si falla la lectura de settings, no bloquear checkout
+            pass
         
         # Validar datos del checkout
         serializer = CheckoutSerializer(data=request.data, context={'request': request})

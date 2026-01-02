@@ -16,6 +16,7 @@ import {
   formatProgressAge 
 } from '@/utils/checkoutStorage';
 import { useShippingConfig } from '@/app/hooks/useShippingConfig';
+import { useSiteSettings } from '@/app/hooks/useSiteSettings';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -43,6 +44,7 @@ interface DirectCart {
 
 const MultiStepCheckoutPage = () => {
   const { token } = useAuth();
+  const { settings: siteSettings } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(0);
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [savedProgressAge, setSavedProgressAge] = useState<string | null>(null);
@@ -286,7 +288,12 @@ const MultiStepCheckoutPage = () => {
   const restoreProgress = () => {
     const savedProgress = loadCheckoutProgress();
     if (savedProgress) {
-      setFormData(savedProgress.formData);
+      setFormData((prev) => ({
+        ...prev,
+        ...savedProgress.formData,
+        aceptaTerminos: (savedProgress.formData as any)?.aceptaTerminos ?? (prev as any).aceptaTerminos,
+        isFreeShipping: (savedProgress.formData as any)?.isFreeShipping ?? (prev as any).isFreeShipping,
+      }));
       setCurrentStep(savedProgress.currentStep);
       setSelectedExtras(savedProgress.selectedExtras);
       setShowRestorePrompt(false);
@@ -381,8 +388,22 @@ const MultiStepCheckoutPage = () => {
     instrucciones: '',
     // Pago
     metodoPago: 'mercadopago',
+    isFreeShipping: false,
     aceptaTerminos: false
   });
+
+  const vacationActive = Boolean(siteSettings?.vacation_active);
+  const reopenDateIso = siteSettings?.reopen_date || null;
+
+  // Si está activo el modo vacaciones, forzar método de envío programado
+  useEffect(() => {
+    if (vacationActive && (formData.metodoEnvio === 'retiro' || formData.metodoEnvio === 'express')) {
+      setFormData((prev) => ({
+        ...prev,
+        metodoEnvio: 'programado',
+      }));
+    }
+  }, [vacationActive, formData.metodoEnvio]);
 
   // Steps se adaptan según el tipo de envío para simplificar el flujo
   // Paso 0 es común: elegir método de envío
@@ -1285,6 +1306,19 @@ const MultiStepCheckoutPage = () => {
           <div className="w-16 h-16 border-4 border-gray-300 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Cargando tu carrito directamente...</p>
         </div>
+
+        {vacationActive && (
+          <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <p className="text-sm text-amber-900">
+              {siteSettings?.vacation_message}
+            </p>
+            {reopenDateIso && (
+              <p className="text-xs text-amber-800 mt-1">
+                Fecha mínima de entrega/retiro: {reopenDateIso.split('-').reverse().join('/')}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -1600,10 +1634,12 @@ const MultiStepCheckoutPage = () => {
               <div className="space-y-4">
                 {/* Retiro en Tienda */}
                 <label 
-                  className={`flex flex-col p-6 rounded-xl cursor-pointer transition-all duration-200 ${
-                    formData.metodoEnvio === 'retiro' 
-                      ? 'bg-purple-50 border-2 border-purple-500 shadow-lg' 
-                      : 'bg-white/50 hover:shadow-md border-2 border-transparent'
+                  className={`flex flex-col p-6 rounded-xl transition-all duration-200 ${
+                    vacationActive
+                      ? 'opacity-60 cursor-not-allowed bg-gray-100 border-2 border-gray-300'
+                      : formData.metodoEnvio === 'retiro' 
+                        ? 'bg-purple-50 border-2 border-purple-500 shadow-lg cursor-pointer' 
+                        : 'bg-white/50 hover:shadow-md border-2 border-transparent cursor-pointer'
                   }`}
                 >
                   <div className="flex items-start">
@@ -1613,6 +1649,7 @@ const MultiStepCheckoutPage = () => {
                       value="retiro"
                       checked={formData.metodoEnvio === 'retiro'}
                       onChange={handleInputChange}
+                      disabled={vacationActive}
                       className="mr-4 mt-1 w-5 h-5 text-purple-600" 
                     />
                     <div className="flex-1">
@@ -1660,6 +1697,9 @@ const MultiStepCheckoutPage = () => {
                           value={formData.fecha}
                           onChange={handleInputChange}
                           min={(() => {
+                            if (vacationActive && reopenDateIso) {
+                              return reopenDateIso;
+                            }
                             const now = new Date();
                             const year = now.getFullYear();
                             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1750,7 +1790,7 @@ const MultiStepCheckoutPage = () => {
                           value="express"
                           checked={formData.metodoEnvio === 'express'}
                           onChange={handleInputChange}
-                          disabled={!isAvailable}
+                          disabled={vacationActive || !isAvailable}
                           className="mr-4 mt-1 w-5 h-5 text-green-600 disabled:opacity-50 disabled:cursor-not-allowed" 
                         />
                         <div className="flex-1">
@@ -1904,16 +1944,14 @@ const MultiStepCheckoutPage = () => {
                         onChange={handleInputChange}
                         min={(() => {
                           const now = new Date();
+                          if (vacationActive && reopenDateIso) {
+                            return reopenDateIso;
+                          }
                           // Para envíos programados, la fecha mínima es siempre mañana
                           // (el mismo día solo está disponible para Express)
                           const tomorrow = new Date(now);
                           tomorrow.setDate(tomorrow.getDate() + 1);
-                          
-                          // Formatear como YYYY-MM-DD en zona horaria local
-                          const year = tomorrow.getFullYear();
-                          const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-                          const day = String(tomorrow.getDate()).padStart(2, '0');
-                          return `${year}-${month}-${day}`;
+                          return tomorrow.toISOString().split('T')[0];
                         })()}
                         required
                         className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${

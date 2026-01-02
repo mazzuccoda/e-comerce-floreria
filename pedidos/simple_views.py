@@ -4,6 +4,7 @@ from django.views.decorators.http import require_http_methods
 from django.db import transaction
 from rest_framework.authtoken.models import Token
 import json
+from datetime import date
 
 
 @csrf_exempt
@@ -344,6 +345,39 @@ def simple_checkout_with_items(request):
                 print("⚠️ Token inválido")
         
         data = json.loads(request.body)
+
+        # Modo vacaciones: permitir solo pedidos con fecha_entrega >= reopen_date
+        try:
+            from core.models import SiteSettings
+            site_settings = SiteSettings.get_solo()
+            if site_settings.is_vacation_active():
+                tipo_envio_raw = data.get('metodo_envio') or data.get('tipo_envio')
+                if tipo_envio_raw in ('express', 'retiro'):
+                    return JsonResponse(
+                        {
+                            'error': site_settings.vacation_message,
+                            'detail': 'Durante el modo vacaciones solo está disponible el envío programado.',
+                            'reopen_date': site_settings.reopen_date.isoformat() if site_settings.reopen_date else None,
+                        },
+                        status=403,
+                    )
+
+                fecha_entrega_raw = data.get('fecha_entrega')
+                if fecha_entrega_raw:
+                    try:
+                        fecha_entrega = date.fromisoformat(str(fecha_entrega_raw))
+                    except ValueError:
+                        fecha_entrega = None
+                    if fecha_entrega and site_settings.reopen_date and fecha_entrega < site_settings.reopen_date:
+                        return JsonResponse(
+                            {
+                                'error': site_settings.vacation_message,
+                                'reopen_date': site_settings.reopen_date.isoformat(),
+                            },
+                            status=403,
+                        )
+        except Exception:
+            pass
         
         # DEBUG: Ver qué datos llegan
         print(f"📦 Datos recibidos del frontend:")
