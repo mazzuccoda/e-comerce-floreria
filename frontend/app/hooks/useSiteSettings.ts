@@ -10,7 +10,15 @@ export interface SiteSettings {
   min_delivery_date: string | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+
+function normalizeApiBase(url: string) {
+  const trimmed = url.replace(/\/+$/, '');
+  if (trimmed.endsWith('/api')) return trimmed;
+  return `${trimmed}/api`;
+}
+
+const API_URL = normalizeApiBase(RAW_API_URL);
 
 export function useSiteSettings() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
