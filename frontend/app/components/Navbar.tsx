@@ -6,6 +6,7 @@ import { useCartRobust } from '../../context/CartContextRobust';
 import { useAuth } from '../../context/AuthContext';
 import { useState, useEffect } from 'react';
 import styles from './Navbar.module.css';
+import VacationBanner from './VacationBanner';
 
 interface TipoFlor {
   id: number;
@@ -89,6 +90,7 @@ export default function Navbar() {
   
   return (
     <nav className="bg-[#f5f0eb] border-b border-gray-200 fixed top-0 left-0 right-0 z-50 shadow-sm">
+      <VacationBanner />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Botón hamburguesa móvil */}

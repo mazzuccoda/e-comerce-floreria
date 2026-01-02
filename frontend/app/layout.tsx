@@ -6,7 +6,6 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
 import { CartProviderRobust } from '../context/CartContextRobust';
 import Navbar from './components/Navbar';
-import VacationBanner from './components/VacationBanner';
 import Footer from './components/Footer';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import AnalyticsProvider from './components/AnalyticsProvider';
@@ -78,7 +77,6 @@ export default function RootLayout({
             <AnalyticsProvider>
               <div className="flex flex-col min-h-screen">
                 <Navbar />
-                <VacationBanner />
                 <Toaster />
                 <main className="flex-grow">
                   {children}
