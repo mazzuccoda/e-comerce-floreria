@@ -1,0 +1,57 @@
+{
+  "nav": {
+    "flowerType": "Flower Type",
+    "occasions": "Occasions",
+    "help": "Help",
+    "contact": "Contact",
+    "search": "Search",
+    "searchPlaceholder": "Search products, flowers, occasions...",
+    "searchPress": "Press Enter to search",
+    "login": "Log in",
+    "myProfile": "My Profile",
+    "myOrders": "My Orders",
+    "logout": "Log out",
+    "cart": "Cart",
+    "menu": "Menu",
+    "loading": "Loading..."
+  },
+  "common": {
+    "buy": "Buy",
+    "addToCart": "Add to cart",
+    "viewDetails": "View details",
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "free": "Free"
+  },
+  "cart": {
+    "title": "Shopping cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue shopping",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shippingMethod": "Shipping method",
+    "pickup": "Store pickup",
+    "express": "Express shipping",
+    "scheduled": "Scheduled delivery",
+    "deliveryDate": "Delivery date",
+    "timeSlot": "Time slot",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "sender": "Sender",
+    "recipient": "Recipient",
+    "dedication": "Dedication",
+    "payment": "Payment"
+  }
+}

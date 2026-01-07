@@ -5,6 +5,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
 import { CartProviderRobust } from '../context/CartContextRobust';
+import { I18nProvider } from '../context/I18nContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import GoogleAnalytics from './components/GoogleAnalytics';
@@ -72,21 +73,23 @@ export default function RootLayout({
         <GoogleAnalytics />
       </head>
       <body className={`${inter.className} bg-gray-50`}>
-        <AuthProvider>
-          <CartProviderRobust>
-            <AnalyticsProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <Toaster />
-                <main className="flex-grow">
-                  {children}
-                </main>
-                <Footer />
-                {/* <CartDebugMonitor /> */}
-              </div>
-            </AnalyticsProvider>
-          </CartProviderRobust>
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <CartProviderRobust>
+              <AnalyticsProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Navbar />
+                  <Toaster />
+                  <main className="flex-grow">
+                    {children}
+                  </main>
+                  <Footer />
+                  {/* <CartDebugMonitor /> */}
+                </div>
+              </AnalyticsProvider>
+            </CartProviderRobust>
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );

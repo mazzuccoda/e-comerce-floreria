@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCartRobust } from '../../context/CartContextRobust';
 import { useAuth } from '../../context/AuthContext';
+import { useI18n } from '../../context/I18nContext';
 import { useState, useEffect } from 'react';
 import styles from './Navbar.module.css';
 import VacationBanner from './VacationBanner';
@@ -20,6 +21,8 @@ interface Ocasion {
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const { locale } = useI18n();
   const { cart } = useCartRobust();
   const { isAuthenticated, user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -31,6 +34,15 @@ export default function Navbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const switchLocale = (newLocale: string) => {
+    // Setear cookie
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+    
+    // Cambiar URL manteniendo el path
+    const pathWithoutLocale = pathname.replace(/^\/(es|en)/, '') || '/';
+    router.push(`/${newLocale}${pathWithoutLocale}`);
+  };
 
   // Cargar tipos de flor y ocasiones desde la API
   useEffect(() => {
@@ -202,6 +214,30 @@ export default function Navbar() {
 
           {/* Iconos derecha */}
           <div className="flex items-center gap-4">
+            {/* Selector de idioma */}
+            <div className="flex items-center gap-1 bg-white/50 rounded-lg px-2 py-1">
+              <button
+                onClick={() => switchLocale('es')}
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  locale === 'es' 
+                    ? 'bg-green-600 text-white' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                ES
+              </button>
+              <button
+                onClick={() => switchLocale('en')}
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                  locale === 'en' 
+                    ? 'bg-green-600 text-white' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                EN
+              </button>
+            </div>
+
             {/* Búsqueda */}
             <button 
               data-search-button

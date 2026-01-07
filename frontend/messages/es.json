@@ -1,0 +1,57 @@
+{
+  "nav": {
+    "flowerType": "Tipo de flor",
+    "occasions": "Ocasiones",
+    "help": "Ayuda",
+    "contact": "Contacto",
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar productos, flores, ocasiones...",
+    "searchPress": "Presiona Enter para buscar",
+    "login": "Iniciar sesión",
+    "myProfile": "Mi Perfil",
+    "myOrders": "Mis Pedidos",
+    "logout": "Cerrar Sesión",
+    "cart": "Carrito",
+    "menu": "Menú",
+    "loading": "Cargando..."
+  },
+  "common": {
+    "buy": "Comprar",
+    "addToCart": "Agregar al carrito",
+    "viewDetails": "Ver detalles",
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "continue": "Continuar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "finish": "Finalizar",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "shipping": "Envío",
+    "free": "Gratis"
+  },
+  "cart": {
+    "title": "Carrito de compras",
+    "empty": "Tu carrito está vacío",
+    "continueShopping": "Continuar comprando",
+    "checkout": "Finalizar compra",
+    "remove": "Eliminar",
+    "quantity": "Cantidad"
+  },
+  "checkout": {
+    "title": "Finalizar compra",
+    "shippingMethod": "Método de envío",
+    "pickup": "Retiro en tienda",
+    "express": "Envío Express",
+    "scheduled": "Envío Programado",
+    "deliveryDate": "Fecha de entrega",
+    "timeSlot": "Franja horaria",
+    "morning": "Mañana",
+    "afternoon": "Tarde",
+    "sender": "Remitente",
+    "recipient": "Destinatario",
+    "dedication": "Dedicatoria",
+    "payment": "Pago"
+  }
+}
