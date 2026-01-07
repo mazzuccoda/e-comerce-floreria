@@ -2,12 +2,20 @@ import os
 import logging
 from typing import Optional, Dict, Any, List
 
-from google.cloud import translate_v2 as translate
 from django.core.cache import cache
 
 from .models import Translation
 
 logger = logging.getLogger(__name__)
+
+# Importar Google Translate de forma opcional
+try:
+    from google.cloud import translate_v2 as translate
+    GOOGLE_TRANSLATE_AVAILABLE = True
+except ImportError:
+    translate = None
+    GOOGLE_TRANSLATE_AVAILABLE = False
+    logger.warning('google-cloud-translate no está instalado. Traducciones deshabilitadas.')
 
 
 class TranslationService:
@@ -18,7 +26,10 @@ class TranslationService:
     
     def __init__(self):
         self.api_key = os.getenv('GOOGLE_TRANSLATE_API_KEY')
-        if not self.api_key:
+        if not GOOGLE_TRANSLATE_AVAILABLE:
+            logger.warning('google-cloud-translate no disponible. Traducciones deshabilitadas.')
+            self.client = None
+        elif not self.api_key:
             logger.warning('GOOGLE_TRANSLATE_API_KEY no configurada. Traducciones deshabilitadas.')
             self.client = None
         else:
