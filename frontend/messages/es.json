@@ -20,6 +20,8 @@
     "howToBuySubtitle": "Un proceso simple, seguro y rápido",
     "startShopping": "Empezar compra",
     "featured": "DESTACADOS",
+    "dailyDeals": "OFERTAS DEL DÍA",
+    "swipeForMore": "← Deslizá para ver más ofertas →",
     "viewAllProducts": "Ver todos los productos",
     "steps": {
       "step1Title": "Elegí el ramo",
@@ -44,7 +46,10 @@
     "addToCart": "Agregar al carrito",
     "outOfStock": "Sin stock",
     "newProduct": "Nuevo",
-    "sale": "Oferta"
+    "sale": "Oferta",
+    "description": "Descripción",
+    "consultWhatsApp": "Consultar por WhatsApp",
+    "quantity": "Cantidad"
   },
   "footer": {
     "aboutUs": "Sobre Nosotros",

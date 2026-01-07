@@ -5,12 +5,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
 import { Product } from '@/types/Product';
 import { ChevronLeft, ChevronRight, Tag, Clock } from 'lucide-react';
+import { useI18n } from '../../context/I18nContext';
 
 interface OfertasDelDiaProps {
   className?: string;
 }
 
 export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
+  const { t } = useI18n();
   const [productos, setProductos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full shadow-lg">
             <Tag className="w-5 h-5" />
-            <span className="font-bold text-lg">OFERTAS DEL DÍA</span>
+            <span className="font-bold text-lg">{t('home.dailyDeals')}</span>
             <Clock className="w-5 h-5 animate-pulse" />
           </div>
         </div>
@@ -172,7 +174,7 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
         {/* Indicador de scroll en móvil */}
         {!loading && productos.length > 1 && (
           <div className="mt-4 text-center text-sm text-gray-500 md:hidden">
-            <p>← Deslizá para ver más ofertas →</p>
+            <p>{t('home.swipeForMore')}</p>
           </div>
         )}
       </div>

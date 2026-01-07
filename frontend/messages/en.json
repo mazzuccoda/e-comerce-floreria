@@ -20,6 +20,8 @@
     "howToBuySubtitle": "A simple, secure and fast process",
     "startShopping": "Start shopping",
     "featured": "FEATURED",
+    "dailyDeals": "DAILY DEALS",
+    "swipeForMore": "← Swipe to see more deals →",
     "viewAllProducts": "View all products",
     "steps": {
       "step1Title": "Choose your bouquet",
@@ -44,7 +46,10 @@
     "addToCart": "Add to cart",
     "outOfStock": "Out of stock",
     "newProduct": "New",
-    "sale": "Sale"
+    "sale": "Sale",
+    "description": "Description",
+    "consultWhatsApp": "Consult via WhatsApp",
+    "quantity": "Quantity"
   },
   "footer": {
     "aboutUs": "About Us",
