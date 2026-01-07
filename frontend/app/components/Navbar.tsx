@@ -218,27 +218,26 @@ export default function Navbar() {
             <div className="flex items-center gap-1 bg-white/50 rounded-lg px-2 py-1">
               <button
                 onClick={() => switchLocale('es')}
-                className={`px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors ${
                   locale === 'es' 
-                    ? 'bg-green-600 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-green-600 text-white shadow-sm' 
+                    : 'text-gray-700 hover:bg-white/80'
                 }`}
                 title="Español"
               >
-                <span className="text-base">🇦🇷</span>
-                <span>ES</span>
+                ES
               </button>
+              <div className="w-px h-4 bg-gray-300"></div>
               <button
                 onClick={() => switchLocale('en')}
-                className={`px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors ${
                   locale === 'en' 
-                    ? 'bg-green-600 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-green-600 text-white shadow-sm' 
+                    : 'text-gray-700 hover:bg-white/80'
                 }`}
                 title="English"
               >
-                <span className="text-base">🇺🇸</span>
-                <span>EN</span>
+                EN
               </button>
             </div>
 

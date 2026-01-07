@@ -15,6 +15,50 @@
     "menu": "Menú",
     "loading": "Cargando..."
   },
+  "home": {
+    "howToBuyTitle": "Cómo comprar en 3 minutos",
+    "howToBuySubtitle": "Un proceso simple, seguro y rápido",
+    "startShopping": "Empezar compra",
+    "featured": "DESTACADOS",
+    "viewAllProducts": "Ver todos los productos",
+    "steps": {
+      "step1Title": "Elegí el ramo",
+      "step1Desc": "Explorá los más vendidos o por ocasión",
+      "step2Title": "Completá datos del envío",
+      "step2Desc": "Tu nombre y el del destinatario",
+      "step3Title": "Agregá dedicatoria",
+      "step3Desc": "Hacelo especial con un mensaje",
+      "step4Title": "Sumá un adicional",
+      "step4Desc": "Chocolates, peluches y más",
+      "step5Title": "Elegí fecha y horario",
+      "step5Desc": "Coordinamos la franja de entrega",
+      "step6Title": "Pagá de forma segura",
+      "step6Desc": "Múltiples medios y confirmación inmediata",
+      "step7Title": "Entrega confirmada",
+      "step7Desc": "Te confirmamos cuando esté entregado"
+    }
+  },
+  "products": {
+    "from": "Desde",
+    "seeDetails": "Ver detalles",
+    "addToCart": "Agregar al carrito",
+    "outOfStock": "Sin stock",
+    "newProduct": "Nuevo",
+    "sale": "Oferta"
+  },
+  "footer": {
+    "aboutUs": "Sobre Nosotros",
+    "aboutText": "Florería especializada en arreglos florales para toda ocasión. Entregamos amor en cada ramo.",
+    "quickLinks": "Enlaces Rápidos",
+    "products": "Productos",
+    "occasions": "Ocasiones",
+    "help": "Ayuda",
+    "contact": "Contacto",
+    "followUs": "Síguenos",
+    "allRightsReserved": "Todos los derechos reservados",
+    "termsAndConditions": "Términos y Condiciones",
+    "privacyPolicy": "Política de Privacidad"
+  },
   "common": {
     "buy": "Comprar",
     "addToCart": "Agregar al carrito",
@@ -29,7 +73,10 @@
     "total": "Total",
     "subtotal": "Subtotal",
     "shipping": "Envío",
-    "free": "Gratis"
+    "free": "Gratis",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito"
   },
   "cart": {
     "title": "Carrito de compras",

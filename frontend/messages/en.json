@@ -15,6 +15,50 @@
     "menu": "Menu",
     "loading": "Loading..."
   },
+  "home": {
+    "howToBuyTitle": "How to buy in 3 minutes",
+    "howToBuySubtitle": "A simple, secure and fast process",
+    "startShopping": "Start shopping",
+    "featured": "FEATURED",
+    "viewAllProducts": "View all products",
+    "steps": {
+      "step1Title": "Choose your bouquet",
+      "step1Desc": "Explore best sellers or by occasion",
+      "step2Title": "Complete shipping details",
+      "step2Desc": "Your name and recipient's name",
+      "step3Title": "Add a dedication",
+      "step3Desc": "Make it special with a message",
+      "step4Title": "Add an extra",
+      "step4Desc": "Chocolates, plushies and more",
+      "step5Title": "Choose date and time",
+      "step5Desc": "We coordinate the delivery slot",
+      "step6Title": "Pay securely",
+      "step6Desc": "Multiple methods and instant confirmation",
+      "step7Title": "Delivery confirmed",
+      "step7Desc": "We confirm when it's delivered"
+    }
+  },
+  "products": {
+    "from": "From",
+    "seeDetails": "See details",
+    "addToCart": "Add to cart",
+    "outOfStock": "Out of stock",
+    "newProduct": "New",
+    "sale": "Sale"
+  },
+  "footer": {
+    "aboutUs": "About Us",
+    "aboutText": "Flower shop specialized in floral arrangements for every occasion. We deliver love in every bouquet.",
+    "quickLinks": "Quick Links",
+    "products": "Products",
+    "occasions": "Occasions",
+    "help": "Help",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "allRightsReserved": "All rights reserved",
+    "termsAndConditions": "Terms and Conditions",
+    "privacyPolicy": "Privacy Policy"
+  },
   "common": {
     "buy": "Buy",
     "addToCart": "Add to cart",
@@ -29,7 +73,10 @@
     "total": "Total",
     "subtotal": "Subtotal",
     "shipping": "Shipping",
-    "free": "Free"
+    "free": "Free",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
   },
   "cart": {
     "title": "Shopping cart",
