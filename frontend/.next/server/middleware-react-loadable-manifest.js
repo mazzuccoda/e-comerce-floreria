@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST='{"app\\\\components\\\\ProductListFinal.tsx -> ./ProductListClient":{"id":5836,"files":["static/css/332b142bd9d736bd.css","static/chunks/5836-96e5ed70e24773c9.js"]}}';
+self.__REACT_LOADABLE_MANIFEST="{}"

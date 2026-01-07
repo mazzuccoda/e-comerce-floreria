@@ -21,14 +21,36 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Messages>({});
 
   useEffect(() => {
-    // Detectar locale desde pathname
-    const detectedLocale = pathname.startsWith('/en') ? 'en' : 'es';
+    // Detectar locale desde pathname o cookie
+    let detectedLocale = 'es';
+    
+    // Primero intentar desde pathname
+    if (pathname.startsWith('/en/') || pathname === '/en') {
+      detectedLocale = 'en';
+    } else if (pathname.startsWith('/es/') || pathname === '/es') {
+      detectedLocale = 'es';
+    } else {
+      // Si no hay locale en pathname, leer de cookie
+      const cookies = document.cookie.split(';');
+      const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='));
+      if (localeCookie) {
+        const cookieValue = localeCookie.split('=')[1];
+        if (cookieValue === 'en' || cookieValue === 'es') {
+          detectedLocale = cookieValue;
+        }
+      }
+    }
+    
+    console.log('🌐 I18n: pathname =', pathname, ', detected locale =', detectedLocale);
     setLocale(detectedLocale);
 
     // Cargar mensajes correspondientes
     import(`@/messages/${detectedLocale}.json`)
-      .then((module) => setMessages(module.default))
-      .catch((err) => console.error('Error loading messages:', err));
+      .then((module) => {
+        console.log('✅ I18n: Mensajes cargados para', detectedLocale);
+        setMessages(module.default);
+      })
+      .catch((err) => console.error('❌ Error loading messages:', err));
   }, [pathname]);
 
   const t = (key: string): string => {
