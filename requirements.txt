@@ -60,6 +60,9 @@ djangorestframework[gis]==3.14.0
 django-rest-auth==0.9.5
 drf-social-oauth2==3.1.0
 
+# Translation
+google-cloud-translate==3.15.0
+
 # Development Dependencies
 pytest==7.4.0
 pytest-django==4.7.0

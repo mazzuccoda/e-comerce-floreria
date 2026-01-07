@@ -7,6 +7,7 @@ from .serializers import (
     ProductoSerializer, CategoriaSerializer, TipoFlorSerializer, 
     OcasionSerializer, ZonaEntregaSerializer, HeroSlideSerializer
 )
+from core.translation_service import translation_service
 
 
 class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -84,19 +85,73 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset
     
+    def list(self, request, *args, **kwargs):
+        """Override list para aplicar traducciones"""
+        response = super().list(request, *args, **kwargs)
+        
+        # Detectar idioma solicitado
+        lang = request.query_params.get('lang', 'es')
+        
+        # Traducir si no es español
+        if lang != 'es' and response.data:
+            if 'results' in response.data:
+                # Paginado
+                response.data['results'] = translation_service.translate_products(
+                    response.data['results'], 
+                    target_lang=lang
+                )
+            else:
+                # Sin paginación
+                response.data = translation_service.translate_products(
+                    response.data, 
+                    target_lang=lang
+                )
+        
+        return response
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Override retrieve para aplicar traducciones"""
+        response = super().retrieve(request, *args, **kwargs)
+        
+        # Detectar idioma solicitado
+        lang = request.query_params.get('lang', 'es')
+        
+        # Traducir si no es español
+        if lang != 'es' and response.data:
+            response.data = translation_service.translate_product(
+                response.data, 
+                target_lang=lang
+            )
+        
+        return response
+    
     @action(detail=False, methods=['get'])
     def recomendados(self, request):
         """Endpoint para obtener productos recomendados (destacados)"""
         productos = self.get_queryset().filter(is_featured=True, es_adicional=False)
         serializer = self.get_serializer(productos, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        
+        # Traducir si es necesario
+        lang = request.query_params.get('lang', 'es')
+        if lang != 'es':
+            data = translation_service.translate_products(data, target_lang=lang)
+        
+        return Response(data)
     
     @action(detail=False, methods=['get'])
     def adicionales(self, request):
         """Endpoint para obtener productos adicionales"""
         productos = self.get_queryset().filter(es_adicional=True)
         serializer = self.get_serializer(productos, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        
+        # Traducir si es necesario
+        lang = request.query_params.get('lang', 'es')
+        if lang != 'es':
+            data = translation_service.translate_products(data, target_lang=lang)
+        
+        return Response(data)
 
 
 class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
@@ -109,6 +164,20 @@ class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CategoriaSerializer
     permission_classes = [AllowAny]
     lookup_field = 'slug'
+    
+    def list(self, request, *args, **kwargs):
+        """Override list para aplicar traducciones"""
+        response = super().list(request, *args, **kwargs)
+        lang = request.query_params.get('lang', 'es')
+        
+        if lang != 'es' and response.data:
+            for item in response.data:
+                if 'nombre' in item:
+                    item['nombre'] = translation_service.translate_text(item['nombre'], lang)
+                if 'descripcion' in item:
+                    item['descripcion'] = translation_service.translate_text(item['descripcion'], lang)
+        
+        return response
 
 
 class TipoFlorViewSet(viewsets.ReadOnlyModelViewSet):
@@ -119,6 +188,20 @@ class TipoFlorViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TipoFlor.objects.filter(is_active=True)
     serializer_class = TipoFlorSerializer
     permission_classes = [AllowAny]
+    
+    def list(self, request, *args, **kwargs):
+        """Override list para aplicar traducciones"""
+        response = super().list(request, *args, **kwargs)
+        lang = request.query_params.get('lang', 'es')
+        
+        if lang != 'es' and response.data:
+            for item in response.data:
+                if 'nombre' in item:
+                    item['nombre'] = translation_service.translate_text(item['nombre'], lang)
+                if 'descripcion' in item:
+                    item['descripcion'] = translation_service.translate_text(item['descripcion'], lang)
+        
+        return response
 
 
 class OcasionViewSet(viewsets.ReadOnlyModelViewSet):
@@ -129,6 +212,20 @@ class OcasionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ocasion.objects.filter(is_active=True)
     serializer_class = OcasionSerializer
     permission_classes = [AllowAny]
+    
+    def list(self, request, *args, **kwargs):
+        """Override list para aplicar traducciones"""
+        response = super().list(request, *args, **kwargs)
+        lang = request.query_params.get('lang', 'es')
+        
+        if lang != 'es' and response.data:
+            for item in response.data:
+                if 'nombre' in item:
+                    item['nombre'] = translation_service.translate_text(item['nombre'], lang)
+                if 'descripcion' in item:
+                    item['descripcion'] = translation_service.translate_text(item['descripcion'], lang)
+        
+        return response
 
 
 class ZonaEntregaViewSet(viewsets.ReadOnlyModelViewSet):
