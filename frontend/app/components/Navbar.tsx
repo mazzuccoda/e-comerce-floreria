@@ -22,7 +22,7 @@ interface Ocasion {
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const { cart } = useCartRobust();
   const { isAuthenticated, user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -146,7 +146,7 @@ export default function Navbar() {
                 }}
                 className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors flex items-center gap-1"
               >
-                Tipo de flor
+                {t('nav.flowerType')}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -163,7 +163,7 @@ export default function Navbar() {
                     </a>
                   ))
                 ) : (
-                  <span className="block px-4 py-2 text-sm text-gray-400">Cargando...</span>
+                  <span className="block px-4 py-2 text-sm text-gray-400">{t('nav.loading')}</span>
                 )}
               </div>
             </li>
@@ -177,7 +177,7 @@ export default function Navbar() {
                 }}
                 className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors flex items-center gap-1"
               >
-                Ocasiones
+                {t('nav.occasions')}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -201,13 +201,13 @@ export default function Navbar() {
             
             <li>
               <Link href="/ayuda" className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors">
-                Ayuda
+                {t('nav.help')}
               </Link>
             </li>
             
             <li>
               <Link href="/contacto" className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors">
-                Contacto
+                {t('nav.contact')}
               </Link>
             </li>
           </ul>
@@ -218,23 +218,27 @@ export default function Navbar() {
             <div className="flex items-center gap-1 bg-white/50 rounded-lg px-2 py-1">
               <button
                 onClick={() => switchLocale('es')}
-                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
                   locale === 'es' 
                     ? 'bg-green-600 text-white' 
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
+                title="Español"
               >
-                ES
+                <span className="text-base">🇦🇷</span>
+                <span>ES</span>
               </button>
               <button
                 onClick={() => switchLocale('en')}
-                className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                className={`px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1 ${
                   locale === 'en' 
                     ? 'bg-green-600 text-white' 
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
+                title="English"
               >
-                EN
+                <span className="text-base">🇺🇸</span>
+                <span>EN</span>
               </button>
             </div>
 
@@ -246,7 +250,7 @@ export default function Navbar() {
                 setShowSearch(!showSearch);
               }}
               className="text-gray-700 hover:text-gray-900 transition-colors" 
-              aria-label="Buscar"
+              aria-label={t('nav.search')}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -276,14 +280,14 @@ export default function Navbar() {
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      Mi Perfil
+                      {t('nav.myProfile')}
                     </Link>
                     <Link
                       href="/mis-pedidos"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setShowUserMenu(false)}
                     >
-                      Mis Pedidos
+                      {t('nav.myOrders')}
                     </Link>
                     <button
                       onClick={() => {
@@ -292,13 +296,13 @@ export default function Navbar() {
                       }}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      Cerrar Sesión
+                      {t('nav.logout')}
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link href="/login" className="text-gray-700 hover:text-gray-900 transition-colors" aria-label="Iniciar sesión">
+              <Link href="/login" className="text-gray-700 hover:text-gray-900 transition-colors" aria-label={t('nav.login')}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -327,7 +331,7 @@ export default function Navbar() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Buscar productos, flores, ocasiones..."
+                placeholder={t('nav.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
