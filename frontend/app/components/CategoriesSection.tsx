@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useI18n } from '@/context/I18nContext';
 
 interface Category {
   id: number;
@@ -12,6 +13,7 @@ interface Category {
 }
 
 export default function CategoriesSection() {
+  const { locale } = useI18n();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +21,7 @@ export default function CategoriesSection() {
     const fetchCategories = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://e-comerce-floreria-production.up.railway.app';
-        const response = await fetch(`${backendUrl}/api/catalogo/categorias/`, {
+        const response = await fetch(`${backendUrl}/api/catalogo/categorias/?lang=${locale}`, {
           credentials: 'omit',
           headers: {
             'Accept': 'application/json',
@@ -42,7 +44,7 @@ export default function CategoriesSection() {
     };
 
     fetchCategories();
-  }, []);
+  }, [locale]);
 
   if (loading) {
     return (

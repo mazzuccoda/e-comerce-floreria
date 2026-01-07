@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import ProductCard from './ProductCard';
 import ProductFilters from './ProductFilters';
 import { Product } from '@/types/Product';
+import { useI18n } from '@/context/I18nContext';
 
 // Productos mock que funcionan correctamente
 const mockProducts: Product[] = [
@@ -202,6 +203,7 @@ interface ProductListProps {
 }
 
 export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFeatured = false, showFilters: showFiltersProp }: ProductListProps) {
+  const { locale } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -248,6 +250,9 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         if (showAdditionals) {
           queryParams.set('adicionales', 'true');
         }
+        
+        // Agregar parámetro de idioma
+        queryParams.set('lang', locale);
         
         const apiUrl = `${backendUrl}/api/catalogo/productos/?${queryParams.toString()}`;
           
