@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '../../context/I18nContext';
 
 interface Slide {
   id: number;
@@ -45,6 +46,7 @@ const defaultSlides: Slide[] = [
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
 export default function HeroCarousel() {
+  const { locale } = useI18n();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -56,10 +58,15 @@ export default function HeroCarousel() {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 segundos
+        const timestamp = Date.now();
 
-        const response = await fetch(`${API_URL}/catalogo/hero-slides/`, {
+        const response = await fetch(`${API_URL}/catalogo/hero-slides/?lang=${locale}&_t=${timestamp}`, {
           signal: controller.signal,
-          cache: 'no-cache'
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache'
+          }
         });
         
         clearTimeout(timeoutId);
@@ -87,7 +94,7 @@ export default function HeroCarousel() {
     };
 
     fetchSlides();
-  }, []);
+  }, [locale]);
 
   // Auto-play del carrusel
   useEffect(() => {
