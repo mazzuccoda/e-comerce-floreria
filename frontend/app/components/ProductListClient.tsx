@@ -322,7 +322,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
     };
 
     fetchProducts();
-  }, [searchParams]); // Recargar cuando cambien los parámetros de búsqueda
+  }, [searchParams, locale]); // Recargar cuando cambien los parámetros de búsqueda o el idioma
 
   // Procesar parámetros de URL (filtros desde navbar)
   useEffect(() => {
