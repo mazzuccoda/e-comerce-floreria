@@ -18,7 +18,7 @@ interface ProductPageParams {
 }
 
 export default function ProductPage({ params }: ProductPageParams) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [slug, setSlug] = React.useState<string>('');
   const [product, setProduct] = useState<Product | null>(null); 
   const { addToCart, loading: cartLoading } = useCartRobust();
@@ -100,10 +100,11 @@ export default function ProductPage({ params }: ProductPageParams) {
     const fetchProduct = async () => {
       try {
         // Llamar directamente al backend - URL hardcodeada para evitar problemas
-        const backendUrl = `https://e-comerce-floreria-production.up.railway.app/api/catalogo/productos/${slug}/`;
+        const backendUrl = `https://e-comerce-floreria-production.up.railway.app/api/catalogo/productos/${slug}/?lang=${locale}`;
         
         console.log('🔍 Fetching product from:', backendUrl);
         console.log('📝 Slug:', slug);
+        console.log('🌐 Locale:', locale);
         
         const res = await fetch(backendUrl, {
           method: 'GET',
@@ -143,7 +144,7 @@ export default function ProductPage({ params }: ProductPageParams) {
     };
 
     fetchProduct();
-  }, [slug]);
+  }, [slug, locale]);
 
   if (loading) {
     return (

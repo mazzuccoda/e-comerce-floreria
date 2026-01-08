@@ -51,7 +51,7 @@ export default function Navbar() {
     console.log('🌸 Navbar: Cargando tipos de flor y ocasiones desde:', apiUrl);
     
     // Cargar tipos de flor
-    fetch(`${apiUrl}/catalogo/tipos-flor/`)
+    fetch(`${apiUrl}/catalogo/tipos-flor/?lang=${locale}`)
       .then(res => res.json())
       .then(data => {
         console.log('✅ Tipos de flor cargados:', data.length);
@@ -60,14 +60,14 @@ export default function Navbar() {
       .catch(err => console.error('❌ Error cargando tipos de flor:', err));
     
     // Cargar ocasiones
-    fetch(`${apiUrl}/catalogo/ocasiones/`)
+    fetch(`${apiUrl}/catalogo/ocasiones/?lang=${locale}`)
       .then(res => res.json())
       .then(data => {
         console.log('✅ Ocasiones cargadas:', data.length);
         setOcasiones(data);
       })
       .catch(err => console.error('❌ Error cargando ocasiones:', err));
-  }, []);
+  }, [locale]);
   
   // Solo renderizar el contador del carrito en el cliente
   useEffect(() => {
