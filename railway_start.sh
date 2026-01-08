@@ -13,8 +13,14 @@ python healthcheck.py || {
     exit 1
 }
 
-# 2. Migrations
-echo "📋 Step 2: Running Migrations"
+# 2. Install google-cloud-translate (runtime fix for Railway)
+echo "📋 Step 2: Installing google-cloud-translate"
+pip install --no-cache-dir google-cloud-translate==3.15.0 || {
+    echo "⚠️ google-cloud-translate installation failed (translations will be disabled)"
+}
+
+# 3. Migrations
+echo "📋 Step 3: Running Migrations"
 echo "🔍 Checking pending migrations..."
 python manage.py showmigrations pedidos
 echo "🚀 Applying migrations..."
@@ -31,20 +37,20 @@ python manage.py migrate --noinput || {
 }
 echo "✅ Migrations completed successfully"
 
-# 3. Collect Static Files (should be done in build, but just in case)
-echo "📋 Step 3: Collecting Static Files"
+# 4. Collect Static Files (should be done in build, but just in case)
+echo "📋 Step 4: Collecting Static Files"
 python manage.py collectstatic --noinput --clear || {
     echo "⚠️  Collectstatic failed (non-critical)"
 }
 
-# 3.5. Initialize Shipping Zones (if not exists)
-echo "📋 Step 3.5: Initializing Shipping Zones"
+# 5. Initialize Shipping Zones (if not exists)
+echo "📋 Step 5: Initializing Shipping Zones"
 python manage.py init_shipping_config || {
     echo "⚠️  Shipping zones initialization failed (non-critical)"
 }
 
-# 4. Start Gunicorn
-echo "📋 Step 4: Starting Gunicorn"
+# 6. Start Gunicorn
+echo "📋 Step 6: Starting Gunicorn"
 echo "   Port: ${PORT:-8000}"
 echo "   Workers: 2"
 echo "   Timeout: 120s"
