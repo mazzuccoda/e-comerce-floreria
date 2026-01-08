@@ -26,14 +26,23 @@ class TranslationService:
     
     def __init__(self):
         self.api_key = os.getenv('GOOGLE_TRANSLATE_API_KEY')
+        logger.info(f'🔧 Inicializando TranslationService...')
+        logger.info(f'📦 GOOGLE_TRANSLATE_AVAILABLE: {GOOGLE_TRANSLATE_AVAILABLE}')
+        logger.info(f'🔑 API Key configurada: {bool(self.api_key)}')
+        
         if not GOOGLE_TRANSLATE_AVAILABLE:
-            logger.warning('google-cloud-translate no disponible. Traducciones deshabilitadas.')
+            logger.warning('⚠️ google-cloud-translate no disponible. Traducciones deshabilitadas.')
             self.client = None
         elif not self.api_key:
-            logger.warning('GOOGLE_TRANSLATE_API_KEY no configurada. Traducciones deshabilitadas.')
+            logger.warning('⚠️ GOOGLE_TRANSLATE_API_KEY no configurada. Traducciones deshabilitadas.')
             self.client = None
         else:
-            self.client = translate.Client(api_key=self.api_key)
+            try:
+                self.client = translate.Client(api_key=self.api_key)
+                logger.info('✅ Cliente de Google Translate inicializado correctamente')
+            except Exception as e:
+                logger.error(f'❌ Error inicializando cliente de Google Translate: {e}')
+                self.client = None
     
     def translate_text(self, text: str, target_lang: str = 'en', source_lang: str = 'es') -> str:
         """
@@ -139,7 +148,14 @@ class TranslationService:
         Returns:
             Producto con campos traducidos
         """
+        logger.info(f'🌐 translate_product llamado: target_lang={target_lang}, producto={product_data.get("nombre", "N/A")}')
+        
         if target_lang == 'es':
+            logger.info(f'⏭️ Idioma es español, retornando sin traducir')
+            return product_data
+        
+        if not self.client:
+            logger.warning(f'⚠️ Cliente no disponible, retornando sin traducir')
             return product_data
         
         translated = product_data.copy()
