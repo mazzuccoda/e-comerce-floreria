@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCartRobust } from '@/context/CartContextRobust';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/context/I18nContext';
 import ExtrasSelector from '@/app/components/ExtrasSelector';
 import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
@@ -43,6 +44,7 @@ interface DirectCart {
 }
 
 const MultiStepCheckoutPage = () => {
+  const { t } = useI18n();
   const { token } = useAuth();
   const { settings: siteSettings } = useSiteSettings();
   const [currentStep, setCurrentStep] = useState(0);
