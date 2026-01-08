@@ -12,7 +12,7 @@ interface OfertasDelDiaProps {
 }
 
 export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [productos, setProductos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
 
   useEffect(() => {
     fetchOfertasDelDia();
-  }, []);
+  }, [locale]);
 
   const fetchOfertasDelDia = async () => {
     try {
@@ -31,14 +31,17 @@ export default function OfertasDelDia({ className = '' }: OfertasDelDiaProps) {
       
       // Construir URL con query params para evitar problemas de trailing slash
       const url = new URL('/api/catalogo/productos/', apiUrl);
-      // Agregar timestamp para evitar cache
-      url.searchParams.append('t', Date.now().toString());
+      // Agregar idioma y timestamp para evitar cache
+      url.searchParams.append('lang', locale);
+      url.searchParams.append('_t', Date.now().toString());
       
       const urlString = url.toString();
       
       const response = await fetch(urlString, {
         headers: {
           'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store',
+          'Pragma': 'no-cache'
         },
         cache: 'no-store',
         mode: 'cors',
