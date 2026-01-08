@@ -38,7 +38,10 @@ class TranslationService:
             self.client = None
         else:
             try:
-                self.client = translate.Client(api_key=self.api_key)
+                # Configurar la API key como variable de entorno para el cliente
+                os.environ['GOOGLE_API_KEY'] = self.api_key
+                # Inicializar el cliente sin parámetros (usa GOOGLE_API_KEY del entorno)
+                self.client = translate.Client()
                 logger.info('✅ Cliente de Google Translate inicializado correctamente')
             except Exception as e:
                 logger.error(f'❌ Error inicializando cliente de Google Translate: {e}')
