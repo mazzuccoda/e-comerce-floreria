@@ -20,9 +20,15 @@ WORKDIR /app
 # Copy requirements files
 COPY requirements/ /app/requirements/
 
-# Install reportlab first, then base dependencies
+# Install reportlab first, then base dependencies, then force google-cloud-translate
 RUN pip install --no-cache-dir reportlab==4.0.7 && \
-    pip install --no-cache-dir -r requirements/base.txt
+    pip install --no-cache-dir -r requirements/base.txt && \
+    echo "=== Verificando google-cloud-translate ===" && \
+    pip show google-cloud-translate || echo "NOT FOUND" && \
+    pip install --no-cache-dir --force-reinstall google-cloud-translate==3.15.0 && \
+    echo "=== Verificación final ===" && \
+    pip show google-cloud-translate && \
+    python -c "from google.cloud import translate_v2; print('✅ google-cloud-translate OK')" || echo "❌ Import failed"
 
 # Development stage
 FROM python:3.11.9-slim-bookworm as development
