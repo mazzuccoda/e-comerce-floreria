@@ -5,9 +5,13 @@ nixPkgs = ["python311", "postgresql"]
 cmds = [
     "pip install --upgrade pip setuptools wheel",
     "pip install --no-cache-dir reportlab==4.0.7",
-    "pip install --no-cache-dir google-api-core google-auth google-cloud-core proto-plus protobuf",
-    "pip install --no-cache-dir google-cloud-translate==3.15.0",
-    "pip install --no-cache-dir -r requirements.txt"
+    "pip install --no-cache-dir -r requirements.txt",
+    "echo '=== Verificando google-cloud-translate ==='",
+    "pip show google-cloud-translate || echo 'NOT FOUND - Installing manually...'",
+    "pip install --no-cache-dir --force-reinstall google-cloud-translate==3.15.0",
+    "echo '=== Verificación final ==='",
+    "pip show google-cloud-translate",
+    "python -c 'from google.cloud import translate_v2; print(\"✅ google-cloud-translate OK\")' || echo '❌ Import failed'"
 ]
 
 [phases.build]
