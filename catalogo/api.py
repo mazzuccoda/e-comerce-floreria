@@ -246,3 +246,24 @@ class HeroSlideViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HeroSlide.objects.filter(is_active=True).order_by('orden', 'created_at')
     serializer_class = HeroSlideSerializer
     permission_classes = [AllowAny]
+    
+    def list(self, request, *args, **kwargs):
+        """Listar slides con traducción según parámetro lang"""
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        
+        # Obtener idioma de los query params
+        target_lang = request.query_params.get('lang', 'es')
+        
+        # Traducir cada slide
+        if target_lang != 'es':
+            for slide in data:
+                if slide.get('titulo'):
+                    slide['titulo'] = translation_service.translate_text(slide['titulo'], target_lang, source_lang='es')
+                if slide.get('subtitulo'):
+                    slide['subtitulo'] = translation_service.translate_text(slide['subtitulo'], target_lang, source_lang='es')
+                if slide.get('texto_boton'):
+                    slide['texto_boton'] = translation_service.translate_text(slide['texto_boton'], target_lang, source_lang='es')
+        
+        return Response(data)
