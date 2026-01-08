@@ -137,19 +137,21 @@ class TranslationService:
     
     def translate_product(self, product_data: Dict[str, Any], target_lang: str = 'en') -> Dict[str, Any]:
         """
-        Traduce todos los campos relevantes de un producto.
+        Traduce los campos de un producto.
+        Los productos están originalmente en español en la base de datos.
         
         Args:
-            product_data: Diccionario con datos del producto
-            target_lang: Idioma destino
+            product_data: Diccionario con datos del producto (originalmente en español)
+            target_lang: Idioma destino ('es' para español, 'en' para inglés)
         
         Returns:
             Producto con campos traducidos
         """
         logger.info(f'🌐 translate_product llamado: target_lang={target_lang}, producto={product_data.get("nombre", "N/A")}')
         
+        # Si el idioma destino es español, retornar sin traducir (ya está en español)
         if target_lang == 'es':
-            logger.info(f'⏭️ Idioma es español, retornando sin traducir')
+            logger.info(f'⏭️ Idioma es español (original), retornando sin traducir')
             return product_data
         
         if not self.client:
@@ -158,40 +160,43 @@ class TranslationService:
         
         translated = product_data.copy()
         
-        # Traducir campos del producto
+        # Traducir campos del producto (desde español al idioma destino)
         if 'nombre' in translated and translated['nombre']:
-            translated['nombre'] = self.translate_text(translated['nombre'], target_lang)
+            translated['nombre'] = self.translate_text(translated['nombre'], target_lang, source_lang='es')
         
         if 'descripcion' in translated and translated['descripcion']:
-            translated['descripcion'] = self.translate_text(translated['descripcion'], target_lang)
+            translated['descripcion'] = self.translate_text(translated['descripcion'], target_lang, source_lang='es')
         
         if 'descripcion_corta' in translated and translated['descripcion_corta']:
-            translated['descripcion_corta'] = self.translate_text(translated['descripcion_corta'], target_lang)
+            translated['descripcion_corta'] = self.translate_text(translated['descripcion_corta'], target_lang, source_lang='es')
         
-        # Traducir categoría si existe
+        # Traducir categoría si existe (desde español)
         if 'categoria' in translated and translated['categoria']:
             if isinstance(translated['categoria'], dict) and 'nombre' in translated['categoria']:
                 translated['categoria']['nombre'] = self.translate_text(
                     translated['categoria']['nombre'],
-                    target_lang
+                    target_lang,
+                    source_lang='es'
                 )
         
-        # Traducir tipo de flor si existe
+        # Traducir tipo de flor si existe (desde español)
         if 'tipo_flor' in translated and translated['tipo_flor']:
             if isinstance(translated['tipo_flor'], dict) and 'nombre' in translated['tipo_flor']:
                 translated['tipo_flor']['nombre'] = self.translate_text(
                     translated['tipo_flor']['nombre'],
-                    target_lang
+                    target_lang,
+                    source_lang='es'
                 )
         
-        # Traducir ocasiones si existen
+        # Traducir ocasiones si existen (desde español)
         if 'ocasiones' in translated and translated['ocasiones']:
             if isinstance(translated['ocasiones'], list):
                 for ocasion in translated['ocasiones']:
                     if isinstance(ocasion, dict) and 'nombre' in ocasion:
                         ocasion['nombre'] = self.translate_text(
                             ocasion['nombre'],
-                            target_lang
+                            target_lang,
+                            source_lang='es'
                         )
         
         return translated
