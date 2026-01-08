@@ -16,4 +16,4 @@ cmds = [
 ]
 
 [start]
-cmd = "bash start.sh"
+cmd = "bash railway_start.sh"
