@@ -100,7 +100,8 @@ export default function ProductPage({ params }: ProductPageParams) {
     const fetchProduct = async () => {
       try {
         // Llamar directamente al backend - URL hardcodeada para evitar problemas
-        const backendUrl = `https://e-comerce-floreria-production.up.railway.app/api/catalogo/productos/${slug}/?lang=${locale}`;
+        const timestamp = Date.now();
+        const backendUrl = `https://e-comerce-floreria-production.up.railway.app/api/catalogo/productos/${slug}/?lang=${locale}&_t=${timestamp}`;
         
         console.log('🔍 Fetching product from:', backendUrl);
         console.log('📝 Slug:', slug);
@@ -111,9 +112,12 @@ export default function ProductPage({ params }: ProductPageParams) {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache'
           },
           // No enviar credentials para evitar problemas CORS
           credentials: 'omit',
+          cache: 'no-store'
         });
         
         console.log('📊 Response status:', res.status, res.statusText);

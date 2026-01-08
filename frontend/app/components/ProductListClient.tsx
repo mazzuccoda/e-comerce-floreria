@@ -254,6 +254,9 @@ export default function ProductListClient({ showRecommended = false, showAdditio
         // Agregar parámetro de idioma
         queryParams.set('lang', locale);
         
+        // Agregar timestamp para evitar caché del navegador
+        queryParams.set('_t', Date.now().toString());
+        
         const apiUrl = `${backendUrl}/api/catalogo/productos/?${queryParams.toString()}`;
           
         console.log('🔍 Iniciando solicitud a:', apiUrl);

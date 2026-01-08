@@ -47,11 +47,18 @@ export default function Navbar() {
   // Cargar tipos de flor y ocasiones desde la API
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+    const timestamp = Date.now();
     
     console.log('🌸 Navbar: Cargando tipos de flor y ocasiones desde:', apiUrl);
     
     // Cargar tipos de flor
-    fetch(`${apiUrl}/catalogo/tipos-flor/?lang=${locale}`)
+    fetch(`${apiUrl}/catalogo/tipos-flor/?lang=${locale}&_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache'
+      },
+      cache: 'no-store'
+    })
       .then(res => res.json())
       .then(data => {
         console.log('✅ Tipos de flor cargados:', data.length);
@@ -60,7 +67,13 @@ export default function Navbar() {
       .catch(err => console.error('❌ Error cargando tipos de flor:', err));
     
     // Cargar ocasiones
-    fetch(`${apiUrl}/catalogo/ocasiones/?lang=${locale}`)
+    fetch(`${apiUrl}/catalogo/ocasiones/?lang=${locale}&_t=${timestamp}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache'
+      },
+      cache: 'no-store'
+    })
       .then(res => res.json())
       .then(data => {
         console.log('✅ Ocasiones cargadas:', data.length);

@@ -21,11 +21,15 @@ export default function CategoriesSection() {
     const fetchCategories = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://e-comerce-floreria-production.up.railway.app';
-        const response = await fetch(`${backendUrl}/api/catalogo/categorias/?lang=${locale}`, {
+        const timestamp = Date.now();
+        const response = await fetch(`${backendUrl}/api/catalogo/categorias/?lang=${locale}&_t=${timestamp}`, {
           credentials: 'omit',
           headers: {
             'Accept': 'application/json',
+            'Cache-Control': 'no-cache, no-store',
+            'Pragma': 'no-cache'
           },
+          cache: 'no-store'
         });
 
         if (!response.ok) {
