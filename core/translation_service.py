@@ -8,14 +8,10 @@ from .models import Translation
 
 logger = logging.getLogger(__name__)
 
-# Importar Google Translate de forma opcional
-try:
-    from google.cloud import translate_v2 as translate
-    GOOGLE_TRANSLATE_AVAILABLE = True
-except ImportError:
-    translate = None
-    GOOGLE_TRANSLATE_AVAILABLE = False
-    logger.warning('google-cloud-translate no está instalado. Traducciones deshabilitadas.')
+# Usar requests para llamar a la API REST de Google Translate
+# Esto evita problemas de autenticación con google-cloud-translate v3.x
+import requests
+GOOGLE_TRANSLATE_AVAILABLE = True
 
 
 class TranslationService:
@@ -26,26 +22,18 @@ class TranslationService:
     
     def __init__(self):
         self.api_key = os.getenv('GOOGLE_TRANSLATE_API_KEY')
+        self.api_url = 'https://translation.googleapis.com/language/translate/v2'
         logger.info(f'🔧 Inicializando TranslationService...')
         logger.info(f'📦 GOOGLE_TRANSLATE_AVAILABLE: {GOOGLE_TRANSLATE_AVAILABLE}')
         logger.info(f'🔑 API Key configurada: {bool(self.api_key)}')
         
-        if not GOOGLE_TRANSLATE_AVAILABLE:
-            logger.warning('⚠️ google-cloud-translate no disponible. Traducciones deshabilitadas.')
-            self.client = None
-        elif not self.api_key:
+        if not self.api_key:
             logger.warning('⚠️ GOOGLE_TRANSLATE_API_KEY no configurada. Traducciones deshabilitadas.')
             self.client = None
         else:
-            try:
-                # Configurar la API key como variable de entorno para el cliente
-                os.environ['GOOGLE_API_KEY'] = self.api_key
-                # Inicializar el cliente sin parámetros (usa GOOGLE_API_KEY del entorno)
-                self.client = translate.Client()
-                logger.info('✅ Cliente de Google Translate inicializado correctamente')
-            except Exception as e:
-                logger.error(f'❌ Error inicializando cliente de Google Translate: {e}')
-                self.client = None
+            # Usar API REST directamente con requests
+            self.client = True  # Marcador para indicar que el servicio está disponible
+            logger.info('✅ Servicio de traducción inicializado correctamente (API REST)')
     
     def translate_text(self, text: str, target_lang: str = 'en', source_lang: str = 'es') -> str:
         """
@@ -85,16 +73,23 @@ class TranslationService:
             logger.warning(f'Cliente de traducción no disponible. Retornando texto original.')
             return text
         
-        # Traducir con Google Translate API
+        # Traducir con Google Translate API REST
         try:
             logger.info(f'Traduciendo con Google API: {text[:50]}...')
-            result = self.client.translate(
-                text,
-                target_language=target_lang,
-                source_language=source_lang
-            )
             
-            translated_text = result['translatedText']
+            params = {
+                'q': text,
+                'target': target_lang,
+                'source': source_lang,
+                'key': self.api_key,
+                'format': 'text'
+            }
+            
+            response = requests.post(self.api_url, params=params)
+            response.raise_for_status()
+            
+            result = response.json()
+            translated_text = result['data']['translations'][0]['translatedText']
             
             # Guardar en caché
             try:
