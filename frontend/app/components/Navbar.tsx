@@ -39,9 +39,9 @@ export default function Navbar() {
     // Setear cookie
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
     
-    // Cambiar URL manteniendo el path
+    // Cambiar URL manteniendo el path y forzar recarga completa
     const pathWithoutLocale = pathname.replace(/^\/(es|en)/, '') || '/';
-    router.push(`/${newLocale}${pathWithoutLocale}`);
+    window.location.href = `/${newLocale}${pathWithoutLocale}`;
   };
 
   // Cargar tipos de flor y ocasiones desde la API
