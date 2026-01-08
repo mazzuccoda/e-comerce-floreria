@@ -330,9 +330,9 @@ export default function ProductPage({ params }: ProductPageParams) {
                       Agregando...
                     </span>
                   ) : product.stock <= 0 ? (
-                    'Sin stock'
+                    t('products.outOfStock')
                   ) : (
-                    'Agregar al carrito'
+                    t('products.addToCart')
                   )}
                 </button>
               </>
