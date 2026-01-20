@@ -146,7 +146,7 @@ def test_whatsapp(request):
                     errorDiv.style.display = 'none';
                     
                     try {
-                        const response = await fetch('/api/notificaciones/test-whatsapp/', {
+                        const response = await fetch(window.location.pathname, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -154,7 +154,10 @@ def test_whatsapp(request):
                             body: JSON.stringify({ telefono })
                         });
                         
-                        const data = await response.json();
+                        const contentType = response.headers.get('content-type') || '';
+                        const data = contentType.includes('application/json')
+                          ? await response.json()
+                          : { success: false, error: await response.text() };
                         
                         if (data.success) {
                             successDiv.innerHTML = '✅ ' + data.message;
