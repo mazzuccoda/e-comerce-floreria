@@ -45,36 +45,64 @@ class N8NService:
                 fecha_entrega_str = pedido.fecha_entrega.strftime('%d/%m/%Y')
             else:
                 fecha_entrega_str = str(pedido.fecha_entrega)
-            
-            # Preparar datos del pedido
+
+            # Preparar datos del pedido (payload estructurado para que n8n renderice el mensaje)
+            telefono_cliente = getattr(pedido, 'telefono_comprador', None) or ''
+            if not telefono_cliente:
+                telefono_cliente = getattr(pedido, 'telefono_destinatario', '')
+
+            nombre_cliente = getattr(pedido, 'nombre_comprador', None) or ''
+            if not nombre_cliente and getattr(pedido, 'cliente', None):
+                cliente = pedido.cliente
+                nombre_cliente = (
+                    getattr(cliente, 'first_name', '')
+                    or getattr(cliente, 'username', '')
+                    or 'Cliente'
+                )
+            if not nombre_cliente:
+                nombre_cliente = 'Cliente'
+
+            direccion = getattr(pedido, 'direccion', '')
+            ciudad = getattr(pedido, 'ciudad', '')
+            if ciudad:
+                direccion = f"{direccion}, {ciudad}"
+
             data = {
-                'pedido_id': pedido.id,
-                'numero_pedido': pedido.numero_pedido,
-                'nombre_destinatario': pedido.nombre_destinatario,
-                'telefono_destinatario': pedido.telefono_destinatario,
-                'direccion': pedido.direccion,
-                'fecha_entrega': fecha_entrega_str,
-                'franja_horaria': pedido.get_franja_horaria_display(),
-                'estado': pedido.estado,
-                'total': str(pedido.total),
-                'dedicatoria': pedido.dedicatoria or '',
+                'event': 'order_status_changed',
+                'status': pedido.estado,
+                'status_label': pedido.get_estado_display(),
+                'order': {
+                    'id': pedido.id,
+                    'number': pedido.numero_pedido,
+                    'total': str(pedido.total),
+                    'shipping_cost': str(getattr(pedido, 'costo_envio', 0) or 0),
+                    'currency': 'ARS',
+                },
+                'customer': {
+                    'name': nombre_cliente,
+                    'phone': telefono_cliente,
+                },
+                'delivery': {
+                    'date': fecha_entrega_str,
+                    'slot': pedido.get_franja_horaria_display(),
+                    'address': direccion,
+                    'recipient': pedido.nombre_destinatario,
+                },
                 'items': [
                     {
-                        'producto_nombre': item.producto.nombre,
-                        'cantidad': item.cantidad,
-                        'precio': str(item.precio)
+                        'name': item.producto.nombre,
+                        'qty': item.cantidad,
+                        'unit_price': str(item.precio),
                     }
                     for item in pedido.items.all()
-                ]
+                ],
+                'meta': {
+                    'source': 'django',
+                },
             }
-            
-            # Determinar webhook según tipo
-            # El path debe coincidir EXACTAMENTE con el configurado en n8n
-            # Según la Production URL de n8n: /webhook/pedido-confirmado
-            webhook_path = {
-                'confirmado': '/webhook/pedido-confirmado',
-                'estado': '/webhook/pedido-estado'
-            }.get(tipo, '/webhook/pedido-confirmado')
+
+            # Usar un único webhook para estados: /webhook/pedido-estado
+            webhook_path = '/webhook/pedido-estado'
             
             # Enviar a n8n
             logger.info(f"📤 Enviando notificación n8n para pedido #{pedido.numero_pedido} (tipo: {tipo})")

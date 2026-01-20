@@ -203,10 +203,10 @@ El equipo de Florería Cristina
                         logger.error(f"❌ Error enviando email: {str(e)}")
                     
                     # Enviar WhatsApp vía n8n si hay teléfono destinatario
-                    if self.telefono_destinatario:
+                    if self.telefono_comprador or self.telefono_destinatario:
                         try:
                             from notificaciones.n8n_service import n8n_service
-                            logger.info(f"📱 Enviando WhatsApp vía n8n a {self.telefono_destinatario}")
+                            logger.info(f"📱 Enviando WhatsApp vía n8n a {self.telefono_comprador or self.telefono_destinatario}")
                             whatsapp_success = n8n_service.enviar_notificacion_pedido(
                                 pedido=self,
                                 tipo='confirmado'

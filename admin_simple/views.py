@@ -624,6 +624,13 @@ def pedido_cambiar_estado(request, pk):
     estado_anterior = pedido.estado
     pedido.estado = nuevo_estado
     pedido.save()
+
+    if estado_anterior != nuevo_estado:
+        try:
+            from notificaciones.n8n_service import n8n_service
+            n8n_service.enviar_notificacion_pedido(pedido=pedido, tipo='estado')
+        except Exception as e:
+            logger.error(f"Error enviando notificación WhatsApp vía n8n para pedido {pedido.id}: {str(e)}")
     
     logger.info(f'Pedido {pedido.id} cambió de estado: {estado_anterior} → {nuevo_estado} por {request.user.username}')
     
