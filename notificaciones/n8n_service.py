@@ -48,6 +48,10 @@ class N8NService:
 
             # Preparar datos del pedido (payload estructurado para que n8n renderice el mensaje)
             telefono_cliente = getattr(pedido, 'telefono_comprador', None) or ''
+            if not telefono_cliente and getattr(pedido, 'cliente', None):
+                # Usuario registrado: buscar en perfil
+                if hasattr(pedido.cliente, 'perfil'):
+                    telefono_cliente = getattr(pedido.cliente.perfil, 'telefono', '') or ''
             if not telefono_cliente:
                 telefono_cliente = getattr(pedido, 'telefono_destinatario', '')
 
