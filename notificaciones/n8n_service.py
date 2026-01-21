@@ -47,15 +47,30 @@ class N8NService:
                 fecha_entrega_str = str(pedido.fecha_entrega)
 
             # Preparar datos del pedido (payload estructurado para que n8n renderice el mensaje)
-            telefono_cliente = getattr(pedido, 'telefono_comprador', None) or ''
-            if not telefono_cliente and getattr(pedido, 'cliente', None):
-                # Usuario registrado: buscar en perfil
-                if hasattr(pedido.cliente, 'perfil'):
-                    telefono_cliente = getattr(pedido.cliente.perfil, 'telefono', '') or ''
-            if not telefono_cliente:
-                telefono_cliente = getattr(pedido, 'telefono_destinatario', '')
+            # WhatsApp solo al COMPRADOR (nunca al destinatario)
+            # Prioridad: telefono_comprador > perfil.telefono
+            telefono_cliente = ''
             
-            logger.info(f"📞 Teléfono para WhatsApp: {telefono_cliente} (comprador: {getattr(pedido, 'telefono_comprador', 'N/A')}, destinatario: {getattr(pedido, 'telefono_destinatario', 'N/A')})")
+            # 1. Leer telefono_comprador directamente
+            if pedido.telefono_comprador:
+                telefono_cliente = str(pedido.telefono_comprador).strip()
+                logger.info(f"✅ Usando telefono_comprador: '{telefono_cliente}'")
+            
+            # 2. Si está vacío y es usuario registrado, buscar en perfil
+            elif pedido.cliente:
+                try:
+                    if hasattr(pedido.cliente, 'perfil') and pedido.cliente.perfil.telefono:
+                        telefono_cliente = str(pedido.cliente.perfil.telefono).strip()
+                        logger.info(f"✅ Usando perfil.telefono: '{telefono_cliente}'")
+                except Exception as e:
+                    logger.warning(f"⚠️ Error accediendo a perfil: {e}")
+            
+            # Si no hay teléfono del comprador, no enviar WhatsApp
+            if not telefono_cliente:
+                logger.warning(f"⚠️ Pedido #{pedido.numero_pedido}: no se encontró teléfono del comprador. WhatsApp no enviado.")
+                return False
+            
+            logger.info(f"📞 Teléfono final para WhatsApp: '{telefono_cliente}'")
 
             nombre_cliente = getattr(pedido, 'nombre_comprador', None) or ''
             if not nombre_cliente and getattr(pedido, 'cliente', None):
