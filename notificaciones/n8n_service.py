@@ -54,6 +54,8 @@ class N8NService:
                     telefono_cliente = getattr(pedido.cliente.perfil, 'telefono', '') or ''
             if not telefono_cliente:
                 telefono_cliente = getattr(pedido, 'telefono_destinatario', '')
+            
+            logger.info(f"📞 Teléfono para WhatsApp: {telefono_cliente} (comprador: {getattr(pedido, 'telefono_comprador', 'N/A')}, destinatario: {getattr(pedido, 'telefono_destinatario', 'N/A')})")
 
             nombre_cliente = getattr(pedido, 'nombre_comprador', None) or ''
             if not nombre_cliente and getattr(pedido, 'cliente', None):
