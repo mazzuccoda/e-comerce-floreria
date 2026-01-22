@@ -404,3 +404,61 @@ class ShippingPricingRule(models.Model):
         if self.free_shipping_threshold:
             return f"{self.get_shipping_method_display()} - Envío gratis > ${self.free_shipping_threshold}"
         return f"{self.get_shipping_method_display()} - {self.get_rule_type_display()}"
+
+
+class CarritoAbandonado(models.Model):
+    """Tracking de carritos abandonados para recuperación vía WhatsApp"""
+    
+    # Identificación del usuario
+    session_id = models.CharField(max_length=100, null=True, blank=True, 
+                                   help_text="Session ID del navegador")
+    telefono = models.CharField(max_length=20, db_index=True,
+                                help_text="Teléfono del comprador")
+    email = models.EmailField(null=True, blank=True)
+    nombre = models.CharField(max_length=200, null=True, blank=True)
+    
+    # Datos del carrito
+    items = models.JSONField(help_text="Lista de productos: [{nombre, cantidad, precio}]")
+    total = models.DecimalField(max_digits=10, decimal_places=2,
+                                help_text="Total del carrito abandonado")
+    
+    # Tracking de recordatorios
+    creado = models.DateTimeField(auto_now_add=True, db_index=True)
+    recordatorio_enviado = models.BooleanField(default=False)
+    recordatorio_enviado_at = models.DateTimeField(null=True, blank=True)
+    
+    # Recuperación
+    recuperado = models.BooleanField(default=False)
+    recuperado_at = models.DateTimeField(null=True, blank=True)
+    pedido_recuperado = models.ForeignKey(Pedido, on_delete=models.SET_NULL, 
+                                          null=True, blank=True,
+                                          related_name='carrito_origen',
+                                          help_text="Pedido generado si se recuperó el carrito")
+    
+    class Meta:
+        verbose_name = 'Carrito Abandonado'
+        verbose_name_plural = 'Carritos Abandonados'
+        ordering = ['-creado']
+        indexes = [
+            models.Index(fields=['telefono', '-creado']),
+            models.Index(fields=['recuperado', 'recordatorio_enviado']),
+        ]
+    
+    def __str__(self):
+        estado = "Recuperado" if self.recuperado else ("Recordatorio enviado" if self.recordatorio_enviado else "Pendiente")
+        return f"Carrito {self.id} - {self.telefono} - ${self.total} - {estado}"
+    
+    def marcar_recordatorio_enviado(self):
+        """Marca que se envió el recordatorio"""
+        from django.utils import timezone
+        self.recordatorio_enviado = True
+        self.recordatorio_enviado_at = timezone.now()
+        self.save(update_fields=['recordatorio_enviado', 'recordatorio_enviado_at'])
+    
+    def marcar_recuperado(self, pedido):
+        """Marca el carrito como recuperado y asocia el pedido"""
+        from django.utils import timezone
+        self.recuperado = True
+        self.recuperado_at = timezone.now()
+        self.pedido_recuperado = pedido
+        self.save(update_fields=['recuperado', 'recuperado_at', 'pedido_recuperado'])

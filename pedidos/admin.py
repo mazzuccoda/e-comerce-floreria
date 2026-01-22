@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pedido, PedidoItem
+from .models import Pedido, PedidoItem, CarritoAbandonado
 from .notificaciones import enviar_whatsapp_actualizacion_estado
 
 # Importar modelos de shipping solo si existen (para evitar errores antes de migrar)
@@ -138,5 +138,63 @@ if SHIPPING_MODELS_AVAILABLE:
                 'fields': ('is_active',)
             }),
         )
+
+
+@admin.register(CarritoAbandonado)
+class CarritoAbandonadoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'telefono', 'nombre', 'total', 'creado', 'recordatorio_enviado', 'recuperado', 'estado_display')
+    list_filter = ('recordatorio_enviado', 'recuperado', 'creado')
+    search_fields = ('telefono', 'nombre', 'email')
+    readonly_fields = ('creado', 'recordatorio_enviado_at', 'recuperado_at', 'items_display')
+    date_hierarchy = 'creado'
+    ordering = ('-creado',)
+    
+    fieldsets = (
+        ('Información del Cliente', {
+            'fields': ('telefono', 'nombre', 'email', 'session_id')
+        }),
+        ('Carrito', {
+            'fields': ('items_display', 'total')
+        }),
+        ('Estado', {
+            'fields': ('recordatorio_enviado', 'recordatorio_enviado_at', 'recuperado', 'recuperado_at', 'pedido_recuperado')
+        }),
+        ('Fechas', {
+            'fields': ('creado',)
+        }),
+    )
+    
+    def items_display(self, obj):
+        """Mostrar items del carrito de forma legible"""
+        if not obj.items:
+            return "Sin items"
+        
+        items_html = "<ul>"
+        for item in obj.items:
+            nombre = item.get('nombre', 'Producto')
+            cantidad = item.get('cantidad', 1)
+            precio = item.get('precio', '0')
+            items_html += f"<li>{nombre} x{cantidad} - ${precio}</li>"
+        items_html += "</ul>"
+        
+        from django.utils.html import format_html
+        return format_html(items_html)
+    
+    items_display.short_description = 'Items del Carrito'
+    
+    def estado_display(self, obj):
+        """Mostrar estado visual con colores"""
+        if obj.recuperado:
+            return "✅ Recuperado"
+        elif obj.recordatorio_enviado:
+            return "📨 Recordatorio enviado"
+        else:
+            return "⏳ Pendiente"
+    
+    estado_display.short_description = 'Estado'
+    
+    def has_add_permission(self, request):
+        # No permitir crear carritos manualmente
+        return False
 
 
