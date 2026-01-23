@@ -18,6 +18,7 @@ import {
 } from '@/utils/checkoutStorage';
 import { useShippingConfig } from '@/app/hooks/useShippingConfig';
 import { useSiteSettings } from '@/app/hooks/useSiteSettings';
+import { useAbandonedCart } from '@/app/hooks/useAbandonedCart';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -60,6 +61,7 @@ const MultiStepCheckoutPage = () => {
   const [hasError, setHasError] = useState(false);
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isCheckoutCompleted, setIsCheckoutCompleted] = useState(false);
   
   // Estado para shipping zones
   const { config: shippingConfig, zones: shippingZones, calculateShippingCost, isWithinCoverage } = useShippingConfig();
@@ -396,6 +398,16 @@ const MultiStepCheckoutPage = () => {
 
   const vacationActive = Boolean(siteSettings?.vacation_active);
   const reopenDateIso = siteSettings?.reopen_date || null;
+
+  // Hook para detectar carritos abandonados
+  useAbandonedCart(
+    formData.telefono,
+    formData.nombre,
+    formData.email,
+    directCart.items,
+    directCart.total_price,
+    isCheckoutCompleted
+  );
 
   // Si está activo el modo vacaciones, forzar método de envío programado
   useEffect(() => {
@@ -1081,6 +1093,9 @@ const MultiStepCheckoutPage = () => {
       
       if (response.ok) {
         alert(`🎉 ¡Pedido #${result.numero_pedido} creado exitosamente! ID: ${result.pedido_id}`);
+        
+        // Marcar checkout como completado para cancelar timer de carrito abandonado
+        setIsCheckoutCompleted(true);
         
         // Guardar datos del pedido en localStorage SIEMPRE (para todos los métodos de pago)
         const costoEnvio = getShippingCost();
