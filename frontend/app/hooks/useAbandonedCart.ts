@@ -24,7 +24,7 @@ interface AbandonedCartData {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 const API_KEY = 'floreria_cristina_2025';
-const TIMEOUT_MINUTES = 5;
+const TIMEOUT_MINUTES = 1; // Reducido a 1 minuto para testing
 
 export const useAbandonedCart = (
   telefono: string,
@@ -108,9 +108,12 @@ export const useAbandonedCart = (
     }
 
     console.log(`⏰ Timer iniciado: ${TIMEOUT_MINUTES} minutos para registrar carrito abandonado`);
+    console.log(`📞 Teléfono: ${telefono}, Items: ${cartItems.length}, Total: ${cartTotal}`);
 
-    // Iniciar timer de 5 minutos
+    // Iniciar timer de 1 minuto
     timerRef.current = setTimeout(() => {
+      console.log('🔔 Timer disparado! Preparando datos del carrito...');
+      
       // Preparar datos del carrito
       const abandonedCartData: AbandonedCartData = {
         telefono: telefono.replace(/\D/g, ''), // Limpiar caracteres no numéricos
@@ -126,6 +129,7 @@ export const useAbandonedCart = (
         total: cartTotal
       };
 
+      console.log('📤 Datos preparados, llamando a registerAbandonedCart...');
       registerAbandonedCart(abandonedCartData);
     }, TIMEOUT_MINUTES * 60 * 1000);
 
