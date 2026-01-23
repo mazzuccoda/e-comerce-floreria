@@ -77,6 +77,7 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
     'x-http-method-override',
+    'x-api-key',  # Agregado para carritos abandonados y n8n
     'cache-control',  # Agregado para permitir control de caché
     'pragma',  # Agregado para compatibilidad con caché
 ]
