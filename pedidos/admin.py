@@ -145,7 +145,7 @@ class CarritoAbandonadoAdmin(admin.ModelAdmin):
     list_display = ('id', 'telefono', 'nombre', 'total', 'creado', 'recordatorio_enviado', 'recuperado', 'estado_display')
     list_filter = ('recordatorio_enviado', 'recuperado', 'creado')
     search_fields = ('telefono', 'nombre', 'email')
-    readonly_fields = ('creado', 'recordatorio_enviado_at', 'recuperado_at', 'items_display')
+    readonly_fields = ('creado', 'recordatorio_enviado_at', 'recuperado_at')
     date_hierarchy = 'creado'
     ordering = ('-creado',)
     
@@ -154,7 +154,8 @@ class CarritoAbandonadoAdmin(admin.ModelAdmin):
             'fields': ('telefono', 'nombre', 'email', 'session_id')
         }),
         ('Carrito', {
-            'fields': ('items_display', 'total')
+            'fields': ('items', 'total'),
+            'description': 'Items debe ser JSON: [{"nombre": "Producto", "cantidad": 1, "precio": "1000"}]'
         }),
         ('Estado', {
             'fields': ('recordatorio_enviado', 'recordatorio_enviado_at', 'recuperado', 'recuperado_at', 'pedido_recuperado')
@@ -192,9 +193,5 @@ class CarritoAbandonadoAdmin(admin.ModelAdmin):
             return "⏳ Pendiente"
     
     estado_display.short_description = 'Estado'
-    
-    def has_add_permission(self, request):
-        # No permitir crear carritos manualmente
-        return False
 
 
