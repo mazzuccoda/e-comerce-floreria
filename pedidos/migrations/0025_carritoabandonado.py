@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pedidos', '0024_shippingconfig_shippingpricingrule_shippingzone'),
+        ('pedidos', '0017_shippingconfig_shippingpricingrule_shippingzone'),
     ]
 
     operations = [
