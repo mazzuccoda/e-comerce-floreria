@@ -32,6 +32,12 @@ from .shipping_views import (
     create_or_update_zone,
     init_shipping_data
 )
+from .carrito_abandonado_views import (
+    registrar_carrito_abandonado,
+    listar_carritos_pendientes,
+    marcar_recordatorio_enviado,
+    marcar_carrito_recuperado
+)
 
 app_name = 'pedidos-api'
 
@@ -79,4 +85,10 @@ urlpatterns = [
     path('shipping/config/update/', update_shipping_config, name='shipping-config-update'),
     path('shipping/zones/save/', create_or_update_zone, name='shipping-zone-save'),
     path('shipping/init/', init_shipping_data, name='shipping-init'),  # Endpoint temporal
+    
+    # Carritos abandonados
+    path('carrito-abandonado/', registrar_carrito_abandonado, name='registrar-carrito-abandonado'),
+    path('carritos-pendientes/', listar_carritos_pendientes, name='listar-carritos-pendientes'),
+    path('carrito-abandonado/<int:carrito_id>/recordatorio-enviado/', marcar_recordatorio_enviado, name='marcar-recordatorio-enviado'),
+    path('carrito-abandonado/<int:carrito_id>/recuperado/', marcar_carrito_recuperado, name='marcar-carrito-recuperado'),
 ]
