@@ -99,7 +99,7 @@ def listar_carritos_pendientes(request):
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
     # Parámetros
-    horas = int(request.GET.get('horas', 1))
+    horas = int(request.GET.get('horas', 0))
     cutoff_time = timezone.now() - timedelta(hours=horas)
     
     # Buscar carritos pendientes
