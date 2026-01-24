@@ -143,9 +143,9 @@ if SHIPPING_MODELS_AVAILABLE:
 @admin.register(CarritoAbandonado)
 class CarritoAbandonadoAdmin(admin.ModelAdmin):
     list_display = ('id', 'telefono', 'nombre', 'total', 'creado', 'recordatorio_enviado', 'recuperado', 'estado_display')
-    list_filter = ('recordatorio_enviado', 'recuperado', 'creado')
+    list_filter = ('recordatorio_enviado', 'recuperado', 'cancelado', 'creado')
     search_fields = ('telefono', 'nombre', 'email')
-    readonly_fields = ('creado', 'recordatorio_enviado_at', 'recuperado_at')
+    readonly_fields = ('creado', 'recordatorio_enviado_at', 'recuperado_at', 'cancelado_at')
     date_hierarchy = 'creado'
     ordering = ('-creado',)
     
@@ -158,7 +158,7 @@ class CarritoAbandonadoAdmin(admin.ModelAdmin):
             'description': 'Items debe ser JSON: [{"nombre": "Producto", "cantidad": 1, "precio": "1000"}]'
         }),
         ('Estado', {
-            'fields': ('recordatorio_enviado', 'recordatorio_enviado_at', 'recuperado', 'recuperado_at', 'pedido_recuperado')
+            'fields': ('recordatorio_enviado', 'recordatorio_enviado_at', 'recuperado', 'recuperado_at', 'cancelado', 'cancelado_at', 'pedido_recuperado')
         }),
         ('Fechas', {
             'fields': ('creado',)
@@ -187,6 +187,8 @@ class CarritoAbandonadoAdmin(admin.ModelAdmin):
         """Mostrar estado visual con colores"""
         if obj.recuperado:
             return "✅ Recuperado"
+        elif obj.cancelado:
+            return "🚫 Cancelado"
         elif obj.recordatorio_enviado:
             return "📨 Recordatorio enviado"
         else:
