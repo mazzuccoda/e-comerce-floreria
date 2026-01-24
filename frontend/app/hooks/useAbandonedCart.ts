@@ -146,16 +146,27 @@ export const useAbandonedCart = (
             console.log(`🔄 Cliente volvió al checkout después de ${Math.round(minutesSince)} minutos`);
             console.log(`♻️ Reseteando estado - dando otra oportunidad antes de marcar como abandonado`);
             
+            // Marcar carritos anteriores como cancelados en el backend
+            fetch(`${API_URL}/pedidos/carrito-abandonado/cancelar-anteriores/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ telefono: telefono.replace(/\D/g, '') })
+            }).then(response => response.json())
+              .then(result => {
+                if (result.success) {
+                  console.log(`🚫 ${result.carritos_cancelados} carritos anteriores cancelados`);
+                }
+              })
+              .catch(err => {
+                console.error('❌ Error cancelando carritos anteriores:', err);
+              });
+            
             // Limpiar el registro anterior para que pueda iniciar un nuevo ciclo
             localStorage.removeItem('abandoned_cart_registered');
             registeredRef.current = false;
             beforeUnloadRegisteredRef.current = false;
-            
-            // Actualizar timestamp de última actividad para extender el tiempo
-            if (parsed.carrito_id && parsed.carrito_id !== 'pending') {
-              console.log(`📝 Actualizando actividad del carrito ${parsed.carrito_id}`);
-              // Nota: El carrito ya existe en BD, pero le damos más tiempo antes de enviar recordatorio
-            }
           } else if (parsed.telefono === telefono && minutesSince >= 30) {
             // Si pasaron más de 30 minutos, ya es un abandono real
             console.log(`⏭️ Carrito abandonado hace ${Math.round(minutesSince)} minutos - no resetear`);

@@ -36,7 +36,8 @@ from .carrito_abandonado_views import (
     registrar_carrito_abandonado,
     listar_carritos_pendientes,
     marcar_recordatorio_enviado,
-    marcar_carrito_recuperado
+    marcar_carrito_recuperado,
+    marcar_carritos_cancelados
 )
 
 app_name = 'pedidos-api'
@@ -89,6 +90,7 @@ urlpatterns = [
     # Carritos abandonados
     path('carrito-abandonado/', registrar_carrito_abandonado, name='registrar-carrito-abandonado'),
     path('carritos-pendientes/', listar_carritos_pendientes, name='listar-carritos-pendientes'),
+    path('carrito-abandonado/cancelar-anteriores/', marcar_carritos_cancelados, name='marcar-carritos-cancelados'),
     path('carrito-abandonado/<int:carrito_id>/recordatorio-enviado/', marcar_recordatorio_enviado, name='marcar-recordatorio-enviado'),
     path('carrito-abandonado/<int:carrito_id>/recuperado/', marcar_carrito_recuperado, name='marcar-carrito-recuperado'),
 ]
