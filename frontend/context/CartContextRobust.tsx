@@ -506,12 +506,16 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
             if (parsed.telefono) {
               console.log('🚫 Carrito vacío, cancelando carritos abandonados');
               
+              // Limpiar teléfono (solo números)
+              const telefonoLimpio = parsed.telefono.replace(/\D/g, '');
+              console.log(`📞 Cancelando carritos para teléfono: ${telefonoLimpio}`);
+              
               fetch(`${API_CONFIG.baseUrl}/pedidos/carrito-abandonado/cancelar-anteriores/`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ telefono: parsed.telefono })
+                body: JSON.stringify({ telefono: telefonoLimpio })
               }).then(response => response.json())
                 .then(result => {
                   if (result.success) {
