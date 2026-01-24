@@ -133,7 +133,7 @@ export const useAbandonedCart = (
       return;
     }
 
-    // Verificar si ya se registró este teléfono recientemente (últimas 24 horas)
+    // Verificar si ya se registró este teléfono recientemente (últimas 2 horas)
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('abandoned_cart_registered');
       if (stored) {
@@ -141,11 +141,14 @@ export const useAbandonedCart = (
           const parsed = JSON.parse(stored);
           const hoursSince = (Date.now() - parsed.timestamp) / (1000 * 60 * 60);
           
-          // Si es el mismo teléfono y fue hace menos de 24 horas, no registrar
-          if (parsed.telefono === telefono && hoursSince < 24) {
-            console.log('⏭️ Carrito abandonado ya registrado para este teléfono');
+          // Si es el mismo teléfono y fue hace menos de 2 horas, no registrar
+          if (parsed.telefono === telefono && hoursSince < 2) {
+            console.log(`⏭️ Carrito abandonado ya registrado hace ${Math.round(hoursSince * 60)} minutos`);
             registeredRef.current = true;
             return;
+          } else if (parsed.telefono === telefono) {
+            console.log(`🔄 Registro anterior expiró (${Math.round(hoursSince)} horas), permitiendo nuevo registro`);
+            localStorage.removeItem('abandoned_cart_registered');
           }
         } catch (e) {
           console.error('Error parseando abandoned_cart_registered:', e);
