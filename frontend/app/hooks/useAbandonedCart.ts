@@ -253,10 +253,16 @@ export const useAbandonedCart = (
       // Verificar si había un carrito abandonado registrado para marcarlo como recuperado
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('abandoned_cart_registered');
+        console.log('🔍 Verificando localStorage para recuperación:', stored);
+        
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
+            console.log('📦 Datos parseados:', parsed);
+            
             if (parsed.carrito_id && parsed.carrito_id !== 'pending') {
+              console.log(`🔄 Marcando carrito ${parsed.carrito_id} como recuperado...`);
+              
               // Marcar como recuperado
               fetch(`${API_URL}/pedidos/carrito-abandonado/${parsed.carrito_id}/recuperado/`, {
                 method: 'POST',
@@ -265,15 +271,24 @@ export const useAbandonedCart = (
                   'X-API-Key': API_KEY,
                 },
                 body: JSON.stringify({ pedido_id: null })
-              }).then(() => {
-                console.log('✅ Carrito abandonado marcado como recuperado');
+              }).then(response => {
+                console.log('📡 Respuesta de recuperación:', response.status);
+                if (response.ok) {
+                  console.log('✅ Carrito abandonado marcado como recuperado');
+                } else {
+                  console.error('❌ Error en respuesta:', response.status);
+                }
               }).catch(err => {
                 console.error('❌ Error marcando recuperación:', err);
               });
+            } else {
+              console.log('⏭️ No hay carrito_id válido para marcar como recuperado');
             }
           } catch (e) {
-            console.error('Error parseando abandoned_cart_registered:', e);
+            console.error('❌ Error parseando abandoned_cart_registered:', e);
           }
+        } else {
+          console.log('ℹ️ No hay carrito abandonado en localStorage');
         }
         
         // Limpiar localStorage
