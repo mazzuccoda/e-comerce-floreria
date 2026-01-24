@@ -174,6 +174,8 @@ def marcar_carritos_cancelados(request):
         if not telefono:
             return JsonResponse({'error': 'Teléfono requerido'}, status=400)
         
+        logger.info(f"🔍 Buscando carritos para cancelar - Teléfono recibido: '{telefono}'")
+        
         # Buscar carritos pendientes del mismo teléfono (sin importar si se envió recordatorio)
         carritos = CarritoAbandonado.objects.filter(
             telefono=telefono,
@@ -182,12 +184,20 @@ def marcar_carritos_cancelados(request):
         )
         
         count = carritos.count()
+        logger.info(f"📊 Carritos encontrados para cancelar: {count}")
+        
+        # Log de todos los carritos en la BD para este teléfono
+        todos_carritos = CarritoAbandonado.objects.filter(telefono=telefono)
+        logger.info(f"📋 Total de carritos en BD con este teléfono: {todos_carritos.count()}")
+        for c in todos_carritos:
+            logger.info(f"   - ID {c.id}: recuperado={c.recuperado}, cancelado={c.cancelado}, recordatorio_enviado={c.recordatorio_enviado}")
         
         # Marcar todos como cancelados
         for carrito in carritos:
+            logger.info(f"🚫 Cancelando carrito ID {carrito.id}")
             carrito.marcar_cancelado()
         
-        logger.info(f"🚫 {count} carritos anteriores marcados como cancelados para {telefono}")
+        logger.info(f"✅ {count} carritos anteriores marcados como cancelados para {telefono}")
         
         return JsonResponse({
             'success': True,
