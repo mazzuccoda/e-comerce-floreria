@@ -100,14 +100,22 @@ def listar_carritos_pendientes(request):
     
     # Parámetros
     horas = int(request.GET.get('horas', 0))
+    telefono = request.GET.get('telefono', None)
     cutoff_time = timezone.now() - timedelta(hours=horas)
     
-    # Buscar carritos pendientes
-    carritos = CarritoAbandonado.objects.filter(
+    # Buscar carritos pendientes (excluir cancelados)
+    query = CarritoAbandonado.objects.filter(
         recordatorio_enviado=False,
         recuperado=False,
+        cancelado=False,
         creado__lte=cutoff_time
-    ).values(
+    )
+    
+    # Filtrar por teléfono si se proporciona
+    if telefono:
+        query = query.filter(telefono=telefono)
+    
+    carritos = query.order_by('-creado').values(
         'id', 'telefono', 'nombre', 'email', 'total', 'items', 'creado'
     )
     
@@ -147,6 +155,49 @@ def marcar_recordatorio_enviado(request, carrito_id):
         return JsonResponse({'error': 'Carrito no encontrado'}, status=404)
     except Exception as e:
         logger.error(f"❌ Error marcando recordatorio: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def marcar_carritos_cancelados(request):
+    """
+    Marcar carritos anteriores del mismo teléfono como cancelados
+    
+    POST /api/pedidos/carrito-abandonado/cancelar-anteriores/
+    Body: {"telefono": "3814778577"}
+    """
+    try:
+        data = json.loads(request.body)
+        telefono = data.get('telefono')
+        
+        if not telefono:
+            return JsonResponse({'error': 'Teléfono requerido'}, status=400)
+        
+        # Buscar carritos pendientes del mismo teléfono
+        carritos = CarritoAbandonado.objects.filter(
+            telefono=telefono,
+            recuperado=False,
+            cancelado=False,
+            recordatorio_enviado=False
+        )
+        
+        count = carritos.count()
+        
+        # Marcar todos como cancelados
+        for carrito in carritos:
+            carrito.marcar_cancelado()
+        
+        logger.info(f"🚫 {count} carritos anteriores marcados como cancelados para {telefono}")
+        
+        return JsonResponse({
+            'success': True,
+            'carritos_cancelados': count,
+            'telefono': telefono
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error marcando carritos como cancelados: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
 

@@ -435,6 +435,11 @@ class CarritoAbandonado(models.Model):
                                           related_name='carrito_origen',
                                           help_text="Pedido generado si se recuperó el carrito")
     
+    # Cancelación (cuando el cliente vuelve al checkout)
+    cancelado = models.BooleanField(default=False, 
+                                    help_text="Marcado como cancelado cuando el cliente vuelve al checkout")
+    cancelado_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         verbose_name = 'Carrito Abandonado'
         verbose_name_plural = 'Carritos Abandonados'
@@ -462,3 +467,10 @@ class CarritoAbandonado(models.Model):
         self.recuperado_at = timezone.now()
         self.pedido_recuperado = pedido
         self.save(update_fields=['recuperado', 'recuperado_at', 'pedido_recuperado'])
+    
+    def marcar_cancelado(self):
+        """Marca el carrito como cancelado (cuando el cliente vuelve al checkout)"""
+        from django.utils import timezone
+        self.cancelado = True
+        self.cancelado_at = timezone.now()
+        self.save(update_fields=['cancelado', 'cancelado_at'])
