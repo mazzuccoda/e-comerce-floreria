@@ -266,21 +266,46 @@ export const useAbandonedCart = (
     };
   }, [telefono, nombre, email, cartItems, cartTotal, isCheckoutCompleted]);
 
-  // Detener timer si el carrito se vacía
+  // Detener timer si el carrito se vacía y cancelar carrito abandonado si ya se registró
   useEffect(() => {
     if (cartItems.length === 0 && timerRef.current) {
       console.log('🛒 Carrito vacío, deteniendo detección de abandono');
       clearTimeout(timerRef.current);
       timerRef.current = null;
-      registeredRef.current = false;
-      beforeUnloadRegisteredRef.current = false;
       
-      // Limpiar localStorage si existía un registro
+      // Si había un carrito registrado, cancelarlo en el backend
       if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('abandoned_cart_registered');
+        
+        if (stored && telefono) {
+          console.log('🚫 Cancelando carrito abandonado porque el usuario vació el carrito');
+          
+          // Cancelar todos los carritos pendientes de este teléfono
+          fetch(`${API_URL}/pedidos/carrito-abandonado/cancelar-anteriores/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ telefono: telefono.replace(/\D/g, '') })
+          }).then(response => response.json())
+            .then(result => {
+              if (result.success) {
+                console.log(`✅ ${result.carritos_cancelados} carritos cancelados por vaciado de carrito`);
+              }
+            })
+            .catch(err => {
+              console.error('❌ Error cancelando carritos:', err);
+            });
+        }
+        
+        // Limpiar localStorage
         localStorage.removeItem('abandoned_cart_registered');
       }
+      
+      registeredRef.current = false;
+      beforeUnloadRegisteredRef.current = false;
     }
-  }, [cartItems.length]);
+  }, [cartItems.length, telefono]);
 
   // Limpiar cuando se completa el checkout y marcar como recuperado si existía
   useEffect(() => {
