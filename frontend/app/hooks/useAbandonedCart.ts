@@ -163,8 +163,8 @@ export const useAbandonedCart = (
                 console.error('❌ Error cancelando carritos anteriores:', err);
               });
             
-            // Limpiar el registro anterior para que pueda iniciar un nuevo ciclo
-            localStorage.removeItem('abandoned_cart_registered');
+            // NO limpiar localStorage aquí - mantenerlo para poder cancelar si vacía el carrito
+            // Solo resetear flags internos para permitir nuevo registro si abandona nuevamente
             registeredRef.current = false;
             beforeUnloadRegisteredRef.current = false;
           } else if (parsed.telefono === telefono && minutesSince >= 30) {
