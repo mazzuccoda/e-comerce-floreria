@@ -196,6 +196,9 @@ def marcar_carritos_cancelados(request):
         for carrito in carritos:
             logger.info(f"🚫 Cancelando carrito ID {carrito.id}")
             carrito.marcar_cancelado()
+            # Verificar que se guardó correctamente
+            carrito.refresh_from_db()
+            logger.info(f"✅ Carrito ID {carrito.id} - cancelado={carrito.cancelado}, cancelado_at={carrito.cancelado_at}")
         
         logger.info(f"✅ {count} carritos anteriores marcados como cancelados para {telefono}")
         
