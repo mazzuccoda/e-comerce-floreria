@@ -497,6 +497,38 @@ export const CartProviderRobust: React.FC<{ children: React.ReactNode }> = ({ ch
       safeSetCart(optimisticCart);
       toast.success('Producto eliminado del carrito');
 
+      // Si el carrito quedó vacío, cancelar carritos abandonados
+      if (optimisticCart.is_empty && typeof window !== 'undefined') {
+        const stored = localStorage.getItem('abandoned_cart_registered');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed.telefono) {
+              console.log('🚫 Carrito vacío, cancelando carritos abandonados');
+              
+              fetch(`${API_CONFIG.baseUrl}/pedidos/carrito-abandonado/cancelar-anteriores/`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ telefono: parsed.telefono })
+              }).then(response => response.json())
+                .then(result => {
+                  if (result.success) {
+                    console.log(`✅ ${result.carritos_cancelados} carritos cancelados por vaciado de carrito`);
+                    localStorage.removeItem('abandoned_cart_registered');
+                  }
+                })
+                .catch(err => {
+                  console.error('❌ Error cancelando carritos:', err);
+                });
+            }
+          } catch (e) {
+            console.error('Error parseando abandoned_cart_registered:', e);
+          }
+        }
+      }
+
       // Intentar sincronizar con backend en background
       try {
         await apiClient.current.request('/carrito/remove/', {
