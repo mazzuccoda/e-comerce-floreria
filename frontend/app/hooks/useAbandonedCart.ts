@@ -208,7 +208,7 @@ export const useAbandonedCart = (
           console.log(`👁️ Usuario volvió después de ${Math.round(timeHidden / 1000)}s`);
           
           // Si estuvo más de 2 minutos en otra pestaña, considerar abandono
-          if (timeHidden > TAB_HIDDEN_THRESHOLD_MS && !registeredRef.current) {
+          if (timeHidden > TAB_HIDDEN_THRESHOLD_MS && !registeredRef.current && cartItems.length > 0) {
             console.log('🚪 Usuario estuvo mucho tiempo fuera, registrando abandono');
             const data = prepareCartData();
             registerAbandonedCart(data, 'cambio_pestana');
@@ -223,8 +223,8 @@ export const useAbandonedCart = (
 
     // Detectar cuando el usuario cierra la ventana/pestaña
     const handleBeforeUnload = () => {
-      // Solo registrar si no se ha completado el checkout y no se ha registrado ya
-      if (!isCheckoutCompleted && !registeredRef.current && !beforeUnloadRegisteredRef.current) {
+      // Solo registrar si no se ha completado el checkout, no se ha registrado ya, y hay items en el carrito
+      if (!isCheckoutCompleted && !registeredRef.current && !beforeUnloadRegisteredRef.current && cartItems.length > 0) {
         console.log('🚪 Usuario cerrando ventana, registrando abandono');
         beforeUnloadRegisteredRef.current = true;
         
@@ -265,6 +265,22 @@ export const useAbandonedCart = (
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [telefono, nombre, email, cartItems, cartTotal, isCheckoutCompleted]);
+
+  // Detener timer si el carrito se vacía
+  useEffect(() => {
+    if (cartItems.length === 0 && timerRef.current) {
+      console.log('🛒 Carrito vacío, deteniendo detección de abandono');
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      registeredRef.current = false;
+      beforeUnloadRegisteredRef.current = false;
+      
+      // Limpiar localStorage si existía un registro
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('abandoned_cart_registered');
+      }
+    }
+  }, [cartItems.length]);
 
   // Limpiar cuando se completa el checkout y marcar como recuperado si existía
   useEffect(() => {
