@@ -263,10 +263,10 @@ export const useAbandonedCart = (
             const parsed = JSON.parse(stored);
             console.log('📦 Datos parseados:', parsed);
             
+            // Si tenemos un carrito_id válido, marcarlo como recuperado
             if (parsed.carrito_id && parsed.carrito_id !== 'pending') {
               console.log(`🔄 Marcando carrito ${parsed.carrito_id} como recuperado...`);
               
-              // Marcar como recuperado
               fetch(`${API_URL}/pedidos/carrito-abandonado/${parsed.carrito_id}/recuperado/`, {
                 method: 'POST',
                 headers: {
@@ -284,8 +284,40 @@ export const useAbandonedCart = (
               }).catch(err => {
                 console.error('❌ Error marcando recuperación:', err);
               });
+            } else if (parsed.telefono && telefono) {
+              // Si no tenemos ID (porque se usó sendBeacon), buscar el último carrito del teléfono
+              console.log(`🔍 Buscando último carrito abandonado para teléfono ${telefono}...`);
+              
+              fetch(`${API_URL}/pedidos/carritos-pendientes/?telefono=${telefono.replace(/\D/g, '')}`, {
+                headers: {
+                  'X-API-Key': API_KEY,
+                }
+              }).then(response => response.json())
+                .then(carritos => {
+                  if (carritos && carritos.length > 0) {
+                    const ultimoCarrito = carritos[0]; // El más reciente
+                    console.log(`🔄 Marcando último carrito ${ultimoCarrito.id} como recuperado...`);
+                    
+                    return fetch(`${API_URL}/pedidos/carrito-abandonado/${ultimoCarrito.id}/recuperado/`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY,
+                      },
+                      body: JSON.stringify({ pedido_id: null })
+                    });
+                  }
+                })
+                .then(response => {
+                  if (response && response.ok) {
+                    console.log('✅ Carrito abandonado marcado como recuperado');
+                  }
+                })
+                .catch(err => {
+                  console.error('❌ Error buscando/marcando carrito:', err);
+                });
             } else {
-              console.log('⏭️ No hay carrito_id válido para marcar como recuperado');
+              console.log('⏭️ No hay carrito_id ni teléfono válido para recuperación');
             }
           } catch (e) {
             console.error('❌ Error parseando abandoned_cart_registered:', e);

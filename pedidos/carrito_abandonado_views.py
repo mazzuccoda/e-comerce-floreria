@@ -100,14 +100,21 @@ def listar_carritos_pendientes(request):
     
     # Parámetros
     horas = int(request.GET.get('horas', 0))
+    telefono = request.GET.get('telefono', None)
     cutoff_time = timezone.now() - timedelta(hours=horas)
     
     # Buscar carritos pendientes
-    carritos = CarritoAbandonado.objects.filter(
+    query = CarritoAbandonado.objects.filter(
         recordatorio_enviado=False,
         recuperado=False,
         creado__lte=cutoff_time
-    ).values(
+    )
+    
+    # Filtrar por teléfono si se proporciona
+    if telefono:
+        query = query.filter(telefono=telefono)
+    
+    carritos = query.order_by('-creado').values(
         'id', 'telefono', 'nombre', 'email', 'total', 'items', 'creado'
     )
     
