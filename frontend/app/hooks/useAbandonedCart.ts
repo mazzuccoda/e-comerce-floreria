@@ -133,22 +133,34 @@ export const useAbandonedCart = (
       return;
     }
 
-    // Verificar si ya se registró este teléfono recientemente (últimas 2 horas)
+    // Verificar si ya se registró este teléfono recientemente
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('abandoned_cart_registered');
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          const hoursSince = (Date.now() - parsed.timestamp) / (1000 * 60 * 60);
+          const minutesSince = (Date.now() - parsed.timestamp) / (1000 * 60);
           
-          // Si es el mismo teléfono y fue hace menos de 2 horas, no registrar
-          if (parsed.telefono === telefono && hoursSince < 2) {
-            console.log(`⏭️ Carrito abandonado ya registrado hace ${Math.round(hoursSince * 60)} minutos`);
+          // Si el cliente vuelve al checkout en menos de 30 minutos, darle otra oportunidad
+          if (parsed.telefono === telefono && minutesSince < 30) {
+            console.log(`🔄 Cliente volvió al checkout después de ${Math.round(minutesSince)} minutos`);
+            console.log(`♻️ Reseteando estado - dando otra oportunidad antes de marcar como abandonado`);
+            
+            // Limpiar el registro anterior para que pueda iniciar un nuevo ciclo
+            localStorage.removeItem('abandoned_cart_registered');
+            registeredRef.current = false;
+            beforeUnloadRegisteredRef.current = false;
+            
+            // Actualizar timestamp de última actividad para extender el tiempo
+            if (parsed.carrito_id && parsed.carrito_id !== 'pending') {
+              console.log(`📝 Actualizando actividad del carrito ${parsed.carrito_id}`);
+              // Nota: El carrito ya existe en BD, pero le damos más tiempo antes de enviar recordatorio
+            }
+          } else if (parsed.telefono === telefono && minutesSince >= 30) {
+            // Si pasaron más de 30 minutos, ya es un abandono real
+            console.log(`⏭️ Carrito abandonado hace ${Math.round(minutesSince)} minutos - no resetear`);
             registeredRef.current = true;
             return;
-          } else if (parsed.telefono === telefono) {
-            console.log(`🔄 Registro anterior expiró (${Math.round(hoursSince)} horas), permitiendo nuevo registro`);
-            localStorage.removeItem('abandoned_cart_registered');
           }
         } catch (e) {
           console.error('Error parseando abandoned_cart_registered:', e);
