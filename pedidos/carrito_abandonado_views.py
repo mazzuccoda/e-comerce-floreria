@@ -174,12 +174,11 @@ def marcar_carritos_cancelados(request):
         if not telefono:
             return JsonResponse({'error': 'Teléfono requerido'}, status=400)
         
-        # Buscar carritos pendientes del mismo teléfono
+        # Buscar carritos pendientes del mismo teléfono (sin importar si se envió recordatorio)
         carritos = CarritoAbandonado.objects.filter(
             telefono=telefono,
             recuperado=False,
-            cancelado=False,
-            recordatorio_enviado=False
+            cancelado=False
         )
         
         count = carritos.count()
