@@ -31,6 +31,7 @@ redis==4.6.0
 requests==2.31.0
 python-dateutil==2.8.2
 python-stdnum==1.19
+phonenumbers==8.13.26  # Validación y normalización de números de teléfono internacionales
 stripe==7.6.0
 mercadopago==2.3.0
 paypalrestsdk==1.13.1

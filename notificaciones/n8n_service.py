@@ -70,7 +70,15 @@ class N8NService:
                 logger.warning(f"⚠️ Pedido #{pedido.numero_pedido}: no se encontró teléfono del comprador. WhatsApp no enviado.")
                 return False
             
-            logger.info(f"📞 Teléfono final para WhatsApp: '{telefono_cliente}'")
+            # NORMALIZAR TELÉFONO para formato internacional (soporta Argentina, España, etc.)
+            from pedidos.utils import normalizar_telefono_whatsapp
+            telefono_normalizado = normalizar_telefono_whatsapp(telefono_cliente)
+            
+            if not telefono_normalizado:
+                logger.error(f"❌ No se pudo normalizar el teléfono '{telefono_cliente}'. WhatsApp no enviado.")
+                return False
+            
+            logger.info(f"📞 Teléfono normalizado para WhatsApp: '{telefono_cliente}' → '{telefono_normalizado}'")
 
             nombre_cliente = getattr(pedido, 'nombre_comprador', None) or ''
             if not nombre_cliente and getattr(pedido, 'cliente', None):
@@ -101,7 +109,7 @@ class N8NService:
                 },
                 'customer': {
                     'name': nombre_cliente,
-                    'phone': telefono_cliente,
+                    'phone': telefono_normalizado,
                 },
                 'delivery': {
                     'date': fecha_entrega_str,
