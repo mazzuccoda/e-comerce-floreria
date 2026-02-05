@@ -15,7 +15,7 @@ const Footer = () => {
           </div>
           <div>
             <h3 className="text-lg font-bold mb-4">{t('footer.quickLinks')}</h3>
-            <ul>
+            <ul className="space-y-2">
               <li><Link href="/" className="text-gray-400 hover:text-white transition-colors">Inicio</Link></li>
               <li><Link href="/catalogo" className="text-gray-400 hover:text-white transition-colors">Catálogo</Link></li>
               <li><Link href="/contacto" className="text-gray-400 hover:text-white transition-colors">{t('footer.contact')}</Link></li>
@@ -29,6 +29,15 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-6 text-center">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
+            <Link href="/privacidad" className="text-gray-400 hover:text-white transition-colors text-sm">
+              Política de Privacidad
+            </Link>
+            <span className="hidden sm:inline text-gray-600">|</span>
+            <Link href="/terminos" className="text-gray-400 hover:text-white transition-colors text-sm">
+              Términos y Condiciones
+            </Link>
+          </div>
           <p className="text-gray-500">&copy; {new Date().getFullYear()} Florería Cristina. {t('footer.allRightsReserved')}.</p>
         </div>
       </div>
