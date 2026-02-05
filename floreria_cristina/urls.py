@@ -40,6 +40,10 @@ urlpatterns = [
 
     # Core (páginas estáticas, etc.)
     path('', include('core.urls', namespace='core')),
+    
+    # Páginas legales
+    path('privacidad/', TemplateView.as_view(template_name='legal/privacy.html'), name='privacy'),
+    path('terminos/', TemplateView.as_view(template_name='legal/terms.html'), name='terms'),
 
     # Apps principales con sus vistas de plantillas
 

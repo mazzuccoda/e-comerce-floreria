@@ -29,12 +29,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-iqrk-k9+a7=+pj^w=a^10*coqt=tqj1sf^&!s6$^li541g^(i+')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG', default=True)
-
 # Railway detection
 RAILWAY_ENVIRONMENT = env('RAILWAY_ENVIRONMENT', default=None)
 IS_RAILWAY = RAILWAY_ENVIRONMENT is not None
+
+# SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG debe ser False en producción (Railway)
+DEBUG = env.bool('DEBUG', default=False if IS_RAILWAY else True)
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -123,13 +124,21 @@ CSRF_EXEMPT_URLS = [
     r'^/api/catalogo/.*',
 ]
 
-# Deshabilitar CSRF completamente para desarrollo
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False
+# Configuración de CSRF y Cookies según entorno
+if IS_RAILWAY or not DEBUG:
+    # Producción - Configuración segura
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+else:
+    # Desarrollo local - Configuración permisiva
+    CSRF_COOKIE_SECURE = False
+    CSRF_COOKIE_HTTPONLY = False
+    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = None
+
 CSRF_USE_SESSIONS = False
-# Configuración de sesiones para desarrollo
-SESSION_COOKIE_SAMESITE = None
-SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_HTTPONLY = True
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'
@@ -522,7 +531,7 @@ STORAGES = {
 # ==============================================================================
 if IS_RAILWAY or not DEBUG:
     # HTTPS/SSL
-    SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=True)
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     
@@ -531,15 +540,20 @@ if IS_RAILWAY or not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     
-    # Otros headers de seguridad
+    # Security Headers
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS = 'SAMEORIGIN'  # Permitir iframes del mismo origen
+    SECURE_REFERRER_POLICY = 'same-origin'
     
     # Proxy headers (Railway usa proxy)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
     USE_X_FORWARDED_PORT = True
+else:
+    # Desarrollo local - configuración permisiva
+    SECURE_SSL_REDIRECT = False
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # ==============================================================================
 # LOGGING CONFIGURATION
