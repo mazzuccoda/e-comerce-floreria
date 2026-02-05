@@ -1,0 +1,140 @@
+import React from 'react';
+
+export const metadata = {
+  title: 'Política de Privacidad - Florería Cristina',
+  description: 'Política de privacidad y protección de datos personales de Florería Cristina',
+};
+
+export default function PrivacyPage() {
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8 md:p-12">
+        <h1 className="text-4xl font-bold text-green-800 border-b-4 border-green-400 pb-4 mb-6">
+          Política de Privacidad
+        </h1>
+        
+        <p className="text-gray-600 italic mb-8">
+          <strong>Última actualización:</strong> Febrero 2026
+        </p>
+        
+        <p className="mb-6 text-gray-700 leading-relaxed">
+          En <strong>Florería Cristina</strong>, nos comprometemos a proteger su privacidad y garantizar la seguridad de su información personal. Esta política describe cómo recopilamos, usamos y protegemos sus datos.
+        </p>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">1. Información que Recopilamos</h2>
+          <p className="mb-3 text-gray-700">Recopilamos la siguiente información cuando realiza un pedido:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li><strong>Datos personales:</strong> Nombre completo, correo electrónico, número de teléfono</li>
+            <li><strong>Datos de entrega:</strong> Dirección completa, ciudad, código postal</li>
+            <li><strong>Datos del destinatario:</strong> Nombre y teléfono de quien recibe el pedido</li>
+            <li><strong>Información de pago:</strong> Procesada de forma segura a través de Mercado Pago (no almacenamos datos de tarjetas)</li>
+            <li><strong>Datos técnicos:</strong> Dirección IP, tipo de navegador, cookies de sesión</li>
+          </ul>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">2. Uso de la Información</h2>
+          <p className="mb-3 text-gray-700">Utilizamos su información personal para:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li>Procesar y gestionar sus pedidos de flores y arreglos florales</li>
+            <li>Coordinar la entrega en la fecha y horario seleccionados</li>
+            <li>Enviar notificaciones sobre el estado de su pedido vía email y WhatsApp</li>
+            <li>Contactarlo en caso de consultas sobre su pedido</li>
+            <li>Mejorar nuestros servicios y experiencia de usuario</li>
+            <li>Cumplir con obligaciones legales y fiscales</li>
+          </ul>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">3. Protección de Datos</h2>
+          <p className="mb-3 text-gray-700">Implementamos múltiples medidas de seguridad para proteger su información:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li><strong>Cifrado SSL/TLS:</strong> Todas las comunicaciones están cifradas mediante HTTPS</li>
+            <li><strong>Almacenamiento seguro:</strong> Sus datos se almacenan en servidores protegidos con acceso restringido</li>
+            <li><strong>Validación de formularios:</strong> Protección contra inyección de código y ataques CSRF</li>
+            <li><strong>Pagos seguros:</strong> Procesados exclusivamente por Mercado Pago, certificado PCI-DSS</li>
+            <li><strong>Acceso limitado:</strong> Solo personal autorizado puede acceder a datos personales</li>
+          </ul>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">4. Compartir Información</h2>
+          <p className="mb-3 text-gray-700">No vendemos ni compartimos su información personal con terceros, excepto:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li><strong>Mercado Pago:</strong> Para procesar pagos de forma segura</li>
+            <li><strong>Servicio de mensajería:</strong> Para enviar notificaciones de pedidos vía WhatsApp</li>
+            <li><strong>Autoridades:</strong> Cuando sea requerido por ley</li>
+          </ul>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">5. Cookies y Tecnologías Similares</h2>
+          <p className="mb-3 text-gray-700">Utilizamos cookies para:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li>Mantener su sesión activa mientras navega</li>
+            <li>Recordar los productos en su carrito de compras</li>
+            <li>Mejorar la funcionalidad del sitio web</li>
+            <li>Analizar el uso del sitio (de forma anónima)</li>
+          </ul>
+          <p className="mt-3 text-gray-700">
+            Puede configurar su navegador para rechazar cookies, pero esto puede afectar la funcionalidad del sitio.
+          </p>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">6. Retención de Datos</h2>
+          <p className="mb-3 text-gray-700">Conservamos su información personal:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li>Durante el tiempo necesario para cumplir con el propósito para el cual fue recopilada</li>
+            <li>Según lo requieran las obligaciones legales y fiscales (mínimo 5 años)</li>
+            <li>Hasta que solicite la eliminación de sus datos (sujeto a obligaciones legales)</li>
+          </ul>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">7. Sus Derechos</h2>
+          <p className="mb-3 text-gray-700">Usted tiene derecho a:</p>
+          <ul className="list-disc ml-6 space-y-2 text-gray-700">
+            <li><strong>Acceder:</strong> Solicitar una copia de sus datos personales</li>
+            <li><strong>Rectificar:</strong> Corregir datos inexactos o incompletos</li>
+            <li><strong>Eliminar:</strong> Solicitar la eliminación de sus datos (sujeto a obligaciones legales)</li>
+            <li><strong>Oponerse:</strong> Rechazar el procesamiento de sus datos para ciertos fines</li>
+            <li><strong>Portabilidad:</strong> Recibir sus datos en un formato estructurado</li>
+          </ul>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">8. Seguridad de Menores</h2>
+          <p className="text-gray-700">
+            Nuestros servicios están dirigidos a personas mayores de 18 años. No recopilamos intencionalmente información de menores de edad.
+          </p>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">9. Cambios a esta Política</h2>
+          <p className="text-gray-700">
+            Nos reservamos el derecho de actualizar esta política de privacidad. Los cambios significativos serán notificados en nuestro sitio web.
+          </p>
+        </section>
+        
+        <section className="mb-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">10. Legislación Aplicable</h2>
+          <p className="text-gray-700">
+            Esta política se rige por las leyes de protección de datos personales de la República Argentina (Ley 25.326).
+          </p>
+        </section>
+        
+        <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-lg mt-8">
+          <h2 className="text-2xl font-semibold text-green-700 mb-4">Contacto</h2>
+          <p className="text-gray-700 mb-3">Para ejercer sus derechos o realizar consultas sobre privacidad:</p>
+          <div className="text-gray-700 space-y-1">
+            <p><strong>Email:</strong> <a href="mailto:privacidad@floreriacristina.com" className="text-green-600 hover:underline">privacidad@floreriacristina.com</a></p>
+            <p><strong>Teléfono:</strong> +54 381 477-8577</p>
+            <p><strong>Dirección:</strong> San Miguel de Tucumán, Argentina</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
