@@ -43,6 +43,8 @@ ALLOWED_HOSTS = [
     'web',
     'testserver',
     '.railway.app',  # Permitir todos los subdominios de Railway
+    'floreriacristina.com.ar',  # Dominio personalizado
+    'www.floreriacristina.com.ar',  # Dominio personalizado con www
     *env.list('ALLOWED_HOSTS', default=[]),
 ]
 
@@ -62,6 +64,10 @@ CORS_ALLOWED_ORIGINS = [
     'https://floreriayviverocristian.up.railway.app',  # Frontend en Railway (ACTUALIZADO)
     'https://frontend-production-0b0b.up.railway.app',  # Frontend antiguo (mantener por compatibilidad)
     'https://frontend-production-7249.up.railway.app',  # Frontend antiguo (mantener por compatibilidad)
+    'https://floreriacristina.com.ar',  # Dominio personalizado
+    'https://www.floreriacristina.com.ar',  # Dominio personalizado con www
+    'http://floreriacristina.com.ar',  # HTTP fallback
+    'http://www.floreriacristina.com.ar',  # HTTP fallback con www
     *env.list('CORS_ALLOWED_ORIGINS', default=[]),  # Permitir configurar desde env
 ]
 CORS_ALLOW_CREDENTIALS = True  # Permitir cookies y sesiones
@@ -113,6 +119,10 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'https://*.railway.app',  # Railway domains
+    'https://floreriacristina.com.ar',  # Dominio personalizado
+    'https://www.floreriacristina.com.ar',  # Dominio personalizado con www
+    'http://floreriacristina.com.ar',  # HTTP fallback
+    'http://www.floreriacristina.com.ar',  # HTTP fallback con www
     *env.list('CSRF_TRUSTED_ORIGINS', default=[]),
 ]
 
