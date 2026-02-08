@@ -217,6 +217,8 @@ class N8NService:
             webhook_path = '/webhook/password-reset'
             
             logger.info(f"📤 Enviando WhatsApp de recuperación de contraseña a {telefono_normalizado}")
+            logger.debug(f"🔍 Payload completo: {data}")
+            logger.debug(f"🔍 URL: {self.base_url}{webhook_path}")
             
             response = requests.post(
                 f"{self.base_url}{webhook_path}",
@@ -227,6 +229,9 @@ class N8NService:
                 },
                 timeout=10
             )
+            
+            logger.debug(f"🔍 Response status: {response.status_code}")
+            logger.debug(f"🔍 Response body: {response.text}")
             
             if response.status_code == 200:
                 logger.info(f"✅ WhatsApp de recuperación enviado a {telefono_normalizado}")
