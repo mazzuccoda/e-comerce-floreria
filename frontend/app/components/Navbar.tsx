@@ -142,9 +142,9 @@ export default function Navbar() {
           {/* Logo */}
           <a href="/" className="flex items-center">
             <img 
-              src="https://res.cloudinary.com/dmxc6odsi/image/upload/v1760465112/Logo_Crsitina_t6ofnz.png" 
+              src="https://res.cloudinary.com/dmxc6odsi/image/upload/v1738967024/logo_floreria_cristina_xfvxqj.png" 
               alt="Florería Cristina" 
-              className="h-12 w-auto cursor-pointer"
+              className="h-16 w-auto cursor-pointer"
             />
           </a>
           
