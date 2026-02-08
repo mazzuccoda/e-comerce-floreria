@@ -157,3 +157,170 @@ def verificar_email(request, email):
         'exists': exists,
         'available': not exists
     })
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SolicitarResetPasswordView(APIView):
+    """Vista para solicitar recuperación de contraseña"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from .serializers import SolicitarResetPasswordSerializer
+        from .models import PasswordResetToken
+        from django.core.mail import send_mail
+        from django.conf import settings
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        serializer = SolicitarResetPasswordSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.get(email=email)
+            
+            # Crear token de recuperación
+            reset_token = PasswordResetToken.create_token(user)
+            
+            # Construir URL de reset (usar dominio del frontend)
+            frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:3000'
+            reset_url = f"{frontend_url}/reset-password/{reset_token.token}"
+            
+            # Enviar email
+            try:
+                subject = '🔐 Recuperación de Contraseña - Florería Cristina'
+                message = f"""
+Hola {user.first_name or user.username},
+
+Recibimos una solicitud para restablecer tu contraseña.
+
+Para crear una nueva contraseña, haz clic en el siguiente enlace:
+{reset_url}
+
+Este enlace expirará en 2 horas.
+
+Si no solicitaste este cambio, puedes ignorar este email.
+
+Saludos,
+Florería Cristina
+                """
+                
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
+                
+                logger.info(f"✅ Email de recuperación enviado a {email}")
+                
+                return Response({
+                    'message': 'Se ha enviado un email con las instrucciones para recuperar tu contraseña'
+                }, status=status.HTTP_200_OK)
+                
+            except Exception as e:
+                logger.error(f"❌ Error enviando email de recuperación: {e}")
+                return Response({
+                    'error': 'Error al enviar el email. Intenta nuevamente más tarde.'
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        return Response({
+            'error': 'Datos inválidos',
+            'details': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ValidarTokenView(APIView):
+    """Vista para validar token de recuperación"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from .serializers import ValidarTokenSerializer
+        from .models import PasswordResetToken
+        
+        serializer = ValidarTokenSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            token_str = serializer.validated_data['token']
+            
+            try:
+                token = PasswordResetToken.objects.get(token=token_str)
+                
+                if token.is_valid():
+                    return Response({
+                        'valid': True,
+                        'message': 'Token válido'
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'valid': False,
+                        'message': 'Token expirado o ya utilizado'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                    
+            except PasswordResetToken.DoesNotExist:
+                return Response({
+                    'valid': False,
+                    'message': 'Token inválido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'error': 'Datos inválidos',
+            'details': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResetPasswordView(APIView):
+    """Vista para resetear contraseña con token"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from .serializers import ResetPasswordSerializer
+        from .models import PasswordResetToken
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        serializer = ResetPasswordSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            token_str = serializer.validated_data['token']
+            new_password = serializer.validated_data['new_password']
+            
+            try:
+                token = PasswordResetToken.objects.get(token=token_str)
+                
+                if not token.is_valid():
+                    return Response({
+                        'error': 'Token expirado o ya utilizado'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Cambiar contraseña
+                user = token.user
+                user.set_password(new_password)
+                user.save()
+                
+                # Marcar token como usado
+                token.mark_as_used()
+                
+                # Invalidar tokens de autenticación existentes
+                try:
+                    user.auth_token.delete()
+                except:
+                    pass
+                
+                logger.info(f"✅ Contraseña reseteada para {user.email}")
+                
+                return Response({
+                    'message': 'Contraseña cambiada exitosamente'
+                }, status=status.HTTP_200_OK)
+                
+            except PasswordResetToken.DoesNotExist:
+                return Response({
+                    'error': 'Token inválido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({
+            'error': 'Datos inválidos',
+            'details': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)

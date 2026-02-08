@@ -24,4 +24,9 @@ urlpatterns = [
     # Verificaciones
     path('verificar-usuario/', api_views.verificar_usuario, name='verificar_usuario'),
     path('verificar-email/', api_views.verificar_email, name='verificar_email'),
+    
+    # Recuperación de contraseña
+    path('solicitar-reset-password/', api_views.SolicitarResetPasswordView.as_view(), name='solicitar_reset_password'),
+    path('validar-token/', api_views.ValidarTokenView.as_view(), name='validar_token'),
+    path('reset-password/', api_views.ResetPasswordView.as_view(), name='reset_password'),
 ]

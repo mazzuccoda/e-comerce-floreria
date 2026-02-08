@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+import secrets
+from datetime import timedelta
 
 
 class PerfilUsuario(models.Model):
@@ -40,3 +43,51 @@ def guardar_perfil_usuario(sender, instance, **kwargs):
     """Guardar perfil cuando se guarda el usuario"""
     if hasattr(instance, 'perfil'):
         instance.perfil.save()
+
+
+class PasswordResetToken(models.Model):
+    """Token para recuperación de contraseña"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
+    token = models.CharField(max_length=100, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    used_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Token de Recuperación de Contraseña'
+        verbose_name_plural = 'Tokens de Recuperación de Contraseña'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Token para {self.user.email} - {'Usado' if self.used else 'Activo'}"
+    
+    @classmethod
+    def create_token(cls, user, expiration_hours=2):
+        """Crear un nuevo token de recuperación"""
+        # Invalidar tokens anteriores del usuario
+        cls.objects.filter(user=user, used=False).update(used=True)
+        
+        # Generar token único
+        token = secrets.token_urlsafe(32)
+        expires_at = timezone.now() + timedelta(hours=expiration_hours)
+        
+        return cls.objects.create(
+            user=user,
+            token=token,
+            expires_at=expires_at
+        )
+    
+    def is_valid(self):
+        """Verificar si el token es válido"""
+        if self.used:
+            return False
+        if timezone.now() > self.expires_at:
+            return False
+        return True
+    
+    def mark_as_used(self):
+        """Marcar token como usado"""
+        self.used = True
+        self.used_at = timezone.now()
+        self.save()

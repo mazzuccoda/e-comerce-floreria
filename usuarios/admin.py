@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import PerfilUsuario
+from .models import PerfilUsuario, PasswordResetToken
 
 
 class PerfilUsuarioInline(admin.StackedInline):
@@ -36,3 +36,21 @@ class PerfilUsuarioAdmin(admin.ModelAdmin):
     list_filter = ['recibir_ofertas', 'ciudad', 'created_at']
     search_fields = ['user__username', 'user__email', 'telefono', 'ciudad']
     ordering = ['-created_at']
+
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    """Admin para tokens de recuperación de contraseña"""
+    list_display = ['user', 'token_preview', 'created_at', 'expires_at', 'used', 'is_valid_status']
+    list_filter = ['used', 'created_at', 'expires_at']
+    search_fields = ['user__username', 'user__email', 'token']
+    readonly_fields = ['token', 'created_at', 'used_at']
+    ordering = ['-created_at']
+    
+    def token_preview(self, obj):
+        return f"{obj.token[:20]}..." if len(obj.token) > 20 else obj.token
+    token_preview.short_description = 'Token'
+    
+    def is_valid_status(self, obj):
+        return '✅ Válido' if obj.is_valid() else '❌ Inválido'
+    is_valid_status.short_description = 'Estado'

@@ -114,3 +114,30 @@ class CambiarPasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Contraseña actual incorrecta")
         return value
+
+
+class SolicitarResetPasswordSerializer(serializers.Serializer):
+    """Serializer para solicitar recuperación de contraseña"""
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No existe una cuenta con este email")
+        return value
+
+
+class ValidarTokenSerializer(serializers.Serializer):
+    """Serializer para validar token de recuperación"""
+    token = serializers.CharField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """Serializer para resetear contraseña con token"""
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError("Las contraseñas no coinciden")
+        return attrs
