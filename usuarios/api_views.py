@@ -182,10 +182,21 @@ class SolicitarResetPasswordView(APIView):
             
             # Obtener usuario según el canal
             if canal == 'email':
-                user = User.objects.get(email=email)
+                try:
+                    user = User.objects.get(email=email)
+                except User.DoesNotExist:
+                    return Response(
+                        {'error': 'No existe un usuario con ese email'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
             else:  # whatsapp
                 from usuarios.models import PerfilUsuario
-                perfil = PerfilUsuario.objects.get(telefono=telefono)
+                perfil = PerfilUsuario.objects.filter(telefono=telefono).first()
+                if not perfil:
+                    return Response(
+                        {'error': 'No existe un usuario con ese teléfono'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
                 user = perfil.user
             
             # Crear token de recuperación
