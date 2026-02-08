@@ -214,8 +214,7 @@ class N8NService:
             }
             
             # Webhook específico para recuperación de contraseña
-            # Usar webhook-test mientras n8n está en modo test
-            webhook_path = '/webhook-test/webhook/password-reset'
+            webhook_path = '/webhook/password-reset'
             
             logger.info(f"📤 Enviando WhatsApp de recuperación de contraseña a {telefono_normalizado}")
             
