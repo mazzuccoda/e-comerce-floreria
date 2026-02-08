@@ -117,13 +117,31 @@ class CambiarPasswordSerializer(serializers.Serializer):
 
 
 class SolicitarResetPasswordSerializer(serializers.Serializer):
-    """Serializer para solicitar recuperación de contraseña"""
-    email = serializers.EmailField()
+    """Serializer para solicitar recuperación de contraseña por WhatsApp o Email"""
+    canal = serializers.ChoiceField(choices=['whatsapp', 'email'], default='whatsapp')
+    email = serializers.EmailField(required=False, allow_blank=True)
+    telefono = serializers.CharField(required=False, allow_blank=True)
 
-    def validate_email(self, value):
-        if not User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("No existe una cuenta con este email")
-        return value
+    def validate(self, attrs):
+        canal = attrs.get('canal')
+        email = attrs.get('email')
+        telefono = attrs.get('telefono')
+        
+        if canal == 'email':
+            if not email:
+                raise serializers.ValidationError("Debes proporcionar un email")
+            if not User.objects.filter(email=email).exists():
+                raise serializers.ValidationError("No existe una cuenta con este email")
+        
+        elif canal == 'whatsapp':
+            if not telefono:
+                raise serializers.ValidationError("Debes proporcionar un teléfono")
+            # Buscar usuario por teléfono en perfil
+            from usuarios.models import PerfilUsuario
+            if not PerfilUsuario.objects.filter(telefono=telefono).exists():
+                raise serializers.ValidationError("No existe una cuenta con este teléfono")
+        
+        return attrs
 
 
 class ValidarTokenSerializer(serializers.Serializer):

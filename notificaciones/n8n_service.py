@@ -162,6 +162,88 @@ class N8NService:
         except Exception as e:
             logger.error(f"❌ Error enviando notificación n8n: {str(e)}")
             return False
+    
+    def enviar_recuperacion_password(self, telefono, nombre_usuario, token, frontend_url):
+        """
+        Envía mensaje de WhatsApp para recuperación de contraseña vía n8n + Evolution API
+        
+        Args:
+            telefono: Número de teléfono del usuario (normalizado)
+            nombre_usuario: Nombre del usuario
+            token: Token de recuperación
+            frontend_url: URL del frontend para construir el link
+        
+        Returns:
+            bool: True si se envió exitosamente
+        """
+        if not self.enabled:
+            logger.info("n8n deshabilitado, notificación no enviada")
+            return False
+        
+        if not self.api_key:
+            logger.warning("N8N_API_KEY no configurado, notificación no enviada")
+            return False
+        
+        try:
+            # Normalizar teléfono
+            from pedidos.utils import normalizar_telefono_whatsapp
+            telefono_normalizado = normalizar_telefono_whatsapp(telefono)
+            
+            if not telefono_normalizado:
+                logger.error(f"❌ No se pudo normalizar el teléfono '{telefono}'")
+                return False
+            
+            # Construir URL de reset
+            reset_url = f"{frontend_url}/reset-password/{token}"
+            
+            # Preparar datos para n8n
+            data = {
+                'event': 'password_reset',
+                'customer': {
+                    'name': nombre_usuario,
+                    'phone': telefono_normalizado,
+                },
+                'reset': {
+                    'url': reset_url,
+                    'token': token,
+                },
+                'meta': {
+                    'source': 'django',
+                    'type': 'password_recovery',
+                },
+            }
+            
+            # Webhook específico para recuperación de contraseña
+            webhook_path = '/webhook/password-reset'
+            
+            logger.info(f"📤 Enviando WhatsApp de recuperación de contraseña a {telefono_normalizado}")
+            
+            response = requests.post(
+                f"{self.base_url}{webhook_path}",
+                json=data,
+                headers={
+                    'X-API-Key': self.api_key,
+                    'Content-Type': 'application/json'
+                },
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ WhatsApp de recuperación enviado a {telefono_normalizado}")
+                return True
+            else:
+                logger.error(f"❌ Error n8n: {response.status_code} - {response.text}")
+                return False
+                
+        except requests.exceptions.Timeout:
+            logger.error(f"⏱️ Timeout al enviar WhatsApp de recuperación")
+            return False
+        except requests.exceptions.ConnectionError:
+            logger.error(f"🔌 Error de conexión con n8n")
+            return False
+        except Exception as e:
+            logger.error(f"❌ Error enviando WhatsApp de recuperación: {str(e)}")
+            return False
 
 
 # Instancia global del servicio

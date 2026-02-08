@@ -345,18 +345,27 @@ USE_TZ = True
 
 # Email Backend Configuration
 # --------------------------------------------------------------------------
-# Determinar si usar SendGrid API o SMTP
+# Prioridad: Resend (django-anymail) > SendGrid > SMTP > Console
+import logging
+logger = logging.getLogger(__name__)
+
+USE_RESEND = env.bool('USE_RESEND', default=False)
 USE_SENDGRID_API = env.bool('USE_SENDGRID_API', default=False)
 
-if USE_SENDGRID_API:
-    # Usar SendGrid API (recomendado para Railway - no requiere puertos SMTP)
+if USE_RESEND:
+    # Usar Resend vía django-anymail (100 emails/día gratis)
+    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+    ANYMAIL = {
+        'RESEND_API_KEY': env('RESEND_API_KEY', default=''),
+    }
+    logger.info("📧 Usando Resend via django-anymail")
+elif USE_SENDGRID_API:
+    # Usar SendGrid API (legacy - agotado)
     EMAIL_BACKEND = 'notificaciones.sendgrid_backend.SendGridAPIBackend'
     SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
-    import logging
-    logger = logging.getLogger(__name__)
     logger.info("📧 Usando SendGrid API Backend")
 else:
-    # Usar SMTP tradicional (puede estar bloqueado en Railway)
+    # Usar SMTP tradicional o console
     EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
     EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
     EMAIL_PORT = env.int('EMAIL_PORT', default=587)
@@ -364,12 +373,13 @@ else:
     EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
     EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
     EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-    import logging
-    logger = logging.getLogger(__name__)
     logger.info("📧 Usando SMTP Backend")
 
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='no-responder@floreriacristina.com')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Frontend URL para links de recuperación de contraseña
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
 
 # Configuracion de Twilio para WhatsApp
 # ATENCION: En producción, usar variables de entorno para estas credenciales.

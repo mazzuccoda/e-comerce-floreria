@@ -161,7 +161,7 @@ def verificar_email(request, email):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SolicitarResetPasswordView(APIView):
-    """Vista para solicitar recuperación de contraseña"""
+    """Vista para solicitar recuperación de contraseña por WhatsApp o Email"""
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
@@ -169,26 +169,65 @@ class SolicitarResetPasswordView(APIView):
         from .models import PasswordResetToken
         from django.core.mail import send_mail
         from django.conf import settings
+        from notificaciones.n8n_service import n8n_service
         import logging
         
         logger = logging.getLogger(__name__)
         serializer = SolicitarResetPasswordSerializer(data=request.data)
         
         if serializer.is_valid():
-            email = serializer.validated_data['email']
-            user = User.objects.get(email=email)
+            canal = serializer.validated_data.get('canal', 'whatsapp')
+            email = serializer.validated_data.get('email')
+            telefono = serializer.validated_data.get('telefono')
+            
+            # Obtener usuario según el canal
+            if canal == 'email':
+                user = User.objects.get(email=email)
+            else:  # whatsapp
+                from usuarios.models import PerfilUsuario
+                perfil = PerfilUsuario.objects.get(telefono=telefono)
+                user = perfil.user
             
             # Crear token de recuperación
             reset_token = PasswordResetToken.create_token(user)
             
-            # Construir URL de reset (usar dominio del frontend)
-            frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else 'http://localhost:3000'
-            reset_url = f"{frontend_url}/reset-password/{reset_token.token}"
+            # Construir URL del frontend
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
             
-            # Enviar email
-            try:
-                subject = '🔐 Recuperación de Contraseña - Florería Cristina'
-                message = f"""
+            # Enviar según el canal elegido
+            if canal == 'whatsapp':
+                try:
+                    nombre_usuario = user.first_name or user.username
+                    success = n8n_service.enviar_recuperacion_password(
+                        telefono=telefono,
+                        nombre_usuario=nombre_usuario,
+                        token=reset_token.token,
+                        frontend_url=frontend_url
+                    )
+                    
+                    if success:
+                        logger.info(f"✅ WhatsApp de recuperación enviado a {telefono}")
+                        return Response({
+                            'message': 'Se ha enviado un WhatsApp con el enlace para recuperar tu contraseña',
+                            'canal': 'whatsapp'
+                        }, status=status.HTTP_200_OK)
+                    else:
+                        logger.error(f"❌ Error enviando WhatsApp a {telefono}")
+                        return Response({
+                            'error': 'Error al enviar WhatsApp. Intenta con email o nuevamente más tarde.'
+                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        
+                except Exception as e:
+                    logger.error(f"❌ Error enviando WhatsApp de recuperación: {e}")
+                    return Response({
+                        'error': 'Error al enviar WhatsApp. Intenta con email o nuevamente más tarde.'
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            else:  # email
+                try:
+                    reset_url = f"{frontend_url}/reset-password/{reset_token.token}"
+                    subject = '🔐 Recuperación de Contraseña - Florería Cristina'
+                    message = f"""
 Hola {user.first_name or user.username},
 
 Recibimos una solicitud para restablecer tu contraseña.
@@ -202,27 +241,28 @@ Si no solicitaste este cambio, puedes ignorar este email.
 
 Saludos,
 Florería Cristina
-                """
-                
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email],
-                    fail_silently=False,
-                )
-                
-                logger.info(f"✅ Email de recuperación enviado a {email}")
-                
-                return Response({
-                    'message': 'Se ha enviado un email con las instrucciones para recuperar tu contraseña'
-                }, status=status.HTTP_200_OK)
-                
-            except Exception as e:
-                logger.error(f"❌ Error enviando email de recuperación: {e}")
-                return Response({
-                    'error': 'Error al enviar el email. Intenta nuevamente más tarde.'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    """
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    
+                    logger.info(f"✅ Email de recuperación enviado a {email}")
+                    
+                    return Response({
+                        'message': 'Se ha enviado un email con las instrucciones para recuperar tu contraseña',
+                        'canal': 'email'
+                    }, status=status.HTTP_200_OK)
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error enviando email de recuperación: {e}")
+                    return Response({
+                        'error': 'Error al enviar el email. Intenta nuevamente más tarde.'
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         return Response({
             'error': 'Datos inválidos',
