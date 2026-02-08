@@ -2383,7 +2383,7 @@ const MultiStepCheckoutPage = () => {
                       className={`mr-3 mt-1 ${formErrors.aceptaTerminos ? 'outline outline-2 outline-red-300' : ''}`} 
                     />
                     <span className="text-sm text-gray-600">
-                      Acepto los <span className="text-green-600 underline cursor-pointer">términos y condiciones</span> y la <span className="text-green-600 underline cursor-pointer">política de privacidad</span>
+                      Acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-green-600 underline cursor-pointer hover:text-green-700">términos y condiciones</a> y la <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-green-600 underline cursor-pointer hover:text-green-700">política de privacidad</a>
                     </span>
                   </label>
                   {formErrors.aceptaTerminos && <span className="text-red-600 text-sm mt-1">{formErrors.aceptaTerminos}</span>}
@@ -2860,7 +2860,7 @@ const MultiStepCheckoutPage = () => {
                         className={`mr-3 mt-1 ${formErrors.aceptaTerminos ? 'outline outline-2 outline-red-300' : ''}`} 
                       />
                       <span className="text-sm text-gray-600">
-                        Acepto los <span className="text-green-600 underline cursor-pointer">términos y condiciones</span> y la <span className="text-green-600 underline cursor-pointer">política de privacidad</span>
+                        Acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-green-600 underline cursor-pointer hover:text-green-700">términos y condiciones</a> y la <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-green-600 underline cursor-pointer hover:text-green-700">política de privacidad</a>
                       </span>
                     </label>
                     {formErrors.aceptaTerminos && <span className="text-red-600 text-sm mt-1">{formErrors.aceptaTerminos}</span>}
