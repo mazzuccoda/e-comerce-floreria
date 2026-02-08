@@ -91,6 +91,10 @@ const nextConfig = {
         destination: `${backendUrl}/media/:path*`,
       },
       {
+        source: '/api/usuarios/solicitar-reset-password',
+        destination: `${backendUrl}/api/usuarios/solicitar-reset-password/`,
+      },
+      {
         source: '/api/usuarios/solicitar-reset-password/',
         destination: `${backendUrl}/api/usuarios/solicitar-reset-password/`,
       },
