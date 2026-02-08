@@ -99,6 +99,22 @@ const nextConfig = {
         destination: `${backendUrl}/api/usuarios/solicitar-reset-password/`,
       },
       {
+        source: '/api/usuarios/validar-token',
+        destination: `${backendUrl}/api/usuarios/validar-token/`,
+      },
+      {
+        source: '/api/usuarios/validar-token/',
+        destination: `${backendUrl}/api/usuarios/validar-token/`,
+      },
+      {
+        source: '/api/usuarios/reset-password',
+        destination: `${backendUrl}/api/usuarios/reset-password/`,
+      },
+      {
+        source: '/api/usuarios/reset-password/',
+        destination: `${backendUrl}/api/usuarios/reset-password/`,
+      },
+      {
         source: '/api/usuarios/:path*',
         destination: `${backendUrl}/api/usuarios/:path*`,
       },
