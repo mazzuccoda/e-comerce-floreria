@@ -20,8 +20,19 @@ export default function RecuperarPasswordPage() {
     setError('');
 
     try {
+      // Normalizar teléfono: asegurar que tenga el símbolo +
+      let telefonoNormalizado = telefono;
+      if (canal === 'whatsapp' && telefono) {
+        // Limpiar espacios, guiones y paréntesis
+        telefonoNormalizado = telefono.replace(/[\s\-()]/g, '');
+        // Si no empieza con +, agregarlo
+        if (!telefonoNormalizado.startsWith('+')) {
+          telefonoNormalizado = '+' + telefonoNormalizado;
+        }
+      }
+
       const payload = canal === 'whatsapp' 
-        ? { canal: 'whatsapp', telefono }
+        ? { canal: 'whatsapp', telefono: telefonoNormalizado }
         : { canal: 'email', email };
 
       const response = await fetch('/api/usuarios/solicitar-reset-password/', {
@@ -171,10 +182,10 @@ export default function RecuperarPasswordPage() {
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
                   className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="+54 9 11 1234-5678"
+                  placeholder="543813671352 o +543813671352"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Ingresá el teléfono registrado en tu cuenta
+                  Ingresá el teléfono registrado (con o sin +)
                 </p>
               </div>
             ) : (
