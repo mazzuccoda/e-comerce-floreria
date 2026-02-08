@@ -56,24 +56,21 @@ def normalizar_telefono_whatsapp(telefono):
                 
                 # Verificar si es válido
                 if phonenumbers.is_valid_number(numero):
-                    # Formatear en E164 (formato internacional estándar)
+                    # Formatear en E164 (formato internacional estándar con +)
                     numero_internacional = phonenumbers.format_number(
                         numero, 
                         phonenumbers.PhoneNumberFormat.E164
                     )
-                    
-                    # Remover el símbolo + para WhatsApp
-                    resultado = numero_internacional.replace('+', '')
                     
                     # Obtener información del país
                     region_detectada = phonenumbers.region_code_for_number(numero)
                     pais = geocoder.description_for_number(numero, "es")
                     
                     logger.info(
-                        f"✅ Teléfono normalizado: '{telefono}' → '{resultado}' "
+                        f"✅ Teléfono normalizado: '{telefono}' → '{numero_internacional}' "
                         f"(País: {pais or region_detectada})"
                     )
-                    return resultado
+                    return numero_internacional
                     
             except phonenumbers.NumberParseException:
                 # Esta región no funcionó, probar la siguiente
@@ -85,38 +82,42 @@ def normalizar_telefono_whatsapp(telefono):
         # Detectar por prefijo conocido
         if telefono_limpio.startswith('54'):
             # Ya tiene código argentino
-            logger.info(f"✅ Código argentino detectado: {telefono_limpio}")
-            return telefono_limpio
+            resultado = f"+{telefono_limpio}"
+            logger.info(f"✅ Código argentino detectado: '{telefono}' → '{resultado}'")
+            return resultado
             
         elif telefono_limpio.startswith('34'):
             # Código español
-            logger.info(f"✅ Código español detectado: {telefono_limpio}")
-            return telefono_limpio
+            resultado = f"+{telefono_limpio}"
+            logger.info(f"✅ Código español detectado: '{telefono}' → '{resultado}'")
+            return resultado
             
         elif telefono_limpio.startswith('1') and len(telefono_limpio) == 11:
             # Código USA/Canadá
-            logger.info(f"✅ Código USA/Canadá detectado: {telefono_limpio}")
-            return telefono_limpio
+            resultado = f"+{telefono_limpio}"
+            logger.info(f"✅ Código USA/Canadá detectado: '{telefono}' → '{resultado}'")
+            return resultado
             
         elif len(telefono_limpio) == 10:
             # Probablemente argentino sin código de país (ej: 3814778577)
-            resultado = f"549{telefono_limpio}"  # 549 = Argentina + móvil
+            resultado = f"+549{telefono_limpio}"  # 549 = Argentina + móvil
             logger.info(f"✅ Asumiendo móvil argentino: '{telefono}' → '{resultado}'")
             return resultado
             
         elif len(telefono_limpio) == 9:
             # Podría ser español sin código (ej: 934695182)
-            resultado = f"34{telefono_limpio}"
+            resultado = f"+34{telefono_limpio}"
             logger.info(f"⚠️ Asumiendo español: '{telefono}' → '{resultado}' (verificar manualmente)")
             return resultado
             
         else:
-            # No se pudo determinar, devolver limpio
+            # No se pudo determinar, devolver con + si no lo tiene
+            resultado = f"+{telefono_limpio}" if not telefono_limpio.startswith('+') else telefono_limpio
             logger.warning(
                 f"⚠️ No se pudo normalizar '{telefono}' (longitud: {len(telefono_limpio)}). "
-                f"Devolviendo número limpio: {telefono_limpio}"
+                f"Devolviendo: {resultado}"
             )
-            return telefono_limpio
+            return resultado
             
     except Exception as e:
         logger.error(f"❌ Error normalizando teléfono '{telefono}': {e}", exc_info=True)
