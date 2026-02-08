@@ -3,6 +3,7 @@ Utilidades para el módulo de pedidos
 """
 
 import phonenumbers
+from phonenumbers import geocoder
 import logging
 
 logger = logging.getLogger(__name__)
@@ -66,7 +67,7 @@ def normalizar_telefono_whatsapp(telefono):
                     
                     # Obtener información del país
                     region_detectada = phonenumbers.region_code_for_number(numero)
-                    pais = phonenumbers.geocoder.description_for_number(numero, "es")
+                    pais = geocoder.description_for_number(numero, "es")
                     
                     logger.info(
                         f"✅ Teléfono normalizado: '{telefono}' → '{resultado}' "
