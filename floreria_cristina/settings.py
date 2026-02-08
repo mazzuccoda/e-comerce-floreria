@@ -345,7 +345,7 @@ USE_TZ = True
 
 # Email Backend Configuration
 # --------------------------------------------------------------------------
-# Prioridad: Resend (django-anymail) > SendGrid > SMTP > Console
+# Prioridad: Resend > SendGrid > SMTP > Console
 import logging
 logger = logging.getLogger(__name__)
 
@@ -353,20 +353,18 @@ USE_RESEND = env.bool('USE_RESEND', default=False)
 USE_SENDGRID_API = env.bool('USE_SENDGRID_API', default=False)
 
 if USE_RESEND:
-    # Usar Resend vía django-anymail (100 emails/día gratis)
-    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
-    ANYMAIL = {
-        'RESEND_API_KEY': env('RESEND_API_KEY', default=''),
-    }
-    logger.info("📧 Usando Resend via django-anymail")
+    # Usar Resend API (backend personalizado)
+    EMAIL_BACKEND = 'notificaciones.resend_backend.ResendEmailBackend'
+    RESEND_API_KEY = env('RESEND_API_KEY', default='')
+    logger.info("📧 Usando Resend API Backend")
 elif USE_SENDGRID_API:
-    # Usar SendGrid API (legacy - agotado)
+    # Usar SendGrid API
     EMAIL_BACKEND = 'notificaciones.sendgrid_backend.SendGridAPIBackend'
     SENDGRID_API_KEY = env('SENDGRID_API_KEY', default='')
     logger.info("📧 Usando SendGrid API Backend")
 else:
     # Usar SMTP tradicional o console
-    EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+    EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
     EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
     EMAIL_PORT = env.int('EMAIL_PORT', default=587)
     EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
