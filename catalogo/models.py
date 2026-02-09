@@ -166,6 +166,17 @@ class Producto(models.Model):
     )
     envio_gratis = models.BooleanField(default=False, verbose_name='Envío Gratis')
     es_adicional = models.BooleanField(default=False, verbose_name='Es Adicional')
+    publicar_en_redes = models.BooleanField(
+        default=False,
+        verbose_name='Publicar en Redes Sociales',
+        help_text='Marcar para incluir este producto en las publicaciones automáticas de Facebook/Instagram'
+    )
+    fecha_ultima_publicacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Última publicación en redes',
+        help_text='Fecha de la última vez que se publicó en redes sociales'
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado el')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado el')
 

@@ -1,13 +1,19 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.conf import settings
+from django.utils import timezone
 from .models import Producto, Categoria, TipoFlor, Ocasion, ZonaEntrega, HeroSlide
 from .serializers import (
     ProductoSerializer, CategoriaSerializer, TipoFlorSerializer, 
     OcasionSerializer, ZonaEntregaSerializer, HeroSlideSerializer
 )
 from core.translation_service import translation_service
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -152,6 +158,145 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
             data = translation_service.translate_products(data, target_lang=lang)
         
         return Response(data)
+    
+    @action(detail=False, methods=['post', 'get'], permission_classes=[AllowAny])
+    def sync_to_social(self, request):
+        """
+        Endpoint para sincronizar productos con redes sociales vía n8n
+        
+        GET: Obtiene productos marcados para publicar en redes
+        POST: Envía productos a n8n para publicación
+        
+        Query params:
+        - limit: Número máximo de productos (default: 10)
+        - force: Incluir productos ya publicados recientemente (default: false)
+        """
+        try:
+            # Parámetros
+            limit = int(request.query_params.get('limit', 10))
+            force = request.query_params.get('force', 'false').lower() == 'true'
+            
+            # Filtrar productos marcados para redes sociales
+            queryset = Producto.objects.filter(
+                is_active=True,
+                publicar_en_redes=True,
+                stock__gt=0
+            ).prefetch_related('imagenes', 'categoria', 'tipo_flor', 'ocasiones')
+            
+            # Si no es force, excluir productos publicados en las últimas 24 horas
+            if not force:
+                from datetime import timedelta
+                hace_24h = timezone.now() - timedelta(hours=24)
+                queryset = queryset.filter(
+                    fecha_ultima_publicacion__isnull=True
+                ) | queryset.filter(
+                    fecha_ultima_publicacion__lt=hace_24h
+                )
+            
+            # Ordenar por fecha de última publicación (los más antiguos primero)
+            queryset = queryset.order_by('fecha_ultima_publicacion', '-created_at')[:limit]
+            
+            productos_list = list(queryset)
+            
+            if not productos_list:
+                return Response({
+                    'success': False,
+                    'message': 'No hay productos disponibles para publicar en redes sociales',
+                    'productos_count': 0
+                }, status=status.HTTP_200_OK)
+            
+            # Preparar datos para n8n
+            productos_data = []
+            for producto in productos_list:
+                productos_data.append({
+                    'id': producto.id,
+                    'sku': producto.sku,
+                    'nombre': producto.nombre,
+                    'slug': producto.slug,
+                    'descripcion': producto.descripcion,
+                    'descripcion_corta': producto.descripcion_corta,
+                    'precio': str(producto.precio),
+                    'precio_descuento': str(producto.precio_descuento) if producto.precio_descuento else None,
+                    'porcentaje_descuento': producto.porcentaje_descuento,
+                    'stock': producto.stock,
+                    'categoria': producto.categoria.nombre if producto.categoria else None,
+                    'tipo_flor': producto.tipo_flor.nombre if producto.tipo_flor else None,
+                    'envio_gratis': producto.envio_gratis,
+                    'imagenes': [
+                        {
+                            'url': img.imagen.url,
+                            'is_primary': img.is_primary
+                        }
+                        for img in producto.imagenes.all()
+                    ],
+                    'url': f"https://www.floreriacristina.com.ar/productos/{producto.slug}"
+                })
+            
+            # Si es GET, solo devolver los productos
+            if request.method == 'GET':
+                return Response({
+                    'success': True,
+                    'productos_count': len(productos_data),
+                    'productos': productos_data
+                })
+            
+            # Si es POST, enviar a n8n
+            n8n_base_url = getattr(settings, 'N8N_BASE_URL', None)
+            n8n_api_key = getattr(settings, 'N8N_API_KEY', None)
+            
+            if not n8n_base_url or not n8n_api_key:
+                logger.warning('⚠️ N8N_BASE_URL o N8N_API_KEY no configurados')
+                return Response({
+                    'success': False,
+                    'error': 'n8n no configurado',
+                    'productos_count': len(productos_data),
+                    'productos': productos_data
+                }, status=status.HTTP_200_OK)
+            
+            # Enviar a n8n
+            webhook_url = f"{n8n_base_url}/webhook/sync-catalog"
+            
+            logger.info(f"📤 Enviando {len(productos_data)} productos a n8n")
+            
+            response = requests.post(
+                webhook_url,
+                json={'productos': productos_data},
+                headers={
+                    'X-API-Key': n8n_api_key,
+                    'Content-Type': 'application/json'
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                # Actualizar fecha de última publicación
+                for producto in productos_list:
+                    producto.fecha_ultima_publicacion = timezone.now()
+                    producto.save(update_fields=['fecha_ultima_publicacion'])
+                
+                logger.info(f"✅ {len(productos_data)} productos sincronizados con n8n")
+                
+                return Response({
+                    'success': True,
+                    'message': f'{len(productos_data)} productos sincronizados con redes sociales',
+                    'productos_count': len(productos_data),
+                    'productos': productos_data
+                })
+            else:
+                logger.error(f"❌ Error en n8n: {response.status_code} - {response.text}")
+                return Response({
+                    'success': False,
+                    'error': 'Error al sincronizar con n8n',
+                    'status_code': response.status_code,
+                    'productos_count': len(productos_data)
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        except Exception as e:
+            logger.error(f"❌ Error en sync_to_social: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):

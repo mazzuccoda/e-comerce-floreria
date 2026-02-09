@@ -65,6 +65,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             'is_featured',
             'envio_gratis',
             'es_adicional',
+            'publicar_en_redes',
+            'fecha_ultima_publicacion',
             'imagen_principal',
             'imagenes',
             'created_at',

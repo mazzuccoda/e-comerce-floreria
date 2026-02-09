@@ -103,8 +103,8 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'categoria', 'tipo_flor', 'precio', 'stock', 'is_active', 'is_featured')
-    list_filter = ('is_active', 'is_featured', 'categoria', 'tipo_flor', 'tipo', 'ocasiones', 'created_at')
+    list_display = ('nombre', 'categoria', 'tipo_flor', 'precio', 'stock', 'is_active', 'is_featured', 'publicar_en_redes', 'fecha_ultima_publicacion')
+    list_filter = ('is_active', 'is_featured', 'publicar_en_redes', 'categoria', 'tipo_flor', 'tipo', 'ocasiones', 'created_at')
     search_fields = ('nombre', 'descripcion', 'sku')
     prepopulated_fields = {'slug': ('nombre', 'sku')}
     readonly_fields = ('created_at', 'updated_at', 'imagen_preview')
@@ -125,6 +125,10 @@ class ProductoAdmin(admin.ModelAdmin):
         }),
         ('Estado', {
             'fields': ('is_active', 'is_featured')
+        }),
+        ('Redes Sociales', {
+            'fields': ('publicar_en_redes', 'fecha_ultima_publicacion'),
+            'description': 'Marcar "Publicar en Redes Sociales" para incluir este producto en las publicaciones automáticas de Facebook/Instagram'
         }),
         ('Fechas', {
             'fields': ('created_at', 'updated_at'),
