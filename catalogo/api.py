@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.conf import settings
 from django.utils import timezone
+from django.db.models import Q
 from .models import Producto, Categoria, TipoFlor, Ocasion, ZonaEntrega, HeroSlide
 from .serializers import (
     ProductoSerializer, CategoriaSerializer, TipoFlorSerializer, 
@@ -188,9 +189,7 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
                 from datetime import timedelta
                 hace_24h = timezone.now() - timedelta(hours=24)
                 queryset = queryset.filter(
-                    fecha_ultima_publicacion__isnull=True
-                ) | queryset.filter(
-                    fecha_ultima_publicacion__lt=hace_24h
+                    Q(fecha_ultima_publicacion__isnull=True) | Q(fecha_ultima_publicacion__lt=hace_24h)
                 )
             
             # Ordenar por fecha de última publicación (los más antiguos primero)
