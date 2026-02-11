@@ -916,10 +916,10 @@ const MultiStepCheckoutPage = () => {
           nombre_comprador: formData.nombre?.trim() || "Cliente Web",
           email_comprador: formData.email?.trim() || "cliente@floreriacristina.com",
           telefono_comprador: formData.telefono?.trim() || "1123456789",
-          nombre_destinatario: formData.nombreDestinatario?.trim() || "Destinatario",
-          telefono_destinatario: formData.telefonoDestinatario?.trim() || "1123456789",
-          direccion: formData.direccion?.trim() || "Dirección de prueba 123",
-          ciudad: formData.ciudad?.trim() || "Buenos Aires",
+          nombre_destinatario: formData.nombreDestinatario?.trim() || (formData.metodoEnvio === 'retiro' ? formData.nombre?.trim() || "Cliente" : "Destinatario"),
+          telefono_destinatario: formData.telefonoDestinatario?.trim() || (formData.metodoEnvio === 'retiro' ? formData.telefono?.trim() || "1123456789" : "1123456789"),
+          direccion: formData.metodoEnvio === 'retiro' ? "Retiro en tienda" : (formData.direccion?.trim() || "Dirección de prueba 123"),
+          ciudad: formData.metodoEnvio === 'retiro' ? "Florería Cristina" : (formData.ciudad?.trim() || "Buenos Aires"),
           codigo_postal: formData.codigoPostal?.trim() || "1000",
           fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
           franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
@@ -1039,10 +1039,10 @@ const MultiStepCheckoutPage = () => {
           telefono_comprador: formData.telefono ? formData.telefono.trim() : "1123456789",
           
           // Datos del destinatario - obligatorios
-          nombre_destinatario: formData.nombreDestinatario ? formData.nombreDestinatario.trim() : "Destinatario",
-          telefono_destinatario: formData.telefonoDestinatario ? formData.telefonoDestinatario.trim() : "1123456789",
-          direccion: formData.direccion ? formData.direccion.trim() : "Dirección de prueba 123",
-          ciudad: formData.ciudad ? formData.ciudad.trim() : "Buenos Aires",
+          nombre_destinatario: formData.nombreDestinatario ? formData.nombreDestinatario.trim() : (formData.metodoEnvio === 'retiro' ? (formData.nombre ? formData.nombre.trim() : "Cliente") : "Destinatario"),
+          telefono_destinatario: formData.telefonoDestinatario ? formData.telefonoDestinatario.trim() : (formData.metodoEnvio === 'retiro' ? (formData.telefono ? formData.telefono.trim() : "1123456789") : "1123456789"),
+          direccion: formData.metodoEnvio === 'retiro' ? "Retiro en tienda" : (formData.direccion ? formData.direccion.trim() : "Dirección de prueba 123"),
+          ciudad: formData.metodoEnvio === 'retiro' ? "Florería Cristina" : (formData.ciudad ? formData.ciudad.trim() : "Buenos Aires"),
           codigo_postal: formData.codigoPostal ? formData.codigoPostal.trim() : "1000",
           
           // Datos de entrega - obligatorios
