@@ -99,9 +99,16 @@ Hola {{ nombre }},
 
 Nos complace informarte que tu pedido #{{ pedido_id }} ha sido entregado exitosamente.
 
-¿Qué te pareció tu experiencia? Nos encantaría conocer tu opinión en nuestra página: http://localhost:3000/pedidos/{{ pedido_id }}/review
+💐 *¡Muchas gracias por elegirnos!*
 
-¡Gracias por confiar en Florería Cristina!"""
+En Florería Cristina nos esforzamos cada día para brindarte el mejor servicio y las flores más frescas. Tu confianza es nuestro mayor regalo.
+
+⭐ *¿Nos ayudas con tu opinión?*
+Tu experiencia es muy importante para nosotros. Si estás satisfecho con nuestro servicio, nos encantaría que compartas tu opinión en Google:
+
+👉 https://g.page/r/CdV9BtKF_KgNEBM/review
+
+¡Esperamos verte pronto! 🌸"""
 
     PlantillaNotificacion.objects.update_or_create(
         tipo=TipoNotificacion.PEDIDO_ENTREGADO,
