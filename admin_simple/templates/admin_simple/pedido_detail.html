@@ -410,13 +410,16 @@ function cambiarEstado() {
         return;
     }
     
+    // Preguntar si desea notificar al cliente por WhatsApp
+    const enviarNotificacion = confirm('¿Deseas notificar al cliente por WhatsApp sobre este cambio de estado?');
+    
     fetch('{% url "admin_simple:pedido-cambiar-estado" pedido.pk %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': csrftoken
         },
-        body: `estado=${nuevoEstado}`
+        body: `estado=${nuevoEstado}&enviar_notificacion=${enviarNotificacion}`
     })
     .then(response => response.json())
     .then(data => {

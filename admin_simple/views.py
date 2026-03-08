@@ -614,6 +614,7 @@ def pedido_cambiar_estado(request, pk):
     """
     pedido = get_object_or_404(Pedido, pk=pk)
     nuevo_estado = request.POST.get('estado')
+    enviar_notificacion = request.POST.get('enviar_notificacion', 'false').lower() == 'true'
     
     if nuevo_estado not in dict(Pedido._meta.get_field('estado').choices):
         return JsonResponse({
@@ -625,18 +626,29 @@ def pedido_cambiar_estado(request, pk):
     pedido.estado = nuevo_estado
     pedido.save()
 
-    if estado_anterior != nuevo_estado:
+    # Solo enviar notificación si el usuario lo confirmó
+    if estado_anterior != nuevo_estado and enviar_notificacion:
         try:
             from notificaciones.n8n_service import n8n_service
             n8n_service.enviar_notificacion_pedido(pedido=pedido, tipo='estado')
+            logger.info(f"Notificación WhatsApp enviada para pedido {pedido.id}")
         except Exception as e:
             logger.error(f"Error enviando notificación WhatsApp vía n8n para pedido {pedido.id}: {str(e)}")
+    elif estado_anterior != nuevo_estado and not enviar_notificacion:
+        logger.info(f"Notificación WhatsApp NO enviada para pedido {pedido.id} (usuario eligió no notificar)")
     
     logger.info(f'Pedido {pedido.id} cambió de estado: {estado_anterior} → {nuevo_estado} por {request.user.username}')
     
+    mensaje = f'Estado actualizado a {pedido.get_estado_display()}'
+    if estado_anterior != nuevo_estado:
+        if enviar_notificacion:
+            mensaje += ' - Notificación enviada al cliente'
+        else:
+            mensaje += ' - Sin notificación al cliente'
+    
     return JsonResponse({
         'success': True,
-        'message': f'Estado actualizado a {pedido.get_estado_display()}',
+        'message': mensaje,
         'nuevo_estado': nuevo_estado
     })
 
