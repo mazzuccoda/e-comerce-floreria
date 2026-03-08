@@ -97,7 +97,7 @@ Florería Cristina"""
 
 Hola {{ nombre }},
 
-Nos complace informarte que tu pedido #{{ pedido_id }} ha sido entregado exitosamente.
+Te informamos que tu pedido #{{ pedido_id }} ha sido entregado exitosamente.
 
 💐 *¡Muchas gracias por elegirnos!*
 
