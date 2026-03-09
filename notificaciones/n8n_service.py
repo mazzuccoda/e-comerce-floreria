@@ -106,6 +106,7 @@ class N8NService:
                     'total': str(pedido.total),
                     'shipping_cost': str(getattr(pedido, 'costo_envio', 0) or 0),
                     'currency': 'ARS',
+                    'token': getattr(pedido, 'token_acceso', ''),
                 },
                 'customer': {
                     'name': nombre_cliente,

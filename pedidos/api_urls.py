@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .api_views import (
     CheckoutView,
     PedidoDetailView,
+    PedidoByTokenView,
     PedidoListView,
     MetodoEnvioListView,
     ValidateStockView,
@@ -57,6 +58,7 @@ urlpatterns = [
     path('metodos-envio/', MetodoEnvioListView.as_view(), name='metodos-envio'),
     
     # Pedidos
+    path('token/<str:token>/', PedidoByTokenView.as_view(), name='pedido-by-token'),
     path('<int:pedido_id>/', PedidoDetailView.as_view(), name='pedido-detail'),
     path('mis-pedidos/', PedidoListView.as_view(), name='mis-pedidos'),
     

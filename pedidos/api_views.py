@@ -173,6 +173,25 @@ class CheckoutView(APIView):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
+class PedidoByTokenView(APIView):
+    """
+    Vista para obtener detalles de un pedido usando el token de acceso
+    Permite a usuarios invitados ver su pedido sin necesidad de login
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request, token):
+        try:
+            pedido = get_object_or_404(Pedido, token_acceso=token)
+            serializer = PedidoReadSerializer(pedido)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Pedido.DoesNotExist:
+            return Response({
+                'error': 'Pedido no encontrado o token inválido'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
 class PedidoDetailView(APIView):
     """
     Vista para obtener detalles de un pedido específico

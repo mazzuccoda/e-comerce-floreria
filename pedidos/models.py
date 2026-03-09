@@ -63,6 +63,13 @@ class Pedido(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     confirmado = models.BooleanField(default=False)
     numero_pedido = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    token_acceso = models.CharField(
+        max_length=32, 
+        unique=True, 
+        blank=True, 
+        null=True,
+        help_text="Token único para acceder al pedido sin login"
+    )
 
     def save(self, *args, **kwargs):
         if not self.numero_pedido:
@@ -70,6 +77,12 @@ class Pedido(models.Model):
             import random
             import string
             self.numero_pedido = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        
+        if not self.token_acceso:
+            # Generar token de acceso único
+            import secrets
+            self.token_acceso = secrets.token_urlsafe(16)
+        
         super().save(*args, **kwargs)
 
     def __str__(self):
