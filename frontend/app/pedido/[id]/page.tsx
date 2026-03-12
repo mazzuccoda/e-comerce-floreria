@@ -48,31 +48,53 @@ const PedidoDetallePage: React.FC = () => {
   const { token, loading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const pedidoId = params?.id;
+  const pedidoId = params?.id as string;
   
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Detectar si es un token (string largo con letras) o un ID numérico
+  const isTokenAccess = pedidoId && pedidoId.length > 15 && /[a-zA-Z-_]/.test(pedidoId);
+
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    // Solo redirigir a login si NO es un token
+    if (!isTokenAccess && !authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isTokenAccess, isAuthenticated, authLoading, router]);
 
   useEffect(() => {
     const fetchPedido = async () => {
-      if (!token || !pedidoId) return;
+      if (!pedidoId) return;
+      
+      // Si es token, esperar que termine de cargar auth pero no requerir autenticación
+      if (isTokenAccess && authLoading) return;
+      
+      // Si es ID numérico, requerir autenticación
+      if (!isTokenAccess && (!token || !isAuthenticated)) return;
       
       try {
         setLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-        const response = await fetch(`${apiUrl}/pedidos/simple/${pedidoId}/`, {
-          headers: {
-            'Authorization': `Token ${token}`,
-            'Accept': 'application/json',
-          },
-          credentials: 'include',
+        
+        // Usar endpoint diferente según si es token o ID
+        const endpoint = isTokenAccess 
+          ? `${apiUrl}/pedidos/token/${pedidoId}/`
+          : `${apiUrl}/pedidos/simple/${pedidoId}/`;
+        
+        const headers: HeadersInit = {
+          'Accept': 'application/json',
+        };
+        
+        // Solo agregar Authorization si NO es token
+        if (!isTokenAccess && token) {
+          headers['Authorization'] = `Token ${token}`;
+        }
+        
+        const response = await fetch(endpoint, {
+          headers,
+          credentials: isTokenAccess ? 'omit' : 'include',
         });
 
         if (response.ok) {
@@ -90,10 +112,10 @@ const PedidoDetallePage: React.FC = () => {
       }
     };
 
-    if (isAuthenticated && token && pedidoId) {
+    if ((isAuthenticated && token && pedidoId) || (isTokenAccess && pedidoId)) {
       fetchPedido();
     }
-  }, [isAuthenticated, token, pedidoId]);
+  }, [token, pedidoId, isTokenAccess, authLoading, isAuthenticated]);
 
   if (authLoading || loading) {
     return (
