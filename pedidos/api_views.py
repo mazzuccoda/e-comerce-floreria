@@ -427,7 +427,7 @@ class GetPaymentLinkByTokenView(APIView):
             # Si no tiene link, generarlo según el medio de pago
             if pedido.medio_pago == 'mercadopago':
                 # Generar preferencia de Mercado Pago
-                from core.mercadopago_service import MercadoPagoService
+                from .mercadopago_service import MercadoPagoService
                 mp_service = MercadoPagoService()
                 result = mp_service.create_preference_for_order(pedido)
                 
