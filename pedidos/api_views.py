@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+import logging
 
 from .models import Pedido, MetodoEnvio
 from .serializers import (
@@ -16,6 +17,8 @@ from .serializers import (
 )
 from carrito.cart import Cart
 from datetime import date
+
+logger = logging.getLogger(__name__)
 
 
 class MetodoEnvioListView(APIView):
@@ -424,7 +427,7 @@ class GetPaymentLinkByTokenView(APIView):
             # Si no tiene link, generarlo según el medio de pago
             if pedido.medio_pago == 'mercadopago':
                 # Generar preferencia de Mercado Pago
-                from pagos.mercadopago_service import MercadoPagoService
+                from core.mercadopago_service import MercadoPagoService
                 mp_service = MercadoPagoService()
                 result = mp_service.create_preference_for_order(pedido)
                 
