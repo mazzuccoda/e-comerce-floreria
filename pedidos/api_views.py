@@ -333,3 +333,90 @@ class GenerateTransferQRView(APIView):
                 'success': False,
                 'error': f'Error interno: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GetPaymentLinkByTokenView(APIView):
+    """
+    Vista para obtener o regenerar link de pago usando el token del pedido
+    Permite a usuarios invitados acceder al link de pago sin autenticación
+    """
+    permission_classes = [AllowAny]
+    
+    def get(self, request, token):
+        """Obtener link de pago existente o regenerarlo si es necesario"""
+        try:
+            # Buscar pedido por token
+            pedido = get_object_or_404(Pedido, token_acceso=token)
+            
+            # Verificar que el pago esté pendiente
+            if pedido.estado_pago != 'pendiente':
+                return Response({
+                    'success': False,
+                    'error': 'Este pedido ya fue pagado o rechazado',
+                    'estado_pago': pedido.estado_pago
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Si ya tiene link de pago válido, devolverlo
+            if pedido.link_pago:
+                return Response({
+                    'success': True,
+                    'link_pago': pedido.link_pago,
+                    'preference_id': pedido.preference_id,
+                    'medio_pago': pedido.medio_pago,
+                    'total': str(pedido.total),
+                    'regenerated': False
+                }, status=status.HTTP_200_OK)
+            
+            # Si no tiene link, generarlo según el medio de pago
+            if pedido.medio_pago == 'mercadopago':
+                # Generar preferencia de Mercado Pago
+                from pagos.mercadopago_service import MercadoPagoService
+                mp_service = MercadoPagoService()
+                result = mp_service.create_preference_for_order(pedido)
+                
+                if result['success']:
+                    pedido.preference_id = result['preference_id']
+                    pedido.link_pago = result['init_point']
+                    pedido.save()
+                    
+                    return Response({
+                        'success': True,
+                        'link_pago': pedido.link_pago,
+                        'preference_id': pedido.preference_id,
+                        'medio_pago': pedido.medio_pago,
+                        'total': str(pedido.total),
+                        'regenerated': True
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'success': False,
+                        'error': result.get('error', 'Error al generar link de Mercado Pago')
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            elif pedido.medio_pago == 'transferencia':
+                # Para transferencia, devolver datos bancarios
+                return Response({
+                    'success': True,
+                    'medio_pago': 'transferencia',
+                    'total': str(pedido.total),
+                    'datos_transferencia': {
+                        'banco': 'Banco Ejemplo',
+                        'titular': 'Florería Cristina',
+                        'cbu': '0000000000000000000000',
+                        'alias': 'floreria.cristina',
+                        'referencia': pedido.numero_pedido
+                    }
+                }, status=status.HTTP_200_OK)
+            
+            else:
+                return Response({
+                    'success': False,
+                    'error': f'Método de pago {pedido.medio_pago} no soportado para pago por link'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            logger.error(f"❌ Error en GetPaymentLinkByTokenView: {str(e)}")
+            return Response({
+                'success': False,
+                'error': f'Error al obtener link de pago: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

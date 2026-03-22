@@ -43,16 +43,20 @@ class PedidoReadSerializer(serializers.ModelSerializer):
     estado_pago_display = serializers.CharField(source='get_estado_pago_display', read_only=True)
     medio_pago_display = serializers.CharField(source='get_medio_pago_display', read_only=True)
     metodo_envio_nombre = serializers.CharField(source='metodo_envio.nombre', read_only=True)
+    franja_horaria_display = serializers.CharField(source='get_franja_horaria_display', read_only=True)
+    tipo_envio_display = serializers.CharField(source='get_tipo_envio_display', read_only=True)
     
     class Meta:
         model = Pedido
         fields = [
             'id', 'numero_pedido', 'nombre_comprador', 'email_comprador', 'telefono_comprador',
             'nombre_destinatario', 'direccion', 'ciudad', 'codigo_postal',
-            'telefono_destinatario', 'fecha_entrega', 'franja_horaria',
-            'dedicatoria', 'firmado_como', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre', 'tipo_envio',
+            'telefono_destinatario', 'fecha_entrega', 'franja_horaria', 'franja_horaria_display',
+            'dedicatoria', 'firmado_como', 'instrucciones', 'metodo_envio', 'metodo_envio_nombre', 
+            'tipo_envio', 'tipo_envio_display',
             'estado', 'estado_display', 'estado_pago', 'estado_pago_display',
-            'medio_pago', 'medio_pago_display', 'costo_envio', 'total', 'creado', 'items'
+            'medio_pago', 'medio_pago_display', 'costo_envio', 'total', 'creado', 'items',
+            'preference_id', 'link_pago'
         ]
 
 

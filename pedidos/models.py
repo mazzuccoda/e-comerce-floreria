@@ -70,6 +70,18 @@ class Pedido(models.Model):
         null=True,
         help_text="Token único para acceder al pedido sin login"
     )
+    preference_id = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        help_text="ID de preferencia de Mercado Pago para pagos online"
+    )
+    link_pago = models.URLField(
+        max_length=500,
+        blank=True, 
+        null=True,
+        help_text="Link de pago generado (Mercado Pago, PayPal, etc.)"
+    )
 
     def save(self, *args, **kwargs):
         if not self.numero_pedido:

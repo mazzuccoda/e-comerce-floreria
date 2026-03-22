@@ -9,7 +9,8 @@ from .api_views import (
     ValidateStockView,
     StockStatusView,
     CheckoutSummaryView,
-    GenerateTransferQRView
+    GenerateTransferQRView,
+    GetPaymentLinkByTokenView
 )
 from .simple_checkout import simple_checkout, test_cart
 from .simple_views import simple_checkout_with_items
@@ -59,6 +60,7 @@ urlpatterns = [
     
     # Pedidos
     path('token/<str:token>/', PedidoByTokenView.as_view(), name='pedido-by-token'),
+    path('token/<str:token>/link-pago/', GetPaymentLinkByTokenView.as_view(), name='payment-link-by-token'),
     path('<int:pedido_id>/', PedidoDetailView.as_view(), name='pedido-detail'),
     path('mis-pedidos/', PedidoListView.as_view(), name='mis-pedidos'),
     
