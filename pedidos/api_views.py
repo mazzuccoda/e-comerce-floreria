@@ -429,7 +429,7 @@ class GetPaymentLinkByTokenView(APIView):
                 # Generar preferencia de Mercado Pago
                 from .mercadopago_service import MercadoPagoService
                 mp_service = MercadoPagoService()
-                result = mp_service.create_preference_for_order(pedido)
+                result = mp_service.create_preference(pedido, request)
                 
                 if result['success']:
                     pedido.preference_id = result['preference_id']
