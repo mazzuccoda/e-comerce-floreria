@@ -450,6 +450,18 @@ class GetPaymentLinkByTokenView(APIView):
                         'error': result.get('error', 'Error al generar link de Mercado Pago')
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
+            elif pedido.medio_pago == 'paypal':
+                # Para PayPal, generar link de pago
+                # TODO: Implementar integración completa con PayPal SDK
+                # Por ahora, devolver mensaje informativo
+                return Response({
+                    'success': True,
+                    'medio_pago': 'paypal',
+                    'total': str(pedido.total),
+                    'message': 'PayPal estará disponible próximamente',
+                    'link_pago': None
+                }, status=status.HTTP_200_OK)
+            
             elif pedido.medio_pago == 'transferencia':
                 # Para transferencia, devolver datos bancarios reales
                 return Response({

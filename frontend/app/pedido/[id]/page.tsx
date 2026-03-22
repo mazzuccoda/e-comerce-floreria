@@ -191,9 +191,13 @@ const PedidoDetallePage: React.FC = () => {
         if (data.medio_pago === 'mercadopago' && data.link_pago) {
           window.open(data.link_pago, '_blank');
         } 
-        // Si es PayPal, abrir link directamente
-        else if (data.medio_pago === 'paypal' && data.link_pago) {
-          window.open(data.link_pago, '_blank');
+        // Si es PayPal, abrir link directamente o mostrar mensaje
+        else if (data.medio_pago === 'paypal') {
+          if (data.link_pago) {
+            window.open(data.link_pago, '_blank');
+          } else {
+            alert(data.message || 'PayPal estará disponible próximamente. Por favor, selecciona otro método de pago.');
+          }
         }
         // Si es transferencia, mostrar modal con datos
         else if (data.medio_pago === 'transferencia') {
@@ -568,8 +572,14 @@ const PedidoDetallePage: React.FC = () => {
 
       {/* Modal de Transferencia Bancaria */}
       {showPaymentModal && paymentData?.medio_pago === 'transferencia' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowPaymentModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-bold text-gray-900">Datos para Transferencia</h3>
               <button
