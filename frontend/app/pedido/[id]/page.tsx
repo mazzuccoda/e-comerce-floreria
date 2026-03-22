@@ -21,6 +21,8 @@ interface Pedido {
   numero_pedido: string;
   estado: string;
   estado_display: string;
+  estado_pago: string;
+  estado_pago_display: string;
   total: string;
   creado: string;
   medio_pago: string;
@@ -41,6 +43,8 @@ interface Pedido {
   metodo_envio?: string;
   tipo_envio?: string;
   costo_envio?: string | number;
+  preference_id?: string;
+  link_pago?: string;
   items: PedidoItem[];
 }
 
@@ -53,6 +57,9 @@ const PedidoDetallePage: React.FC = () => {
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
 
   // Detectar si es un token (string largo con letras) o un ID numérico
   const isTokenAccess = pedidoId && pedidoId.length > 15 && /[a-zA-Z-_]/.test(pedidoId);
@@ -117,6 +124,46 @@ const PedidoDetallePage: React.FC = () => {
     }
   }, [token, pedidoId, isTokenAccess, authLoading, isAuthenticated]);
 
+  const handlePayNow = async () => {
+    if (!pedidoId) return;
+    
+    setPaymentLoading(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+      const response = await fetch(`${apiUrl}/pedidos/token/${pedidoId}/link-pago/`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener link de pago');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setPaymentData(data);
+        
+        // Si es Mercado Pago, abrir link directamente
+        if (data.medio_pago === 'mercadopago' && data.link_pago) {
+          window.open(data.link_pago, '_blank');
+        } 
+        // Si es transferencia, mostrar modal con datos
+        else if (data.medio_pago === 'transferencia') {
+          setShowPaymentModal(true);
+        }
+      } else {
+        alert(data.error || 'Error al obtener link de pago');
+      }
+    } catch (err) {
+      console.error('Error al obtener link de pago:', err);
+      alert('Error al obtener link de pago. Por favor, intenta nuevamente.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -178,7 +225,65 @@ const PedidoDetallePage: React.FC = () => {
               {pedido.estado_display || pedido.estado.toUpperCase()}
             </span>
           </div>
+          
+          {/* Badge de Estado de Pago */}
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-600">Estado del pago:</span>
+            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+              pedido.estado_pago === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+              pedido.estado_pago === 'approved' ? 'bg-green-100 text-green-800' :
+              'bg-red-100 text-red-800'
+            }`}>
+              {pedido.estado_pago_display || pedido.estado_pago}
+            </span>
+          </div>
         </div>
+
+        {/* Banner de Pago Pendiente */}
+        {pedido.estado_pago === 'pendiente' && (
+          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Pago Pendiente
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>Tu pedido está confirmado pero el pago aún está pendiente.</p>
+                  <p className="mt-1">Total a pagar: <span className="font-bold">${parseFloat(pedido.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={handlePayNow}
+                    disabled={paymentLoading}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Cargando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        Pagar Ahora
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
@@ -319,6 +424,95 @@ const PedidoDetallePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Transferencia Bancaria */}
+      {showPaymentModal && paymentData?.medio_pago === 'transferencia' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Datos para Transferencia</h3>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-sm text-green-800 font-medium mb-2">Total a transferir:</p>
+                <p className="text-2xl font-bold text-green-700">${parseFloat(paymentData.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">Banco:</p>
+                  <p className="text-sm font-semibold text-gray-900">{paymentData.datos_transferencia?.banco}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">Titular:</p>
+                  <p className="text-sm font-semibold text-gray-900">{paymentData.datos_transferencia?.titular}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">CBU:</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono font-semibold text-gray-900">{paymentData.datos_transferencia?.cbu}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentData.datos_transferencia?.cbu);
+                        alert('CBU copiado al portapapeles');
+                      }}
+                      className="text-green-600 hover:text-green-700"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-medium">Alias:</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900">{paymentData.datos_transferencia?.alias}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentData.datos_transferencia?.alias);
+                        alert('Alias copiado al portapapeles');
+                      }}
+                      className="text-green-600 hover:text-green-700"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-gray-600 font-medium">Referencia (incluir en la transferencia):</p>
+                  <p className="text-sm font-bold text-green-700">{paymentData.datos_transferencia?.referencia}</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>Importante:</strong> Una vez realizada la transferencia, el pago será verificado manualmente. 
+                  Recibirás una confirmación por email cuando se apruebe.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 font-medium"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
