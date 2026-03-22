@@ -394,16 +394,17 @@ class GetPaymentLinkByTokenView(APIView):
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             elif pedido.medio_pago == 'transferencia':
-                # Para transferencia, devolver datos bancarios
+                # Para transferencia, devolver datos bancarios reales
                 return Response({
                     'success': True,
                     'medio_pago': 'transferencia',
                     'total': str(pedido.total),
                     'datos_transferencia': {
-                        'banco': 'Banco Ejemplo',
-                        'titular': 'Florería Cristina',
-                        'cbu': '0000000000000000000000',
-                        'alias': 'floreria.cristina',
+                        'banco': 'Mercado Pago',
+                        'titular': 'Monica Eleonora Sosa',
+                        'cvu': '0000003100095405777972',
+                        'alias': 'eleososatuc',
+                        'cuit': '27-26676582-2',
                         'referencia': pedido.numero_pedido
                     }
                 }, status=status.HTTP_200_OK)

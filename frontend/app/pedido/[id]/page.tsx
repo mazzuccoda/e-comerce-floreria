@@ -457,13 +457,13 @@ const PedidoDetallePage: React.FC = () => {
                   <p className="text-sm font-semibold text-gray-900">{paymentData.datos_transferencia?.titular}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600 font-medium">CBU:</p>
+                  <p className="text-xs text-gray-600 font-medium">CVU:</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-mono font-semibold text-gray-900">{paymentData.datos_transferencia?.cbu}</p>
+                    <p className="text-sm font-mono font-semibold text-gray-900">{paymentData.datos_transferencia?.cvu}</p>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(paymentData.datos_transferencia?.cbu);
-                        alert('CBU copiado al portapapeles');
+                        navigator.clipboard.writeText(paymentData.datos_transferencia?.cvu);
+                        alert('CVU copiado al portapapeles');
                       }}
                       className="text-green-600 hover:text-green-700"
                     >
@@ -490,6 +490,12 @@ const PedidoDetallePage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+                {paymentData.datos_transferencia?.cuit && (
+                  <div>
+                    <p className="text-xs text-gray-600 font-medium">CUIT:</p>
+                    <p className="text-sm font-semibold text-gray-900">{paymentData.datos_transferencia?.cuit}</p>
+                  </div>
+                )}
                 <div className="pt-2 border-t">
                   <p className="text-xs text-gray-600 font-medium">Referencia (incluir en la transferencia):</p>
                   <p className="text-sm font-bold text-green-700">{paymentData.datos_transferencia?.referencia}</p>
