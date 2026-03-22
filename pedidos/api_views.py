@@ -451,16 +451,29 @@ class GetPaymentLinkByTokenView(APIView):
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             elif pedido.medio_pago == 'paypal':
-                # Para PayPal, generar link de pago
-                # TODO: Implementar integración completa con PayPal SDK
-                # Por ahora, devolver mensaje informativo
-                return Response({
-                    'success': True,
-                    'medio_pago': 'paypal',
-                    'total': str(pedido.total),
-                    'message': 'PayPal estará disponible próximamente',
-                    'link_pago': None
-                }, status=status.HTTP_200_OK)
+                # Para PayPal, generar link de pago en USD
+                from .paypal_service import PayPalService
+                paypal_service = PayPalService()
+                result = paypal_service.create_payment(pedido, request)
+                
+                if result['success']:
+                    pedido.link_pago = result['approval_url']
+                    pedido.save()
+                    
+                    return Response({
+                        'success': True,
+                        'link_pago': pedido.link_pago,
+                        'payment_id': result['payment_id'],
+                        'medio_pago': pedido.medio_pago,
+                        'total': str(pedido.total),
+                        'conversion_info': result.get('conversion_info'),
+                        'regenerated': True
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'success': False,
+                        'error': result.get('error', 'Error al generar link de PayPal')
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             elif pedido.medio_pago == 'transferencia':
                 # Para transferencia, devolver datos bancarios reales
