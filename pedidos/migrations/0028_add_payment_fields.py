@@ -1,4 +1,4 @@
-# Generated manually for payment fields
+# Generated manually - adds token_acceso and payment fields (preference_id, link_pago)
 
 from django.db import migrations, models
 
@@ -6,10 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pedidos', '0027_pedido_token_acceso'),
+        ('pedidos', '0026_carritoabandonado_cancelado'),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='pedido',
+            name='token_acceso',
+            field=models.CharField(blank=True, help_text='Token único para acceder al pedido sin login', max_length=32, null=True, unique=True),
+        ),
         migrations.AddField(
             model_name='pedido',
             name='preference_id',
