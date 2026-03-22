@@ -339,8 +339,62 @@ class GetPaymentLinkByTokenView(APIView):
     """
     Vista para obtener o regenerar link de pago usando el token del pedido
     Permite a usuarios invitados acceder al link de pago sin autenticación
+    GET: Obtener link de pago
+    PATCH: Actualizar método de pago
     """
     permission_classes = [AllowAny]
+    
+    def patch(self, request, token):
+        """Actualizar método de pago del pedido"""
+        try:
+            # Buscar pedido por token
+            pedido = get_object_or_404(Pedido, token_acceso=token)
+            
+            # Verificar que el pago esté pendiente
+            if pedido.estado_pago != 'pendiente':
+                return Response({
+                    'success': False,
+                    'error': 'No se puede cambiar el método de pago de un pedido ya pagado o rechazado',
+                    'estado_pago': pedido.estado_pago
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Obtener nuevo método de pago
+            nuevo_medio_pago = request.data.get('medio_pago')
+            
+            if not nuevo_medio_pago:
+                return Response({
+                    'success': False,
+                    'error': 'Debe especificar el medio_pago'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validar que sea un método válido
+            metodos_validos = ['mercadopago', 'paypal', 'transferencia']
+            if nuevo_medio_pago not in metodos_validos:
+                return Response({
+                    'success': False,
+                    'error': f'Método de pago inválido. Opciones: {", ".join(metodos_validos)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Actualizar método de pago y limpiar links anteriores
+            pedido.medio_pago = nuevo_medio_pago
+            pedido.link_pago = None
+            pedido.preference_id = None
+            pedido.save()
+            
+            logger.info(f"✅ Método de pago actualizado para pedido {pedido.numero_pedido}: {nuevo_medio_pago}")
+            
+            return Response({
+                'success': True,
+                'message': 'Método de pago actualizado correctamente',
+                'medio_pago': pedido.medio_pago
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"❌ Error al actualizar método de pago: {str(e)}")
+            return Response({
+                'success': False,
+                'error': f'Error al actualizar método de pago: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def get(self, request, token):
         """Obtener link de pago existente o regenerarlo si es necesario"""

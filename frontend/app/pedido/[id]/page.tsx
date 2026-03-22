@@ -60,6 +60,8 @@ const PedidoDetallePage: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentData, setPaymentData] = useState<any>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+  const [changingPaymentMethod, setChangingPaymentMethod] = useState(false);
 
   // Detectar si es un token (string largo con letras) o un ID numérico
   const isTokenAccess = pedidoId && pedidoId.length > 15 && /[a-zA-Z-_]/.test(pedidoId);
@@ -107,6 +109,7 @@ const PedidoDetallePage: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           setPedido(data);
+          setSelectedPaymentMethod(data.medio_pago || '');
         } else {
           const errorData = await response.json();
           setError(errorData.error || 'Error al cargar el pedido');
@@ -123,6 +126,45 @@ const PedidoDetallePage: React.FC = () => {
       fetchPedido();
     }
   }, [token, pedidoId, isTokenAccess, authLoading, isAuthenticated]);
+
+  const handleChangePaymentMethod = async (newMethod: string) => {
+    if (!pedidoId || !pedido) return;
+    
+    setChangingPaymentMethod(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
+      const response = await fetch(`${apiUrl}/pedidos/token/${pedidoId}/link-pago/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ medio_pago: newMethod }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cambiar método de pago');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Actualizar estado local
+        setSelectedPaymentMethod(newMethod);
+        setPedido({ ...pedido, medio_pago: newMethod });
+        
+        // Limpiar datos de pago anteriores
+        setPaymentData(null);
+      } else {
+        alert(data.error || 'Error al cambiar método de pago');
+      }
+    } catch (err) {
+      console.error('Error al cambiar método de pago:', err);
+      alert('Error al cambiar método de pago. Por favor, intenta nuevamente.');
+    } finally {
+      setChangingPaymentMethod(false);
+    }
+  };
 
   const handlePayNow = async () => {
     if (!pedidoId) return;
@@ -149,6 +191,10 @@ const PedidoDetallePage: React.FC = () => {
         if (data.medio_pago === 'mercadopago' && data.link_pago) {
           window.open(data.link_pago, '_blank');
         } 
+        // Si es PayPal, abrir link directamente
+        else if (data.medio_pago === 'paypal' && data.link_pago) {
+          window.open(data.link_pago, '_blank');
+        }
         // Si es transferencia, mostrar modal con datos
         else if (data.medio_pago === 'transferencia') {
           setShowPaymentModal(true);
@@ -241,7 +287,7 @@ const PedidoDetallePage: React.FC = () => {
 
         {/* Banner de Pago Pendiente */}
         {pedido.estado_pago === 'pendiente' && (
-          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -256,10 +302,105 @@ const PedidoDetallePage: React.FC = () => {
                   <p>Tu pedido está confirmado pero el pago aún está pendiente.</p>
                   <p className="mt-1">Total a pagar: <span className="font-bold">${parseFloat(pedido.total).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
                 </div>
+
+                {/* Selector de Métodos de Pago */}
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-yellow-800 mb-3">Selecciona tu método de pago:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Mercado Pago */}
+                    <label className={`relative flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedPaymentMethod === 'mercadopago' 
+                        ? 'border-blue-500 bg-blue-50 shadow-md' 
+                        : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                    } ${changingPaymentMethod ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payment-method"
+                        value="mercadopago"
+                        checked={selectedPaymentMethod === 'mercadopago'}
+                        onChange={(e) => handleChangePaymentMethod(e.target.value)}
+                        disabled={changingPaymentMethod}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-gray-900">💳 Mercado Pago</div>
+                        <div className="text-xs text-gray-600 mt-1">Tarjetas (ARS)</div>
+                      </div>
+                      {selectedPaymentMethod === 'mercadopago' && (
+                        <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </label>
+
+                    {/* PayPal */}
+                    <label className={`relative flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedPaymentMethod === 'paypal' 
+                        ? 'border-blue-600 bg-blue-50 shadow-md' 
+                        : 'border-gray-200 bg-white hover:border-blue-400 hover:shadow-sm'
+                    } ${changingPaymentMethod ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payment-method"
+                        value="paypal"
+                        checked={selectedPaymentMethod === 'paypal'}
+                        onChange={(e) => handleChangePaymentMethod(e.target.value)}
+                        disabled={changingPaymentMethod}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-gray-900">💵 PayPal</div>
+                        <div className="text-xs text-gray-600 mt-1">Pago en USD</div>
+                      </div>
+                      {selectedPaymentMethod === 'paypal' && (
+                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </label>
+
+                    {/* Transferencia */}
+                    <label className={`relative flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      selectedPaymentMethod === 'transferencia' 
+                        ? 'border-green-500 bg-green-50 shadow-md' 
+                        : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                    } ${changingPaymentMethod ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payment-method"
+                        value="transferencia"
+                        checked={selectedPaymentMethod === 'transferencia'}
+                        onChange={(e) => handleChangePaymentMethod(e.target.value)}
+                        disabled={changingPaymentMethod}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-sm text-gray-900">🏦 Transferencia</div>
+                        <div className="text-xs text-gray-600 mt-1">Bancaria</div>
+                      </div>
+                      {selectedPaymentMethod === 'transferencia' && (
+                        <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </label>
+                  </div>
+                  
+                  {changingPaymentMethod && (
+                    <p className="text-xs text-yellow-700 mt-2 flex items-center">
+                      <svg className="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Actualizando método de pago...
+                    </p>
+                  )}
+                </div>
+
                 <div className="mt-4">
                   <button
                     onClick={handlePayNow}
-                    disabled={paymentLoading}
+                    disabled={paymentLoading || changingPaymentMethod}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {paymentLoading ? (
