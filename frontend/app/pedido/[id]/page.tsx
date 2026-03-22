@@ -573,24 +573,26 @@ const PedidoDetallePage: React.FC = () => {
       {/* Modal de Transferencia Bancaria */}
       {showPaymentModal && paymentData?.medio_pago === 'transferencia' && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setShowPaymentModal(false)}
         >
           <div 
-            className="bg-white rounded-lg max-w-md w-full p-6"
+            className="bg-white rounded-lg max-w-md w-full my-8 relative max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Datos para Transferencia</h3>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            {/* Botón cerrar fijo en la esquina */}
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="sticky top-0 right-0 float-right m-4 text-gray-400 hover:text-gray-600 bg-white rounded-full p-1 shadow-lg z-10"
+              aria-label="Cerrar"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="p-6 pt-2">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Datos para Transferencia</h3>
 
             <div className="space-y-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -666,6 +668,7 @@ const PedidoDetallePage: React.FC = () => {
               >
                 Entendido
               </button>
+            </div>
             </div>
           </div>
         </div>
