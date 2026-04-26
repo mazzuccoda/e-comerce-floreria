@@ -240,11 +240,11 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
                 })
             
             # Si es POST, enviar a n8n
-            n8n_base_url = getattr(settings, 'N8N_BASE_URL', None)
+            n8n_base_url = getattr(settings, 'N8N_WEBHOOK_URL', None)
             n8n_api_key = getattr(settings, 'N8N_API_KEY', None)
             
             if not n8n_base_url or not n8n_api_key:
-                logger.warning('⚠️ N8N_BASE_URL o N8N_API_KEY no configurados')
+                logger.warning('⚠️ N8N_WEBHOOK_URL o N8N_API_KEY no configurados')
                 return Response({
                     'success': False,
                     'error': 'n8n no configurado',
