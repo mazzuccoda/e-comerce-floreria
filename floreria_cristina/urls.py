@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from pedidos.simple_views import simple_checkout, simple_cart_test, simple_mis_pedidos, simple_pedido_detalle, simple_create_payment
 from django.views.generic import TemplateView
+from catalogo.facebook_feed import facebook_product_feed, facebook_product_feed_csv
 
 # API URL patterns
 api_urlpatterns = [
@@ -44,6 +45,10 @@ urlpatterns = [
     # Páginas legales
     path('privacidad/', TemplateView.as_view(template_name='legal/privacy.html'), name='privacy'),
     path('terminos/', TemplateView.as_view(template_name='legal/terms.html'), name='terms'),
+    
+    # Facebook Product Feed (para Instagram Shopping)
+    path('feeds/facebook-products.xml', facebook_product_feed, name='facebook-product-feed'),
+    path('feeds/facebook-products.csv', facebook_product_feed_csv, name='facebook-product-feed-csv'),
 
     # Apps principales con sus vistas de plantillas
 
