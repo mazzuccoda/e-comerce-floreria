@@ -253,7 +253,7 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
                 }, status=status.HTTP_200_OK)
             
             # Enviar a n8n
-            webhook_url = f"{n8n_base_url}/webhook-test/sync-catalog"
+            webhook_url = f"{n8n_base_url}/webhook/sync-catalog"
             
             logger.info(f"📤 Enviando {len(productos_data)} productos a n8n")
             
