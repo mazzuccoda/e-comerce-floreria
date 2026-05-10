@@ -68,12 +68,12 @@ def facebook_product_feed(request):
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
         if imagen_principal:
-            ET.SubElement(item, 'g:image_link').text = imagen_principal.url
+            ET.SubElement(item, 'g:image_link').text = imagen_principal.imagen.url
             
             # Imágenes adicionales (máximo 10)
             imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10]
             for img in imagenes_adicionales:
-                ET.SubElement(item, 'g:additional_image_link').text = img.url
+                ET.SubElement(item, 'g:additional_image_link').text = img.imagen.url
         else:
             # Si no hay imagen, usar placeholder o skip
             # Facebook requiere al menos una imagen, así que usamos un placeholder
@@ -154,11 +154,11 @@ def facebook_product_feed_csv(request):
         
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
-        image_link = imagen_principal.url if imagen_principal else ''
+        image_link = imagen_principal.imagen.url if imagen_principal else ''
         
         # Imágenes adicionales
         imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10] if imagen_principal else []
-        additional_images = ','.join([img.url for img in imagenes_adicionales])
+        additional_images = ','.join([img.imagen.url for img in imagenes_adicionales])
         
         # Disponibilidad
         availability = 'in stock' if producto.stock > 0 else 'out of stock'
