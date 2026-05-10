@@ -74,6 +74,10 @@ def facebook_product_feed(request):
             imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10]
             for img in imagenes_adicionales:
                 ET.SubElement(item, 'g:additional_image_link').text = img.url
+        else:
+            # Si no hay imagen, usar placeholder o skip
+            # Facebook requiere al menos una imagen, así que usamos un placeholder
+            ET.SubElement(item, 'g:image_link').text = 'https://www.floreriacristina.com.ar/static/images/placeholder.jpg'
         
         # Marca
         ET.SubElement(item, 'g:brand').text = 'Florería Cristina'
