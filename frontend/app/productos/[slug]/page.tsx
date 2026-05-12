@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import ProductImageGallery from '@/app/components/ProductImageGallery';
 import { trackProductView, trackAddToCart } from '@/utils/analytics';
+import * as fbPixel from '@/utils/fbPixel';
 import { useI18n } from '@/context/I18nContext';
 
 interface ProductPageParams {
@@ -69,7 +70,7 @@ export default function ProductPage({ params }: ProductPageParams) {
       // Delegar el manejo de toasts de éxito al contexto de carrito
       await addToCart(product, quantity);
       
-      // Trackear agregar al carrito
+      // Trackear agregar al carrito (Google Analytics)
       trackAddToCart({
         id: product.id,
         nombre: product.nombre,
@@ -77,6 +78,13 @@ export default function ProductPage({ params }: ProductPageParams) {
         cantidad: quantity,
         categoria: product.categoria?.nombre
       });
+      
+      // Trackear agregar al carrito (Facebook Pixel)
+      fbPixel.addToCart(
+        product.sku || product.id,
+        product.nombre,
+        parseFloat(product.precio) * quantity
+      );
     } catch (error: any) {
       toast.error(`Error: ${error.message || 'No se pudo agregar al carrito'}`);
     } finally {
@@ -132,13 +140,20 @@ export default function ProductPage({ params }: ProductPageParams) {
         console.log('✅ Product loaded:', data.nombre);
         setProduct(data);
         
-        // Trackear vista de producto
+        // Trackear vista de producto (Google Analytics)
         trackProductView({
           id: data.id,
           nombre: data.nombre,
           precio: parseFloat(data.precio),
           categoria: data.categoria?.nombre
         });
+        
+        // Trackear vista de producto (Facebook Pixel)
+        fbPixel.viewContent(
+          data.sku || data.id,
+          data.nombre,
+          parseFloat(data.precio)
+        );
       } catch (err: any) {
         console.error('💥 Error completo:', err);
         setError(err.message || 'Error al cargar el producto');

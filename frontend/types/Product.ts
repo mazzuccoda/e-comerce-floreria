@@ -27,6 +27,7 @@ export interface ProductoImagen {
 
 export interface Product {
   id: number;
+  sku?: string;
   nombre: string;
   slug: string;
   descripcion: string;
