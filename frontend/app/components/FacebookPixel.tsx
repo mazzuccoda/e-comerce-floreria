@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import Script from 'next/script';
 
 const PIXEL_ID = '2362234944085088';
 
@@ -17,7 +18,7 @@ export default function FacebookPixel() {
 
   return (
     <>
-      <script
+      <Script
         id="facebook-pixel"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
