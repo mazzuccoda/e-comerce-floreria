@@ -9,6 +9,7 @@ import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
+import * as fbPixel from '@/utils/fbPixel';
 import { 
   saveCheckoutProgress, 
   loadCheckoutProgress, 
@@ -331,7 +332,11 @@ const MultiStepCheckoutPage = () => {
     
     // Trackear inicio de checkout cuando el carrito esté cargado
     if (directCart.items.length > 0) {
+      // Google Analytics
       trackBeginCheckout(directCart.items, directCart.total_price);
+      
+      // Facebook Pixel
+      fbPixel.initiateCheckout(directCart.total_price, directCart.items.length);
     }
 
     // Listener para cambios en localStorage (cuando se actualiza el carrito desde otra pestaña o componente)

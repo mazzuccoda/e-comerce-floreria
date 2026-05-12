@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import dynamicImport from 'next/dynamic';
 import { trackPurchase } from '@/utils/analytics';
+import * as fbPixel from '@/utils/fbPixel';
 
 // Importar componente de QR de forma dinámica (opcional)
 const TransferQROptional = dynamicImport(() => import('@/components/TransferQROptional'), {
@@ -70,8 +71,9 @@ const PaymentSuccessPage = () => {
         setPedidoData(data);
         console.log('📦 Datos del pedido cargados:', data);
         
-        // Trackear compra completada en Google Analytics
+        // Trackear compra completada
         if (data && paymentStatus === 'success') {
+          // Google Analytics
           trackPurchase({
             pedido_id: data.pedido_id.toString(),
             numero_pedido: data.numero_pedido,
@@ -80,6 +82,12 @@ const PaymentSuccessPage = () => {
             medio_pago: data.medio_pago,
             costo_envio: data.costo_envio || 0
           });
+          
+          // Facebook Pixel
+          fbPixel.purchase(
+            data.pedido_id.toString(),
+            parseFloat(data.total)
+          );
         }
       } catch (error) {
         console.error('Error al parsear datos del pedido:', error);
