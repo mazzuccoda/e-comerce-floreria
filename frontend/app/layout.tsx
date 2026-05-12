@@ -9,6 +9,7 @@ import { I18nProvider } from '../context/I18nContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import GoogleAnalytics from './components/GoogleAnalytics';
+import FacebookPixel from './components/FacebookPixel';
 import AnalyticsProvider from './components/AnalyticsProvider';
 // import CartDebugMonitor from './components/CartDebugMonitor'; // Disabled for production 
 
@@ -71,6 +72,7 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <GoogleAnalytics />
+        <FacebookPixel />
       </head>
       <body className={`${inter.className} bg-gray-50`}>
         <I18nProvider>
