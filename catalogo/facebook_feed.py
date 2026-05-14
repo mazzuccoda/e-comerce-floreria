@@ -34,6 +34,10 @@ def facebook_product_feed(request):
     
     # Agregar cada producto
     for producto in productos:
+        # Saltar productos sin SKU
+        if not producto.sku:
+            continue
+        
         item = ET.SubElement(channel, 'item')
         
         # ID único (SKU)
@@ -57,32 +61,31 @@ def facebook_product_feed(request):
         precio = producto.precio_descuento if producto.precio_descuento else producto.precio
         if not precio or float(precio) <= 0:
             continue
-        ET.SubElement(item, 'g:price').text = f'{precio} ARS'
+        ET.SubElement(item, 'g:price').text = f'{int(float(precio))} ARS'
         
         # Cantidad en stock
         ET.SubElement(item, 'g:quantity_to_sell_on_facebook').text = str(max(producto.stock, 1))
         
         # Precio de oferta (si hay descuento)
-        if producto.precio_descuento:
-            ET.SubElement(item, 'g:sale_price').text = f'{producto.precio_descuento} ARS'
+        if producto.precio_descuento and float(producto.precio_descuento) > 0:
+            ET.SubElement(item, 'g:sale_price').text = f'{int(float(producto.precio_descuento))} ARS'
         
         # Link al producto
+        if not producto.slug:
+            continue
         producto_url = f'https://www.floreriacristina.com.ar/productos/{producto.slug}'
         ET.SubElement(item, 'g:link').text = producto_url
         
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
-        if imagen_principal:
-            ET.SubElement(item, 'g:image_link').text = imagen_principal.imagen.url
-            
-            # Imágenes adicionales (máximo 10)
-            imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10]
-            for img in imagenes_adicionales:
-                ET.SubElement(item, 'g:additional_image_link').text = img.imagen.url
-        else:
-            # Si no hay imagen, usar placeholder o skip
-            # Facebook requiere al menos una imagen, así que usamos un placeholder
-            ET.SubElement(item, 'g:image_link').text = 'https://www.floreriacristina.com.ar/static/images/placeholder.jpg'
+        if not imagen_principal:
+            continue
+        ET.SubElement(item, 'g:image_link').text = imagen_principal.imagen.url
+        
+        # Imágenes adicionales (máximo 10)
+        imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10]
+        for img in imagenes_adicionales:
+            ET.SubElement(item, 'g:additional_image_link').text = img.imagen.url
         
         # Marca
         ET.SubElement(item, 'g:brand').text = 'Florería Cristina'
