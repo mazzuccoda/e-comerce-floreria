@@ -55,6 +55,9 @@ export const metadata: Metadata = {
     icon: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1770509496/logo_circular_byx4zs.png',
     apple: 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1770509496/logo_circular_byx4zs.png',
   },
+  other: {
+    'facebook-domain-verification': '9bfo1m5fp56iebd33hvs9s8akja89k',
+  },
 };
 
 export const viewport = {
@@ -72,9 +75,9 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <GoogleAnalytics />
-        <FacebookPixel />
       </head>
       <body className={`${inter.className} bg-gray-50`}>
+        <FacebookPixel />
         <I18nProvider>
           <AuthProvider>
             <CartProviderRobust>
