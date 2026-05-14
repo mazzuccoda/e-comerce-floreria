@@ -13,10 +13,16 @@ def facebook_product_feed(request):
     Documentación: https://developers.facebook.com/docs/commerce-platform/catalog/products
     """
     
-    # Obtener productos activos con stock
+    # Obtener productos activos con stock, precio, SKU y slug válidos
     productos = Producto.objects.filter(
         is_active=True,
-        stock__gt=0
+        stock__gt=0,
+        precio__gt=0,
+        sku__isnull=False,
+        slug__isnull=False,
+    ).exclude(
+        sku='',
+        slug='',
     ).prefetch_related('imagenes', 'categoria', 'tipo_flor')
     
     # Crear estructura XML
@@ -131,10 +137,16 @@ def facebook_product_feed_csv(request):
     import csv
     from io import StringIO
     
-    # Obtener productos activos con stock
+    # Obtener productos activos con stock, precio, SKU y slug válidos
     productos = Producto.objects.filter(
         is_active=True,
-        stock__gt=0
+        stock__gt=0,
+        precio__gt=0,
+        sku__isnull=False,
+        slug__isnull=False,
+    ).exclude(
+        sku='',
+        slug='',
     ).prefetch_related('imagenes', 'categoria', 'tipo_flor')
     
     # Crear CSV en memoria
