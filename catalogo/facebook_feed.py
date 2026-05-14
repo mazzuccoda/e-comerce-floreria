@@ -53,9 +53,14 @@ def facebook_product_feed(request):
         # Condición (siempre nuevo para flores)
         ET.SubElement(item, 'g:condition').text = 'new'
         
-        # Precio
+        # Precio (saltar productos sin precio)
         precio = producto.precio_descuento if producto.precio_descuento else producto.precio
+        if not precio or float(precio) <= 0:
+            continue
         ET.SubElement(item, 'g:price').text = f'{precio} ARS'
+        
+        # Cantidad en stock
+        ET.SubElement(item, 'g:quantity_to_sell_on_facebook').text = str(max(producto.stock, 1))
         
         # Precio de oferta (si hay descuento)
         if producto.precio_descuento:
@@ -93,9 +98,12 @@ def facebook_product_feed(request):
         # Si tienes códigos de barras, agrégalos aquí
         # ET.SubElement(item, 'g:gtin').text = producto.gtin
         
-        # Envío gratis
+        # Envío (siempre incluir con país Argentina)
+        shipping = ET.SubElement(item, 'g:shipping')
+        ET.SubElement(shipping, 'g:country').text = 'AR'
         if producto.envio_gratis:
-            shipping = ET.SubElement(item, 'g:shipping')
+            ET.SubElement(shipping, 'g:price').text = '0 ARS'
+        else:
             ET.SubElement(shipping, 'g:price').text = '0 ARS'
     
     # Convertir a string XML
@@ -144,13 +152,17 @@ def facebook_product_feed_csv(request):
         'product_type',
         'google_product_category',
         'sale_price',
-        'additional_image_link'
+        'additional_image_link',
+        'quantity_to_sell_on_facebook',
+        'shipping'
     ])
     
     # Agregar cada producto
     for producto in productos:
-        # Precio
+        # Precio (saltar productos sin precio)
         precio = producto.precio_descuento if producto.precio_descuento else producto.precio
+        if not precio or float(precio) <= 0:
+            continue
         
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
@@ -183,7 +195,9 @@ def facebook_product_feed_csv(request):
             producto.categoria.nombre if producto.categoria else '',
             '985',  # Categoría de Google para Flores
             f'{producto.precio_descuento} ARS' if producto.precio_descuento else '',
-            additional_images
+            additional_images,
+            str(max(producto.stock, 1)),
+            'AR::0 ARS'
         ])
     
     # Retornar respuesta HTTP
