@@ -2,6 +2,7 @@
 Script de prueba para simular un carrito abandonado
 Ejecutar: python test_carrito_abandonado.py
 """
+import os
 import requests
 import json
 
@@ -64,9 +65,9 @@ def listar_carritos_pendientes():
     
     url = f"{DJANGO_URL}/api/pedidos/carritos-pendientes?horas=24"
     
-    # ⚠️ CAMBIAR POR TU API KEY
+    # La API key se toma del entorno (misma que N8N_API_KEY en Railway)
     headers = {
-        "X-API-Key": "floreria_cristina_2025"
+        "X-API-Key": os.getenv("N8N_API_KEY", "")
     }
     
     print("\n📋 Listando carritos pendientes (últimas 24 horas)...")

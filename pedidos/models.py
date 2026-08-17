@@ -494,6 +494,36 @@ class CarritoAbandonado(models.Model):
         self.pedido_recuperado = pedido
         self.save(update_fields=['recuperado', 'recuperado_at', 'pedido_recuperado'])
     
+    @classmethod
+    def marcar_recuperados_por_telefono(cls, telefono, pedido=None, dias=7):
+        """Marca como recuperados los carritos pendientes de ese teléfono.
+
+        Compara sólo los dígitos y por sufijo, porque el checkout guarda el
+        teléfono normalizado y el pedido puede traerlo con prefijos o formato.
+        """
+        import re
+        from datetime import timedelta
+        from django.utils import timezone
+
+        digitos = re.sub(r'\D', '', telefono or '')
+        if len(digitos) < 6:
+            return 0
+
+        sufijo = digitos[-8:]
+        pendientes = cls.objects.filter(
+            recuperado=False,
+            cancelado=False,
+            creado__gte=timezone.now() - timedelta(days=dias),
+        )
+
+        recuperados = 0
+        for carrito in pendientes:
+            if re.sub(r'\D', '', carrito.telefono or '').endswith(sufijo):
+                carrito.marcar_recuperado(pedido)
+                recuperados += 1
+
+        return recuperados
+
     def marcar_cancelado(self):
         """Marca el carrito como cancelado (cuando el cliente vuelve al checkout)"""
         from django.utils import timezone

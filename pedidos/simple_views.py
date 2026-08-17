@@ -488,6 +488,18 @@ def simple_checkout_with_items(request):
             
             print(f"💰 Total del pedido: ${pedido.total} (productos: {total_productos} + envío: {costo_envio})")
             
+            # Cerrar los carritos abandonados de este cliente para que n8n no le
+            # mande el recordatorio de "completá tu compra" después de comprar
+            try:
+                from .models import CarritoAbandonado
+                recuperados = CarritoAbandonado.marcar_recuperados_por_telefono(
+                    data['telefono_comprador'], pedido
+                )
+                if recuperados:
+                    print(f"🛒 {recuperados} carrito(s) abandonado(s) marcados como recuperados")
+            except Exception as e:
+                print(f"⚠️ No se pudieron marcar carritos abandonados: {e}")
+
             # Confirmar pedido (esto reduce stock y envía notificaciones)
             print("📧 Confirmando pedido y enviando notificaciones...")
             success, message = pedido.confirmar_pedido()
