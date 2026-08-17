@@ -23,7 +23,6 @@ interface AbandonedCartData {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
-const API_KEY = 'floreria_cristina_2025';
 const TIMEOUT_MINUTES = 10; // 10 minutos de inactividad
 const INACTIVITY_RESET_EVENTS = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
 const TAB_HIDDEN_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutos en otra pestaña
@@ -56,7 +55,6 @@ export const useAbandonedCart = (
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': API_KEY,
         },
         body: JSON.stringify(data),
       });
@@ -317,80 +315,10 @@ export const useAbandonedCart = (
         timerRef.current = null;
       }
       
-      // Verificar si había un carrito abandonado registrado para marcarlo como recuperado
+      // El backend marca los carritos como recuperados al crear el pedido
+      // (CarritoAbandonado.marcar_recuperados_por_telefono), así que acá sólo
+      // limpiamos el estado local.
       if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('abandoned_cart_registered');
-        console.log('🔍 Verificando localStorage para recuperación:', stored);
-        
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            console.log('📦 Datos parseados:', parsed);
-            
-            // Si tenemos un carrito_id válido, marcarlo como recuperado
-            if (parsed.carrito_id && parsed.carrito_id !== 'pending') {
-              console.log(`🔄 Marcando carrito ${parsed.carrito_id} como recuperado...`);
-              
-              fetch(`${API_URL}/pedidos/carrito-abandonado/${parsed.carrito_id}/recuperado/`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-API-Key': API_KEY,
-                },
-                body: JSON.stringify({ pedido_id: null })
-              }).then(response => {
-                console.log('📡 Respuesta de recuperación:', response.status);
-                if (response.ok) {
-                  console.log('✅ Carrito abandonado marcado como recuperado');
-                } else {
-                  console.error('❌ Error en respuesta:', response.status);
-                }
-              }).catch(err => {
-                console.error('❌ Error marcando recuperación:', err);
-              });
-            } else if (parsed.telefono && telefono) {
-              // Si no tenemos ID (porque se usó sendBeacon), buscar el último carrito del teléfono
-              console.log(`🔍 Buscando último carrito abandonado para teléfono ${telefono}...`);
-              
-              fetch(`${API_URL}/pedidos/carritos-pendientes/?telefono=${telefono.replace(/\D/g, '')}`, {
-                headers: {
-                  'X-API-Key': API_KEY,
-                }
-              }).then(response => response.json())
-                .then(carritos => {
-                  if (carritos && carritos.length > 0) {
-                    const ultimoCarrito = carritos[0]; // El más reciente
-                    console.log(`🔄 Marcando último carrito ${ultimoCarrito.id} como recuperado...`);
-                    
-                    return fetch(`${API_URL}/pedidos/carrito-abandonado/${ultimoCarrito.id}/recuperado/`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'X-API-Key': API_KEY,
-                      },
-                      body: JSON.stringify({ pedido_id: null })
-                    });
-                  }
-                })
-                .then(response => {
-                  if (response && response.ok) {
-                    console.log('✅ Carrito abandonado marcado como recuperado');
-                  }
-                })
-                .catch(err => {
-                  console.error('❌ Error buscando/marcando carrito:', err);
-                });
-            } else {
-              console.log('⏭️ No hay carrito_id ni teléfono válido para recuperación');
-            }
-          } catch (e) {
-            console.error('❌ Error parseando abandoned_cart_registered:', e);
-          }
-        } else {
-          console.log('ℹ️ No hay carrito abandonado en localStorage');
-        }
-        
-        // Limpiar localStorage
         localStorage.removeItem('abandoned_cart_registered');
       }
       
