@@ -8,6 +8,7 @@ import ExtrasSelector from '@/app/components/ExtrasSelector';
 import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
+import toast from 'react-hot-toast';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
 import { 
@@ -619,59 +620,36 @@ const MultiStepCheckoutPage = () => {
     return error;
   };
 
-  // Validar todos los campos relevantes para el paso actual
-  const validateCurrentStep = (): boolean => {
-    // Paso 0: elegir método de envío + validar fecha/hora si es programado
-    if (currentStep === 0) {
-      const errors: Record<string, string> = {};
-      
-      // Si eligió envío programado, validar fecha y franja horaria
-      if (formData.metodoEnvio === 'programado') {
-        if (!formData.fecha) {
-          errors.fecha = 'Debes seleccionar una fecha de entrega';
-        }
-        if (!formData.franjaHoraria) {
-          errors.franjaHoraria = 'Debes seleccionar una franja horaria';
-        }
-      }
-      
-      if (Object.keys(errors).length > 0) {
-        setFormErrors(errors);
-        return false;
-      }
-      
-      setFormErrors({});
-      return true;
-    }
-    console.log(`🔍 Validando paso ${currentStep}...`);
+  // Calcula los errores del paso actual sin tocar el estado
+  const computeStepErrors = (): Record<string, string> => {
     const errors: Record<string, string> = {};
     
     if (isPickup) {
-      // Flujo simple de retiro en tienda: 3 pasos
+      // Flujo simple de retiro en tienda: 4 pasos
       switch (currentStep) {
         case 0: // Método de envío + fecha/hora de retiro
-          console.log('🏪 [Retiro] Validando fecha y hora de retiro');
           errors.fecha = validateField('fecha', formData.fecha);
           errors.hora = validateField('hora', formData.hora);
           break;
         case 1: // Remitente
-          console.log('👤 [Retiro] Validando datos del remitente');
-          if (!formData.envioAnonimo) {
-            errors.nombre = validateField('nombre', formData.nombre);
-            errors.email = validateField('email', formData.email);
-            errors.telefono = validateField('telefono', formData.telefono);
-          }
+          errors.nombre = validateField('nombre', formData.nombre);
+          errors.email = validateField('email', formData.email);
+          errors.telefono = validateField('telefono', formData.telefono);
           break;
         case 3: // Pago + términos
-          console.log('💳 [Retiro] Validando datos de pago');
           errors.aceptaTerminos = validateField('aceptaTerminos', formData.aceptaTerminos);
           break;
       }
     } else {
-      // Flujo de envío (express/programado): 4 pasos
+      // Flujo de envío (express/programado): 5 pasos
       switch (currentStep) {
+        case 0: // Método de envío + fecha/franja si es programado
+          if (formData.metodoEnvio === 'programado') {
+            errors.fecha = validateField('fecha', formData.fecha);
+            errors.franjaHoraria = validateField('franjaHoraria', formData.franjaHoraria);
+          }
+          break;
         case 1: // Destinatario + dirección
-          console.log('📍 [Envío] Validando datos del destinatario');
           errors.nombreDestinatario = validateField('nombreDestinatario', formData.nombreDestinatario);
           errors.telefonoDestinatario = validateField('telefonoDestinatario', formData.telefonoDestinatario);
           errors.direccion = validateField('direccion', formData.direccion);
@@ -689,15 +667,11 @@ const MultiStepCheckoutPage = () => {
           }
           break;
         case 2: // Remitente
-          console.log('👤 [Envío] Validando datos del remitente');
-          if (!formData.envioAnonimo) {
-            errors.nombre = validateField('nombre', formData.nombre);
-            errors.email = validateField('email', formData.email);
-            errors.telefono = validateField('telefono', formData.telefono);
-          }
+          errors.nombre = validateField('nombre', formData.nombre);
+          errors.email = validateField('email', formData.email);
+          errors.telefono = validateField('telefono', formData.telefono);
           break;
         case 4: // Envío + pago
-          console.log('🚚 [Envío] Validando datos de envío y pago');
           if (formData.metodoEnvio === 'programado') {
             errors.fecha = validateField('fecha', formData.fecha);
             errors.franjaHoraria = validateField('franjaHoraria', formData.franjaHoraria);
@@ -707,13 +681,28 @@ const MultiStepCheckoutPage = () => {
       }
     }
     
-    // Filtrar los campos vacíos
-    const filteredErrors = Object.fromEntries(
+    // Filtrar los campos sin error
+    return Object.fromEntries(
       Object.entries(errors).filter(([_, value]) => value !== '')
     );
-    
-    setFormErrors(filteredErrors);
-    return Object.keys(filteredErrors).length === 0;
+  };
+
+  // Validar el paso actual y reflejar los errores en la UI
+  const validateCurrentStep = (): boolean => {
+    const errors = computeStepErrors();
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Llevar el foco al primer campo con error
+  const focusFirstError = (errors: Record<string, string>) => {
+    const firstField = Object.keys(errors)[0];
+    if (!firstField || typeof document === 'undefined') return;
+    const element = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus({ preventScroll: true });
+    }
   };
 
   // Función para copiar al portapapeles
@@ -796,14 +785,12 @@ const MultiStepCheckoutPage = () => {
 
   const nextStep = () => {
     // Validar el paso actual antes de avanzar
-    const isValid = validateCurrentStep();
+    const errors = computeStepErrors();
+    setFormErrors(errors);
+    const isValid = Object.keys(errors).length === 0;
     
     // Marcar que se intentó enviar el formulario
     setFormSubmitted(true);
-    
-    // Mostrar mensaje de validación
-    console.log('Validación de formulario:', isValid ? '✅ Paso válido' : '❌ Hay errores en el formulario');
-    console.log('Errores:', formErrors);
     
     const maxStep = isPickup ? 3 : 4;
 
@@ -818,13 +805,13 @@ const MultiStepCheckoutPage = () => {
       // Al cambiar de paso, reiniciar el estado de envío del formulario
       setFormSubmitted(false);
     } else {
-      // Mostrar una alerta más detallada si hay errores
-      const errorMessages = Object.entries(formErrors)
-        .filter(([_, value]) => value !== '')
-        .map(([field, message]) => `- ${field}: ${message}`)
-        .join('\n');
-      
-      alert(`⚠️ ERRORES DE VALIDACIÓN\n\n${errorMessages}\n\nPor favor, corrige estos campos antes de continuar.`);
+      const total = Object.keys(errors).length;
+      toast.error(
+        total === 1
+          ? Object.values(errors)[0]
+          : `Completá los ${total} campos marcados para continuar`
+      );
+      focusFirstError(errors);
     }
   };
 
@@ -868,41 +855,72 @@ const MultiStepCheckoutPage = () => {
     return total;
   };
 
+  // Fecha en formato YYYY-MM-DD según el horario local (toISOString usa UTC y adelanta el día de noche)
+  const toLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Fecha de entrega/retiro: la que eligió el cliente; express es siempre hoy
+  const getFechaEntrega = (): string => {
+    if (formData.metodoEnvio === 'express') return toLocalDateString(new Date());
+    return formData.fecha;
+  };
+
+  // Franja horaria: la elegida en programado, el día completo en express y derivada de la hora en retiro
+  const getFranjaHoraria = (): string => {
+    if (formData.metodoEnvio === 'programado') return formData.franjaHoraria;
+    if (formData.metodoEnvio === 'express') return 'durante_el_dia';
+    const hora = parseInt((formData.hora || '').split(':')[0], 10);
+    return Number.isFinite(hora) && hora >= 13 ? 'tarde' : 'mañana';
+  };
+
+  // Payload del pedido: sin valores de relleno, si falta un dato obligatorio la validación lo bloquea antes
+  const buildOrderPayload = () => {
+    const isRetiro = formData.metodoEnvio === 'retiro';
+
+    return {
+      nombre_comprador: formData.nombre.trim(),
+      email_comprador: formData.email.trim(),
+      telefono_comprador: formData.telefono.trim(),
+      nombre_destinatario: isRetiro ? formData.nombre.trim() : formData.nombreDestinatario.trim(),
+      telefono_destinatario: isRetiro ? formData.telefono.trim() : formData.telefonoDestinatario.trim(),
+      direccion: isRetiro ? 'Retiro en tienda' : formData.direccion.trim(),
+      ciudad: isRetiro ? 'Florería Cristina' : formData.ciudad.trim(),
+      codigo_postal: formData.codigoPostal.trim(),
+      fecha_entrega: getFechaEntrega(),
+      hora_retiro: isRetiro ? formData.hora : '',
+      franja_horaria: getFranjaHoraria(),
+      metodo_envio: formData.metodoEnvio,
+      metodo_envio_id: 1,
+      costo_envio: getShippingCost(),
+      dedicatoria: formData.mensaje.trim(),
+      firmado_como: formData.firmadoComo.trim(),
+      instrucciones: formData.instrucciones.trim(),
+      regalo_anonimo: formData.envioAnonimo,
+      medio_pago: formData.metodoPago,
+      items: directCart.items.map((item: CartItem) => ({
+        producto_id: item.producto.id,
+        cantidad: item.quantity
+      }))
+    };
+  };
+
   // Función auxiliar para crear pedido y retornar el ID (para usar en TransferPaymentData)
   const createOrderAndGetId = async (): Promise<string | null> => {
     try {
       // Validar antes de crear
-      const isValid = validateCurrentStep();
-      if (!isValid) {
-        console.log('❌ Error de validación');
+      if (!validateCurrentStep()) {
         return null;
       }
 
       // Verificar carrito
       if (!directCart.items || directCart.items.length === 0) {
-        alert('❌ El carrito está vacío');
+        toast.error('Tu carrito está vacío');
         return null;
       }
-
-      // Preparar fecha de entrega
-      let fechaEntrega: string;
-      if (formData.metodoEnvio === 'express') {
-        // Express: entrega el mismo día
-        const today = new Date();
-        fechaEntrega = today.toISOString().split('T')[0];
-      } else {
-        // Retiro: mañana (o lunes si mañana es domingo)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        if (tomorrow.getDay() === 0) tomorrow.setDate(tomorrow.getDate() + 1);
-        fechaEntrega = tomorrow.toISOString().split('T')[0];
-      }
-
-      // Preparar items
-      const items = directCart.items.map((item: any) => ({
-        producto_id: item.producto.id,
-        cantidad: item.quantity
-      }));
 
       // Preparar headers
       const apiBaseUrl = API_URL.replace('/api', '');
@@ -917,34 +935,13 @@ const MultiStepCheckoutPage = () => {
         method: 'POST',
         credentials: 'include',
         headers,
-        body: JSON.stringify({
-          nombre_comprador: formData.nombre?.trim() || "Cliente Web",
-          email_comprador: formData.email?.trim() || "cliente@floreriacristina.com",
-          telefono_comprador: formData.telefono?.trim() || "1123456789",
-          nombre_destinatario: formData.nombreDestinatario?.trim() || (formData.metodoEnvio === 'retiro' ? formData.nombre?.trim() || "Cliente" : "Destinatario"),
-          telefono_destinatario: formData.telefonoDestinatario?.trim() || (formData.metodoEnvio === 'retiro' ? formData.telefono?.trim() || "1123456789" : "1123456789"),
-          direccion: formData.metodoEnvio === 'retiro' ? "Retiro en tienda" : (formData.direccion?.trim() || "Dirección de prueba 123"),
-          ciudad: formData.metodoEnvio === 'retiro' ? "Florería Cristina" : (formData.ciudad?.trim() || "Buenos Aires"),
-          codigo_postal: formData.codigoPostal?.trim() || "1000",
-          fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
-          metodo_envio_id: 1,
-          metodo_envio: formData.metodoEnvio,
-          costo_envio: getShippingCost(),
-          dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
-          firmado_como: formData.firmadoComo || "",
-          instrucciones: formData.instrucciones || "",
-          regalo_anonimo: false,
-          medio_pago: formData.metodoPago,
-          items: items
-        }),
+        body: JSON.stringify(buildOrderPayload()),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        const errorMsg = result.error || result.message || 'Error desconocido';
-        alert(`❌ Error al crear pedido: ${errorMsg}`);
+        toast.error(result.error || result.message || 'No pudimos crear el pedido. Intentá de nuevo.');
         return null;
       }
 
@@ -952,7 +949,7 @@ const MultiStepCheckoutPage = () => {
       return result.pedido_id?.toString() || null;
     } catch (error) {
       console.error('Error al crear pedido:', error);
-      alert('❌ Error al crear el pedido');
+      toast.error('No pudimos crear el pedido. Revisá tu conexión e intentá de nuevo.');
       return null;
     }
   };
@@ -960,69 +957,28 @@ const MultiStepCheckoutPage = () => {
   // Función para crear el pedido usando el endpoint simple
   const handleFinalizarPedido = async () => {
     // Validar el último paso antes de finalizar
-    const isValid = validateCurrentStep();
+    const errors = computeStepErrors();
+    setFormErrors(errors);
     setFormSubmitted(true);
     
-    if (!isValid) {
-      console.log('❌ Error de validación en el paso final');
+    if (Object.keys(errors).length > 0) {
+      toast.error(Object.values(errors)[0]);
+      focusFirstError(errors);
       return;
     }
     
+    if (loading) return;
     setLoading(true);
     try {
-      console.log('🚀 INICIANDO CREACIÓN DE PEDIDO');
-      alert('🚀 Iniciando creación de pedido...');
-      
       // Usar directamente el carrito ya cargado en el checkout (directCart)
       if (!directCart.items || directCart.items.length === 0) {
-        console.log('❌ CARRITO VACÍO EN directCart - items:', directCart.items);
-        alert('❌ El carrito está vacío. Agrega productos antes de finalizar el pedido.');
+        toast.error('Tu carrito está vacío. Agregá productos antes de finalizar el pedido.');
         return;
       }
 
-      console.log(`✅ CARRITO VÁLIDO (directCart): ${directCart.items.length} productos`);
-      alert(`✅ Carrito verificado: ${directCart.items.length} productos por $${directCart.total_price}`);
-
-      // Crear pedido usando el endpoint API existente
-      console.log('📡 Enviando pedido a simple-checkout...');
-      
-      // Preparar fecha de entrega según tipo de envío
-      let fechaEntrega: string;
-      if (formData.metodoEnvio === 'express') {
-        // Express: entrega el mismo día
-        const today = new Date();
-        fechaEntrega = today.toISOString().split('T')[0];
-      } else {
-        // Retiro: mañana (o lunes si mañana es domingo)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        if (tomorrow.getDay() === 0) { // 0 = domingo
-          tomorrow.setDate(tomorrow.getDate() + 1);
-        }
-        fechaEntrega = tomorrow.toISOString().split('T')[0];
-      }
-      
       // Determinar la URL base de la API correctamente para evitar problemas CORS
       const apiBaseUrl = API_URL.replace('/api', '');  // Remove /api suffix for pedidos endpoint
       
-      // Mostrar detalles para debugging
-      console.log('👀 Valores del formulario:', {
-        nombre: formData.nombre,
-        email: formData.email,
-        telefono: formData.telefono,
-        nombreDestinatario: formData.nombreDestinatario,
-        direccion: formData.direccion
-      });
-      
-      // Preparar items del carrito para enviar usando directCart
-      const items = directCart.items.map((item: any) => ({
-        producto_id: item.producto.id,
-        cantidad: item.quantity
-      }));
-      
-      console.log('📦 Items a enviar:', items);
-      console.log('🔗 URL de la API:', `${apiBaseUrl}/api/pedidos/checkout-with-items/`);
-        
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -1037,68 +993,23 @@ const MultiStepCheckoutPage = () => {
         method: 'POST',
         credentials: 'include',
         headers,
-        body: JSON.stringify({
-          // Datos del comprador - obligatorios
-          nombre_comprador: formData.nombre ? formData.nombre.trim() : "Cliente Web",
-          email_comprador: formData.email ? formData.email.trim() : "cliente@floreriacristina.com", 
-          telefono_comprador: formData.telefono ? formData.telefono.trim() : "1123456789",
-          
-          // Datos del destinatario - obligatorios
-          nombre_destinatario: formData.nombreDestinatario ? formData.nombreDestinatario.trim() : (formData.metodoEnvio === 'retiro' ? (formData.nombre ? formData.nombre.trim() : "Cliente") : "Destinatario"),
-          telefono_destinatario: formData.telefonoDestinatario ? formData.telefonoDestinatario.trim() : (formData.metodoEnvio === 'retiro' ? (formData.telefono ? formData.telefono.trim() : "1123456789") : "1123456789"),
-          direccion: formData.metodoEnvio === 'retiro' ? "Retiro en tienda" : (formData.direccion ? formData.direccion.trim() : "Dirección de prueba 123"),
-          ciudad: formData.metodoEnvio === 'retiro' ? "Florería Cristina" : (formData.ciudad ? formData.ciudad.trim() : "Buenos Aires"),
-          codigo_postal: formData.codigoPostal ? formData.codigoPostal.trim() : "1000",
-          
-          // Datos de entrega - obligatorios
-          fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? (formData.franjaHoraria || 'mañana') : (formData.metodoEnvio === 'express' ? 'durante_el_dia' : 'mañana'),
-          metodo_envio_id: 1,
-          metodo_envio: formData.metodoEnvio, // 'retiro', 'express', 'programado'
-          costo_envio: getShippingCost(), // Costo de envío calculado
-          
-          // Datos adicionales - opcionales
-          dedicatoria: formData.mensaje || "Entrega de Florería Cristina",
-          firmado_como: formData.firmadoComo || "",
-          instrucciones: formData.instrucciones || "",
-          regalo_anonimo: false,
-          medio_pago: formData.metodoPago,
-          
-          // ITEMS DEL CARRITO - NUEVO
-          items: items
-        }),
+        body: JSON.stringify(buildOrderPayload()),
       });
 
       const result = await response.json();
-      console.log('📋 Respuesta del servidor:', result);
-      console.log('📋 Respuesta completa (JSON):', JSON.stringify(result, null, 2));
       
-      // Mostrar detalles específicos del error si existen
-      if (result.details) {
-        console.log('⚠️ CAMPOS CON ERROR:', result.details);
-        // Recorrer todos los errores y mostrarlos claramente
-        Object.entries(result.details).forEach(([campo, errores]) => {
-          console.error(`Campo con error: ${campo} - ${JSON.stringify(errores)}`);
-        });
-        
-        // Mostrar un mensaje de alerta con todos los errores
-        const mensajeErrores = Object.entries(result.details)
-          .map(([campo, error]) => `${campo}: ${JSON.stringify(error)}`)
-          .join('\n');
-        
-        alert(`❌ Error de validación:\n${mensajeErrores}`);
-      }
-
       if (!response.ok) {
-        // Si hay error, mostrar el mensaje
-        const errorMsg = result.error || result.message || 'Error desconocido';
-        alert(`❌ Error al crear pedido:\n${errorMsg}\n\nDetalles: ${JSON.stringify(result.details || {}, null, 2)}`);
+        const detalles = result.details
+          ? Object.entries(result.details)
+              .map(([campo, error]) => `${campo}: ${Array.isArray(error) ? error.join(', ') : error}`)
+              .join(' · ')
+          : '';
+        toast.error(detalles || result.error || result.message || 'No pudimos crear el pedido. Intentá de nuevo.');
+        console.error('Error al crear pedido:', result);
         return;
       }
       
-      if (response.ok) {
-        alert(`🎉 ¡Pedido #${result.numero_pedido} creado exitosamente! ID: ${result.pedido_id}`);
-        
+      {
         // Marcar checkout como completado para cancelar timer de carrito abandonado
         setIsCheckoutCompleted(true);
         
@@ -1127,25 +1038,22 @@ const MultiStepCheckoutPage = () => {
             firmadoComo: formData.firmadoComo,
             incluirTarjeta: formData.incluirTarjeta
           },
-          fecha_entrega: formData.metodoEnvio === 'programado' ? formData.fecha : fechaEntrega,
-          franja_horaria: formData.metodoEnvio === 'programado' ? formData.franjaHoraria : 'mañana',
+          fecha_entrega: getFechaEntrega(),
+          hora_retiro: formData.metodoEnvio === 'retiro' ? formData.hora : '',
+          franja_horaria: getFranjaHoraria(),
           metodo_envio: formData.metodoEnvio,
           costo_envio: costoEnvio, // Usar la variable ya calculada
           medio_pago: formData.metodoPago
         };
         
         localStorage.setItem('ultimo_pedido', JSON.stringify(pedidoData));
-        console.log('💾 Datos del pedido guardados en localStorage');
         
         // Limpiar el carrito SIEMPRE (para todos los métodos de pago)
         try {
-          console.log('🗑️ Limpiando carrito usando CartContext...');
-          
           // Limpiar localStorage directamente
           if (typeof window !== 'undefined') {
             localStorage.removeItem('cart_data');
             sessionStorage.removeItem('cart_data');
-            console.log('✅ localStorage y sessionStorage limpiados');
           }
           
           // Actualizar el estado del carrito a vacío
@@ -1163,9 +1071,7 @@ const MultiStepCheckoutPage = () => {
             headers: {
               'Content-Type': 'application/json',
             }
-          }).catch(err => console.log('⚠️ Error limpiando backend (no crítico):', err));
-          
-          console.log('✅ Carrito limpiado completamente');
+          }).catch(err => console.warn('Error limpiando carrito en backend (no crítico):', err));
         } catch (clearError) {
           console.error('⚠️ Error al limpiar carrito:', clearError);
         }
@@ -1173,7 +1079,6 @@ const MultiStepCheckoutPage = () => {
         // Si el método de pago es MercadoPago, crear preferencia y redirigir
         if (formData.metodoPago === 'mercadopago') {
           try {
-            console.log('💳 Creando preferencia de MercadoPago...');
             const paymentResponse = await fetch(`${apiBaseUrl}/api/pedidos/simple/${result.pedido_id}/payment/`, {
               method: 'POST',
               headers: {
@@ -1183,25 +1088,24 @@ const MultiStepCheckoutPage = () => {
             });
             
             const paymentResult = await paymentResponse.json();
-            console.log('💳 Respuesta de pago:', paymentResult);
             
             if (paymentResult.success) {
-              console.log('✅ Preferencia creada, redirigiendo a MercadoPago...');
               clearCheckoutProgress(); // Limpiar progreso guardado
               // Redirigir a MercadoPago
               window.location.href = paymentResult.init_point;
             } else {
-              alert(`❌ Error al crear el pago: ${paymentResult.error || 'Error desconocido'}`);
               console.error('Error de pago:', paymentResult);
+              toast.error(`Tu pedido #${result.numero_pedido} quedó guardado pero no pudimos abrir MercadoPago. Reintentá el pago desde el detalle del pedido.`, { duration: 8000 });
+              window.location.href = `/checkout/payment/${result.pedido_id}`;
             }
           } catch (error) {
             console.error('Error creating payment preference:', error);
-            alert('❌ Error al procesar el pago. Pedido creado pero pago pendiente.');
+            toast.error(`Tu pedido #${result.numero_pedido} quedó guardado pero el pago no se pudo iniciar. Te llevamos a reintentarlo.`, { duration: 8000 });
+            window.location.href = `/checkout/payment/${result.pedido_id}`;
           }
         } else if (formData.metodoPago === 'paypal') {
           // PayPal: Crear pago y redirigir
           try {
-            console.log('💳 Creando pago de PayPal...');
             const paymentResponse = await fetch(`${apiBaseUrl}/api/pedidos/${result.pedido_id}/payment/paypal/`, {
               method: 'POST',
               headers: {
@@ -1211,112 +1115,38 @@ const MultiStepCheckoutPage = () => {
             });
             
             const paymentResult = await paymentResponse.json();
-            console.log('💳 Respuesta de PayPal:', paymentResult);
             
             if (paymentResult.success) {
-              console.log('✅ Pago PayPal creado, redirigiendo...');
-              console.log('💱 Conversión:', paymentResult.conversion_info);
-              
-              // Mostrar información de conversión al usuario
+              // Informar la conversión a USD antes de salir del sitio
               const convInfo = paymentResult.conversion_info;
-              alert(`💱 Conversión USD:\n` +
-                    `Total ARS: $${convInfo.total_ars.toFixed(2)}\n` +
-                    `Total USD: $${convInfo.total_usd.toFixed(2)}\n` +
-                    `TC Oficial: $${convInfo.official_rate.toFixed(2)} ARS/USD\n` +
-                    `(Incluye ${convInfo.margin_percentage.toFixed(0)}% de margen)`);
+              if (convInfo) {
+                toast(`PayPal cobra en USD: $${convInfo.total_usd.toFixed(2)} USD (≈ $${convInfo.total_ars.toFixed(2)} ARS)`, { duration: 6000, icon: '💱' });
+              }
               
               clearCheckoutProgress(); // Limpiar progreso guardado
               // Redirigir a PayPal
               window.location.href = paymentResult.approval_url;
             } else {
-              alert(`❌ Error al crear el pago PayPal: ${paymentResult.error || 'Error desconocido'}`);
               console.error('Error de pago PayPal:', paymentResult);
+              toast.error(`Tu pedido #${result.numero_pedido} quedó guardado pero no pudimos abrir PayPal. Reintentá el pago desde el detalle del pedido.`, { duration: 8000 });
+              window.location.href = `/checkout/payment/${result.pedido_id}`;
             }
           } catch (error) {
             console.error('Error creating PayPal payment:', error);
-            alert('❌ Error al procesar el pago PayPal. Pedido creado pero pago pendiente.');
+            toast.error(`Tu pedido #${result.numero_pedido} quedó guardado pero el pago no se pudo iniciar. Te llevamos a reintentarlo.`, { duration: 8000 });
+            window.location.href = `/checkout/payment/${result.pedido_id}`;
           }
         } else {
           // Para otros métodos de pago (transferencia), redirigir directamente a la página de éxito
           clearCheckoutProgress(); // Limpiar progreso guardado
-          window.location.href = `/checkout/success?pedido=${result.pedido_id}`;
+          window.location.href = `/checkout/success?pedido=${result.pedido_id}&payment=pendiente&provider=${formData.metodoPago}`;
         }
-      } else {
-        console.error('❌ ERROR COMPLETO:', result);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      alert(`❌ Error de conexión: ${errorMessage}`);
+      toast.error('No pudimos conectarnos con el servidor. Revisá tu conexión e intentá de nuevo.');
       console.error('Connection error:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const createOrder = async () => {
-    try {
-      alert('🚀 Iniciando creación de pedido...');
-      
-      // Validar datos del formulario
-      if (!formData.nombre || !formData.email || !formData.telefono) {
-        alert('❌ Faltan datos del remitente');
-        return;
-      }
-      
-      if (!formData.nombreDestinatario || !formData.direccion || !formData.telefonoDestinatario) {
-        alert('❌ Faltan datos del destinatario');
-        return;
-      }
-
-      const checkoutData = {
-        nombre_comprador: `${formData.nombre} ${formData.apellido}`.trim(),
-        email_comprador: formData.email,
-        telefono_comprador: formData.telefono,
-        nombre_destinatario: `${formData.nombreDestinatario} ${formData.apellidoDestinatario}`.trim(),
-        telefono_destinatario: formData.telefonoDestinatario,
-        direccion: formData.direccion,
-        ciudad: formData.ciudad || 'Buenos Aires',
-        codigo_postal: formData.codigoPostal || '',
-        fecha_entrega: formData.fecha || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        franja_horaria: 'mañana',
-        metodo_envio_id: formData.metodoEnvio === 'programado' ? 2 : 1,
-        dedicatoria: formData.mensaje || '',
-        instrucciones: formData.instrucciones || '',
-        regalo_anonimo: formData.envioAnonimo,
-        medio_pago: formData.metodoPago
-      };
-
-      console.log('📤 Datos a enviar:', checkoutData);
-      alert('📤 Enviando petición al servidor...');
-
-      const response = await fetch('http://localhost:8000/api/pedidos/checkout/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(checkoutData),
-        credentials: 'include',
-      });
-
-      console.log('📡 Status de respuesta:', response.status);
-      console.log('📡 Headers de respuesta:', Object.fromEntries(response.headers.entries()));
-
-      console.log('📡 Response status pedido:', response.status);
-      const result = await response.json();
-      console.log('🎉 Respuesta completa del servidor:', JSON.stringify(result, null, 2));
-
-      if (result.success) {
-        console.log(`✅ PEDIDO CREADO: ${result.numero_pedido}`);
-        alert(`✅ ¡Pedido creado exitosamente! Número: ${result.numero_pedido}`);
-        // Aquí podrías redirigir a una página de confirmación
-        // router.push(`/checkout/success?pedido=${result.pedido_id}`);
-      } else {
-        console.log(`❌ ERROR EN PEDIDO:`, result);
-        alert(`❌ Error: ${result.error || 'Error desconocido'}`);
-      }
-    } catch (error) {
-      console.error('💥 Error al crear pedido:', error);
-      alert(`💥 Error al crear pedido: ${(error as Error).message}`);
     }
   };
 

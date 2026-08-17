@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
+import { API_ROOT } from '@/utils/apiBase';
+
 export const dynamic = 'force-dynamic';
 
 const PaymentFailurePage = () => {
@@ -19,7 +21,7 @@ const PaymentFailurePage = () => {
 
       if (paymentId && status) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pedidos/pago-fallido/`, {
+          await fetch(`${API_ROOT}/api/pedidos/pago-fallido/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

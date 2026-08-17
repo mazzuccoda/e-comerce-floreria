@@ -33,6 +33,7 @@ class Pedido(models.Model):
     codigo_postal = models.CharField(max_length=20, blank=True, null=True)
     telefono_destinatario = models.CharField(max_length=30)
     fecha_entrega = models.DateField()
+    hora_retiro = models.TimeField(null=True, blank=True, help_text="Hora elegida por el cliente para retirar en tienda")
     franja_horaria = models.CharField(max_length=20, choices=[('mañana', 'Mañana (9-12)'), ('tarde', 'Tarde (16-20)'), ('durante_el_dia', 'Durante el día')])
     instrucciones = models.CharField(max_length=200, blank=True)
     metodo_envio = models.ForeignKey('MetodoEnvio', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Método de envío (legacy)")

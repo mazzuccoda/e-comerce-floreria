@@ -19,15 +19,15 @@ export default function MetaTags({
   description = 'Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales. Entrega a domicilio en toda la ciudad. Calidad garantizada.',
   keywords = 'florería, flores, ramos, plantas, vivero, entrega domicilio, arreglos florales, flores frescas, bouquet, decoración floral',
   image = '/images/floreria-cristina-og.jpg',
-  url = 'https://floreria-cristina.com',
+  url = 'https://floreriacristina.com.ar',
   type = 'website',
   price,
   currency = 'ARS',
   availability = 'in_stock'
 }: MetaTagsProps) {
   const fullTitle = title.includes('Florería Cristina') ? title : `${title} | Florería Cristina`;
-  const fullUrl = url.startsWith('http') ? url : `https://floreria-cristina.com${url}`;
-  const fullImage = image.startsWith('http') ? image : `https://floreria-cristina.com${image}`;
+  const fullUrl = url.startsWith('http') ? url : `https://floreriacristina.com.ar${url}`;
+  const fullImage = image.startsWith('http') ? image : `https://floreriacristina.com.ar${image}`;
 
   return (
     <Head>
@@ -76,7 +76,7 @@ export default function MetaTags({
             "@type": "LocalBusiness",
             "name": "Florería Cristina",
             "description": description,
-            "url": "https://floreria-cristina.com",
+            "url": "https://floreriacristina.com.ar",
             "telephone": "+54-11-1234-5678",
             "address": {
               "@type": "PostalAddress",

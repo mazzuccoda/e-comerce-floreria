@@ -59,6 +59,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost',
     'http://localhost:3000',
     'http://localhost:80',
+    'https://floreriacristina.com.ar',  # Dominio público
+    'https://www.floreriacristina.com.ar',
     'https://floreriayviverocristian.up.railway.app',  # Frontend en Railway (ACTUALIZADO)
     'https://frontend-production-0b0b.up.railway.app',  # Frontend antiguo (mantener por compatibilidad)
     'https://frontend-production-7249.up.railway.app',  # Frontend antiguo (mantener por compatibilidad)
@@ -113,6 +115,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'https://*.railway.app',  # Railway domains
+    'https://floreriacristina.com.ar',  # Dominio público
+    'https://www.floreriacristina.com.ar',
     *env.list('CSRF_TRUSTED_ORIGINS', default=[]),  # Dominios personalizados desde variable de entorno
 ]
 

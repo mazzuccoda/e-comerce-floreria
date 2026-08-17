@@ -19,7 +19,11 @@ const inter = Inter({
   preload: true,
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://floreriacristina.com.ar';
+const OG_IMAGE = 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1770509496/logo_circular_byx4zs.png';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Florería Cristina - Ramos de flores a domicilio",
   description: "Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales. Entrega a domicilio en toda la ciudad. Calidad garantizada.",
   keywords: "florería, flores, ramos, plantas, vivero, entrega domicilio, arreglos florales, flores frescas, bouquet, decoración floral",
@@ -30,11 +34,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Florería Cristina - Ramos de flores a domicilio",
     description: "Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales. Entrega a domicilio en toda la ciudad.",
-    url: "https://floreria-cristina.com",
+    url: SITE_URL,
     siteName: "Florería Cristina",
     images: [
       {
-        url: "https://floreria-cristina.com/images/floreria-cristina-og.jpg",
+        url: OG_IMAGE,
         width: 1200,
         height: 630,
         alt: "Florería Cristina - Flores frescas a domicilio",
@@ -47,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Florería Cristina - Ramos de flores a domicilio",
     description: "Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales.",
-    images: ["https://floreria-cristina.com/images/floreria-cristina-og.jpg"],
+    images: [OG_IMAGE],
     creator: "@floreria_cristina",
   },
   manifest: "/manifest.json",

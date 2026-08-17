@@ -163,7 +163,7 @@ class PaymentSuccessView(APIView):
                         logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado")
             
             # Redirigir al frontend
-            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=success&payment_id={payment_id or ''}"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
@@ -172,7 +172,7 @@ class PaymentSuccessView(APIView):
         except Exception as e:
             logger.error(f"❌ Error in payment success: {str(e)}")
             # En caso de error, redirigir al frontend con error
-            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
 
 
@@ -190,7 +190,7 @@ class PaymentFailureView(APIView):
             logger.warning(f"⚠️ Pago fallido para pedido #{pedido_id}")
             
             # Redirigir al frontend
-            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=failure"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
@@ -198,7 +198,7 @@ class PaymentFailureView(APIView):
             
         except Exception as e:
             logger.error(f"❌ Error in payment failure: {str(e)}")
-            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
 
 
@@ -216,7 +216,7 @@ class PaymentPendingView(APIView):
             logger.info(f"⏳ Pago pendiente para pedido #{pedido_id}")
             
             # Redirigir al frontend
-            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=pending"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
@@ -224,7 +224,7 @@ class PaymentPendingView(APIView):
             
         except Exception as e:
             logger.error(f"❌ Error in payment pending: {str(e)}")
-            frontend_url = os.getenv('FRONTEND_URL', 'https://e-comerce-floreria-production.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
 
 
@@ -313,7 +313,7 @@ class PayPalSuccessView(APIView):
                     logger.error(f"❌ Error ejecutando pago PayPal: {execute_result.get('error')}")
             
             # Redirigir al frontend
-            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=success&payment_id={payment_id or ''}&provider=paypal"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
@@ -323,7 +323,7 @@ class PayPalSuccessView(APIView):
             logger.error(f"❌ Error in PayPal success: {str(e)}")
             import traceback
             traceback.print_exc()
-            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error")
 
 
@@ -340,7 +340,7 @@ class PayPalCancelView(APIView):
             logger.warning(f"⚠️ Pago PayPal cancelado para pedido #{pedido_id}")
             
             # Redirigir a la página de éxito con parámetro de cancelación (igual que MercadoPago)
-            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=cancelled&provider=paypal"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
@@ -348,5 +348,5 @@ class PayPalCancelView(APIView):
             
         except Exception as e:
             logger.error(f"❌ Error in PayPal cancel: {str(e)}")
-            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriayviverocristian.up.railway.app')
+            frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
             return redirect(f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=error&provider=paypal")

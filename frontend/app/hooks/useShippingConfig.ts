@@ -4,6 +4,8 @@
 
 import { useState, useEffect } from 'react';
 
+import { API_URL } from '@/utils/apiBase';
+
 export interface ShippingConfig {
   store_name: string;
   store_address: string;
@@ -35,7 +37,7 @@ export interface ShippingCalculation {
   message?: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = API_URL;
 
 export function useShippingConfig() {
   const [config, setConfig] = useState<ShippingConfig | null>(null);

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
+import { API_ROOT } from '@/utils/apiBase';
 
 interface ProductImage {
   id: number;
@@ -37,7 +38,7 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
     }
     
     if (url.startsWith('/media/')) {
-      return `https://e-comerce-floreria-production.up.railway.app${url}`;
+      return `${API_ROOT}${url}`;
     }
     
     if (url.startsWith('http://') || url.startsWith('https://')) {

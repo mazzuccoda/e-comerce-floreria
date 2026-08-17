@@ -10,6 +10,7 @@ import { ArrowLeft } from 'lucide-react';
 import ProductImageGallery from '@/app/components/ProductImageGallery';
 import { trackProductView, trackAddToCart } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
+import { API_ROOT } from '@/utils/apiBase';
 import { useI18n } from '@/context/I18nContext';
 
 interface ProductPageParams {
@@ -48,11 +49,11 @@ export default function ProductPage({ params }: ProductPageParams) {
     }
     
     if (url.startsWith('/media/')) {
-      return `http://localhost${url}`;
+      return `${API_ROOT}${url}`;
     }
     
     if (url.includes('web:8000')) {
-      return url.replace('web:8000', 'localhost');
+      return url.replace(/https?:\/\/web:8000/, API_ROOT);
     }
     
     if (url.startsWith('http://') || url.startsWith('https://')) {

@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://floreria-cristina.com'
+  // El sitio sirve todo bajo el prefijo de idioma (/es)
+  const baseUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://floreriacristina.com.ar'}/es`
   
   // URLs estáticas principales
   const staticUrls = [
@@ -56,7 +57,7 @@ async function getProductUrls() {
     // const products = await response.json()
     
     // return products.results?.map((product: any) => ({
-    //   url: `https://floreria-cristina.com/productos/${product.slug}`,
+    //   url: `${baseUrl}/productos/${product.slug}`,
     //   lastModified: new Date(product.updated_at || product.created_at),
     //   changeFrequency: 'weekly' as const,
     //   priority: 0.8,

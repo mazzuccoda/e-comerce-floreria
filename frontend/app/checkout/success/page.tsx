@@ -55,11 +55,33 @@ interface PedidoData {
   medio_pago: string;
 }
 
+type PaymentOutcome = 'success' | 'pending' | 'failure' | 'cancelled' | 'error';
+
+// El backend y las pasarelas devuelven al cliente acá con distintos estados: cada uno tiene su propio mensaje
+const resolveOutcome = (paymentStatus: string | null): PaymentOutcome => {
+  switch (paymentStatus) {
+    case 'success':
+    case 'approved':
+      return 'success';
+    case 'failure':
+    case 'rejected':
+      return 'failure';
+    case 'cancelled':
+      return 'cancelled';
+    case 'error':
+      return 'error';
+    default:
+      return 'pending';
+  }
+};
+
 const PaymentSuccessPage = () => {
   const searchParams = useSearchParams();
   const pedidoId = searchParams.get('pedido');
   const paymentStatus = searchParams.get('payment');
   const provider = searchParams.get('provider');
+  const outcome = resolveOutcome(paymentStatus);
+  const isPaid = outcome === 'success';
   const [pedidoData, setPedidoData] = useState<PedidoData | null>(null);
 
   useEffect(() => {
@@ -69,9 +91,8 @@ const PaymentSuccessPage = () => {
       try {
         const data = JSON.parse(storedData);
         setPedidoData(data);
-        console.log('📦 Datos del pedido cargados:', data);
         
-        // Trackear compra completada
+        // Trackear compra sólo cuando el pago fue efectivamente aprobado
         if (data && paymentStatus === 'success') {
           // Google Analytics
           trackPurchase({
@@ -186,9 +207,49 @@ const PaymentSuccessPage = () => {
   const handleWhatsAppClick = () => {
     const mensaje = generateWhatsAppMessage();
     const url = `https://wa.me/543813671352?text=${mensaje}`;
-    console.log('📱 Abriendo WhatsApp con mensaje:', decodeURIComponent(mensaje));
     window.open(url, '_blank');
   };
+
+  const providerLabel = provider === 'paypal' ? 'PayPal' : provider === 'mercadopago' ? 'Mercado Pago' : 'la pasarela de pago';
+
+  const outcomeCopy: Record<PaymentOutcome, { title: string; detail: string; estado: string; estadoDetail: string }> = {
+    success: {
+      title: '¡Pago aprobado!',
+      detail: 'Tu pedido está siendo preparado con amor 💚',
+      estado: 'Estado: Pago aprobado',
+      estadoDetail: 'Recibimos tu pago y ya estamos preparando el pedido'
+    },
+    pending: {
+      title: 'Pedido registrado',
+      detail: pedidoData?.medio_pago === 'transferencia'
+        ? 'Nos falta confirmar tu transferencia para preparar el pedido.'
+        : pedidoData?.medio_pago === 'efectivo'
+          ? 'Vas a abonar en efectivo al momento de la entrega o el retiro.'
+          : 'Tu pago quedó pendiente de acreditación. Te avisamos en cuanto se confirme.',
+      estado: 'Estado: Pendiente de pago',
+      estadoDetail: 'El pedido queda reservado hasta confirmar el pago'
+    },
+    failure: {
+      title: 'El pago fue rechazado',
+      detail: `${providerLabel} rechazó el pago. Tu pedido quedó guardado: podés reintentar con otro medio.`,
+      estado: 'Estado: Pago rechazado',
+      estadoDetail: 'Todavía no recibimos el pago, el pedido no se prepara hasta entonces'
+    },
+    cancelled: {
+      title: 'Pago cancelado',
+      detail: `Cancelaste el pago en ${providerLabel}. El pedido está creado pero pendiente de pago.`,
+      estado: 'Estado: Pago cancelado',
+      estadoDetail: 'Podés reintentar el pago cuando quieras'
+    },
+    error: {
+      title: 'No pudimos confirmar el pago',
+      detail: 'Tu pedido quedó guardado, pero no pudimos verificar el estado del pago. Escribinos por WhatsApp y lo resolvemos.',
+      estado: 'Estado: Pago sin confirmar',
+      estadoDetail: 'Verificamos manualmente el estado de tu pago'
+    }
+  };
+
+  const copy = outcomeCopy[outcome];
 
   if (!pedidoId) {
     return (
@@ -215,67 +276,74 @@ const PaymentSuccessPage = () => {
         
         {/* Hero Section - Limpio y elegante */}
         <div className="text-center mb-12">
-          {paymentStatus === 'cancelled' ? (
-            <>
-              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full mb-6 shadow-xl animate-scaleIn">
-                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1-1.964-1-2.732 0L3.732 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-                Pago Cancelado
-              </h1>
-              <p className="text-lg text-gray-600 mb-2">
-                Pedido <span className="font-mono font-semibold text-orange-600">#{pedidoData?.numero_pedido || pedidoId}</span>
-              </p>
-              <p className="text-base text-gray-500">
-                Has cancelado el pago de {provider === 'paypal' ? 'PayPal' : 'tu pedido'}. El pedido está creado pero pendiente de pago.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-6 shadow-xl animate-scaleIn">
-                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-                ¡Pedido Confirmado!
-              </h1>
-              <p className="text-lg text-gray-600 mb-2">
-                Pedido <span className="font-mono font-semibold text-green-600">#{pedidoData?.numero_pedido || pedidoId}</span>
-              </p>
-              <p className="text-base text-gray-500">
-                Tu pedido está siendo preparado con amor 💚
-              </p>
-            </>
-          )}
+          <div className={`inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full mb-6 shadow-xl animate-scaleIn bg-gradient-to-br ${
+            isPaid ? 'from-green-500 to-emerald-600' : outcome === 'failure' ? 'from-red-500 to-rose-600' : 'from-yellow-500 to-orange-600'
+          }`}>
+            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isPaid ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              ) : outcome === 'failure' ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              )}
+            </svg>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+            {copy.title}
+          </h1>
+          <p className="text-lg text-gray-600 mb-2">
+            Pedido <span className={`font-mono font-semibold ${isPaid ? 'text-green-600' : outcome === 'failure' ? 'text-red-600' : 'text-orange-600'}`}>#{pedidoData?.numero_pedido || pedidoId}</span>
+          </p>
+          <p className="text-base text-gray-500">
+            {copy.detail}
+          </p>
         </div>
 
-        {/* Estado Simple */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 sm:p-8 shadow-lg border border-green-200 mb-8">
+        {/* Estado del pago */}
+        <div className={`rounded-2xl p-6 sm:p-8 shadow-lg border mb-8 bg-gradient-to-br ${
+          isPaid ? 'from-green-50 to-emerald-50 border-green-200' : outcome === 'failure' ? 'from-red-50 to-rose-50 border-red-200' : 'from-amber-50 to-orange-50 border-amber-200'
+        }`}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-14 h-14 bg-green-500 rounded-full shadow-lg">
+              <div className={`flex items-center justify-center w-14 h-14 rounded-full shadow-lg ${
+                isPaid ? 'bg-green-500' : outcome === 'failure' ? 'bg-red-500' : 'bg-amber-500'
+              }`}>
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  {isPaid ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  ) : outcome === 'failure' ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  )}
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Estado: Confirmado</h2>
-                <p className="text-sm text-gray-600 mt-1">Tu pedido ha sido recibido exitosamente</p>
+                <h2 className="text-xl font-bold text-gray-900">{copy.estado}</h2>
+                <p className="text-sm text-gray-600 mt-1">{copy.estadoDetail}</p>
               </div>
             </div>
-            <Link 
-              href={`/pedido/${pedidoData?.pedido_id}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-green-700 font-semibold rounded-xl hover:bg-green-50 transition-all duration-200 shadow-md hover:shadow-lg border-2 border-green-200"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Seguir mi pedido
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              {!isPaid && (outcome === 'failure' || outcome === 'cancelled') && pedidoId && (
+                <Link
+                  href={`/checkout/payment/${pedidoId}`}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Reintentar el pago
+                </Link>
+              )}
+              <Link
+                href={`/pedido/${pedidoData?.pedido_id || pedidoId}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-800 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg border-2 border-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Seguir mi pedido
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -412,9 +480,11 @@ const PaymentSuccessPage = () => {
               )}
               
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 gap-2">
-                <span className="text-sm sm:text-base text-gray-600">Estado:</span>
-                <span className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 rounded-full text-sm sm:text-base font-semibold shadow-md w-fit">
-                  ✅ Confirmado
+                <span className="text-sm sm:text-base text-gray-600">Estado del pago:</span>
+                <span className={`inline-block px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-base font-semibold shadow-md w-fit bg-gradient-to-r ${
+                  isPaid ? 'from-green-100 to-emerald-100 text-green-800' : outcome === 'failure' ? 'from-red-100 to-rose-100 text-red-800' : 'from-amber-100 to-orange-100 text-amber-800'
+                }`}>
+                  {isPaid ? 'Aprobado' : outcome === 'failure' ? 'Rechazado' : outcome === 'cancelled' ? 'Cancelado' : 'Pendiente'}
                 </span>
               </div>
             </div>
