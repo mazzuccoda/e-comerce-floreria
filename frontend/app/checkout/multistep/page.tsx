@@ -1924,16 +1924,13 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('nombre')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formData.envioAnonimo
-                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                        : formErrors.nombre 
+                      formErrors.nombre 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.nombre && formData.nombre.trim()
                         ? 'border-2 border-green-500 bg-green-50'
                         : 'bg-white/50 border-2 border-transparent focus:border-green-300'
                     }`} 
                     placeholder="Nombre completo de quien retira *" 
-                    disabled={formData.envioAnonimo}
                   />
                   {touchedFields.nombre && formData.nombre.trim() && !formErrors.nombre && (
                     <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
@@ -1951,16 +1948,13 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('email')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formData.envioAnonimo
-                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                        : formErrors.email 
+                      formErrors.email 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.email && formData.email.trim() && !formErrors.email
                         ? 'border-2 border-green-500 bg-green-50'
                         : 'bg-white/50 border-2 border-transparent focus:border-green-300'
                     }`} 
                     placeholder="Email *" 
-                    disabled={formData.envioAnonimo}
                     aria-required="true"
                     aria-invalid="false"
                     {...(formErrors.email && { 'aria-invalid': 'true' })}
@@ -1980,16 +1974,13 @@ const MultiStepCheckoutPage = () => {
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('telefono')}
                     className={`p-4 pr-12 rounded-xl transition-all ${
-                      formData.envioAnonimo
-                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                        : formErrors.telefono 
+                      formErrors.telefono 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : touchedFields.telefono && formData.telefono.trim() && !formErrors.telefono
                         ? 'border-2 border-green-500 bg-green-50'
                         : 'bg-white/50 border-2 border-transparent focus:border-green-300'
                     }`} 
                     placeholder="Teléfono * (ej: 3815551234)" 
-                    disabled={formData.envioAnonimo}
                     aria-required="true"
                     aria-invalid="false"
                     {...(formErrors.telefono && { 'aria-invalid': 'true' })}
@@ -2013,7 +2004,7 @@ const MultiStepCheckoutPage = () => {
                   <span className="text-gray-700 font-medium">Envío anónimo</span>
                 </label>
                 {formData.envioAnonimo && (
-                  <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">ℹ️ Los campos de remitente son opcionales</p>
+                  <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">ℹ️ No mostramos tus datos al destinatario, pero los necesitamos para confirmarte el pedido</p>
                 )}
               </div>
             </div>
@@ -2401,14 +2392,11 @@ const MultiStepCheckoutPage = () => {
                     value={formData.nombre}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl transition-all ${
-                      formData.envioAnonimo
-                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                        : formErrors.nombre 
+                      formErrors.nombre 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : 'bg-white/50 border-0'
                     }`} 
                     placeholder={isPickup ? "Nombre de quien retira" : "Nombre de quien envía"} 
-                    disabled={formData.envioAnonimo}
                   />
                   {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
                 </div>
@@ -2422,14 +2410,11 @@ const MultiStepCheckoutPage = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl transition-all ${
-                      formData.envioAnonimo
-                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                        : formErrors.email 
+                      formErrors.email 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : 'bg-white/50 border-0'
                     }`} 
                     placeholder="Email" 
-                    disabled={formData.envioAnonimo}
                     aria-required="true"
                     aria-invalid="false"
                     {...(formErrors.email && { 'aria-invalid': 'true' })}
@@ -2445,14 +2430,11 @@ const MultiStepCheckoutPage = () => {
                     value={formData.telefono}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl transition-all ${
-                      formData.envioAnonimo
-                        ? 'bg-gray-100 border-2 border-gray-300 text-gray-400 cursor-not-allowed'
-                        : formErrors.telefono 
+                      formErrors.telefono 
                         ? 'border-2 border-red-500 bg-red-50 shadow-md shadow-red-300/30' 
                         : 'bg-white/50 border-0'
                     }`} 
                     placeholder="Teléfono (solo números, mínimo 7 dígitos)" 
-                    disabled={formData.envioAnonimo}
                     aria-required="true"
                     aria-invalid="false"
                     {...(formErrors.telefono && { 'aria-invalid': 'true' })}
@@ -2473,7 +2455,7 @@ const MultiStepCheckoutPage = () => {
                   <span className="text-gray-700 font-medium">Envío anónimo</span>
                 </label>
                 {formData.envioAnonimo && (
-                  <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">ℹ️ Los campos de remitente son opcionales</p>
+                  <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded">ℹ️ No mostramos tus datos al destinatario, pero los necesitamos para confirmarte el pedido</p>
                 )}
               </div>
             </div>

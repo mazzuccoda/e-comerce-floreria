@@ -58,6 +58,39 @@ interface PedidoData {
 type PaymentOutcome = 'success' | 'pending' | 'failure' | 'cancelled' | 'error';
 
 // El backend y las pasarelas devuelven al cliente acá con distintos estados: cada uno tiene su propio mensaje
+interface NextStep {
+  titulo: string;
+  detalle: string;
+}
+
+const NEXT_STEPS: Record<PaymentOutcome, NextStep[]> = {
+  success: [
+    { titulo: 'Recibirás confirmación por email', detalle: 'Te enviaremos todos los detalles de tu pedido' },
+    { titulo: 'Nos contactaremos contigo', detalle: 'Te confirmaremos los detalles de entrega a la brevedad' },
+    { titulo: 'Seguimiento en tiempo real', detalle: 'Podrás ver el progreso de tu pedido en cualquier momento desde la página de seguimiento' },
+  ],
+  pending: [
+    { titulo: 'Estamos esperando la acreditación del pago', detalle: 'Según el medio elegido puede demorar unos minutos o hasta 48 horas hábiles' },
+    { titulo: 'Te avisamos por email en cuanto se acredite', detalle: 'Recién entonces preparamos el arreglo y coordinamos la entrega' },
+    { titulo: 'Si preferís, escribinos por WhatsApp', detalle: 'Podemos verificar el estado del pago con vos' },
+  ],
+  failure: [
+    { titulo: 'El pedido quedó guardado, pero sin pagar', detalle: 'No se preparó ni se despachó nada todavía' },
+    { titulo: 'Podés reintentar el pago', detalle: 'Usá el botón de reintento con la misma tarjeta u otro medio de pago' },
+    { titulo: 'Si vuelve a fallar, escribinos por WhatsApp', detalle: 'Coordinamos el pago por transferencia o efectivo' },
+  ],
+  cancelled: [
+    { titulo: 'Cancelaste el pago', detalle: 'El pedido quedó guardado sin pagar y no se despachó nada' },
+    { titulo: 'Podés retomarlo cuando quieras', detalle: 'Reintentá el pago desde el botón de arriba' },
+    { titulo: 'Cualquier duda, escribinos por WhatsApp', detalle: 'Te ayudamos a elegir otro medio de pago' },
+  ],
+  error: [
+    { titulo: 'No pudimos confirmar el estado del pago', detalle: 'Puede que se haya acreditado igual: no vuelvas a pagar sin verificar' },
+    { titulo: 'Escribinos por WhatsApp con el número de pedido', detalle: 'Lo verificamos y te confirmamos en el momento' },
+    { titulo: 'Si el pago no se registró, te avisamos por email', detalle: 'Vas a poder reintentarlo desde el pedido' },
+  ],
+};
+
 const resolveOutcome = (paymentStatus: string | null): PaymentOutcome => {
   switch (paymentStatus) {
     case 'success':
@@ -501,35 +534,19 @@ const PaymentSuccessPage = () => {
           </h2>
           
           <div className="space-y-5">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg">
-                1
+            {NEXT_STEPS[outcome].map((step, index) => (
+              <div key={step.titulo} className="flex items-start gap-4">
+                <div className={`w-10 h-10 bg-gradient-to-br text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg ${
+                  index === 0 ? 'from-blue-500 to-indigo-600' : index === 1 ? 'from-green-500 to-green-700' : 'from-purple-500 to-purple-700'
+                }`}>
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{step.titulo}</h3>
+                  <p className="text-gray-600">{step.detalle}</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Recibirás confirmación por email</h3>
-                <p className="text-gray-600">Te enviaremos todos los detalles de tu pedido</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg">
-                2
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Nos contactaremos contigo</h3>
-                <p className="text-gray-600">Te confirmaremos los detalles de entrega a la brevedad</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg">
-                3
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Seguimiento en tiempo real</h3>
-                <p className="text-gray-600">Podrás ver el progreso de tu pedido en cualquier momento desde la página de seguimiento</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
