@@ -19,8 +19,8 @@ export default function ProductSchema({ product }: ProductSchemaProps) {
     "image": product.imagen_principal ? 
       (product.imagen_principal.startsWith('http') ? 
         product.imagen_principal : 
-        `https://floreria-cristina.com${product.imagen_principal}`) : 
-      "https://floreria-cristina.com/images/default-flower.jpg",
+        `https://floreriacristina.com.ar${product.imagen_principal}`) : 
+      "https://floreriacristina.com.ar/images/default-flower.jpg",
     "sku": product.id.toString(),
     "brand": {
       "@type": "Brand",
@@ -37,9 +37,9 @@ export default function ProductSchema({ product }: ProductSchemaProps) {
       "seller": {
         "@type": "Organization",
         "name": "Florería Cristina",
-        "url": "https://floreria-cristina.com"
+        "url": "https://floreriacristina.com.ar"
       },
-      "url": `https://floreria-cristina.com/productos/${product.slug}`,
+      "url": `https://floreriacristina.com.ar/productos/${product.slug}`,
       "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 días
     },
     "aggregateRating": {

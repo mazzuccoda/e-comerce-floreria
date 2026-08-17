@@ -116,7 +116,7 @@ export default function OfflineProductCard({ product }: ProductCardProps) {
         />
         
         {/* Descuento */}
-        {product.porcentaje_descuento && (
+        {(product.porcentaje_descuento ?? 0) > 0 && (
           <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-md font-semibold">
             {product.porcentaje_descuento}% OFF
           </div>

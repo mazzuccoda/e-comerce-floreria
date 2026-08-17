@@ -6,6 +6,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
+import { API_ROOT } from '@/utils/apiBase';
+
 interface Pedido {
   id: number;
   numero_pedido: string;
@@ -49,7 +51,7 @@ const PaymentPage = () => {
   useEffect(() => {
     const fetchPedido = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pedidos/${pedidoId}/`, {
+        const response = await fetch(`${API_ROOT}/api/pedidos/${pedidoId}/`, {
           credentials: 'include',
         });
 
@@ -96,7 +98,7 @@ const PaymentPage = () => {
     const loadingToast = toast.loading('Creando pago...');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/pedidos/crear-pago/`, {
+      const response = await fetch(`${API_ROOT}/api/pedidos/crear-pago/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

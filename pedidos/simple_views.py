@@ -433,6 +433,7 @@ def simple_checkout_with_items(request):
                 ciudad=data.get('ciudad', 'Buenos Aires'),
                 codigo_postal=data.get('codigo_postal', ''),
                 fecha_entrega=data['fecha_entrega'],
+                hora_retiro=data.get('hora_retiro') or None,
                 franja_horaria=data['franja_horaria'],
                 metodo_envio=metodo_envio,
                 tipo_envio=data.get('metodo_envio'),  # 'retiro', 'express', 'programado'

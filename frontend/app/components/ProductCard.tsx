@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/types/Product';
 import { useI18n } from '../../context/I18nContext';
+import { API_ROOT } from '@/utils/apiBase';
 
 interface ProductCardProps {
   product: Product;
@@ -42,14 +43,14 @@ export default function ProductCard({ product, hideDiscountBadge = false }: Prod
       
       // PASO 2: Si es una URL de media del backend, construir URL completa
       if (url.startsWith('/media/')) {
-        const fullUrl = `http://localhost${url}`;
+        const fullUrl = `${API_ROOT}${url}`;
         console.log('✅ Imagen del backend:', product.nombre, fullUrl);
         return fullUrl;
       }
       
       // Si tiene web:8000 (URL interna de Docker), reemplazar con localhost
       if (url.includes('web:8000')) {
-        const fixedUrl = url.replace('web:8000', 'localhost');
+        const fixedUrl = url.replace(/https?:\/\/web:8000/, API_ROOT);
         console.log('✅ URL Docker corregida:', fixedUrl);
         return fixedUrl;
       }
@@ -104,7 +105,7 @@ export default function ProductCard({ product, hideDiscountBadge = false }: Prod
             </div>
           )}
           {/* Badge de descuento en esquina superior derecha */}
-          {!hideDiscountBadge && product.porcentaje_descuento && product.porcentaje_descuento > 0 && (
+          {!hideDiscountBadge && (product.porcentaje_descuento ?? 0) > 0 && (
             <div className="absolute top-3 right-3 bg-green-600 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg z-10">
               -{product.porcentaje_descuento}%
             </div>
@@ -126,7 +127,7 @@ export default function ProductCard({ product, hideDiscountBadge = false }: Prod
                   Solicitar cotización
                 </span>
               </div>
-            ) : product.precio_descuento && product.porcentaje_descuento && product.porcentaje_descuento > 0 ? (
+            ) : product.precio_descuento && (product.porcentaje_descuento ?? 0) > 0 ? (
               <div className="space-y-1">
                 <p className="text-xl sm:text-2xl font-bold text-green-700">
                   $ {parseFloat(product.precio_descuento).toLocaleString('es-AR')}

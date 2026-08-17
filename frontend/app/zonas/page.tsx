@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { API_ROOT } from '@/utils/apiBase';
+
 interface ZonaEntrega {
   id: number;
   nombre: string;
@@ -11,8 +13,6 @@ interface ZonaEntrega {
   is_active: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window === 'undefined' ? 'http://web:8000' : 'http://localhost:8000');
-
 export default function ZonasPage() {
   const [zonas, setZonas] = useState<ZonaEntrega[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,7 @@ export default function ZonasPage() {
   useEffect(() => {
     const fetchZonas = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/catalogo/zonas/`);
+        const response = await fetch(`${API_ROOT}/api/catalogo/zonas/`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
