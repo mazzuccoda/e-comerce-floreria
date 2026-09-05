@@ -12,6 +12,7 @@ import { trackProductView, trackAddToCart } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
 import { API_ROOT } from '@/utils/apiBase';
 import { useI18n } from '@/context/I18nContext';
+import { TIENDA } from '@/components/paymentInfo';
 
 interface ProductPageParams {
   params: Promise<{
@@ -35,7 +36,7 @@ export default function ProductPage({ params }: ProductPageParams) {
   // Generar mensaje de WhatsApp para cotización
   const generateWhatsAppUrl = () => {
     if (!product) return '#';
-    const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5491112345678';
+    const phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || TIENDA.whatsapp;
     const message = `Hola! Me interesa obtener una cotización para:\n\n- Producto: ${product.nombre}\n- Categoría: ${product.categoria.nombre}\n\n¿Podrían brindarme más información?`;
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
@@ -257,10 +258,10 @@ export default function ProductPage({ params }: ProductPageParams) {
                 <div className="space-y-1 sm:space-y-0">
                   <div className="flex items-baseline gap-2 sm:gap-3">
                     <span className="text-4xl font-bold text-green-700">
-                      $ {parseFloat(product.precio_descuento).toLocaleString()}
+                      $ {parseFloat(product.precio_descuento).toLocaleString('es-AR')}
                     </span>
                     <span className="text-lg sm:text-2xl text-gray-400 line-through">
-                      $ {parseFloat(product.precio).toLocaleString()}
+                      $ {parseFloat(product.precio).toLocaleString('es-AR')}
                     </span>
                   </div>
                   <div>
@@ -271,7 +272,7 @@ export default function ProductPage({ params }: ProductPageParams) {
                 </div>
               ) : (
                 <span className="text-4xl font-bold text-gray-900">
-                  $ {parseFloat(product.precio).toLocaleString()}
+                  $ {parseFloat(product.precio).toLocaleString('es-AR')}
                 </span>
               )}
             </div>

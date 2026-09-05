@@ -84,7 +84,9 @@ export default function Home() {
   return (
     <div>
       <ConnectionStatusBanner />
-      
+
+      <h1 className="sr-only">{t('home.pageTitle')}</h1>
+
       {/* Carrusel Hero */}
       <HeroCarousel />
 

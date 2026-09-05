@@ -43,6 +43,10 @@ const nextConfig = {
       },
     ];
   },
+  compiler: {
+    // En producción sólo sobreviven console.error y console.warn
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
   // Optimizaciones SEO y Performance
   compress: true,
   poweredByHeader: false,
