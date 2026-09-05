@@ -103,16 +103,10 @@ const NEXT_STEPS_TRANSFERENCIA: NextStep[] = [
   { titulo: 'Te avisamos por email al confirmarlo', detalle: 'Tu pedido queda reservado mientras esperamos la transferencia' },
 ];
 
-const NEXT_STEPS_EFECTIVO_RETIRO: NextStep[] = [
+const NEXT_STEPS_EFECTIVO: NextStep[] = [
   { titulo: 'Tu pedido ya está reservado', detalle: 'No hace falta pagar nada por adelantado' },
   { titulo: 'Pagás en efectivo cuando retirás', detalle: `Te esperamos en ${TIENDA.direccion}, en el horario que elegiste` },
   { titulo: 'Te confirmamos por WhatsApp o email', detalle: 'Si necesitamos ajustar el horario, te escribimos antes' },
-];
-
-const NEXT_STEPS_EFECTIVO_ENVIO: NextStep[] = [
-  { titulo: 'Tu pedido ya está reservado', detalle: 'No hace falta pagar nada por adelantado' },
-  { titulo: 'Pagás en efectivo al recibirlo', detalle: 'Le abonás el total al repartidor: el monto ya incluye el envío' },
-  { titulo: 'Te confirmamos la entrega por WhatsApp o email', detalle: 'Coordinamos el día y la franja horaria antes de salir' },
 ];
 
 const resolveOutcome = (paymentStatus: string | null): PaymentOutcome => {
@@ -281,9 +275,7 @@ const PaymentSuccessPage = () => {
       detail: pedidoData?.medio_pago === 'transferencia'
         ? 'Nos falta confirmar tu transferencia para preparar el pedido.'
         : pedidoData?.medio_pago === 'efectivo'
-          ? (pedidoData?.metodo_envio === 'retiro'
-              ? 'Reservamos tu pedido: abonás en efectivo cuando lo retirás.'
-              : 'Reservamos tu pedido: abonás en efectivo cuando lo recibís.')
+          ? 'Reservamos tu pedido: abonás en efectivo cuando lo retirás en la tienda.'
           : 'Tu pago quedó pendiente de acreditación. Te avisamos en cuanto se confirme.',
       estado: pedidoData?.medio_pago === 'efectivo' ? 'Estado: Reservado, se paga en efectivo' : 'Estado: Pendiente de pago',
       estadoDetail: pedidoData?.medio_pago === 'efectivo'
@@ -321,7 +313,7 @@ const PaymentSuccessPage = () => {
     : esTransferencia
       ? NEXT_STEPS_TRANSFERENCIA
       : esEfectivo
-        ? (isPickup ? NEXT_STEPS_EFECTIVO_RETIRO : NEXT_STEPS_EFECTIVO_ENVIO)
+        ? NEXT_STEPS_EFECTIVO
         : NEXT_STEPS.pending;
 
   if (!pedidoId) {
@@ -614,7 +606,7 @@ const PaymentSuccessPage = () => {
 
         {!isPaid && esEfectivo && totalPedido > 0 && (
           <div className="mb-8">
-            <CashPaymentInfo total={totalPedido} isPickup={isPickup} />
+            <CashPaymentInfo total={totalPedido} />
           </div>
         )}
 

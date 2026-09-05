@@ -408,7 +408,12 @@ def simple_checkout_with_items(request):
                 'error': 'Faltan campos requeridos',
                 'details': missing_fields
             }, status=400)
-        
+
+        if data.get('medio_pago') == 'efectivo' and (data.get('metodo_envio') or data.get('tipo_envio')) != 'retiro':
+            return JsonResponse({
+                'error': 'El pago en efectivo solo está disponible para retiro en tienda'
+            }, status=400)
+
         with transaction.atomic():
             # Obtener método de envío
             try:
