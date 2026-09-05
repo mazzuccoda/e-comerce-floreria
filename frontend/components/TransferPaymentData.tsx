@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { TRANSFER_DATA } from './paymentInfo'
 
 interface TransferPaymentDataProps {
   total: number
@@ -18,14 +19,7 @@ export default function TransferPaymentData({ total, showQR = true, pedidoId, on
   const [showMpQr, setShowMpQr] = useState(false)
   const [createdPedidoId, setCreatedPedidoId] = useState<string | null>(null)
 
-  // Datos de transferencia
-  const transferData = {
-    banco: 'Mercado Pago',
-    alias: 'eleososatuc',
-    cvu: '0000003100095405777972',
-    titular: 'Monica Eleonora Sosa',
-    cuit: '27-26676582-2'
-  }
+  const transferData = TRANSFER_DATA
 
   // Generar QR simple con los datos de transferencia
   useEffect(() => {

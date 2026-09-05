@@ -8,6 +8,8 @@ import ExtrasSelector from '@/app/components/ExtrasSelector';
 import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
+import CashPaymentInfo from '@/components/CashPaymentInfo';
+import { TIENDA } from '@/components/paymentInfo';
 import toast from 'react-hot-toast';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
@@ -775,12 +777,23 @@ const MultiStepCheckoutPage = () => {
     
     // VALIDAR SIEMPRE, independientemente de formSubmitted
     const error = validateField(name, newValue);
-    console.log(`Validando campo ${name} en tiempo real:`, error ? `❌ ERROR: ${error}` : '✅ OK');
     
-    setFormErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
+    setFormErrors(prev => {
+      const next = { ...prev };
+      if (error) {
+        next[name] = error;
+      } else {
+        delete next[name];
+      }
+      return next;
+    });
+  };
+
+  // En mobile el botón queda al pie: sin esto el paso nuevo arranca scrolleado al footer
+  const scrollToStepTop = () => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const nextStep = () => {
@@ -797,6 +810,7 @@ const MultiStepCheckoutPage = () => {
     if (isValid && currentStep < maxStep) {
       const nextStepNumber = currentStep + 1;
       setCurrentStep(nextStepNumber);
+      scrollToStepTop();
       
       // Trackear progreso del checkout
       const stepName = steps[nextStepNumber]?.title || `Paso ${nextStepNumber}`;
@@ -815,9 +829,13 @@ const MultiStepCheckoutPage = () => {
     }
   };
 
+  // Un campo corregido borra su error, pero el banner sólo debe verse si queda alguno
+  const hasVisibleErrors = Object.values(formErrors).some(Boolean);
+
   const prevStep = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+      scrollToStepTop();
       // Al retroceder, no es necesario validar
       setFormSubmitted(false);
     }
@@ -1020,6 +1038,7 @@ const MultiStepCheckoutPage = () => {
         const pedidoData = {
           pedido_id: result.pedido_id,
           numero_pedido: result.numero_pedido,
+          token_acceso: result.token_acceso || '',
           total: result.total, // Total ya incluye envío (viene del backend)
           items: directCart.items,
           comprador: {
@@ -1027,12 +1046,19 @@ const MultiStepCheckoutPage = () => {
             email: formData.email,
             telefono: formData.telefono
           },
-          destinatario: {
-            nombre: formData.nombreDestinatario,
-            telefono: formData.telefonoDestinatario,
-            direccion: formData.direccion,
-            ciudad: formData.ciudad
-          },
+          destinatario: formData.metodoEnvio === 'retiro'
+            ? {
+                nombre: formData.nombre,
+                telefono: formData.telefono,
+                direccion: TIENDA.direccion,
+                ciudad: ''
+              }
+            : {
+                nombre: formData.nombreDestinatario,
+                telefono: formData.telefonoDestinatario,
+                direccion: formData.direccion,
+                ciudad: formData.ciudad
+              },
           dedicatoria: {
             mensaje: formData.mensaje,
             firmadoComo: formData.firmadoComo,
@@ -1920,6 +1946,7 @@ const MultiStepCheckoutPage = () => {
                 <div className="flex flex-col relative md:col-span-2">
                   <input 
                     name="nombre"
+                    autoComplete="name"
                     value={formData.nombre}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('nombre')}
@@ -1935,7 +1962,7 @@ const MultiStepCheckoutPage = () => {
                   {touchedFields.nombre && formData.nombre.trim() && !formErrors.nombre && (
                     <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
                   )}
-                  {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
+                  <span className="text-red-600 font-medium text-sm mt-1 min-h-[20px]">{formErrors.nombre ? `⚠️ ${formErrors.nombre}` : ''}</span>
                 </div>
                 <input type="hidden" name="apellido" value={formData.apellido} />
                 <div className="flex flex-col relative">
@@ -1943,6 +1970,8 @@ const MultiStepCheckoutPage = () => {
                   <input 
                     id="email"
                     name="email"
+                    inputMode="email"
+                    autoComplete="email"
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -1963,13 +1992,16 @@ const MultiStepCheckoutPage = () => {
                   {touchedFields.email && formData.email.trim() && !formErrors.email && (
                     <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
                   )}
-                  {formErrors.email && <span id="email-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.email}</span>}
+                  <span id="email-error" className="text-red-600 font-medium text-sm mt-1 min-h-[20px]">{formErrors.email ? `⚠️ ${formErrors.email}` : ''}</span>
                 </div>
                 <div className="flex flex-col relative">
                   <label htmlFor="telefono" className="sr-only">Teléfono</label>
                   <input 
                     id="telefono"
                     name="telefono"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={formData.telefono}
                     onChange={handleInputChange}
                     onBlur={() => handleFieldBlur('telefono')}
@@ -1989,7 +2021,7 @@ const MultiStepCheckoutPage = () => {
                   {touchedFields.telefono && formData.telefono.trim() && !formErrors.telefono && (
                     <span className="absolute right-4 top-4 text-green-600 text-xl">✓</span>
                   )}
-                  {formErrors.telefono && <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.telefono}</span>}
+                  <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1 min-h-[20px]">{formErrors.telefono ? `⚠️ ${formErrors.telefono}` : ''}</span>
                 </div>
               </div>
               <div className="mt-4">
@@ -2198,6 +2230,10 @@ const MultiStepCheckoutPage = () => {
                 />
               )}
               
+              {formData.metodoPago === 'efectivo' && (
+                <CashPaymentInfo total={calculateTotal()} isPickup={true} />
+              )}
+              
               <div className="mt-6">
                 <div className="flex flex-col">
                   <label className="flex items-start">
@@ -2344,17 +2380,20 @@ const MultiStepCheckoutPage = () => {
                     className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.nombreDestinatario ? 'border-2 border-red-300 bg-red-50/10' : ''}`}
                     placeholder="Nombre completo del destinatario" 
                   />
-                  {formErrors.nombreDestinatario && <span className="text-red-600 text-sm mt-1">{formErrors.nombreDestinatario}</span>}
+                  <span className="text-red-600 text-sm mt-1 min-h-[20px]">{formErrors.nombreDestinatario || ''}</span>
                 </div>
                 <div className="flex flex-col md:col-span-2">
                   <input 
                     name="telefonoDestinatario"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={formData.telefonoDestinatario}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl bg-white/50 border-0 ${formErrors.telefonoDestinatario ? 'border-2 border-red-300 bg-red-50/10' : ''}`} 
                     placeholder="Teléfono (para coordinar la entrega)" 
                   />
-                  {formErrors.telefonoDestinatario && <span className="text-red-600 text-sm mt-1">{formErrors.telefonoDestinatario}</span>}
+                  <span className="text-red-600 text-sm mt-1 min-h-[20px]">{formErrors.telefonoDestinatario || ''}</span>
                 </div>
               </div>
               
@@ -2389,6 +2428,7 @@ const MultiStepCheckoutPage = () => {
                 <div className="flex flex-col md:col-span-2">
                   <input 
                     name="nombre"
+                    autoComplete="name"
                     value={formData.nombre}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl transition-all ${
@@ -2398,7 +2438,7 @@ const MultiStepCheckoutPage = () => {
                     }`} 
                     placeholder={isPickup ? "Nombre de quien retira" : "Nombre de quien envía"} 
                   />
-                  {formErrors.nombre && <span className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.nombre}</span>}
+                  <span className="text-red-600 font-medium text-sm mt-1 min-h-[20px]">{formErrors.nombre ? `⚠️ ${formErrors.nombre}` : ''}</span>
                 </div>
                 <input type="hidden" name="apellido" value={formData.apellido} />
                 <div className="flex flex-col">
@@ -2406,6 +2446,8 @@ const MultiStepCheckoutPage = () => {
                   <input 
                     id="email"
                     name="email"
+                    inputMode="email"
+                    autoComplete="email"
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -2420,13 +2462,16 @@ const MultiStepCheckoutPage = () => {
                     {...(formErrors.email && { 'aria-invalid': 'true' })}
                     aria-describedby={formErrors.email ? "email-error" : undefined}
                   />
-                  {formErrors.email && <span id="email-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.email}</span>}
+                  <span id="email-error" className="text-red-600 font-medium text-sm mt-1 min-h-[20px]">{formErrors.email ? `⚠️ ${formErrors.email}` : ''}</span>
                 </div>
                 <div className="flex flex-col">
                   <label htmlFor="telefono" className="sr-only">Teléfono</label>
                   <input 
                     id="telefono"
                     name="telefono"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={formData.telefono}
                     onChange={handleInputChange}
                     className={`p-4 rounded-xl transition-all ${
@@ -2440,7 +2485,7 @@ const MultiStepCheckoutPage = () => {
                     {...(formErrors.telefono && { 'aria-invalid': 'true' })}
                     aria-describedby={formErrors.telefono ? "telefono-error" : undefined}
                   />
-                  {formErrors.telefono && <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1">⚠️ {formErrors.telefono}</span>}
+                  <span id="telefono-error" className="text-red-600 font-medium text-sm mt-1 min-h-[20px]">{formErrors.telefono ? `⚠️ ${formErrors.telefono}` : ''}</span>
                 </div>
               </div>
               <div className="mt-4">
@@ -2666,6 +2711,10 @@ const MultiStepCheckoutPage = () => {
                   />
                 )}
                 
+                {formData.metodoPago === 'efectivo' && (
+                  <CashPaymentInfo total={calculateTotal()} isPickup={false} />
+                )}
+                
                 <div className="mt-6">
                   <div className="flex flex-col">
                     <label className="flex items-start">
@@ -2705,7 +2754,7 @@ const MultiStepCheckoutPage = () => {
           
           {currentStep < (isPickup ? 3 : 4) ? (
             <div className="flex flex-col items-stretch sm:items-end flex-1 sm:flex-initial">
-              {formSubmitted && Object.keys(formErrors).length > 0 && (
+              {formSubmitted && hasVisibleErrors && (
                 <p className="text-red-500 text-sm mb-2 text-center sm:text-right bg-red-50 p-2 rounded-lg border border-red-200">
                   ⚠️ Por favor, completa correctamente todos los campos requeridos.
                 </p>
@@ -2719,7 +2768,7 @@ const MultiStepCheckoutPage = () => {
             </div>
           ) : (
             <div className="flex flex-col items-stretch sm:items-end flex-1 sm:flex-initial">
-              {formSubmitted && Object.keys(formErrors).length > 0 && (
+              {formSubmitted && hasVisibleErrors && (
                 <p className="text-red-500 text-sm mb-2 text-center sm:text-right bg-red-50 p-2 rounded-lg border border-red-200">
                   ⚠️ Debes aceptar los términos y condiciones para continuar.
                 </p>

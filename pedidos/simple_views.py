@@ -512,7 +512,9 @@ def simple_checkout_with_items(request):
                 'success': True,
                 'pedido_id': pedido.id,
                 'numero_pedido': pedido.numero_pedido,
-                'total': str(pedido.total)
+                'total': str(pedido.total),
+                # Permite el seguimiento del pedido sin cuenta (checkout de invitado)
+                'token_acceso': pedido.token_acceso,
             })
             
     except Exception as e:
