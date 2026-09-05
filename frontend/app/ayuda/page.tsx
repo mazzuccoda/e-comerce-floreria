@@ -47,7 +47,7 @@ const faqData: FAQItem[] = [
   {
     id: 8,
     question: "¿Puedo cancelar o modificar mi pedido?",
-    answer: "Podés cancelar o modificar tu pedido hasta 2 horas después de haberlo realizado, siempre que aún no haya sido preparado. Contactanos lo antes posible para gestionar cualquier cambio."
+    answer: "Podés cancelar o modificar tu pedido hasta 24 horas antes de la entrega programada. Contactanos lo antes posible para gestionar cualquier cambio."
   }
 ];
 

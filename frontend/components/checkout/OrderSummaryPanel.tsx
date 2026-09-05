@@ -142,12 +142,12 @@ export default function OrderSummaryPanel({
         <ul className="space-y-2 text-[13px] leading-snug text-gray-600">
           <li className="flex gap-2">
             <CheckIcon />
-            <span>Arreglos preparados el mismo día de la entrega.</span>
+            <span>Flores frescas seleccionadas para cada arreglo.</span>
           </li>
           <li className="flex gap-2">
             <CheckIcon />
             <span>
-              Cancelás o modificás hasta 2 horas antes de la entrega (
+              Cancelás o modificás hasta 24 horas antes de la entrega (
               <a
                 href="/terminos"
                 target="_blank"

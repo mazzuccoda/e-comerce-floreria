@@ -116,7 +116,7 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold text-green-700 mb-4">7. Cancelaciones y Modificaciones</h2>
           <ul className="list-disc ml-6 space-y-2 text-gray-700">
-            <li>Puede cancelar o modificar su pedido hasta <strong>2 horas antes</strong> de la entrega programada</li>
+            <li>Puede cancelar o modificar su pedido hasta <strong>24 horas antes</strong> de la entrega programada</li>
             <li>Para cancelaciones, contacte a nuestro servicio al cliente</li>
             <li>Las cancelaciones después del plazo establecido no tendrán reembolso</li>
             <li>Los reembolsos se procesan en 5-10 días hábiles según el medio de pago</li>
