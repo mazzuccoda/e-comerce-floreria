@@ -9,7 +9,9 @@ import AddressMapPicker from '@/app/components/AddressMapPicker';
 import { AddressData } from '@/types/Address';
 import TransferPaymentData from '@/components/TransferPaymentData';
 import CashPaymentInfo from '@/components/CashPaymentInfo';
-import { TIENDA } from '@/components/paymentInfo';
+import { TIENDA, formatARS } from '@/components/paymentInfo';
+import OrderSummaryPanel from '@/components/checkout/OrderSummaryPanel';
+import ConfirmedRow from '@/components/checkout/ConfirmedRow';
 import toast from 'react-hot-toast';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
@@ -1282,28 +1284,83 @@ const MultiStepCheckoutPage = () => {
     );
   };
 
+  const shippingLabel = isPickup
+    ? 'Retiro en tienda'
+    : formData.metodoEnvio === 'express'
+      ? 'Envío express'
+      : 'Envío programado';
+
+  const formatFechaCorta = (fecha: string): string => {
+    if (!fecha) return '';
+    const [year, month, day] = fecha.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('es-AR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+  };
+
+  const getDeliveryPromise = (): string | null => {
+    if (isPickup) {
+      if (formData.fecha && formData.hora) {
+        return `Retirás el ${formatFechaCorta(formData.fecha)} a las ${formData.hora} hs`;
+      }
+      return `Retirás en ${TIENDA.direccion}`;
+    }
+    if (formData.metodoEnvio === 'express') {
+      return getExpressAvailabilityMessage().message.replace('✅ ', '');
+    }
+    if (formData.fecha && formData.franjaHoraria) {
+      const franja = formData.franjaHoraria === 'mañana' ? 'entre 9:00 y 12:00 hs' : 'entre 16:00 y 20:00 hs';
+      return `Entrega el ${formatFechaCorta(formData.fecha)}, ${franja}`;
+    }
+    return null;
+  };
+
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+    setFormSubmitted(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getPrimaryCtaLabel = (): string => {
+    const monto = formatARS(calculateTotal());
+    switch (formData.metodoPago) {
+      case 'mercadopago':
+        return `Pagar ${monto} con Mercado Pago`;
+      case 'paypal':
+        return `Pagar ${monto} con PayPal`;
+      case 'transferencia':
+        return 'Confirmar y ver datos de transferencia';
+      case 'efectivo':
+        return 'Reservar y pagar al retirar';
+      default:
+        return `Confirmar pedido por ${monto}`;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 sm:pt-28">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-24 sm:pt-28">
       {/* Prompt para restaurar progreso */}
       <RestoreProgressPrompt />
       
-      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-5xl">
-        {/* Header mejorado */}
-        <div className="text-center mb-8 sm:mb-12">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl">🌸</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Florería</span> Cristina
-            </h1>
-          </div>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-gray-100">
-            <span className="text-sm font-medium text-gray-500">Paso</span>
-            <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full text-sm font-bold">{currentStep + 1}</span>
-            <span className="text-sm text-gray-400">de {steps.length}</span>
-            <span className="hidden sm:inline text-sm text-gray-400">|</span>
-            <span className="hidden sm:inline text-sm font-medium text-green-600">{steps[currentStep].title}</span>
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10 max-w-6xl">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+            Florería Cristina
+          </p>
+          <h1 className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-gray-900">
+            Finalizá tu pedido
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Paso {currentStep + 1} de {steps.length} · {steps[currentStep].title}
+          </p>
+          <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+              style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
+            />
           </div>
         </div>
 
@@ -1343,178 +1400,68 @@ const MultiStepCheckoutPage = () => {
           </div>
         </div>
         
-        {/* Resumen del pedido - Movido aquí para mejor UX en mobile */}
-        <div className="mb-8 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 sm:p-6 shadow-xl border-2 border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
-                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
-                <path d="M16.5 9.4 7.55 4.24"/>
-                <polyline points="3.29 7 12 12 20.71 7"/>
-                <line x1="12" y1="22" x2="12" y2="12"/>
-                <circle cx="18.5" cy="15.5" r="2.5"/>
-                <path d="M20.27 17.27 22 19"/>
-              </svg>
-              <span>Resumen del pedido</span>
-            </h3>
-            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs sm:text-sm font-semibold">
-              {directCart?.total_items || 0} {directCart?.total_items === 1 ? 'producto' : 'productos'}
-            </span>
-          </div>
-          
-          {/* Productos del carrito */}
-          {directCart?.items && directCart.items.length > 0 ? (
-            <div className="space-y-2 mb-4">
-              {directCart.items.map((item, index) => (
-                <div key={index} className="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                  <div className="flex gap-3 items-center">
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {item.producto.imagen_principal ? (
-                        <img
-                          src={item.producto.imagen_principal}
-                          alt={item.producto.nombre}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-2xl">🌸</span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 text-sm truncate">{item.producto.nombre}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          × {item.quantity}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          ${Number(item.price).toLocaleString('es-AR', { minimumFractionDigits: 2 })} c/u
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-base sm:text-lg font-bold text-green-600">
-                        ${(Number(item.price) * item.quantity).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-red-500 mb-4 p-3 bg-red-50 rounded-lg text-sm">
-              ⚠️ No hay productos en el carrito
-            </div>
-          )}
-          
-          {/* Totales */}
-          <div className="border-t border-gray-200 pt-3 space-y-2">
-            <div className="flex justify-between text-gray-700 text-sm">
-              <span>Subtotal productos</span>
-              <span className="font-semibold">${directCart.total_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            
-            {/* Costo de envío */}
-            <div className="flex justify-between text-gray-700 text-sm">
-              <span className="flex items-center gap-1">
-                {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
-                {formData.metodoEnvio === 'express' && '⚡ Envío Express'}
-                {formData.metodoEnvio === 'programado' && '📅 Envío Programado'}
-              </span>
-              <span className="font-semibold">
-                {formData.metodoEnvio === 'retiro' && 'Sin cargo'}
-                {formData.metodoEnvio !== 'retiro' && (
-                  isCalculatingShipping ? (
-                    <span className="text-blue-600">Calculando...</span>
-                  ) : calculatedShippingCost !== null && calculatedShippingCost !== undefined && calculatedShippingCost > 0 ? (
-                    `+$${calculatedShippingCost.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  ) : calculatedShippingCost === 0 ? (
-                    <span className="text-green-600">GRATIS</span>
-                  ) : (
-                    <span className="text-gray-500 italic">A calcular</span>
-                  )
-                )}
-              </span>
-            </div>
-            
-            {/* Total */}
-            <div className="flex justify-between text-lg font-bold text-gray-900 border-t border-gray-200 pt-2">
-              <span>Total a Pagar</span>
-              <span className="text-green-600">
-                ${(() => {
-                  const costoEnvio = formData.metodoEnvio === 'retiro' ? 0 : (calculatedShippingCost || 0);
-                  return (directCart.total_price + costoEnvio).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                })()}
-              </span>
-            </div>
-          </div>
-        </div>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+          <aside className="lg:order-2 lg:sticky lg:top-28">
+            <OrderSummaryPanel
+              items={directCart?.items || []}
+              totalItems={directCart?.total_items || 0}
+              subtotal={directCart?.total_price || 0}
+              shippingLabel={shippingLabel}
+              shippingCost={calculatedShippingCost}
+              isPickup={isPickup}
+              isCalculating={isCalculatingShipping}
+              total={calculateTotal()}
+              deliveryPromise={getDeliveryPromise()}
+            />
+          </aside>
 
-        {/* Resumen de pasos completados */}
+          <div className="min-w-0 lg:order-1">
+
+        {/* Datos confirmados, editables */}
         {currentStep > 0 && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-6 border-2 border-green-200 shadow-md">
-            <div className="flex items-center gap-2 mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-600">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-              <h3 className="font-semibold text-green-800">Datos completados</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              {/* Método de envío siempre se muestra */}
-              <div className="bg-white p-3 rounded-lg flex items-center gap-2">
-                <span className="text-green-600">✓</span>
-                <div>
-                  <span className="font-medium text-gray-700">Método de envío:</span>
-                  <span className="ml-2 text-gray-900">
-                    {formData.metodoEnvio === 'retiro' && '🏪 Retiro en tienda'}
-                    {formData.metodoEnvio === 'express' && '⚡ Express'}
-                    {formData.metodoEnvio === 'programado' && '📅 Programado'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Destinatario (solo en flujo de envío) */}
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+              Datos confirmados
+            </p>
+            <dl className="divide-y divide-gray-100">
+              <ConfirmedRow
+                label="Entrega"
+                value={[shippingLabel, getDeliveryPromise()].filter(Boolean).join(' \u00b7 ')}
+                onEdit={() => goToStep(0)}
+              />
               {!isPickup && currentStep > 1 && formData.nombreDestinatario && (
-                <div className="bg-white p-3 rounded-lg flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
-                  <div>
-                    <span className="font-medium text-gray-700">Destinatario:</span>
-                    <span className="ml-2 text-gray-900">{formData.nombreDestinatario}</span>
-                  </div>
-                </div>
+                <ConfirmedRow
+                  label="Destinatario"
+                  value={[formData.nombreDestinatario, formData.direccion].filter(Boolean).join(' \u00b7 ')}
+                  onEdit={() => goToStep(1)}
+                />
               )}
-              
-              {/* Remitente */}
               {((isPickup && currentStep > 1) || (!isPickup && currentStep > 2)) && formData.nombre && (
-                <div className="bg-white p-3 rounded-lg flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
-                  <div>
-                    <span className="font-medium text-gray-700">Remitente:</span>
-                    <span className="ml-2 text-gray-900">{formData.nombre}</span>
-                  </div>
-                </div>
+                <ConfirmedRow
+                  label={isPickup ? 'Qui\u00e9n retira' : 'Remitente'}
+                  value={[formData.nombre, formData.telefono].filter(Boolean).join(' \u00b7 ')}
+                  onEdit={() => goToStep(isPickup ? 1 : 2)}
+                />
               )}
-              
-              {/* Dedicatoria */}
               {((isPickup && currentStep > 2) || (!isPickup && currentStep > 3)) && formData.mensaje && (
-                <div className="bg-white p-3 rounded-lg flex items-start gap-2">
-                  <span className="text-green-600">✓</span>
-                  <div className="flex-1">
-                    <span className="font-medium text-gray-700">Dedicatoria:</span>
-                    <p className="ml-2 text-gray-900 text-sm italic mt-1">"{formData.mensaje}"</p>
-                  </div>
-                </div>
+                <ConfirmedRow
+                  label="Dedicatoria"
+                  value={`\u201c${formData.mensaje}\u201d`}
+                  onEdit={() => goToStep(isPickup ? 2 : 3)}
+                />
               )}
-            </div>
+            </dl>
           </div>
         )}
 
+
         {/* Step Content con animación */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 mb-8 transform transition-all duration-300 hover:shadow-3xl animate-fadeIn">
+        <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
           {/* PASO 0: ELEGIR MÉTODO DE ENVÍO (común para ambos flujos) */}
           {currentStep === 0 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">🚚 ¿Cómo deseas recibir tu pedido?</h2>
-              <p className="text-gray-600 mb-6">Selecciona el método de envío que prefieras</p>
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900">¿Cómo querés recibir tu pedido?</h2>
+              <p className="mb-6 mt-1 text-sm text-gray-500">Elegí una opción para ver el costo y el tiempo de entrega.</p>
               
               <div className="space-y-4">
                 {/* Retiro en Tienda */}
@@ -1948,7 +1895,7 @@ const MultiStepCheckoutPage = () => {
           {/* FLUJO RETIRO EN TIENDA */}
           {isPickup && currentStep === 1 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">👤 ¿Quién retira el pedido?</h2>
+              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">¿Quién retira el pedido?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col relative md:col-span-2">
                   <input 
@@ -2051,7 +1998,7 @@ const MultiStepCheckoutPage = () => {
 
           {isPickup && currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">💌 Dedicatoria y Extras</h2>
+              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">Dedicatoria y extras <span className="ml-1 text-sm font-normal text-gray-400">(opcional)</span></h2>
               
               {/* Dedicatoria */}
               <div className="mb-8">
@@ -2102,8 +2049,8 @@ const MultiStepCheckoutPage = () => {
 
           {isPickup && currentStep === 3 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">💳 Método de Pago</h2>
-              <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900">¿Cómo querés pagar?</h2>
+              <p className="mb-6 mt-1 text-sm text-gray-500">Elegí el medio de pago y confirmá tu pedido.</p>
               
               {/* PayPal Integration v1.0 - 4 payment methods */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -2264,7 +2211,7 @@ const MultiStepCheckoutPage = () => {
           {/* FLUJO ENVÍO A DOMICILIO */}
           {!isPickup && currentStep === 1 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">📍 Datos del Destinatario</h2>
+              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">¿A quién se lo entregamos?</h2>
               
               {/* Mapa interactivo para seleccionar dirección */}
               <div className="mb-6">
@@ -2430,7 +2377,7 @@ const MultiStepCheckoutPage = () => {
 
           {!isPickup && currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">💝 ¿Quién envía este regalo?</h2>
+              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">¿Quién envía este regalo?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col md:col-span-2">
                   <input 
@@ -2515,7 +2462,7 @@ const MultiStepCheckoutPage = () => {
 
           {!isPickup && currentStep === 3 && (
             <div>
-              <h2 className="text-2xl font-light mb-6">💌 Dedicatoria y Extras</h2>
+              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">Dedicatoria y extras <span className="ml-1 text-sm font-normal text-gray-400">(opcional)</span></h2>
               
               {/* Dedicatoria */}
               <div className="mb-8">
@@ -2583,8 +2530,8 @@ const MultiStepCheckoutPage = () => {
                 </p>
               </div>
 
-              <h2 className="text-2xl font-light mb-6">💳 Método de Pago</h2>
-              <p className="text-gray-600 mb-6">Selecciona cómo deseas pagar tu compra</p>
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900">¿Cómo querés pagar?</h2>
+              <p className="mb-6 mt-1 text-sm text-gray-500">Elegí el medio de pago y confirmá tu pedido.</p>
                 
                 {/* PayPal Integration v1.0 - 4 payment methods (Delivery) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -2716,67 +2663,78 @@ const MultiStepCheckoutPage = () => {
           )}
         </div>
 
-        {/* Navigation Buttons mejorados */}
-        <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8">
-          {currentStep > 0 ? (
-            <button
-              onClick={prevStep}
-              className="px-6 py-3 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg font-medium text-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              ← Anterior
-            </button>
-          ) : (
-            <div className="hidden sm:block">{/* Espacio vacío en desktop */}</div>
+        {/* Navegación: barra fija en mobile, en línea en desktop */}
+        <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+          {formSubmitted && hasVisibleErrors && (
+            <p className="mb-2 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">
+              {currentStep === (isPickup ? 3 : 4)
+                ? 'Revisá los campos marcados y aceptá los términos para continuar.'
+                : 'Revisá los campos marcados para continuar.'}
+            </p>
           )}
-          
-          {currentStep < (isPickup ? 3 : 4) ? (
-            <div className="flex flex-col items-stretch sm:items-end flex-1 sm:flex-initial">
-              {formSubmitted && hasVisibleErrors && (
-                <p className="text-red-500 text-sm mb-2 text-center sm:text-right bg-red-50 p-2 rounded-lg border border-red-200">
-                  ⚠️ Por favor, completa correctamente todos los campos requeridos.
-                </p>
-              )}
+          <div className="flex items-center justify-between gap-3 lg:hidden">
+            <div className="leading-tight">
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">Total</p>
+              <p className="text-lg font-semibold text-gray-900">{formatARS(calculateTotal())}</p>
+            </div>
+            {currentStep > 0 && (
+              <button
+                onClick={prevStep}
+                className="rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-600"
+              >
+                Volver
+              </button>
+            )}
+          </div>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:mt-0">
+            {currentStep > 0 ? (
+              <button
+                onClick={prevStep}
+                className="hidden rounded-xl border border-gray-200 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 lg:block"
+              >
+                ← Anterior
+              </button>
+            ) : (
+              <div className="hidden lg:block" />
+            )}
+
+            {currentStep < (isPickup ? 3 : 4) ? (
               <button
                 onClick={nextStep}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all flex items-center justify-center gap-2 font-semibold text-lg shadow-lg hover:scale-105 transform"
+                className="w-full rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:w-auto"
               >
-                Siguiente →
+                Continuar
               </button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-stretch sm:items-end flex-1 sm:flex-initial">
-              {formSubmitted && hasVisibleErrors && (
-                <p className="text-red-500 text-sm mb-2 text-center sm:text-right bg-red-50 p-2 rounded-lg border border-red-200">
-                  ⚠️ Debes aceptar los términos y condiciones para continuar.
-                </p>
-              )}
+            ) : (
               <button
                 onClick={handleFinalizarPedido}
                 disabled={loading}
-                className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl hover:shadow-xl transition-all text-lg font-bold flex items-center justify-center gap-3 shadow-lg hover:scale-105 transform disabled:scale-100 disabled:cursor-not-allowed"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-400 sm:w-auto"
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Procesando...</span>
+                    <span>Procesando…</span>
                   </>
                 ) : (
-                  <>
-                    <span>🎉 Confirmar Pedido</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </>
+                  <span>{getPrimaryCtaLabel()}</span>
                 )}
               </button>
-            </div>
+            )}
+          </div>
+          {currentStep === (isPickup ? 3 : 4) && !loading && (
+            <p className="mt-2 text-center text-xs text-gray-500 sm:text-right">
+              {formData.metodoPago === 'transferencia' && 'Te mostramos alias y CVU en la pantalla siguiente.'}
+              {formData.metodoPago === 'efectivo' && 'No pagás nada ahora: abonás al retirar en la tienda.'}
+              {(formData.metodoPago === 'mercadopago' || formData.metodoPago === 'paypal') &&
+                'Te llevamos al pago seguro y volvés a la web al terminar.'}
+            </p>
           )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
