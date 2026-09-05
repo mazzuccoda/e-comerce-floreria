@@ -7,6 +7,9 @@ import Image from 'next/image';
 import dynamicImport from 'next/dynamic';
 import { trackPurchase } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
+import TransferPaymentData from '@/components/TransferPaymentData';
+import CashPaymentInfo from '@/components/CashPaymentInfo';
+import { TIENDA } from '@/components/paymentInfo';
 
 // Importar componente de QR de forma dinámica (opcional)
 const TransferQROptional = dynamicImport(() => import('@/components/TransferQROptional'), {
@@ -30,6 +33,7 @@ interface PedidoItem {
 interface PedidoData {
   pedido_id: number;
   numero_pedido: string;
+  token_acceso?: string;
   total: string;
   items: PedidoItem[];
   comprador: {
@@ -49,6 +53,7 @@ interface PedidoData {
     incluirTarjeta: boolean;
   };
   fecha_entrega: string;
+  hora_retiro?: string;
   franja_horaria?: string;
   metodo_envio?: string;
   costo_envio?: number;
@@ -90,6 +95,19 @@ const NEXT_STEPS: Record<PaymentOutcome, NextStep[]> = {
     { titulo: 'Si el pago no se registró, te avisamos por email', detalle: 'Vas a poder reintentarlo desde el pedido' },
   ],
 };
+
+// Transferencia y efectivo no tienen acreditación automática: el paso a paso es distinto
+const NEXT_STEPS_TRANSFERENCIA: NextStep[] = [
+  { titulo: 'Transferí el total a los datos de acá abajo', detalle: 'Podés copiar el alias o el CVU con un toque, o escanear el QR con tu app bancaria' },
+  { titulo: 'Mandanos el comprobante por WhatsApp', detalle: 'Con el comprobante confirmamos el pedido y empezamos a prepararlo' },
+  { titulo: 'Te avisamos por email al confirmarlo', detalle: 'Tu pedido queda reservado mientras esperamos la transferencia' },
+];
+
+const NEXT_STEPS_EFECTIVO: NextStep[] = [
+  { titulo: 'Tu pedido ya está reservado', detalle: 'No hace falta pagar nada por adelantado' },
+  { titulo: 'Pagás en efectivo cuando retirás', detalle: `Te esperamos en ${TIENDA.direccion}, en el horario que elegiste` },
+  { titulo: 'Te confirmamos por WhatsApp o email', detalle: 'Si necesitamos ajustar el horario, te escribimos antes' },
+];
 
 const resolveOutcome = (paymentStatus: string | null): PaymentOutcome => {
   switch (paymentStatus) {
@@ -257,10 +275,12 @@ const PaymentSuccessPage = () => {
       detail: pedidoData?.medio_pago === 'transferencia'
         ? 'Nos falta confirmar tu transferencia para preparar el pedido.'
         : pedidoData?.medio_pago === 'efectivo'
-          ? 'Vas a abonar en efectivo al momento de la entrega o el retiro.'
+          ? 'Reservamos tu pedido: abonás en efectivo cuando lo retirás en la tienda.'
           : 'Tu pago quedó pendiente de acreditación. Te avisamos en cuanto se confirme.',
-      estado: 'Estado: Pendiente de pago',
-      estadoDetail: 'El pedido queda reservado hasta confirmar el pago'
+      estado: pedidoData?.medio_pago === 'efectivo' ? 'Estado: Reservado, se paga en efectivo' : 'Estado: Pendiente de pago',
+      estadoDetail: pedidoData?.medio_pago === 'efectivo'
+        ? 'No hay nada que pagar por adelantado'
+        : 'El pedido queda reservado hasta confirmar el pago'
     },
     failure: {
       title: 'El pago fue rechazado',
@@ -283,6 +303,18 @@ const PaymentSuccessPage = () => {
   };
 
   const copy = outcomeCopy[outcome];
+  const isPickup = pedidoData?.metodo_envio === 'retiro';
+  const esTransferencia = pedidoData?.medio_pago === 'transferencia';
+  const esEfectivo = pedidoData?.medio_pago === 'efectivo';
+  const totalPedido = pedidoData ? parseFloat(pedidoData.total) : 0;
+
+  const steps: NextStep[] = outcome !== 'pending'
+    ? NEXT_STEPS[outcome]
+    : esTransferencia
+      ? NEXT_STEPS_TRANSFERENCIA
+      : esEfectivo
+        ? NEXT_STEPS_EFECTIVO
+        : NEXT_STEPS.pending;
 
   if (!pedidoId) {
     return (
@@ -367,7 +399,7 @@ const PaymentSuccessPage = () => {
                 </Link>
               )}
               <Link
-                href={`/pedido/${pedidoData?.pedido_id || pedidoId}`}
+                href={`/pedido/${pedidoData?.token_acceso || pedidoData?.pedido_id || pedidoId}`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-800 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-md hover:shadow-lg border-2 border-gray-200"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -501,14 +533,25 @@ const PaymentSuccessPage = () => {
                   </div>
                   
                   <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200 gap-1">
-                    <span className="text-sm sm:text-base text-gray-600">Dirección:</span>
-                    <span className="text-sm sm:text-base font-semibold text-gray-900 text-left sm:text-right">{pedidoData.destinatario.direccion}, {pedidoData.destinatario.ciudad}</span>
+                    <span className="text-sm sm:text-base text-gray-600">{isPickup ? 'Retirás en:' : 'Dirección:'}</span>
+                    <span className="text-sm sm:text-base font-semibold text-gray-900 text-left sm:text-right">
+                      {isPickup
+                        ? TIENDA.direccion
+                        : [pedidoData.destinatario.direccion, pedidoData.destinatario.ciudad].filter(Boolean).join(', ')}
+                    </span>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200 gap-1">
-                    <span className="text-sm sm:text-base text-gray-600">Fecha de entrega:</span>
+                    <span className="text-sm sm:text-base text-gray-600">{isPickup ? 'Fecha de retiro:' : 'Fecha de entrega:'}</span>
                     <span className="text-sm sm:text-base font-semibold text-gray-900">{pedidoData.fecha_entrega}</span>
                   </div>
+                  
+                  {isPickup && pedidoData.hora_retiro && (
+                    <div className="flex flex-col sm:flex-row sm:justify-between py-3 border-b border-gray-200 gap-1">
+                      <span className="text-sm sm:text-base text-gray-600">Hora de retiro:</span>
+                      <span className="text-sm sm:text-base font-semibold text-gray-900">{pedidoData.hora_retiro} hs</span>
+                    </div>
+                  )}
                 </>
               )}
               
@@ -534,7 +577,7 @@ const PaymentSuccessPage = () => {
           </h2>
           
           <div className="space-y-5">
-            {NEXT_STEPS[outcome].map((step, index) => (
+            {steps.map((step, index) => (
               <div key={step.titulo} className="flex items-start gap-4">
                 <div className={`w-10 h-10 bg-gradient-to-br text-white rounded-full flex items-center justify-center text-lg font-bold flex-shrink-0 shadow-lg ${
                   index === 0 ? 'from-blue-500 to-indigo-600' : index === 1 ? 'from-green-500 to-green-700' : 'from-purple-500 to-purple-700'
@@ -549,6 +592,23 @@ const PaymentSuccessPage = () => {
             ))}
           </div>
         </div>
+
+        {/* Datos de pago: el cliente los necesita después de confirmar, no sólo antes */}
+        {!isPaid && esTransferencia && totalPedido > 0 && (
+          <div className="mb-8">
+            <TransferPaymentData
+              total={totalPedido}
+              showQR={true}
+              pedidoId={pedidoData?.pedido_id ? String(pedidoData.pedido_id) : (pedidoId || undefined)}
+            />
+          </div>
+        )}
+
+        {!isPaid && esEfectivo && totalPedido > 0 && (
+          <div className="mb-8">
+            <CashPaymentInfo total={totalPedido} />
+          </div>
+        )}
 
         {/* QR de Transferencia (OPCIONAL) */}
         <TransferQROptional 
