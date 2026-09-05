@@ -18,6 +18,10 @@ const nextConfig = {
     ];
   },
   reactStrictMode: true,
+  compiler: {
+    // En producción sólo sobreviven console.error y console.warn
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+  },
   images: {
     remotePatterns: [
       {

@@ -101,7 +101,7 @@ export default function AdicionalesSection() {
 
               {/* Precio */}
               <p className="text-sm md:text-base text-green-600 font-semibold mt-2">
-                ${producto.precio.toLocaleString('es-AR')}
+                $ {Number(producto.precio).toLocaleString('es-AR')}
               </p>
 
               {/* Stock bajo */}
