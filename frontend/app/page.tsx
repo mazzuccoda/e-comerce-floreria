@@ -6,6 +6,7 @@ import AdicionalesSection from './components/AdicionalesSection';
 import CategoriesSection from './components/CategoriesSection';
 import OfertasDelDia from './components/OfertasDelDia';
 import HomePromiseBar from './components/HomePromiseBar';
+import GoogleReviews from './components/GoogleReviews';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ShoppingBag, CalendarClock, CreditCard } from 'lucide-react';
@@ -122,6 +123,9 @@ export default function Home() {
 
       {/* Sección de adicionales con diseño especial */}
       <AdicionalesSection />
+
+      {/* Reseñas de Google */}
+      <GoogleReviews />
 
       {/* Cómo comprar */}
       <StepByStep />
