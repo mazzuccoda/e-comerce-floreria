@@ -18,27 +18,19 @@
   "home": {
     "pageTitle": "Florería Cristina: flower bouquets and plants delivered in Yerba Buena and San Miguel de Tucumán",
     "howToBuyTitle": "How to buy in 3 minutes",
-    "howToBuySubtitle": "A simple, secure and fast process",
+    "howToBuySubtitle": "Three steps: choose, pick delivery and pay",
     "startShopping": "Start shopping",
     "featured": "FEATURED",
     "dailyDeals": "DAILY DEALS",
     "swipeForMore": "← Swipe to see more deals →",
     "viewAllProducts": "View all products",
     "steps": {
-      "step1Title": "Choose your bouquet",
-      "step1Desc": "Explore best sellers or by occasion",
-      "step2Title": "Complete shipping details",
-      "step2Desc": "Your name and recipient's name",
-      "step3Title": "Add a dedication",
-      "step3Desc": "Make it special with a message",
-      "step4Title": "Add an extra",
-      "step4Desc": "Chocolates, plushies and more",
-      "step5Title": "Choose date and time",
-      "step5Desc": "We coordinate the delivery slot",
-      "step6Title": "Pay securely",
-      "step6Desc": "Multiple methods and instant confirmation",
-      "step7Title": "Delivery confirmed",
-      "step7Desc": "We confirm when it's delivered"
+      "step1Title": "Choose your arrangement",
+      "step1Desc": "Add a dedication and extras if you want",
+      "step2Title": "Choose delivery or pickup",
+      "step2Desc": "Express delivery, a date and time, or store pickup",
+      "step3Title": "Pay and you're done",
+      "step3Desc": "Mercado Pago, PayPal, bank transfer or cash on pickup"
     }
   },
   "products": {

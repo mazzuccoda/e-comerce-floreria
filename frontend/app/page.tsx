@@ -5,9 +5,10 @@ import HeroCarousel from './components/HeroCarousel';
 import AdicionalesSection from './components/AdicionalesSection';
 import CategoriesSection from './components/CategoriesSection';
 import OfertasDelDia from './components/OfertasDelDia';
+import HomePromiseBar from './components/HomePromiseBar';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { ShoppingBag, UserRound, MessageSquareHeart, Gift, CalendarClock, CreditCard, PackageCheck } from 'lucide-react';
+import { ShoppingBag, CalendarClock, CreditCard } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 
 // Cargar el banner de estado sin SSR para evitar errores de hidratación
@@ -20,12 +21,8 @@ function StepByStep() {
   const { t } = useI18n();
   const steps = [
     { icon: ShoppingBag, titleKey: 'home.steps.step1Title', descKey: 'home.steps.step1Desc' },
-    { icon: UserRound, titleKey: 'home.steps.step2Title', descKey: 'home.steps.step2Desc' },
-    { icon: MessageSquareHeart, titleKey: 'home.steps.step3Title', descKey: 'home.steps.step3Desc' },
-    { icon: Gift, titleKey: 'home.steps.step4Title', descKey: 'home.steps.step4Desc' },
-    { icon: CalendarClock, titleKey: 'home.steps.step5Title', descKey: 'home.steps.step5Desc' },
-    { icon: CreditCard, titleKey: 'home.steps.step6Title', descKey: 'home.steps.step6Desc' },
-    { icon: PackageCheck, titleKey: 'home.steps.step7Title', descKey: 'home.steps.step7Desc' },
+    { icon: CalendarClock, titleKey: 'home.steps.step2Title', descKey: 'home.steps.step2Desc' },
+    { icon: CreditCard, titleKey: 'home.steps.step3Title', descKey: 'home.steps.step3Desc' },
   ];
   return (
     <section className="py-16 bg-white">
@@ -55,7 +52,7 @@ function StepByStep() {
           </div>
           
           {/* Vista desktop: Grid */}
-          <ol role="list" className="hidden lg:grid relative grid-cols-4 xl:grid-cols-7 gap-6 items-start">
+          <ol role="list" className="hidden lg:grid relative grid-cols-3 gap-6 items-start">
             {steps.map((s, idx) => (
               <li key={idx} role="listitem" className="group">
                 <div className="flex flex-col items-center text-center h-full">
@@ -90,6 +87,9 @@ export default function Home() {
       {/* Carrusel Hero */}
       <HeroCarousel />
 
+      {/* Envío, retiro, pagos y garantía */}
+      <HomePromiseBar />
+
       {/* Sección de categorías */}
       <CategoriesSection />
 
@@ -107,7 +107,16 @@ export default function Home() {
               <span className="font-bold text-lg">{t('home.featured')}</span>
             </div>
           </div>
-          <ProductListFinal showFeatured={true} />
+          <ProductListFinal showFeatured={true} maxItems={8} />
+
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/productos"
+              className="inline-flex items-center rounded-md border border-green-700 px-6 py-3 font-medium text-green-700 transition-colors hover:bg-green-50"
+            >
+              {t('home.viewAllProducts')}
+            </Link>
+          </div>
         </div>
       </section>
 

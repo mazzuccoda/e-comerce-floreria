@@ -200,9 +200,10 @@ interface ProductListProps {
   showAdditionals?: boolean;
   showFeatured?: boolean;
   showFilters?: boolean;
+  maxItems?: number;
 }
 
-export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFeatured = false, showFilters: showFiltersProp }: ProductListProps) {
+export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFeatured = false, showFilters: showFiltersProp, maxItems }: ProductListProps) {
   const { locale } = useI18n();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -598,7 +599,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
 
       {/* Grid de productos mejorado */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 mt-8 px-2">
-        {displayProducts.map((product) => (
+        {(maxItems ? displayProducts.slice(0, maxItems) : displayProducts).map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
