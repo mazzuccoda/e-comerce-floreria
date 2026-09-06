@@ -89,7 +89,7 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
         <div className="sticky top-8">
           {/* Imagen principal */}
           <div 
-            className="relative aspect-square bg-white rounded-2xl overflow-hidden shadow-xl cursor-pointer group"
+            className="relative aspect-[4/3] sm:aspect-square bg-white rounded-2xl overflow-hidden shadow-xl cursor-pointer group"
             onClick={() => openModal(selectedImageIndex)}
           >
             <img
@@ -147,7 +147,7 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
           )}
 
           {/* Instrucción */}
-          <p className="text-center text-sm text-gray-500 mt-4">
+          <p className="hidden sm:block text-center text-sm text-gray-500 mt-4">
             <ZoomIn className="w-4 h-4 inline mr-1" />
             Haz clic en la imagen para verla en tamaño completo
           </p>

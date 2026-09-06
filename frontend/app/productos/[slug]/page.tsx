@@ -13,6 +13,8 @@ import * as fbPixel from '@/utils/fbPixel';
 import { API_ROOT } from '@/utils/apiBase';
 import { useI18n } from '@/context/I18nContext';
 import { TIENDA } from '@/components/paymentInfo';
+import ProductDeliveryInfo from '@/components/product/ProductDeliveryInfo';
+import RelatedProducts from '@/components/product/RelatedProducts';
 
 interface ProductPageParams {
   params: Promise<{
@@ -204,8 +206,28 @@ export default function ProductPage({ params }: ProductPageParams) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Botón volver */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
+        {/* Breadcrumb */}
+        <nav aria-label="Ubicación" className="mb-6 text-sm text-gray-500">
+          <ol className="flex flex-wrap items-center gap-1.5">
+            <li><Link href="/" className="hover:text-green-700">Inicio</Link></li>
+            <li aria-hidden="true">/</li>
+            <li><Link href="/productos" className="hover:text-green-700">Productos</Link></li>
+            {product.categoria?.slug && (
+              <>
+                <li aria-hidden="true">/</li>
+                <li>
+                  <Link href={`/productos?categoria=${product.categoria.slug}`} className="hover:text-green-700">
+                    {product.categoria.nombre}
+                  </Link>
+                </li>
+              </>
+            )}
+            <li aria-hidden="true">/</li>
+            <li className="text-gray-900" aria-current="page">{product.nombre}</li>
+          </ol>
+        </nav>
+
         <Link 
           href="/productos" 
           className="inline-flex items-center gap-2 text-gray-600 hover:text-green-700 mb-8 transition-colors"
@@ -235,7 +257,7 @@ export default function ProductPage({ params }: ProductPageParams) {
           {/* Información del producto */}
           <div className="flex flex-col">
             {/* Título */}
-            <h1 className="text-4xl lg:text-5xl font-serif text-gray-900 mb-4 leading-tight">
+            <h1 className="text-3xl lg:text-5xl font-serif text-gray-900 mb-4 leading-tight">
               {product.nombre}
             </h1>
 
@@ -276,18 +298,6 @@ export default function ProductPage({ params }: ProductPageParams) {
                 </span>
               )}
             </div>
-
-            {/* Descripción completa */}
-            {product.descripcion && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">{t('products.description')}:</h2>
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                    {product.descripcion}
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Selector de cantidad y botón */}
             {requiresQuote ? (
@@ -355,24 +365,83 @@ export default function ProductPage({ params }: ProductPageParams) {
               </>
             )}
 
-            {/* Información adicional */}
-            <div className="mt-8 space-y-3">
-              {product.tipo_flor && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span className="text-2xl">🌸</span>
-                  <span>Tipo: <strong>{product.tipo_flor.nombre}</strong></span>
+            {/* Entrega, retiro, pagos y garantía */}
+            <ProductDeliveryInfo />
+
+            {/* Descripción completa */}
+            {product.descripcion && (
+              <div className="mt-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">{t('products.description')}</h2>
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+                    {product.descripcion}
+                  </p>
                 </div>
-              )}
-              {product.ocasiones && product.ocasiones.length > 0 && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span className="text-2xl">🎉</span>
-                  <span>Ocasiones: <strong>{product.ocasiones.map(o => o.nombre).join(', ')}</strong></span>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Ficha técnica */}
+            {(product.tipo_flor || (product.ocasiones && product.ocasiones.length > 0) || product.sku) && (
+              <dl className="mt-8 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white text-sm">
+                {product.tipo_flor && (
+                  <div className="flex justify-between gap-4 p-4">
+                    <dt className="text-gray-500">Tipo de flor</dt>
+                    <dd className="text-right font-medium text-gray-900">{product.tipo_flor.nombre}</dd>
+                  </div>
+                )}
+                {product.ocasiones && product.ocasiones.length > 0 && (
+                  <div className="flex justify-between gap-4 p-4">
+                    <dt className="text-gray-500">Ideal para</dt>
+                    <dd className="text-right font-medium text-gray-900">
+                      {product.ocasiones.map(o => o.nombre).join(', ')}
+                    </dd>
+                  </div>
+                )}
+                {product.categoria?.nombre && (
+                  <div className="flex justify-between gap-4 p-4">
+                    <dt className="text-gray-500">Categoría</dt>
+                    <dd className="text-right font-medium text-gray-900">{product.categoria.nombre}</dd>
+                  </div>
+                )}
+                {product.sku && (
+                  <div className="flex justify-between gap-4 p-4">
+                    <dt className="text-gray-500">Código</dt>
+                    <dd className="text-right font-medium text-gray-900">{product.sku}</dd>
+                  </div>
+                )}
+              </dl>
+            )}
           </div>
         </div>
+
+        {/* Relacionados y complementos */}
+        <RelatedProducts
+          categoriaSlug={product.categoria?.slug}
+          currentProductId={product.id}
+          locale={locale}
+        />
       </div>
+
+      {/* Barra fija en celular con precio y CTA */}
+      {!requiresQuote && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-xs text-gray-500">{product.nombre}</p>
+              <p className="text-lg font-bold text-gray-900">
+                $ {parseFloat(product.precio_descuento || product.precio).toLocaleString('es-AR')}
+              </p>
+            </div>
+            <button
+              onClick={handleAddToCart}
+              disabled={addingToCart || product.stock <= 0}
+              className="ml-auto flex-shrink-0 rounded-xl bg-green-700 px-6 py-3 font-semibold text-white disabled:bg-gray-300"
+            >
+              {product.stock <= 0 ? t('products.outOfStock') : t('products.addToCart')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
