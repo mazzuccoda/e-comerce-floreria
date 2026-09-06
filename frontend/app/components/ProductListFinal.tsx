@@ -16,8 +16,9 @@ interface ProductListProps {
   showRecommended?: boolean;
   showAdditionals?: boolean;
   showFeatured?: boolean;
+  maxItems?: number;
 }
 
-export default function ProductListFinal({ showRecommended = false, showAdditionals = false, showFeatured = false }: ProductListProps) {
-  return <ProductListClient showRecommended={showRecommended} showAdditionals={showAdditionals} showFeatured={showFeatured} />;
+export default function ProductListFinal({ showRecommended = false, showAdditionals = false, showFeatured = false, maxItems }: ProductListProps) {
+  return <ProductListClient showRecommended={showRecommended} showAdditionals={showAdditionals} showFeatured={showFeatured} maxItems={maxItems} />;
 }

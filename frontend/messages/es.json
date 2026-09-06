@@ -18,27 +18,19 @@
   "home": {
     "pageTitle": "Florería Cristina: ramos de flores y plantas con envío en Yerba Buena y San Miguel de Tucumán",
     "howToBuyTitle": "Cómo comprar en 3 minutos",
-    "howToBuySubtitle": "Un proceso simple, seguro y rápido",
+    "howToBuySubtitle": "Tres pasos: elegís, coordinás la entrega y pagás",
     "startShopping": "Empezar compra",
     "featured": "DESTACADOS",
     "dailyDeals": "OFERTAS DEL DÍA",
     "swipeForMore": "← Deslizá para ver más ofertas →",
     "viewAllProducts": "Ver todos los productos",
     "steps": {
-      "step1Title": "Elegí el ramo",
-      "step1Desc": "Explorá los más vendidos o por ocasión",
-      "step2Title": "Completá datos del envío",
-      "step2Desc": "Tu nombre y el del destinatario",
-      "step3Title": "Agregá dedicatoria",
-      "step3Desc": "Hacelo especial con un mensaje",
-      "step4Title": "Sumá un adicional",
-      "step4Desc": "Chocolates, peluches y más",
-      "step5Title": "Elegí fecha y horario",
-      "step5Desc": "Coordinamos la franja de entrega",
-      "step6Title": "Pagá de forma segura",
-      "step6Desc": "Múltiples medios y confirmación inmediata",
-      "step7Title": "Entrega confirmada",
-      "step7Desc": "Te confirmamos cuando esté entregado"
+      "step1Title": "Elegí el arreglo",
+      "step1Desc": "Sumá una dedicatoria y adicionales si querés",
+      "step2Title": "Elegí entrega o retiro",
+      "step2Desc": "Envío Express, día y horario, o retiro en la tienda",
+      "step3Title": "Pagá y listo",
+      "step3Desc": "Mercado Pago, PayPal, transferencia o efectivo al retirar"
     }
   },
   "products": {
