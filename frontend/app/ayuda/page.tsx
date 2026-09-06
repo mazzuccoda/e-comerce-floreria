@@ -17,22 +17,22 @@ const faqData: FAQItem[] = [
   {
     id: 2,
     question: "¿Qué medios de pago aceptan?",
-    answer: "Aceptamos múltiples medios de pago: tarjetas de crédito y débito (Visa, Mastercard, American Express), transferencia bancaria, Mercado Pago y efectivo contra entrega en algunas zonas."
+    answer: "Mercado Pago (tarjetas de crédito y débito), PayPal y transferencia bancaria. El pago en efectivo es sólo para pedidos que se retiran en la tienda."
   },
   {
     id: 3,
     question: "¿Cuáles son los horarios de entrega?",
-    answer: "Realizamos entregas de lunes a sábado de 9:00 a 18:00 hs. Para entregas el mismo día, es necesario realizar el pedido antes de las 14:00 hs. Los domingos no realizamos entregas."
+    answer: "Entregamos de lunes a sábado de 9:00 a 18:00 hs y los domingos de 9:00 a 13:00 hs. Para la entrega en el día, hacé el pedido dentro de esas franjas; después, la entrega pasa al día siguiente desde las 8:00 hs."
   },
   {
     id: 4,
     question: "¿Tienen envío gratis?",
-    answer: "¡Sí! Tenemos envío gratis en Capital Federal sin monto mínimo. Para otras zonas, el envío es gratis a partir de cierto monto de compra que varía según la zona."
+    answer: "El envío es sin cargo en los productos marcados con 'Envío gratis' y en pedidos que superan el monto mínimo vigente. En el resto de los casos el costo se calcula por la distancia entre la tienda y la dirección de entrega, y lo ves en el checkout antes de pagar. El retiro en tienda es siempre sin cargo."
   },
   {
     id: 5,
     question: "¿Las flores son frescas?",
-    answer: "Absolutamente. Todas nuestras flores son frescas y de la mejor calidad. Las preparamos el mismo día de la entrega para garantizar su frescura y duración."
+    answer: "Sí. Trabajamos con flores frescas seleccionadas para cada arreglo. Según la logística del pedido, el arreglo puede prepararse el día anterior a la entrega."
   },
   {
     id: 6,

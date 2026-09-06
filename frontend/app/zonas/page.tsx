@@ -1,139 +1,178 @@
 'use client';
 
+import { Store, Truck, CalendarClock } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { API_ROOT } from '@/utils/apiBase';
+import { TIENDA } from '@/components/paymentInfo';
+import { API_URL } from '@/utils/apiBase';
 
-interface ZonaEntrega {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  costo_envio: string;
-  envio_gratis_desde: string;
-  is_active: boolean;
+import { useShippingConfig, type ShippingZone } from '../hooks/useShippingConfig';
+
+const formatPrice = (value: number) =>
+  value === 0 ? 'Sin cargo' : `$ ${value.toLocaleString('es-AR')}`;
+
+function ZoneRow({ zone, maxCoverageKm }: { zone: ShippingZone; maxCoverageKm: number }) {
+  const from = zone.min_distance_km;
+  const to = Math.min(zone.max_distance_km, maxCoverageKm);
+
+  return (
+    <li className="flex flex-wrap items-baseline justify-between gap-2 py-3">
+      <div>
+        <p className="font-medium text-gray-900">{zone.zone_name}</p>
+        <p className="text-sm text-gray-600">
+          Hasta {to} km de la tienda
+          {from > 0 ? ` (desde ${from} km)` : ''}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="font-semibold text-gray-900">{formatPrice(zone.base_price)}</p>
+        {zone.price_per_km > 0 && (
+          <p className="text-sm text-gray-600">
+            + $ {zone.price_per_km.toLocaleString('es-AR')} por km
+          </p>
+        )}
+      </div>
+    </li>
+  );
 }
 
 export default function ZonasPage() {
-  const [zonas, setZonas] = useState<ZonaEntrega[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { config, zones, loading } = useShippingConfig();
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState<number | null>(null);
 
+  // El umbral de envío gratis por monto sólo lo devuelve el cálculo de costo: lo consultamos
+  // con una distancia de referencia para no publicar un valor fijo que quede desactualizado.
   useEffect(() => {
-    const fetchZonas = async () => {
+    const fetchThreshold = async () => {
       try {
-        const response = await fetch(`${API_ROOT}/api/catalogo/zonas/`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await fetch(`${API_URL}/pedidos/shipping/calculate/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            distance_km: 1,
+            shipping_method: 'programado',
+            order_amount: 0,
+          }),
+        });
+        if (!response.ok) return;
         const data = await response.json();
-        setZonas(data.results || data);
-      } catch (e: any) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
+        if (typeof data.free_shipping_threshold === 'number') {
+          setFreeShippingThreshold(data.free_shipping_threshold);
+        }
+      } catch {
+        // Sin umbral disponible no mostramos la promesa de envío gratis por monto
       }
     };
 
-    fetchZonas();
+    fetchThreshold();
   }, []);
 
-  const formatPrice = (price: string) => {
-    const num = parseFloat(price);
-    return num === 0 ? 'GRATIS' : `$ ${num.toLocaleString('es-AR')}`;
-  };
+  const maxExpress = config?.max_distance_express_km ?? 0;
+  const maxProgramado = config?.max_distance_programado_km ?? 0;
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-500">
-          Error al cargar las zonas de entrega: {error}
-        </div>
-      </div>
-    );
-  }
+  const expressZones = zones.express.filter((z) => z.min_distance_km < maxExpress);
+  const programadoZones = zones.programado.filter((z) => z.min_distance_km < maxProgramado);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Zonas de Entrega</h1>
-      <p className="text-gray-600 mb-8">
-        Conocé nuestras zonas de cobertura y costos de envío. ¡Envío gratis en Capital Federal!
+      <h1 className="mb-2 text-3xl font-bold text-gray-900">Zonas de entrega y costos de envío</h1>
+      <p className="mb-8 max-w-2xl text-gray-600">
+        Entregamos en Yerba Buena y San Miguel de Tucumán. El costo se calcula por la distancia
+        entre la tienda ({TIENDA.direccion}) y la dirección de entrega, y lo ves en el checkout
+        antes de pagar.
       </p>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-        {zonas.map((zona) => (
-          <div key={zona.id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              {zona.nombre}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {zona.descripcion}
-            </p>
-            
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">Costo de envío:</span>
-                <span className={`font-bold ${zona.costo_envio === '0.00' ? 'text-green-600' : 'text-gray-900'}`}>
-                  {formatPrice(zona.costo_envio)}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">Envío gratis desde:</span>
-                <span className="font-bold text-green-600">
-                  $ {parseFloat(zona.envio_gratis_desde).toLocaleString('es-AR')}
-                </span>
-              </div>
+      {loading ? (
+        <div className="animate-pulse space-y-4">
+          <div className="h-40 rounded-lg bg-gray-200" />
+          <div className="h-40 rounded-lg bg-gray-200" />
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Truck className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+              <h2 className="text-lg font-semibold text-gray-900">Envío Express</h2>
             </div>
-
-            {zona.costo_envio === '0.00' && (
-              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-green-700 font-medium">¡Envío siempre gratis!</span>
-                </div>
-              </div>
+            <p className="mb-4 text-sm text-gray-600">
+              Entrega en el día, dentro de {maxExpress} km de la tienda.
+            </p>
+            {expressZones.length > 0 ? (
+              <ul className="divide-y divide-gray-100">
+                {expressZones.map((zone) => (
+                  <ZoneRow key={zone.id} zone={zone} maxCoverageKm={maxExpress} />
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Consultanos por WhatsApp la disponibilidad para tu dirección.
+              </p>
             )}
-          </div>
-        ))}
-      </div>
+          </section>
 
-      <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">
-          Información Importante
-        </h3>
-        <ul className="space-y-2 text-blue-800">
-          <li className="flex items-start">
-            <span className="text-blue-500 mr-2">•</span>
-            Los envíos se realizan de lunes a sábado de 9:00 a 18:00 hs.
+          <section className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+              <h2 className="text-lg font-semibold text-gray-900">Envío programado</h2>
+            </div>
+            <p className="mb-4 text-sm text-gray-600">
+              Elegís día y franja horaria, dentro de {maxProgramado} km de la tienda.
+            </p>
+            {programadoZones.length > 0 ? (
+              <ul className="divide-y divide-gray-100">
+                {programadoZones.map((zone) => (
+                  <ZoneRow key={zone.id} zone={zone} maxCoverageKm={maxProgramado} />
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Consultanos por WhatsApp la disponibilidad para tu dirección.
+              </p>
+            )}
+          </section>
+
+          <section className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Store className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+              <h2 className="text-lg font-semibold text-gray-900">Retiro en tienda</h2>
+            </div>
+            <p className="text-sm text-gray-600">Sin cargo, coordinando día y horario.</p>
+            <p className="mt-3 text-sm text-gray-900">{TIENDA.direccion}</p>
+            <p className="text-sm text-gray-600">{TIENDA.horario}</p>
+          </section>
+        </div>
+      )}
+
+      <div className="mt-12 rounded-lg border border-gray-200 bg-gray-50 p-6">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900">Información importante</h2>
+        <ul className="space-y-2 text-gray-700">
+          <li>
+            El envío es sin cargo en los productos marcados con “Envío gratis”
+            {freeShippingThreshold !== null
+              ? ` y en pedidos de $ ${freeShippingThreshold.toLocaleString('es-AR')} o más.`
+              : '.'}
           </li>
-          <li className="flex items-start">
-            <span className="text-blue-500 mr-2">•</span>
-            Para envíos el mismo día, realizá tu pedido antes de las 14:00 hs.
+          <li>El costo exacto se calcula con la dirección de entrega en el checkout.</li>
+          <li>Flores frescas seleccionadas para cada arreglo.</li>
+          <li>
+            Podés cancelar o modificar tu pedido hasta 24 horas antes de la entrega (
+            <Link href="/terminos" className="text-emerald-700 hover:underline">
+              ver términos
+            </Link>
+            ).
           </li>
-          <li className="flex items-start">
-            <span className="text-blue-500 mr-2">•</span>
-            Todas las flores son frescas y se entregan el mismo día de la compra.
-          </li>
-          <li className="flex items-start">
-            <span className="text-blue-500 mr-2">•</span>
-            Si tu zona no aparece en la lista, contactanos para consultar disponibilidad.
+          <li>
+            Si tu dirección queda fuera de la cobertura, escribinos por{' '}
+            <a
+              href={`https://wa.me/${TIENDA.whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-700 hover:underline"
+            >
+              WhatsApp
+            </a>{' '}
+            y lo vemos.
           </li>
         </ul>
       </div>
