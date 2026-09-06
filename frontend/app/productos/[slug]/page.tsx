@@ -299,6 +299,18 @@ export default function ProductPage({ params }: ProductPageParams) {
               )}
             </div>
 
+            {/* Descripción completa */}
+            {product.descripcion && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">{t('products.description')}</h2>
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+                    {product.descripcion}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Selector de cantidad y botón */}
             {requiresQuote ? (
               /* Botón de WhatsApp para cotización */
@@ -367,18 +379,6 @@ export default function ProductPage({ params }: ProductPageParams) {
 
             {/* Entrega, retiro, pagos y garantía */}
             <ProductDeliveryInfo />
-
-            {/* Descripción completa */}
-            {product.descripcion && (
-              <div className="mt-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">{t('products.description')}</h2>
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                    {product.descripcion}
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Ficha técnica */}
             {(product.tipo_flor || (product.ocasiones && product.ocasiones.length > 0) || product.sku) && (
