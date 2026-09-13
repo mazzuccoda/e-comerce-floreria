@@ -31,7 +31,13 @@
       "step2Desc": "Envío Express, día y horario, o retiro en la tienda",
       "step3Title": "Pagá y listo",
       "step3Desc": "Mercado Pago, PayPal, transferencia o efectivo al retirar"
-    }
+    },
+    "hero": {
+      "coverage": "Ramos y arreglos con flores frescas. Envío en Yerba Buena y San Miguel de Tucumán, o retiro en la tienda.",
+      "primaryCta": "Ver ramos",
+      "secondaryCta": "Zonas y costo de envío"
+    },
+    "shopByCategory": "Comprá por categoría"
   },
   "products": {
     "from": "Desde",
@@ -98,5 +104,18 @@
     "recipient": "Destinatario",
     "dedication": "Dedicatoria",
     "payment": "Pago"
+  },
+  "catalog": {
+    "home": "Inicio",
+    "allProducts": "Todos los productos",
+    "resultsFor": "Resultados para",
+    "oneProduct": "1 producto disponible",
+    "productsAvailable": "productos disponibles",
+    "loadMore": "Mostrar más productos",
+    "extrasHint": "¿Buscás globos, chocolates o peluches para sumar al ramo?",
+    "extrasLink": "Ver adicionales",
+    "emptyTitle": "No encontramos productos con estos filtros",
+    "emptyText": "Probá quitando algún filtro o mirá todo el catálogo.",
+    "emptyCta": "Ver todos los productos"
   }
 }

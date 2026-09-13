@@ -31,7 +31,13 @@
       "step2Desc": "Express delivery, a date and time, or store pickup",
       "step3Title": "Pay and you're done",
       "step3Desc": "Mercado Pago, PayPal, bank transfer or cash on pickup"
-    }
+    },
+    "hero": {
+      "coverage": "Bouquets and arrangements with fresh flowers. Delivery in Yerba Buena and San Miguel de Tucumán, or store pickup.",
+      "primaryCta": "See bouquets",
+      "secondaryCta": "Delivery areas and cost"
+    },
+    "shopByCategory": "Shop by category"
   },
   "products": {
     "from": "From",
@@ -98,5 +104,18 @@
     "recipient": "Recipient",
     "dedication": "Dedication",
     "payment": "Payment"
+  },
+  "catalog": {
+    "home": "Home",
+    "allProducts": "All products",
+    "resultsFor": "Results for",
+    "oneProduct": "1 product available",
+    "productsAvailable": "products available",
+    "loadMore": "Show more products",
+    "extrasHint": "Looking for balloons, chocolates or plush toys to add to the bouquet?",
+    "extrasLink": "See add-ons",
+    "emptyTitle": "No products match these filters",
+    "emptyText": "Try removing a filter or browse the whole catalog.",
+    "emptyCta": "See all products"
   }
 }
