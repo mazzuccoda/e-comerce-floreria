@@ -146,7 +146,7 @@ export default function HeroCarousel() {
   }
 
   return (
-    <div className="relative z-10 h-[340px] w-full overflow-hidden bg-gray-900 md:h-[420px] lg:h-[480px]">
+    <div className="relative z-10 h-[420px] w-full overflow-hidden bg-gray-900 sm:h-[400px] md:h-[440px] lg:h-[480px]">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
@@ -157,41 +157,49 @@ export default function HeroCarousel() {
           aria-hidden={index !== currentSlide}
         >
           <div className="relative h-full w-full">
-            <img
-              src={cloudinaryThumb(slide.imagen, { aspectRatio: '16:9', width: 1600 })}
-              alt={slide.titulo}
-              className="h-full w-full object-cover"
-              loading={index === 0 ? 'eager' : 'lazy'}
-            />
+            {/* En celular el recorte es vertical para que la flor no quede fuera de cuadro */}
+            <picture className="block h-full w-full">
+              <source
+                media="(min-width: 640px)"
+                srcSet={cloudinaryThumb(slide.imagen, { aspectRatio: '16:9', width: 1600 })}
+              />
+              <img
+                src={cloudinaryThumb(slide.imagen, { aspectRatio: '4:5', width: 900 })}
+                alt={slide.titulo}
+                className="h-full w-full object-cover"
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            </picture>
             {/* Degradado para legibilidad del texto */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/20 sm:bg-gradient-to-r sm:from-black/70 sm:via-black/40 sm:to-black/10" />
           </div>
 
           {/* Contenido del slide */}
-          <div className="absolute inset-0 z-20 flex items-center">
-            <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
+          <div className="absolute inset-0 z-20 flex items-end pb-14 sm:items-center sm:pb-0">
+            <div className="mx-auto w-full max-w-7xl px-4 sm:px-8 lg:px-10">
               <div className="max-w-xl text-left">
                 {deliveryPromise && (
-                  <p className="mb-4 inline-flex items-center rounded-full bg-white/95 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-800 md:text-sm">
+                  <p className="mb-3 inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-800 sm:px-4 sm:py-1.5 sm:text-xs md:text-sm">
                     {deliveryPromise}
                   </p>
                 )}
-                <h2 className="mb-3 text-3xl font-semibold tracking-tight text-white md:text-4xl lg:text-5xl">
+                <h2 className="mb-2 text-2xl font-semibold leading-tight tracking-tight text-white sm:mb-3 sm:text-3xl md:text-4xl lg:text-5xl">
                   {slide.titulo}
                 </h2>
-                <p className="mb-6 text-base text-white/90 md:text-lg">
-                  {t('home.hero.coverage')}
+                <p className="mb-4 text-sm text-white/90 sm:mb-6 sm:text-base md:text-lg">
+                  <span className="sm:hidden">{t('home.hero.coverageShort')}</span>
+                  <span className="hidden sm:inline">{t('home.hero.coverage')}</span>
                 </p>
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   <Link
                     href="/productos?categoria=ramos-de-flores"
-                    className="inline-flex items-center justify-center rounded-md bg-emerald-700 px-6 py-3 text-base font-semibold text-white shadow-lg transition-colors hover:bg-emerald-800"
+                    className="inline-flex items-center justify-center rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-emerald-800 sm:px-6 sm:py-3 sm:text-base"
                   >
                     {t('home.hero.primaryCta')}
                   </Link>
                   <Link
                     href="/zonas"
-                    className="inline-flex items-center justify-center rounded-md border border-white/80 bg-white/10 px-6 py-3 text-base font-semibold text-white backdrop-blur transition-colors hover:bg-white hover:text-gray-900"
+                    className="inline-flex items-center justify-center rounded-md border border-white/80 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white hover:text-gray-900 sm:px-6 sm:py-3 sm:text-base"
                   >
                     {t('home.hero.secondaryCta')}
                   </Link>
@@ -207,7 +215,7 @@ export default function HeroCarousel() {
         <>
           <button
             onClick={prevSlide}
-            className="absolute left-3 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow-lg transition-colors hover:bg-white md:left-6 md:h-12 md:w-12"
+            className="absolute left-2 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow-lg transition-colors hover:bg-white md:left-6 md:h-12 md:w-12"
             aria-label="Slide anterior"
           >
             <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,7 +225,7 @@ export default function HeroCarousel() {
 
           <button
             onClick={nextSlide}
-            className="absolute right-3 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow-lg transition-colors hover:bg-white md:right-6 md:h-12 md:w-12"
+            className="absolute right-2 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-gray-900 shadow-lg transition-colors hover:bg-white md:right-6 md:h-12 md:w-12"
             aria-label="Siguiente slide"
           >
             <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

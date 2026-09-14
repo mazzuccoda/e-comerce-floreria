@@ -34,8 +34,9 @@
     },
     "hero": {
       "coverage": "Bouquets and arrangements with fresh flowers. Delivery in Yerba Buena and San Miguel de Tucumán, or store pickup.",
+      "coverageShort": "Fresh flowers delivered in Yerba Buena and San Miguel.",
       "primaryCta": "See bouquets",
-      "secondaryCta": "Delivery areas and cost"
+      "secondaryCta": "Areas and delivery cost"
     },
     "shopByCategory": "Shop by category"
   },

@@ -34,8 +34,9 @@
     },
     "hero": {
       "coverage": "Ramos y arreglos con flores frescas. Envío en Yerba Buena y San Miguel de Tucumán, o retiro en la tienda.",
+      "coverageShort": "Flores frescas con envío en Yerba Buena y San Miguel.",
       "primaryCta": "Ver ramos",
-      "secondaryCta": "Zonas y costo de envío"
+      "secondaryCta": "Zonas y envío"
     },
     "shopByCategory": "Comprá por categoría"
   },
