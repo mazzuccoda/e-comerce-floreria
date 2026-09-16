@@ -237,7 +237,10 @@ const MultiStepCheckoutPage = () => {
         aceptaTerminos: (savedProgress.formData as any)?.aceptaTerminos ?? (prev as any).aceptaTerminos,
         isFreeShipping: (savedProgress.formData as any)?.isFreeShipping ?? (prev as any).isFreeShipping,
       }));
-      setCurrentStep(savedProgress.currentStep);
+      const restoredPickup =
+        (savedProgress.formData?.metodoEnvio ?? formData.metodoEnvio) === 'retiro';
+      const lastStep = restoredPickup ? 2 : 3;
+      setCurrentStep(Math.min(Math.max(savedProgress.currentStep, 0), lastStep));
       setSelectedExtras(savedProgress.selectedExtras);
       setShowRestorePrompt(false);
       console.log('✅ Progreso restaurado');
@@ -366,21 +369,22 @@ const MultiStepCheckoutPage = () => {
   // Paso 0 es común: elegir método de envío
   const pickupSteps = [
     { id: 0, title: 'Método de envío', icon: '🚚' },
-    { id: 1, title: 'Remitente', icon: '👤' },
-    { id: 2, title: 'Dedicatoria', icon: '💌' },
-    { id: 3, title: 'Pago', icon: '💳' },
+    { id: 1, title: 'Tus datos y dedicatoria', icon: '💌' },
+    { id: 2, title: 'Pago', icon: '💳' },
   ];
 
   const deliverySteps = [
     { id: 0, title: 'Método de envío', icon: '🚚' },
     { id: 1, title: 'Destinatario', icon: '📍' },
-    { id: 2, title: 'Remitente', icon: '👤' },
-    { id: 3, title: 'Dedicatoria', icon: '💌' },
-    { id: 4, title: 'Pago', icon: '💳' },
+    { id: 2, title: 'Tus datos y dedicatoria', icon: '💌' },
+    { id: 3, title: 'Pago', icon: '💳' },
   ];
 
   const isPickup = formData.metodoEnvio === 'retiro';
   const steps = isPickup ? pickupSteps : deliverySteps;
+  // Remitente y dedicatoria comparten paso, así que el pago es el último
+  const senderStep = isPickup ? 1 : 2;
+  const paymentStep = isPickup ? 2 : 3;
   
   // Estado para los errores del formulario
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -400,7 +404,7 @@ const MultiStepCheckoutPage = () => {
   // Guardar progreso automáticamente cuando cambian los datos
   useEffect(() => {
     // No guardar si estamos en el paso de pago o si el formulario está vacío
-    const isPaymentStep = (isPickup && currentStep === 3) || (!isPickup && currentStep === 4);
+    const isPaymentStep = currentStep === paymentStep;
     const hasData = formData.nombre || formData.email || formData.nombreDestinatario;
     
     if (!isPaymentStep && hasData) {
@@ -575,12 +579,12 @@ const MultiStepCheckoutPage = () => {
           errors.fecha = validateField('fecha', formData.fecha);
           errors.hora = validateField('hora', formData.hora);
           break;
-        case 1: // Remitente
+        case 1: // Remitente + dedicatoria
           errors.nombre = validateField('nombre', formData.nombre);
           errors.email = validateField('email', formData.email);
           errors.telefono = validateField('telefono', formData.telefono);
           break;
-        case 3: // Pago + términos
+        case 2: // Pago + términos
           errors.aceptaTerminos = validateField('aceptaTerminos', formData.aceptaTerminos);
           break;
       }
@@ -610,12 +614,12 @@ const MultiStepCheckoutPage = () => {
             }
           }
           break;
-        case 2: // Remitente
+        case 2: // Remitente + dedicatoria
           errors.nombre = validateField('nombre', formData.nombre);
           errors.email = validateField('email', formData.email);
           errors.telefono = validateField('telefono', formData.telefono);
           break;
-        case 4: // Envío + pago
+        case 3: // Envío + pago
           if (formData.metodoEnvio === 'programado') {
             errors.fecha = validateField('fecha', formData.fecha);
             errors.franjaHoraria = validateField('franjaHoraria', formData.franjaHoraria);
@@ -747,7 +751,7 @@ const MultiStepCheckoutPage = () => {
     // Marcar que se intentó enviar el formulario
     setFormSubmitted(true);
     
-    const maxStep = isPickup ? 3 : 4;
+    const maxStep = paymentStep;
 
     if (isValid && currentStep < maxStep) {
       const nextStepNumber = currentStep + 1;
@@ -1372,14 +1376,14 @@ const MultiStepCheckoutPage = () => {
                   onEdit={() => goToStep(1)}
                 />
               )}
-              {((isPickup && currentStep > 1) || (!isPickup && currentStep > 2)) && formData.nombre && (
+              {currentStep > senderStep && formData.nombre && (
                 <ConfirmedRow
                   label={isPickup ? 'Qui\u00e9n retira' : 'Remitente'}
                   value={[formData.nombre, formData.telefono].filter(Boolean).join(' \u00b7 ')}
                   onEdit={() => goToStep(isPickup ? 1 : 2)}
                 />
               )}
-              {((isPickup && currentStep > 2) || (!isPickup && currentStep > 3)) && formData.mensaje && (
+              {currentStep > senderStep && formData.mensaje && (
                 <ConfirmedRow
                   label="Dedicatoria"
                   value={`\u201c${formData.mensaje}\u201d`}
@@ -1932,9 +1936,9 @@ const MultiStepCheckoutPage = () => {
             </div>
           )}
 
-          {isPickup && currentStep === 2 && (
+          {isPickup && currentStep === 1 && (
             <div>
-              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">Dedicatoria y extras <span className="ml-1 text-sm font-normal text-gray-400">(opcional)</span></h2>
+              <h2 className="mb-6 mt-10 text-xl font-semibold tracking-tight text-gray-900">Dedicatoria y extras <span className="ml-1 text-sm font-normal text-gray-400">(opcional)</span></h2>
               
               {/* Dedicatoria */}
               <div className="mb-8">
@@ -1988,7 +1992,7 @@ const MultiStepCheckoutPage = () => {
             </div>
           )}
 
-          {isPickup && currentStep === 3 && (
+          {isPickup && currentStep === 2 && (
             <div>
               <h2 className="text-xl font-semibold tracking-tight text-gray-900">¿Cómo querés pagar?</h2>
               <p className="mb-6 mt-1 text-sm text-gray-500">Elegí el medio de pago y confirmá tu pedido.</p>
@@ -2401,9 +2405,9 @@ const MultiStepCheckoutPage = () => {
             </div>
           )}
 
-          {!isPickup && currentStep === 3 && (
+          {!isPickup && currentStep === 2 && (
             <div>
-              <h2 className="mb-6 text-xl font-semibold tracking-tight text-gray-900">Dedicatoria y extras <span className="ml-1 text-sm font-normal text-gray-400">(opcional)</span></h2>
+              <h2 className="mb-6 mt-10 text-xl font-semibold tracking-tight text-gray-900">Dedicatoria y extras <span className="ml-1 text-sm font-normal text-gray-400">(opcional)</span></h2>
               
               {/* Dedicatoria */}
               <div className="mb-8">
@@ -2458,7 +2462,7 @@ const MultiStepCheckoutPage = () => {
           )}
 
           {/* Paso 4 (Pago) para delivery */}
-          {!isPickup && currentStep === 4 && (
+          {!isPickup && currentStep === 3 && (
             <div>
               {/* Método de pago ya seleccionado en paso anterior */}
               <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -2613,7 +2617,7 @@ const MultiStepCheckoutPage = () => {
         <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
           {formSubmitted && hasVisibleErrors && (
             <p className="mb-2 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-600">
-              {currentStep === (isPickup ? 3 : 4)
+              {currentStep === paymentStep
                 ? 'Revisá los campos marcados y aceptá los términos para continuar.'
                 : 'Revisá los campos marcados para continuar.'}
             </p>
@@ -2644,7 +2648,7 @@ const MultiStepCheckoutPage = () => {
               <div className="hidden lg:block" />
             )}
 
-            {currentStep < (isPickup ? 3 : 4) ? (
+            {currentStep < paymentStep ? (
               <button
                 onClick={nextStep}
                 className="w-full rounded-xl bg-emerald-600 px-8 py-4 font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 sm:w-auto"
@@ -2671,7 +2675,7 @@ const MultiStepCheckoutPage = () => {
               </button>
             )}
           </div>
-          {currentStep === (isPickup ? 3 : 4) && !loading && (
+          {currentStep === paymentStep && !loading && (
             <p className="mt-2 text-center text-xs text-gray-500 sm:text-right">
               {formData.metodoPago === 'transferencia' && 'Te mostramos alias y CVU en la pantalla siguiente.'}
               {formData.metodoPago === 'efectivo' && 'No pagás nada ahora: abonás al retirar en la tienda.'}
