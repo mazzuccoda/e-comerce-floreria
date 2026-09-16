@@ -98,7 +98,7 @@ export default function GiftMessageCard() {
                 {anonimo ? 'Sin firma del remitente' : 'Se firma con tus datos del checkout'}
               </p>
               <p className="mt-1 text-xs text-gray-600">
-                Lo vas a ver precargado en el paso “Dedicatoria”.
+                Lo vas a ver precargado en el paso “Tus datos y dedicatoria”.
               </p>
             </div>
           )}
