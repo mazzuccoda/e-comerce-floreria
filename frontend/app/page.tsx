@@ -6,7 +6,10 @@ import AdicionalesSection from './components/AdicionalesSection';
 import CategoriesSection from './components/CategoriesSection';
 import OfertasDelDia from './components/OfertasDelDia';
 import HomePromiseBar from './components/HomePromiseBar';
+import DeliveryFinder from './components/DeliveryFinder';
+import OccasionsSection from './components/OccasionsSection';
 import GoogleReviews from './components/GoogleReviews';
+import { GoogleReviewsStrip } from './components/GoogleRating';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ShoppingBag, CalendarClock, CreditCard } from 'lucide-react';
@@ -88,11 +91,20 @@ export default function Home() {
       {/* Carrusel Hero */}
       <HeroCarousel />
 
+      {/* Prueba social: el puntaje real de Google apenas debajo del hero */}
+      <GoogleReviewsStrip />
+
+      {/* Zona y momento de entrega antes de elegir el ramo */}
+      <DeliveryFinder />
+
       {/* Envío, retiro, pagos y garantía */}
       <HomePromiseBar />
 
       {/* Sección de categorías */}
       <CategoriesSection />
+
+      {/* Navegación por ocasión */}
+      <OccasionsSection />
 
       {/* Sección de ofertas del día */}
       <OfertasDelDia />

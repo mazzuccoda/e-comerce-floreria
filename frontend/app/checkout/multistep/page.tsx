@@ -26,6 +26,7 @@ import { useShippingConfig } from '@/app/hooks/useShippingConfig';
 import { useSiteSettings } from '@/app/hooks/useSiteSettings';
 import { useAbandonedCart } from '@/app/hooks/useAbandonedCart';
 import { getExpressAvailability } from '@/utils/deliveryPromise';
+import { clearGiftDraft, readGiftDraft } from '@/utils/giftMessage';
 
 // API URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
@@ -201,6 +202,18 @@ const MultiStepCheckoutPage = () => {
     
     return ['mañana', 'tarde']; // Ambas disponibles
   };
+
+  // Precargar la dedicatoria escrita en la ficha del producto
+  useEffect(() => {
+    const draft = readGiftDraft();
+    if (!draft || (!draft.mensaje && !draft.anonimo)) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      mensaje: prev.mensaje || draft.mensaje,
+      envioAnonimo: prev.envioAnonimo || draft.anonimo,
+    }));
+  }, []);
 
   // Cargar progreso guardado al iniciar
   useEffect(() => {
@@ -1000,6 +1013,9 @@ const MultiStepCheckoutPage = () => {
         };
         
         localStorage.setItem('ultimo_pedido', JSON.stringify(pedidoData));
+
+        // La dedicatoria ya viajó en el pedido: el borrador de la ficha no debe reaparecer
+        clearGiftDraft();
         
         // Limpiar el carrito SIEMPRE (para todos los métodos de pago)
         try {

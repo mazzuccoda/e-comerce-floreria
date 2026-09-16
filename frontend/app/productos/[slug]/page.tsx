@@ -8,11 +8,13 @@ import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import ProductImageGallery from '@/app/components/ProductImageGallery';
+import { GoogleRatingBadge } from '@/app/components/GoogleRating';
 import { trackProductView, trackAddToCart } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
 import { API_ROOT } from '@/utils/apiBase';
 import { useI18n } from '@/context/I18nContext';
 import { TIENDA } from '@/components/paymentInfo';
+import GiftMessageCard from '@/components/product/GiftMessageCard';
 import ProductDeliveryInfo from '@/components/product/ProductDeliveryInfo';
 import RelatedProducts from '@/components/product/RelatedProducts';
 
@@ -297,6 +299,7 @@ export default function ProductPage({ params }: ProductPageParams) {
                   $ {parseFloat(product.precio).toLocaleString('es-AR')}
                 </span>
               )}
+              <GoogleRatingBadge className="mt-3" />
             </div>
 
             {/* Descripción completa */}
@@ -354,6 +357,9 @@ export default function ProductPage({ params }: ProductPageParams) {
                   </div>
                 </div>
 
+                {/* ¿Es un regalo? El mensaje de la tarjeta viaja al checkout */}
+                <GiftMessageCard />
+
                 {/* Botón agregar al carrito */}
                 <button
                   onClick={handleAddToCart}
@@ -371,9 +377,12 @@ export default function ProductPage({ params }: ProductPageParams) {
                   ) : product.stock <= 0 ? (
                     t('products.outOfStock')
                   ) : (
-                    t('products.addToCart')
+                    t('products.sendGift')
                   )}
                 </button>
+                <p className="mt-2 text-center text-sm text-gray-500">
+                  Elegís envío o retiro, día y horario en el siguiente paso.
+                </p>
               </>
             )}
 
@@ -392,8 +401,16 @@ export default function ProductPage({ params }: ProductPageParams) {
                 {product.ocasiones && product.ocasiones.length > 0 && (
                   <div className="flex justify-between gap-4 p-4">
                     <dt className="text-gray-500">Ideal para</dt>
-                    <dd className="text-right font-medium text-gray-900">
-                      {product.ocasiones.map(o => o.nombre).join(', ')}
+                    <dd className="flex flex-wrap justify-end gap-x-2 text-right font-medium text-gray-900">
+                      {product.ocasiones.map((ocasion) => (
+                        <Link
+                          key={ocasion.id}
+                          href={`/productos?ocasion=${ocasion.id}`}
+                          className="text-emerald-700 hover:underline"
+                        >
+                          {ocasion.nombre}
+                        </Link>
+                      ))}
                     </dd>
                   </div>
                 )}
@@ -437,7 +454,7 @@ export default function ProductPage({ params }: ProductPageParams) {
               disabled={addingToCart || product.stock <= 0}
               className="ml-auto flex-shrink-0 rounded-xl bg-green-700 px-6 py-3 font-semibold text-white disabled:bg-gray-300"
             >
-              {product.stock <= 0 ? t('products.outOfStock') : t('products.addToCart')}
+              {product.stock <= 0 ? t('products.outOfStock') : t('products.sendGift')}
             </button>
           </div>
         </div>
