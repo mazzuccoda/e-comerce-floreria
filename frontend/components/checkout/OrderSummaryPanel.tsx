@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { GoogleRatingBadge } from '@/app/components/GoogleRating';
 import { TIENDA, formatARS, whatsappLink } from '@/components/paymentInfo';
 
 export interface OrderSummaryItem {
@@ -139,6 +140,7 @@ export default function OrderSummaryPanel({
       </div>
 
       <div className="border-t border-gray-100 px-5 py-4">
+        <GoogleRatingBadge className="mb-3" />
         <ul className="space-y-2 text-[13px] leading-snug text-gray-600">
           <li className="flex gap-2">
             <CheckIcon />
