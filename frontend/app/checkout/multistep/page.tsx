@@ -70,6 +70,7 @@ const MultiStepCheckoutPage = () => {
   const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCheckoutCompleted, setIsCheckoutCompleted] = useState(false);
+  const [giftDraftPrefilled, setGiftDraftPrefilled] = useState(false);
   
   // Estado para shipping zones
   const { config: shippingConfig, zones: shippingZones, calculateShippingCost, isWithinCoverage } = useShippingConfig();
@@ -213,6 +214,7 @@ const MultiStepCheckoutPage = () => {
       mensaje: prev.mensaje || draft.mensaje,
       envioAnonimo: prev.envioAnonimo || draft.anonimo,
     }));
+    setGiftDraftPrefilled(true);
   }, []);
 
   // Cargar progreso guardado al iniciar
@@ -1944,6 +1946,11 @@ const MultiStepCheckoutPage = () => {
                   className="w-full p-4 rounded-xl bg-white/50 border-0 h-32" 
                   placeholder="Escribe un mensaje especial (opcional)..."
                 ></textarea>
+                {giftDraftPrefilled && (
+                  <p className="mt-2 text-sm text-emerald-700">
+                    Trajimos el mensaje que escribiste en el producto. Podés editarlo acá.
+                  </p>
+                )}
                 <input 
                   name="firmadoComo"
                   value={formData.firmadoComo}
@@ -2408,6 +2415,11 @@ const MultiStepCheckoutPage = () => {
                   className="w-full p-4 rounded-xl bg-white/50 border-0 h-32" 
                   placeholder="Escribe un mensaje especial (opcional)..."
                 ></textarea>
+                {giftDraftPrefilled && (
+                  <p className="mt-2 text-sm text-emerald-700">
+                    Trajimos el mensaje que escribiste en el producto. Podés editarlo acá.
+                  </p>
+                )}
                 <input 
                   name="firmadoComo"
                   value={formData.firmadoComo}

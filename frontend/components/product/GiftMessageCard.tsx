@@ -47,7 +47,7 @@ export default function GiftMessageCard() {
             ¿Es un regalo?
           </span>
           <span className="mt-0.5 block text-gray-600">
-            Escribí el mensaje de la tarjeta ahora: va impreso y lo podés editar antes de pagar.
+            Escribí el mensaje de la tarjeta ahora: lo escribimos a mano y lo podés editar en el checkout antes de pagar.
           </span>
         </span>
       </label>
@@ -96,6 +96,9 @@ export default function GiftMessageCard() {
               <p className="mt-2 whitespace-pre-line text-sm italic text-gray-800">“{mensaje}”</p>
               <p className="mt-2 text-xs text-gray-600">
                 {anonimo ? 'Sin firma del remitente' : 'Se firma con tus datos del checkout'}
+              </p>
+              <p className="mt-1 text-xs text-gray-600">
+                Lo vas a ver precargado en el paso “Dedicatoria”.
               </p>
             </div>
           )}
