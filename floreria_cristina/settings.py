@@ -390,6 +390,10 @@ TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='your_auth_token')
 TWILIO_WHATSAPP_NUMBER = env('TWILIO_WHATSAPP_NUMBER', default='+14155238886')  # Número de sandbox o comprado
 TWILIO_SMS_NUMBER = env('TWILIO_SMS_NUMBER', default='')  # Número para SMS
 
+# Geocoding y distancias del lado del servidor (cotización de envío sin navegador).
+# Sin key se usa una estimación por línea recta.
+GOOGLE_MAPS_API_KEY = env('GOOGLE_MAPS_API_KEY', default='')
+
 # Configuración Mercado Pago
 MERCADOPAGO = {
     'ACCESS_TOKEN': os.getenv('MERCADOPAGO_ACCESS_TOKEN', os.getenv('MP_ACCESS_TOKEN', 'TEST-1234567890123456-123456-1234567890abcdef1234567890abcdef123456')),
