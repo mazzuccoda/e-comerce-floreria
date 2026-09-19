@@ -52,6 +52,7 @@ def simple_add_to_cart(request):
             items_data.append({
                 'producto': {
                     'id': item['producto'].id,
+                    'sku': item['producto'].sku,
                     'nombre': item['producto'].nombre,
                     'precio': str(item['producto'].precio),
                     'imagen_principal': item['producto'].get_primary_image_url
@@ -112,6 +113,7 @@ def simple_add_to_cart(request):
                 items_data.append({
                     'producto': {
                         'id': item['producto'].id,
+                        'sku': item['producto'].sku,
                         'nombre': item['producto'].nombre,
                         'precio': str(item['producto'].precio),
                         'imagen_principal': item['producto'].get_primary_image_url
@@ -162,6 +164,7 @@ def simple_get_cart(request):
             items_data.append({
                 'producto': {
                     'id': item['producto'].id,
+                    'sku': item['producto'].sku,
                     'nombre': item['producto'].nombre,
                     'precio': str(item['producto'].precio),
                     'imagen_principal': item['producto'].get_primary_image_url
@@ -225,6 +228,7 @@ def simple_update_cart(request):
             items_data.append({
                 'producto': {
                     'id': item['producto'].id,
+                    'sku': item['producto'].sku,
                     'nombre': item['producto'].nombre,
                     'precio': str(item['producto'].precio),
                     'imagen_principal': item['producto'].get_primary_image_url
@@ -282,6 +286,7 @@ def simple_remove_from_cart(request):
             items_data.append({
                 'producto': {
                     'id': item['producto'].id,
+                    'sku': item['producto'].sku,
                     'nombre': item['producto'].nombre,
                     'precio': str(item['producto'].precio),
                     'imagen_principal': item['producto'].get_primary_image_url

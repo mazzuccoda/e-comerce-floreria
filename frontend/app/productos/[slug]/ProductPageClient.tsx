@@ -87,7 +87,9 @@ export default function ProductPageClient({ slug, initialProduct }: ProductPageC
       fbPixel.addToCart(
         product.sku || product.id,
         product.nombre,
-        parseFloat(product.precio) * quantity
+        parseFloat(product.precio_descuento || product.precio),
+        'ARS',
+        quantity
       );
     } catch (error: any) {
       toast.error(`Error: ${error.message || 'No se pudo agregar al carrito'}`);
@@ -110,7 +112,7 @@ export default function ProductPageClient({ slug, initialProduct }: ProductPageC
       fbPixel.viewContent(
         initialProduct.sku || initialProduct.id,
         initialProduct.nombre,
-        parseFloat(initialProduct.precio)
+        parseFloat(initialProduct.precio_descuento || initialProduct.precio)
       );
       return;
     }
@@ -144,7 +146,7 @@ export default function ProductPageClient({ slug, initialProduct }: ProductPageC
         fbPixel.viewContent(
           data.sku || data.id,
           data.nombre,
-          parseFloat(data.precio)
+          parseFloat(data.precio_descuento || data.precio)
         );
       } catch (err: any) {
         console.error('Error al cargar el producto:', err);

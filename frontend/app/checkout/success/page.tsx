@@ -22,6 +22,7 @@ export const dynamic = 'force-dynamic';
 interface PedidoItem {
   producto: {
     id: number;
+    sku?: string;
     nombre: string;
     precio: number;
     imagen_principal?: string;
@@ -158,7 +159,8 @@ const PaymentSuccessPage = () => {
           // Facebook Pixel
           fbPixel.purchase(
             data.pedido_id.toString(),
-            parseFloat(data.total)
+            parseFloat(data.total),
+            fbPixel.contentsFromItems(Array.isArray(data.items) ? data.items : [])
           );
         }
       } catch (error) {
