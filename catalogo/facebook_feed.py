@@ -3,6 +3,22 @@ from django.utils import timezone
 from .models import Producto
 import xml.etree.ElementTree as ET
 
+# URL pública final del sitio (Next.js sirve las fichas bajo /es para evitar redirects)
+SITE_URL = 'https://floreriacristina.com.ar'
+PRODUCT_URL_TEMPLATE = SITE_URL + '/es/productos/{slug}'
+
+# Costo de envío más bajo de las zonas reales (Yerba Buena Centro).
+# Meta exige un valor fijo por feed; el costo definitivo se calcula en el checkout.
+SHIPPING_COST_ARS = 7000
+
+
+def _producto_url(producto):
+    return PRODUCT_URL_TEMPLATE.format(slug=producto.slug)
+
+
+def _shipping_cost(producto):
+    return 0 if producto.envio_gratis else SHIPPING_COST_ARS
+
 
 def facebook_product_feed(request):
     """
@@ -35,7 +51,7 @@ def facebook_product_feed(request):
     
     # Información del canal
     ET.SubElement(channel, 'title').text = 'Florería Cristina - Catálogo de Productos'
-    ET.SubElement(channel, 'link').text = 'https://www.floreriacristina.com.ar'
+    ET.SubElement(channel, 'link').text = SITE_URL
     ET.SubElement(channel, 'description').text = 'Catálogo completo de flores y arreglos florales'
     
     # Agregar cada producto
@@ -63,24 +79,22 @@ def facebook_product_feed(request):
         # Condición (siempre nuevo para flores)
         ET.SubElement(item, 'g:condition').text = 'new'
         
-        # Precio (saltar productos sin precio)
-        precio = producto.precio_descuento if producto.precio_descuento else producto.precio
-        if not precio or float(precio) <= 0:
+        # Precio de lista (saltar productos sin precio)
+        if not producto.precio or float(producto.precio) <= 0:
             continue
-        ET.SubElement(item, 'g:price').text = f'{int(float(precio))} ARS'
+        ET.SubElement(item, 'g:price').text = f'{int(float(producto.precio))} ARS'
         
         # Cantidad en stock
         ET.SubElement(item, 'g:quantity_to_sell_on_facebook').text = str(max(producto.stock, 1))
         
-        # Precio de oferta (si hay descuento)
-        if producto.precio_descuento and float(producto.precio_descuento) > 0:
+        # Precio de oferta (sólo si es realmente menor al de lista)
+        if producto.precio_descuento and 0 < float(producto.precio_descuento) < float(producto.precio):
             ET.SubElement(item, 'g:sale_price').text = f'{int(float(producto.precio_descuento))} ARS'
         
         # Link al producto
         if not producto.slug:
             continue
-        producto_url = f'https://www.floreriacristina.com.ar/productos/{producto.slug}'
-        ET.SubElement(item, 'g:link').text = producto_url
+        ET.SubElement(item, 'g:link').text = _producto_url(producto)
         
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
@@ -110,10 +124,7 @@ def facebook_product_feed(request):
         # Envío (siempre incluir con país Argentina)
         shipping = ET.SubElement(item, 'g:shipping')
         ET.SubElement(shipping, 'g:country').text = 'AR'
-        if producto.envio_gratis:
-            ET.SubElement(shipping, 'g:price').text = '0 ARS'
-        else:
-            ET.SubElement(shipping, 'g:price').text = '0 ARS'
+        ET.SubElement(shipping, 'g:price').text = f'{_shipping_cost(producto)} ARS'
     
     # Convertir a string XML
     xml_string = ET.tostring(rss, encoding='utf-8', method='xml')
@@ -174,10 +185,15 @@ def facebook_product_feed_csv(request):
     
     # Agregar cada producto
     for producto in productos:
-        # Precio (saltar productos sin precio)
-        precio = producto.precio_descuento if producto.precio_descuento else producto.precio
-        if not precio or float(precio) <= 0:
+        # Precio de lista (saltar productos sin precio)
+        if not producto.precio or float(producto.precio) <= 0:
             continue
+        precio_lista = int(float(producto.precio))
+        precio_oferta = (
+            int(float(producto.precio_descuento))
+            if producto.precio_descuento and 0 < float(producto.precio_descuento) < float(producto.precio)
+            else None
+        )
         
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
@@ -194,7 +210,7 @@ def facebook_product_feed_csv(request):
         descripcion = producto.descripcion_corta or producto.descripcion
         
         # URL del producto
-        producto_url = f'https://www.floreriacristina.com.ar/productos/{producto.slug}'
+        producto_url = _producto_url(producto)
         
         # Escribir fila
         writer.writerow([
@@ -203,16 +219,16 @@ def facebook_product_feed_csv(request):
             descripcion[:5000],
             availability,
             'new',
-            f'{precio} ARS',
+            f'{precio_lista} ARS',
             producto_url,
             image_link,
             'Florería Cristina',
             producto.categoria.nombre if producto.categoria else '',
             '985',  # Categoría de Google para Flores
-            f'{producto.precio_descuento} ARS' if producto.precio_descuento else '',
+            f'{precio_oferta} ARS' if precio_oferta else '',
             additional_images,
             str(max(producto.stock, 1)),
-            'AR::0 ARS'
+            f'AR::{_shipping_cost(producto)} ARS'
         ])
     
     # Retornar respuesta HTTP

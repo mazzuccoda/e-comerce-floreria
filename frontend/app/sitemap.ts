@@ -1,71 +1,73 @@
 import { MetadataRoute } from 'next'
+import { getProducts, productPath, SITE_URL } from '@/utils/catalog'
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  // El sitio sirve todo bajo el prefijo de idioma (/es)
-  const baseUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://floreriacristina.com.ar'}/es`
-  
-  // URLs estáticas principales
-  const staticUrls = [
+export const revalidate = 3600
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = `${SITE_URL}/es`
+
+  const staticUrls: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'daily' as const,
+      changeFrequency: 'daily',
       priority: 1,
     },
     {
       url: `${baseUrl}/productos`,
       lastModified: new Date(),
-      changeFrequency: 'daily' as const,
+      changeFrequency: 'daily',
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/carrito`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
     },
     {
       url: `${baseUrl}/contacto`,
       lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
+      changeFrequency: 'monthly',
       priority: 0.7,
     },
     {
       url: `${baseUrl}/ayuda`,
       lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
+      changeFrequency: 'monthly',
       priority: 0.6,
     },
     {
       url: `${baseUrl}/zonas`,
       lastModified: new Date(),
-      changeFrequency: 'monthly' as const,
+      changeFrequency: 'monthly',
       priority: 0.6,
+    },
+    {
+      url: `${baseUrl}/terminos`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.3,
     },
   ]
 
-  // TODO: En producción, agregar URLs dinámicas de productos
-  // const productUrls = await getProductUrls()
-  
-  return staticUrls
-}
+  const productos = await getProducts()
 
-// Función para obtener URLs de productos (implementar cuando sea necesario)
-async function getProductUrls() {
-  try {
-    // const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/catalogo/productos/`)
-    // const products = await response.json()
-    
-    // return products.results?.map((product: any) => ({
-    //   url: `${baseUrl}/productos/${product.slug}`,
-    //   lastModified: new Date(product.updated_at || product.created_at),
-    //   changeFrequency: 'weekly' as const,
-    //   priority: 0.8,
-    // })) || []
-    
-    return []
-  } catch (error) {
-    console.error('Error fetching product URLs for sitemap:', error)
-    return []
-  }
+  const productUrls: MetadataRoute.Sitemap = productos.map((producto) => ({
+    url: `${baseUrl}${productPath(producto)}`,
+    lastModified: producto.updated_at ? new Date(producto.updated_at) : new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }))
+
+  const categorias = Array.from(
+    new Set(
+      productos
+        .map((producto) => producto.categoria?.slug)
+        .filter((slug): slug is string => Boolean(slug))
+    )
+  )
+
+  const categoryUrls: MetadataRoute.Sitemap = categorias.map((slug) => ({
+    url: `${baseUrl}/productos?categoria=${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }))
+
+  return [...staticUrls, ...categoryUrls, ...productUrls]
 }
