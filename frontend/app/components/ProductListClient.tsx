@@ -15,6 +15,9 @@ interface ProductListProps {
   showFeatured?: boolean;
   showFilters?: boolean;
   maxItems?: number;
+  /** Productos ya resueltos en el servidor: el HTML inicial sale con la grilla
+   *  completa, que es lo que rastrean Google y los agentes. */
+  initialProducts?: Product[];
 }
 
 interface FilterState {
@@ -28,13 +31,13 @@ interface FilterState {
 
 const PAGE_SIZE = 24;
 
-export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFeatured = false, showFilters: showFiltersProp, maxItems }: ProductListProps) {
+export default function ProductListClient({ showRecommended = false, showAdditionals = false, showFeatured = false, showFilters: showFiltersProp, maxItems, initialProducts }: ProductListProps) {
   const { locale, t } = useI18n();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(initialProducts ?? []);
+  const [loading, setLoading] = useState(!initialProducts?.length);
   const [error, setError] = useState<string | null>(null);
   const showFilters = showFiltersProp !== undefined ? showFiltersProp : (!showRecommended && !showAdditionals && !showFeatured);
-  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
+  const [displayProducts, setDisplayProducts] = useState<Product[]>(initialProducts ?? []);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const searchParams = useSearchParams();
@@ -48,7 +51,6 @@ export default function ProductListClient({ showRecommended = false, showAdditio
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoading(true);
         setError(null);
 
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://e-comerce-floreria-production.up.railway.app';
@@ -97,16 +99,19 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Error desconocido';
         console.error('Error cargando productos:', message);
-        setError(`Error al cargar productos: ${message}. Por favor, verifica que el servidor esté funcionando.`);
-        setProducts([]);
-        setDisplayProducts([]);
+        // Con productos del servidor la grilla ya es usable: no se pisa con un error.
+        if (!initialProducts?.length) {
+          setError(`Error al cargar productos: ${message}. Por favor, verifica que el servidor esté funcionando.`);
+          setProducts([]);
+          setDisplayProducts([]);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [categoriaParam, ocasionParam, tipoFlorParam, searchParam, showAdditionals, showFeatured, locale]);
+  }, [categoriaParam, ocasionParam, tipoFlorParam, searchParam, showAdditionals, showFeatured, locale, initialProducts]);
 
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);

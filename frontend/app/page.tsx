@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
-import { SITE_URL } from '../utils/catalog';
+import { getProducts, SITE_URL } from '../utils/catalog';
 
 export const metadata: Metadata = {
   title: 'Florería en Yerba Buena y San Miguel de Tucumán | Florería Cristina',
@@ -19,10 +19,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export const revalidate = 300;
+
+export default async function Home() {
+  const destacados = (await getProducts()).filter((p) => p.is_featured).slice(0, 8);
+
   return (
     <Suspense>
-      <HomeClient />
+      <HomeClient destacados={destacados} />
     </Suspense>
   );
 }

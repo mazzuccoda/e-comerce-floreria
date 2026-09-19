@@ -15,6 +15,14 @@ const nextConfig = {
           { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
         ],
       },
+      {
+        // Sin esto el CDN guarda robots y sitemap durante meses y los
+        // buscadores siguen leyendo la versión anterior al deploy.
+        source: '/:file(robots.txt|sitemap.xml|llms.txt)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=300, must-revalidate' },
+        ],
+      },
     ];
   },
   reactStrictMode: true,
