@@ -1,6 +1,7 @@
 'use client';
 
 import ProductListFinal from './components/ProductListFinal';
+import FeaturedGrid from './components/FeaturedGrid';
 import HeroCarousel from './components/HeroCarousel';
 import AdicionalesSection from './components/AdicionalesSection';
 import CategoriesSection from './components/CategoriesSection';
@@ -14,6 +15,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ShoppingBag, CalendarClock, CreditCard } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
+import { Product } from '@/types/Product';
 
 // Cargar el banner de estado sin SSR para evitar errores de hidratación
 const ConnectionStatusBanner = dynamic(
@@ -79,7 +81,11 @@ function StepByStep() {
   );
 }
 
-export default function HomeClient() {
+interface HomeClientProps {
+  destacados?: Product[];
+}
+
+export default function HomeClient({ destacados }: HomeClientProps) {
   const { t } = useI18n();
   
   return (
@@ -120,7 +126,11 @@ export default function HomeClient() {
               <span className="font-bold text-lg">{t('home.featured')}</span>
             </div>
           </div>
-          <ProductListFinal showFeatured={true} maxItems={8} />
+          {destacados && destacados.length > 0 ? (
+            <FeaturedGrid products={destacados} />
+          ) : (
+            <ProductListFinal showFeatured={true} maxItems={8} />
+          )}
 
           <div className="mt-10 flex justify-center">
             <Link

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Product } from '@/types/Product';
 import { useI18n } from '../../context/I18nContext';
 import { API_ROOT } from '@/utils/apiBase';
+import { productPath } from '@/utils/catalog';
 
 interface ProductCardProps {
   product: Product;
@@ -12,7 +13,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, hideDiscountBadge = false }: ProductCardProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Verificar si el producto requiere cotización (precio = 0)
   const requiresQuote = parseFloat(product.precio) === 0;
@@ -55,12 +56,13 @@ export default function ProductCard({ product, hideDiscountBadge = false }: Prod
     }
   }, [product.imagen_principal, product.nombre]);
 
-  // Generar slug del producto para la URL
-  const productSlug = product.id.toString();
+  // La URL canónica del producto: con slug y locale, para no depender de
+  // redirecciones (que los buscadores penalizan) ni duplicar URLs por id.
+  const productHref = `/${locale}${productPath(product)}`;
 
   return (
     <Link
-      href={`/productos/${productSlug}`}
+      href={productHref}
       className="block"
       aria-label={product.nombre}
     >
