@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCartRobust } from '@/context/CartContextRobust';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
@@ -36,6 +36,7 @@ console.log('🚀 Checkout page loaded');
 interface CartItem {
   producto: {
     id: number;
+    sku?: string;
     nombre: string;
     precio: number | string;
     imagen_principal?: string;
@@ -270,15 +271,6 @@ const MultiStepCheckoutPage = () => {
     };
 
     init();
-    
-    // Trackear inicio de checkout cuando el carrito esté cargado
-    if (directCart.items.length > 0) {
-      // Google Analytics
-      trackBeginCheckout(directCart.items, directCart.total_price);
-      
-      // Facebook Pixel
-      fbPixel.initiateCheckout(directCart.total_price, directCart.items.length);
-    }
 
     // Listener para cambios en localStorage (cuando se actualiza el carrito desde otra pestaña o componente)
     const handleStorageChange = (e: StorageEvent) => {
@@ -303,6 +295,19 @@ const MultiStepCheckoutPage = () => {
     };
   }, []);
   
+  // Trackear inicio de checkout una sola vez, cuando el carrito ya está cargado
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || directCart.items.length === 0) return;
+    checkoutTracked.current = true;
+
+    trackBeginCheckout(directCart.items, directCart.total_price);
+    fbPixel.initiateCheckout(
+      fbPixel.contentsFromItems(directCart.items),
+      directCart.total_price
+    );
+  }, [directCart]);
+
   // Estado para los datos del formulario
   const [formData, setFormData] = useState({
     // Remitente
