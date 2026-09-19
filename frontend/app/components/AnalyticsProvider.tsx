@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { pageview, initGA } from '@/utils/analytics';
 
-export default function AnalyticsProvider({ children }: { children: React.ReactNode }) {
+export default function AnalyticsProvider() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -21,5 +21,5 @@ export default function AnalyticsProvider({ children }: { children: React.ReactN
     }
   }, [pathname, searchParams]);
 
-  return <>{children}</>;
+  return null;
 }

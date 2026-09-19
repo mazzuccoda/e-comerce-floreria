@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import './globals.css'
@@ -11,6 +12,7 @@ import Footer from './components/Footer';
 import GoogleAnalytics from './components/GoogleAnalytics';
 import FacebookPixel from './components/FacebookPixel';
 import AnalyticsProvider from './components/AnalyticsProvider';
+import LocalBusinessJsonLd from './components/LocalBusinessJsonLd';
 // import CartDebugMonitor from './components/CartDebugMonitor'; // Disabled for production 
 
 const inter = Inter({ 
@@ -24,16 +26,16 @@ const OG_IMAGE = 'https://res.cloudinary.com/dmxc6odsi/image/upload/v1770509496/
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Florería Cristina - Ramos de flores a domicilio",
-  description: "Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales. Entrega a domicilio en toda la ciudad. Calidad garantizada.",
+  title: "Florería Cristina - Ramos de flores a domicilio en Tucumán",
+  description: "Florería y vivero con ramos de flores frescas, plantas y arreglos florales. Envío en Yerba Buena y San Miguel de Tucumán, o retiro en Solano Vera 480.",
   keywords: "florería, flores, ramos, plantas, vivero, entrega domicilio, arreglos florales, flores frescas, bouquet, decoración floral",
   authors: [{ name: "Florería Cristina" }],
   creator: "Florería Cristina",
   publisher: "Florería Cristina",
   robots: "index, follow",
   openGraph: {
-    title: "Florería Cristina - Ramos de flores a domicilio",
-    description: "Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales. Entrega a domicilio en toda la ciudad.",
+    title: "Florería Cristina - Ramos de flores a domicilio en Tucumán",
+    description: "Ramos de flores frescas, plantas y arreglos florales con envío en Yerba Buena y San Miguel de Tucumán, o retiro en tienda.",
     url: SITE_URL,
     siteName: "Florería Cristina",
     images: [
@@ -49,8 +51,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Florería Cristina - Ramos de flores a domicilio",
-    description: "Florería y vivero especializado en ramos de flores frescas, plantas y arreglos florales.",
+    title: "Florería Cristina - Ramos de flores a domicilio en Tucumán",
+    description: "Ramos de flores frescas, plantas y arreglos florales con envío en Yerba Buena y San Miguel de Tucumán.",
     images: [OG_IMAGE],
     creator: "@floreria_cristina",
   },
@@ -79,23 +81,27 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <GoogleAnalytics />
+        <LocalBusinessJsonLd />
       </head>
       <body className={`${inter.className} bg-gray-50`}>
-        <FacebookPixel />
+        {/* Suspense: sin él, `useSearchParams` de estos componentes deja todo el
+            sitio sin render en servidor */}
+        <Suspense>
+          <FacebookPixel />
+          <AnalyticsProvider />
+        </Suspense>
         <I18nProvider>
           <AuthProvider>
             <CartProviderRobust>
-              <AnalyticsProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Navbar />
-                  <Toaster />
-                  <main className="flex-grow">
-                    {children}
-                  </main>
-                  <Footer />
-                  {/* <CartDebugMonitor /> */}
-                </div>
-              </AnalyticsProvider>
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <Toaster />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+                {/* <CartDebugMonitor /> */}
+              </div>
             </CartProviderRobust>
           </AuthProvider>
         </I18nProvider>

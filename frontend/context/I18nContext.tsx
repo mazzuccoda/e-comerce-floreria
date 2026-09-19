@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import esMessages from '@/messages/es.json';
 
 type Messages = {
   [key: string]: any;
@@ -15,43 +16,47 @@ type I18nContextType = {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+const localeFromPathname = (pathname: string): string | null => {
+  if (pathname === '/en' || pathname.startsWith('/en/')) return 'en';
+  if (pathname === '/es' || pathname.startsWith('/es/')) return 'es';
+  return null;
+};
+
+const localeFromCookie = (): string => {
+  const cookie = document.cookie
+    .split(';')
+    .find((c) => c.trim().startsWith('NEXT_LOCALE='));
+  const value = cookie?.split('=')[1];
+  return value === 'en' ? 'en' : 'es';
+};
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [locale, setLocale] = useState('es');
-  const [messages, setMessages] = useState<Messages>({});
+  const pathLocale = localeFromPathname(pathname);
+  const [cookieLocale, setCookieLocale] = useState('es');
+  // Español viene estático para que el HTML servido traiga los textos reales
+  const [messages, setMessages] = useState<Messages>(esMessages as Messages);
+  const locale = pathLocale ?? cookieLocale;
 
   useEffect(() => {
-    // Detectar locale desde pathname o cookie
-    let detectedLocale = 'es';
-    
-    // Primero intentar desde pathname
-    if (pathname.startsWith('/en/') || pathname === '/en') {
-      detectedLocale = 'en';
-    } else if (pathname.startsWith('/es/') || pathname === '/es') {
-      detectedLocale = 'es';
-    } else {
-      // Si no hay locale en pathname, leer de cookie
-      const cookies = document.cookie.split(';');
-      const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='));
-      if (localeCookie) {
-        const cookieValue = localeCookie.split('=')[1];
-        if (cookieValue === 'en' || cookieValue === 'es') {
-          detectedLocale = cookieValue;
-        }
-      }
-    }
-    
-    console.log('🌐 I18n: pathname =', pathname, ', detected locale =', detectedLocale);
-    setLocale(detectedLocale);
+    if (!pathLocale) setCookieLocale(localeFromCookie());
+  }, [pathLocale]);
 
-    // Cargar mensajes correspondientes
-    import(`@/messages/${detectedLocale}.json`)
-      .then((module) => {
-        console.log('✅ I18n: Mensajes cargados para', detectedLocale);
-        setMessages(module.default);
-      })
-      .catch((err) => console.error('❌ Error loading messages:', err));
-  }, [pathname]);
+  useEffect(() => {
+    if (locale === 'es') {
+      setMessages(esMessages as Messages);
+      return;
+    }
+
+    let active = true;
+    import(`@/messages/${locale}.json`).then((module) => {
+      if (active) setMessages(module.default);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [locale]);
 
   const t = (key: string): string => {
     const keys = key.split('.');
