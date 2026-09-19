@@ -25,6 +25,7 @@ from catalogo.facebook_feed import facebook_product_feed, facebook_product_feed_
 # API URL patterns
 api_urlpatterns = [
         path('catalogo/', include('catalogo.api_urls', namespace='catalogo-api')),
+        path('publico/', include('catalogo.public_urls', namespace='publico-api')),
         path('carrito/', include('carrito.api_urls', namespace='carrito-api')),
         path('usuarios/', include('usuarios.api_urls')),
         path('pedidos/', include('pedidos.api_urls', namespace='pedidos-api')),

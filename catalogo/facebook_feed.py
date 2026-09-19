@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.utils import timezone
 from .models import Producto
+from .text_utils import clean_product_name
 import xml.etree.ElementTree as ET
 
 # URL pública final del sitio (Next.js sirve las fichas bajo /es para evitar redirects)
@@ -66,7 +67,7 @@ def facebook_product_feed(request):
         ET.SubElement(item, 'g:id').text = str(producto.sku)
         
         # Título
-        ET.SubElement(item, 'g:title').text = producto.nombre[:150]  # Max 150 caracteres
+        ET.SubElement(item, 'g:title').text = clean_product_name(producto.nombre)[:150]  # Max 150 caracteres
         
         # Descripción
         descripcion = producto.descripcion_corta or producto.descripcion
@@ -215,7 +216,7 @@ def facebook_product_feed_csv(request):
         # Escribir fila
         writer.writerow([
             producto.sku,
-            producto.nombre[:150],
+            clean_product_name(producto.nombre)[:150],
             descripcion[:5000],
             availability,
             'new',

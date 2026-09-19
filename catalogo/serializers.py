@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Producto, Categoria, TipoFlor, Ocasion, ZonaEntrega, ProductoImagen, HeroSlide
+from .text_utils import clean_product_name
 
 class ProductoImagenSerializer(serializers.ModelSerializer):
     imagen = serializers.SerializerMethodField()
@@ -38,6 +39,7 @@ class ZonaEntregaSerializer(serializers.ModelSerializer):
         fields = ['id', 'nombre', 'descripcion', 'costo_envio', 'envio_gratis_desde', 'is_active']
 
 class ProductoSerializer(serializers.ModelSerializer):
+    nombre = serializers.SerializerMethodField()
     imagen_principal = serializers.SerializerMethodField()
     imagenes = ProductoImagenSerializer(many=True, read_only=True)
     tipo_flor = TipoFlorSerializer(read_only=True)
@@ -72,6 +74,9 @@ class ProductoSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_nombre(self, obj):
+        return clean_product_name(obj.nombre)
 
     def get_imagen_principal(self, obj):
         url = getattr(obj, 'get_primary_image_url', None)

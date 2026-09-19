@@ -125,6 +125,11 @@ const nextConfig = {
       {
         source: '/api/pedidos/:path*',
         destination: `${backendUrl}/api/pedidos/:path*`,
+      },
+      // API pública para agentes de compra (sin barra final, para evitar el 308 en POST)
+      {
+        source: '/api/publico/:path*',
+        destination: `${backendUrl}/api/publico/:path*`,
       }
     ];
   },

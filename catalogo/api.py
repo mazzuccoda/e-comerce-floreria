@@ -23,7 +23,8 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
     Se puede acceder a la lista en `/api/catalogo/productos/`
     y al detalle en `/api/catalogo/productos/<slug>/`.
     """
-    queryset = Producto.objects.filter(is_active=True).prefetch_related(
+    # Los productos sin precio no se pueden comprar: no se publican.
+    queryset = Producto.objects.filter(is_active=True, precio__gt=0).prefetch_related(
         'imagenes', 'tipo_flor', 'ocasiones'
     )
     serializer_class = ProductoSerializer

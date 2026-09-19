@@ -4,6 +4,10 @@ Allow: /
 # Sitemap
 Sitemap: https://floreriacristina.com.ar/sitemap.xml
 
+# API pública para agentes de compra y asistentes de IA
+Allow: /api/publico/
+Allow: /feeds/
+
 # Disallow admin and private areas
 Disallow: /api/
 Disallow: /_next/
