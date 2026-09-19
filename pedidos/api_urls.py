@@ -34,6 +34,7 @@ from .shipping_views import (
     create_or_update_zone,
     init_shipping_data
 )
+from .shipping_quote_views import quote_shipping
 from .carrito_abandonado_views import (
     registrar_carrito_abandonado,
     listar_carritos_pendientes,
@@ -87,6 +88,7 @@ urlpatterns = [
     path('shipping/config/', get_shipping_config, name='shipping-config'),
     path('shipping/zones/<str:method>/', get_shipping_zones, name='shipping-zones'),
     path('shipping/calculate/', calculate_shipping_cost, name='shipping-calculate'),
+    path('shipping/quote/', quote_shipping, name='shipping-quote'),
     path('shipping/config/update/', update_shipping_config, name='shipping-config-update'),
     path('shipping/zones/save/', create_or_update_zone, name='shipping-zone-save'),
     path('shipping/init/', init_shipping_data, name='shipping-init'),  # Endpoint temporal
