@@ -80,9 +80,8 @@ function curateSlides(slides: Slide[]): Slide[] {
 
 export default function HeroCarousel() {
   const { locale, t } = useI18n();
-  const [slides, setSlides] = useState<Slide[]>([]);
+  const [slides, setSlides] = useState<Slide[]>(() => curateSlides(defaultSlides));
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [deliveryPromise, setDeliveryPromise] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,11 +114,8 @@ export default function HeroCarousel() {
         } else {
           setSlides(curateSlides(defaultSlides));
         }
-      } catch (error) {
-        console.error('Error cargando slides del hero:', error);
+      } catch {
         setSlides(curateSlides(defaultSlides));
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -131,15 +127,6 @@ export default function HeroCarousel() {
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
 
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-
-  // Mostrar loading mientras carga
-  if (loading) {
-    return (
-      <div className="relative z-10 flex h-[340px] w-full items-center justify-center overflow-hidden bg-gray-900 md:h-[420px] lg:h-[480px]">
-        <div className="text-white text-xl">Cargando...</div>
-      </div>
-    );
-  }
 
   // Si no hay slides, no mostrar nada
   if (slides.length === 0) {
