@@ -24,10 +24,23 @@ export const metadata: Metadata = {
   },
 };
 
+const CATEGORIAS_SUGERIDAS = ['ramos-de-flores', 'flores-amarillas', 'ramos-blancos'];
+
 export default async function DiaDeLaMadrePage() {
-  const productos = (await getProducts()).filter(
-    (producto) => producto.categoria?.slug === CATEGORIA_SLUG
-  );
+  const todos = await getProducts();
+  const deCategoria = todos.filter((producto) => producto.categoria?.slug === CATEGORIA_SLUG);
+
+  // Mientras la categoría del Día de la Madre no tenga productos cargados, la
+  // página muestra ramos disponibles en vez de quedar vacía.
+  const usaSugeridos = deCategoria.length === 0;
+  const productos = usaSugeridos
+    ? todos
+        .filter(
+          (producto) =>
+            CATEGORIAS_SUGERIDAS.includes(producto.categoria?.slug ?? '') && producto.stock > 0
+        )
+        .slice(0, 12)
+    : deCategoria;
 
   const itemList = {
     '@context': 'https://schema.org',
@@ -72,6 +85,12 @@ export default async function DiaDeLaMadrePage() {
         también podés programar la entrega para la fecha que quieras.
       </p>
 
+      {usaSugeridos && productos.length > 0 && (
+        <h2 className="mt-10 text-xl font-semibold text-gray-900">
+          Ramos disponibles para regalarle a mamá
+        </h2>
+      )}
+
       {productos.length > 0 ? (
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {productos.map((producto) => (
@@ -87,10 +106,10 @@ export default async function DiaDeLaMadrePage() {
 
       <div className="mt-10 flex flex-wrap gap-3">
         <Link
-          href={`/es/productos?categoria=${CATEGORIA_SLUG}`}
+          href={usaSugeridos ? '/es/productos' : `/es/productos?categoria=${CATEGORIA_SLUG}`}
           className="rounded-full border border-gray-300 px-6 py-3 text-sm font-medium text-gray-800 transition-colors hover:border-emerald-700 hover:text-emerald-800"
         >
-          Ver la categoría completa con filtros
+          {usaSugeridos ? 'Ver todo el catálogo' : 'Ver la categoría completa con filtros'}
         </Link>
         <Link
           href="/es/zonas"
