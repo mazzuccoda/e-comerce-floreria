@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { API_URL } from '@/utils/apiBase';
+import { useI18n } from '@/context/I18nContext';
+import { localeHref } from '@/utils/localeHref';
 
 interface Ocasion {
   id: number;
@@ -16,6 +18,7 @@ interface Ocasion {
  * para quien busca un regalo y no una flor puntual.
  */
 export default function OccasionsSection() {
+  const { locale } = useI18n();
   const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export default function OccasionsSection() {
           {ocasiones.map((ocasion) => (
             <li key={ocasion.id}>
               <Link
-                href={`/productos?ocasion=${ocasion.id}`}
+                href={localeHref(`/productos?ocasion=${ocasion.id}`, locale)}
                 className="inline-flex items-center rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-800 transition-colors hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
               >
                 {ocasion.nombre}

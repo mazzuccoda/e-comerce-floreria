@@ -8,6 +8,7 @@ import ProductCard from './ProductCard';
 import ProductFilters from './ProductFilters';
 import { Product } from '@/types/Product';
 import { useI18n } from '@/context/I18nContext';
+import { localeHref } from '@/utils/localeHref';
 
 interface ProductListProps {
   showRecommended?: boolean;
@@ -210,13 +211,13 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       {showFilters && (
         <div className="mb-6 px-2">
           <nav aria-label="Ruta de navegación" className="flex items-center gap-1 text-sm text-gray-500">
-            <Link href="/" className="hover:text-emerald-700 hover:underline">
+            <Link href={localeHref('/', locale)} className="hover:text-emerald-700 hover:underline">
               {t('catalog.home')}
             </Link>
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
             {categoryName ? (
               <>
-                <Link href="/productos" className="hover:text-emerald-700 hover:underline">
+                <Link href={localeHref('/productos', locale)} className="hover:text-emerald-700 hover:underline">
                   {t('catalog.allProducts')}
                 </Link>
                 <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -269,7 +270,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
       {showFilters && extrasHidden && (
         <div className="mt-10 px-2 text-center text-sm text-gray-600">
           {t('catalog.extrasHint')}{' '}
-          <Link href="/productos?categoria=adicionales" className="font-medium text-emerald-700 hover:underline">
+          <Link href={localeHref('/productos?categoria=adicionales', locale)} className="font-medium text-emerald-700 hover:underline">
             {t('catalog.extrasLink')}
           </Link>
         </div>
@@ -282,7 +283,7 @@ export default function ProductListClient({ showRecommended = false, showAdditio
             <h3 className="text-gray-800 font-semibold mb-2">{t('catalog.emptyTitle')}</h3>
             <p className="text-gray-600 mb-4">{t('catalog.emptyText')}</p>
             <Link
-              href="/productos"
+              href={localeHref('/productos', locale)}
               className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
               {t('catalog.emptyCta')}

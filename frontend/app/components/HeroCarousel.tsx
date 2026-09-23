@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useI18n } from '../../context/I18nContext';
+import { localeHref } from '@/utils/localeHref';
 import { getExpressAvailability } from '@/utils/deliveryPromise';
 import { cloudinaryThumb } from '@/utils/cloudinary';
 
@@ -192,13 +193,13 @@ export default function HeroCarousel() {
                 </p>
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   <Link
-                    href="/productos?categoria=ramos-de-flores"
+                    href={localeHref('/productos?categoria=ramos-de-flores', locale)}
                     className="inline-flex items-center justify-center rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-emerald-800 sm:px-6 sm:py-3 sm:text-base"
                   >
                     {t('home.hero.primaryCta')}
                   </Link>
                   <Link
-                    href="/zonas"
+                    href={localeHref('/zonas', locale)}
                     className="inline-flex items-center justify-center rounded-md border border-white/80 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur transition-colors hover:bg-white hover:text-gray-900 sm:px-6 sm:py-3 sm:text-base"
                   >
                     {t('home.hero.secondaryCta')}

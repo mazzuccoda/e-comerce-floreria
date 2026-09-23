@@ -98,6 +98,10 @@ export default function ZonasPage() {
             <p className="mb-4 text-sm text-gray-600">
               Entrega en el día, dentro de {maxExpress} km de la tienda.
             </p>
+            <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+              Pedidos confirmados hasta las <strong>17:00 hs</strong> se entregan el mismo día;
+              después de esa hora, la entrega pasa al día siguiente.
+            </p>
             {expressZones.length > 0 ? (
               <ul className="divide-y divide-gray-100">
                 {expressZones.map((zone) => (

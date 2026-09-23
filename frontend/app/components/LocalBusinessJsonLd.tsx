@@ -34,6 +34,27 @@ const data = {
     { '@type': 'City', name: 'Yerba Buena' },
     { '@type': 'City', name: 'San Miguel de Tucumán' },
   ],
+  openingHoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ],
+      opens: '09:00',
+      closes: '20:00',
+    },
+  ],
+  // Pedidos express confirmados hasta las 17:00 se entregan el mismo día.
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Ramos y arreglos florales',
+    url: `${SITE_URL}/es/productos`,
+  },
   // El puntaje es del negocio en Google, no de cada producto.
   aggregateRating: {
     '@type': 'AggregateRating',

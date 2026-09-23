@@ -3,11 +3,15 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useI18n } from '@/context/I18nContext';
+import { productPath } from '@/utils/catalog';
+import { localeHref } from '@/utils/localeHref';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
 
 interface ProductoAdicional {
   id: number;
+  slug?: string;
   nombre: string;
   descripcion_corta: string;
   precio: number;
@@ -16,6 +20,7 @@ interface ProductoAdicional {
 }
 
 export default function AdicionalesSection() {
+  const { locale } = useI18n();
   const [productos, setProductos] = useState<ProductoAdicional[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,11 +33,10 @@ export default function AdicionalesSection() {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('✅ Productos adicionales cargados:', data);
           setProductos(data.slice(0, 4)); // Mostrar máximo 4
         }
-      } catch (error) {
-        console.error('❌ Error cargando productos adicionales:', error);
+      } catch {
+        setProductos([]);
       } finally {
         setLoading(false);
       }
@@ -75,7 +79,7 @@ export default function AdicionalesSection() {
           {productos.map((producto) => (
             <Link
               key={producto.id}
-              href={`/productos/${producto.id}`}
+              href={localeHref(productPath({ id: producto.id, slug: producto.slug ?? '' }), locale)}
               className="group flex flex-col items-center"
             >
               {/* Círculo con imagen */}
@@ -118,7 +122,7 @@ export default function AdicionalesSection() {
         {productos.length >= 4 && (
           <div className="text-center mt-12">
             <Link
-              href="/productos?adicionales=true"
+              href={localeHref('/productos?adicionales=true', locale)}
               className="inline-block bg-white text-gray-800 px-8 py-3 rounded-full font-medium hover:bg-gray-100 transition-all duration-300 shadow-md hover:shadow-lg"
             >
               Ver todos los adicionales

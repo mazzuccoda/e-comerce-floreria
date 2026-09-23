@@ -4,6 +4,9 @@ A diferencia de `/api/catalogo/`, estos endpoints devuelven datos ya resueltos
 (nombre sin emojis, URL final del producto, precio vigente, disponibilidad) y
 entienden búsquedas en lenguaje natural, con o sin acentos.
 """
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -14,6 +17,10 @@ from .text_utils import clean_product_name, normalize
 
 SITE_URL = 'https://floreriacristina.com.ar'
 PRODUCT_URL_TEMPLATE = SITE_URL + '/es/productos/{slug}'
+
+# Los pedidos express confirmados antes de esta hora local se entregan el mismo día.
+SAME_DAY_CUTOFF = time(17, 0)
+LOCAL_TZ = ZoneInfo('America/Argentina/Buenos_Aires')
 
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 50
@@ -174,6 +181,23 @@ def buscar_productos(request):
     })
 
 
+def _entrega_mismo_dia(ahora: datetime) -> dict:
+    """Qué puede prometer un agente ahora mismo sobre la entrega del mismo día."""
+    abierto = ahora.time() < SAME_DAY_CUTOFF
+    proxima = ahora.date() if abierto else (ahora + timedelta(days=1)).date()
+    return {
+        'hora_corte': SAME_DAY_CUTOFF.strftime('%H:%M'),
+        'zona_horaria': 'America/Argentina/Buenos_Aires',
+        'hora_local': ahora.strftime('%Y-%m-%d %H:%M'),
+        'acepta_pedidos_para_hoy': abierto,
+        'proxima_fecha_de_entrega': proxima.isoformat(),
+        'detalle': (
+            'Los pedidos express confirmados hasta las 17:00 se entregan el mismo día; '
+            'después de esa hora la entrega pasa al día siguiente.'
+        ),
+    }
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def info_tienda(request):
@@ -201,6 +225,7 @@ def info_tienda(request):
         'horario': '9:00 a 20:00 hs',
         'zonas_de_entrega': ['Yerba Buena', 'San Miguel de Tucumán'],
         'metodos_de_entrega': ['express', 'programado', 'retiro'],
+        'entrega_mismo_dia': _entrega_mismo_dia(datetime.now(LOCAL_TZ)),
         'medios_de_pago': ['Mercado Pago', 'PayPal', 'Transferencia bancaria', 'Efectivo (sólo al retirar en tienda)'],
         'moneda': 'ARS',
         'zonas': zonas,
@@ -215,5 +240,6 @@ def info_tienda(request):
             'cancelacion': 'Hasta 24 horas antes de la entrega.',
             'envio_gratis': 'Sólo en productos marcados con envío gratis o al superar el umbral configurado.',
             'tarjeta': 'La dedicatoria se escribe a mano y se entrega con el arreglo.',
+            'entrega_mismo_dia': 'Pedidos express hasta las 17:00 (hora de Argentina).',
         },
     })
