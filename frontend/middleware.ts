@@ -5,7 +5,16 @@ const locales = ['es', 'en'];
 const defaultLocale = 'es';
 
 export function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
+
+  // Un solo host canónico: www duplica todo el sitio en un segundo dominio.
+  const host = request.headers.get('host');
+  if (host?.startsWith('www.')) {
+    const url = request.nextUrl.clone();
+    url.host = host.slice(4);
+    url.port = '';
+    return NextResponse.redirect(url, 308);
+  }
 
   // Ignorar rutas especiales (API, assets, Next internals)
   if (
@@ -26,11 +35,16 @@ export function middleware(request: NextRequest) {
   if (pathnameHasLocale) {
     const locale = pathname.split('/')[1];
     const pathWithoutLocale = pathname.replace(`/${locale}`, '') || '/';
-    
+
     const url = request.nextUrl.clone();
     url.pathname = pathWithoutLocale;
-    
-    const response = NextResponse.rewrite(url);
+
+    // El locale viaja como header de la request para que las páginas de servidor
+    // puedan leerlo con `headers()`.
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-locale', locale);
+
+    const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
     response.headers.set('x-locale', locale);
     return response;
   }
@@ -42,8 +56,11 @@ export function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone();
   url.pathname = `/${locale}${pathname}`;
-  
-  return NextResponse.redirect(url);
+
+  // Permanente cuando la URL final no depende de la preferencia del visitante.
+  const status = locale === defaultLocale && !cookieLocale ? 308 : 307;
+
+  return NextResponse.redirect(url, status);
 }
 
 export const config = {

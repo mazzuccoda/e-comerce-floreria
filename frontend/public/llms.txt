@@ -11,6 +11,7 @@
 - Medios de pago: Mercado Pago, PayPal, transferencia bancaria, efectivo (sólo al retirar en tienda)
 - Zonas de entrega: Yerba Buena y San Miguel de Tucumán
 - Métodos de entrega: express, programado y retiro en tienda
+- Entrega el mismo día: los pedidos express confirmados hasta las 17:00 (hora de Argentina, UTC-3) se entregan el mismo día; después de las 17:00 la entrega pasa al día siguiente
 - Cancelaciones y cambios: hasta 24 horas antes de la entrega
 - El costo de envío nunca está incluido en el precio del producto: hay que cotizarlo por dirección
 
@@ -26,6 +27,8 @@
 - Feed de productos (XML): https://floreriacristina.com.ar/feeds/facebook-products.xml
 - Feed de productos (CSV): https://floreriacristina.com.ar/feeds/facebook-products.csv
 - Sitemap: https://floreriacristina.com.ar/sitemap.xml
+- Catálogo completo: https://floreriacristina.com.ar/es/productos
+- Día de la Madre: https://floreriacristina.com.ar/es/dia-de-la-madre
 - Cada ficha de producto trae JSON-LD `Product` + `Offer` con precio, SKU y disponibilidad.
 
 ## Compra

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { useI18n } from '../../context/I18nContext';
+import { localeHref } from '@/utils/localeHref';
 
 const Footer = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   
   return (
     <footer className="bg-gray-800 text-white mt-12">
@@ -16,9 +17,11 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-4">{t('footer.quickLinks')}</h3>
             <ul className="space-y-2">
-              <li><Link href="/" className="text-gray-400 hover:text-white transition-colors">Inicio</Link></li>
-              <li><Link href="/productos" className="text-gray-400 hover:text-white transition-colors">Catálogo</Link></li>
-              <li><Link href="/contacto" className="text-gray-400 hover:text-white transition-colors">{t('footer.contact')}</Link></li>
+              <li><Link href={localeHref('/', locale)} className="text-gray-400 hover:text-white transition-colors">Inicio</Link></li>
+              <li><Link href={localeHref('/productos', locale)} className="text-gray-400 hover:text-white transition-colors">Catálogo</Link></li>
+              <li><Link href={localeHref('/dia-de-la-madre', locale)} className="text-gray-400 hover:text-white transition-colors">Día de la Madre</Link></li>
+              <li><Link href={localeHref('/zonas', locale)} className="text-gray-400 hover:text-white transition-colors">Zonas y envíos</Link></li>
+              <li><Link href={localeHref('/contacto', locale)} className="text-gray-400 hover:text-white transition-colors">{t('footer.contact')}</Link></li>
             </ul>
           </div>
           <div>
@@ -30,11 +33,11 @@ const Footer = () => {
         </div>
         <div className="border-t border-gray-700 mt-8 pt-6 text-center">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
-            <Link href="/privacidad" className="text-gray-400 hover:text-white transition-colors text-sm">
+            <Link href={localeHref('/privacidad', locale)} className="text-gray-400 hover:text-white transition-colors text-sm">
               Política de Privacidad
             </Link>
             <span className="hidden sm:inline text-gray-600">|</span>
-            <Link href="/terminos" className="text-gray-400 hover:text-white transition-colors text-sm">
+            <Link href={localeHref('/terminos', locale)} className="text-gray-400 hover:text-white transition-colors text-sm">
               Términos y Condiciones
             </Link>
           </div>

@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Truck, Store, CreditCard, ShieldCheck } from 'lucide-react';
 import { TIENDA } from '@/components/paymentInfo';
+import { useI18n } from '@/context/I18nContext';
 import { getExpressAvailability } from '@/utils/deliveryPromise';
+import { localeHref } from '@/utils/localeHref';
 
 export default function HomePromiseBar() {
+  const { locale } = useI18n();
   const [promise, setPromise] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,7 +24,7 @@ export default function HomePromiseBar() {
           <Truck className="h-5 w-5 flex-shrink-0 text-emerald-700" aria-hidden="true" />
           <div className="text-sm">
             <p className="font-semibold text-gray-900">{promise ?? 'Envío Express'}</p>
-            <Link href="/zonas" className="text-gray-600 hover:text-emerald-700 hover:underline">
+            <Link href={localeHref('/zonas', locale)} className="text-gray-600 hover:text-emerald-700 hover:underline">
               Ver zonas y costo de envío
             </Link>
           </div>
@@ -47,7 +50,7 @@ export default function HomePromiseBar() {
           <ShieldCheck className="h-5 w-5 flex-shrink-0 text-emerald-700" aria-hidden="true" />
           <div className="text-sm">
             <p className="font-semibold text-gray-900">Flores frescas para cada arreglo</p>
-            <Link href="/terminos" className="text-gray-600 hover:text-emerald-700 hover:underline">
+            <Link href={localeHref('/terminos', locale)} className="text-gray-600 hover:text-emerald-700 hover:underline">
               Cancelás hasta 24 hs antes
             </Link>
           </div>

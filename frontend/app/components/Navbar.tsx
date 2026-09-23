@@ -8,26 +8,23 @@ import { useI18n } from '../../context/I18nContext';
 import { useState, useEffect } from 'react';
 import styles from './Navbar.module.css';
 import VacationBanner from './VacationBanner';
+import { localeHref } from '@/utils/localeHref';
+import type { TipoFlor, Ocasion } from '@/utils/taxonomia';
 
-interface TipoFlor {
-  id: number;
-  nombre: string;
+interface NavbarProps {
+  tiposFlorIniciales?: TipoFlor[];
+  ocasionesIniciales?: Ocasion[];
 }
 
-interface Ocasion {
-  id: number;
-  nombre: string;
-}
-
-export default function Navbar() {
+export default function Navbar({ tiposFlorIniciales = [], ocasionesIniciales = [] }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { locale, t } = useI18n();
   const { cart } = useCartRobust();
   const { isAuthenticated, user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>([]);
-  const [ocasiones, setOcasiones] = useState<Ocasion[]>([]);
+  const [tiposFlor, setTiposFlor] = useState<TipoFlor[]>(tiposFlorIniciales);
+  const [ocasiones, setOcasiones] = useState<Ocasion[]>(ocasionesIniciales);
   const [showOcasiones, setShowOcasiones] = useState(false);
   const [showTiposFlor, setShowTiposFlor] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -48,10 +45,7 @@ export default function Navbar() {
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://e-comerce-floreria-production.up.railway.app/api';
     const timestamp = Date.now();
-    
-    console.log('🌸 Navbar: Cargando tipos de flor y ocasiones desde:', apiUrl);
-    
-    // Cargar tipos de flor
+
     fetch(`${apiUrl}/catalogo/tipos-flor/?lang=${locale}&_t=${timestamp}`, {
       headers: {
         'Cache-Control': 'no-cache, no-store',
@@ -61,12 +55,10 @@ export default function Navbar() {
     })
       .then(res => res.json())
       .then(data => {
-        console.log('✅ Tipos de flor cargados:', data.length);
-        setTiposFlor(data);
+        if (Array.isArray(data) && data.length > 0) setTiposFlor(data);
       })
-      .catch(err => console.error('❌ Error cargando tipos de flor:', err));
-    
-    // Cargar ocasiones
+      .catch(() => {});
+
     fetch(`${apiUrl}/catalogo/ocasiones/?lang=${locale}&_t=${timestamp}`, {
       headers: {
         'Cache-Control': 'no-cache, no-store',
@@ -76,10 +68,9 @@ export default function Navbar() {
     })
       .then(res => res.json())
       .then(data => {
-        console.log('✅ Ocasiones cargadas:', data.length);
-        setOcasiones(data);
+        if (Array.isArray(data) && data.length > 0) setOcasiones(data);
       })
-      .catch(err => console.error('❌ Error cargando ocasiones:', err));
+      .catch(() => {});
   }, [locale]);
   
   // Solo renderizar el contador del carrito en el cliente
@@ -140,7 +131,7 @@ export default function Navbar() {
           </button>
 
           {/* Logo */}
-          <a href="/" className="flex items-center">
+          <a href={localeHref('/', locale)} className="flex items-center">
             <img 
               src="https://res.cloudinary.com/dmxc6odsi/image/upload/v1760465112/Logo_Crsitina_t6ofnz.png" 
               alt="Florería Cristina" 
@@ -167,13 +158,13 @@ export default function Navbar() {
               <div data-desktop-menu className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showTiposFlor ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 {tiposFlor.length > 0 ? (
                   tiposFlor.map(tipo => (
-                    <a 
-                      key={tipo.id} 
-                      onClick={() => window.location.href = `/productos?tipo_flor=${tipo.id}`}
+                    <Link
+                      key={tipo.id}
+                      href={localeHref(`/productos?tipo_flor=${tipo.id}`, locale)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                     >
                       {tipo.nombre}
-                    </a>
+                    </Link>
                   ))
                 ) : (
                   <span className="block px-4 py-2 text-sm text-gray-400">{t('nav.loading')}</span>
@@ -198,28 +189,28 @@ export default function Navbar() {
               <div data-desktop-menu className={`absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 transition-all duration-200 ${showOcasiones ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>
                 {ocasiones.length > 0 ? (
                   ocasiones.map(ocasion => (
-                    <a 
-                      key={ocasion.id} 
-                      onClick={() => window.location.href = `/productos?ocasion=${ocasion.id}`}
+                    <Link
+                      key={ocasion.id}
+                      href={localeHref(`/productos?ocasion=${ocasion.id}`, locale)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                     >
                       {ocasion.nombre}
-                    </a>
+                    </Link>
                   ))
                 ) : (
-                  <span className="block px-4 py-2 text-sm text-gray-400">Cargando...</span>
+                  <span className="block px-4 py-2 text-sm text-gray-400">{t('nav.loading')}</span>
                 )}
               </div>
             </li>
             
             <li>
-              <Link href="/ayuda" className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors">
+              <Link href={localeHref('/ayuda', locale)} className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors">
                 {t('nav.help')}
               </Link>
             </li>
             
             <li>
-              <Link href="/contacto" className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors">
+              <Link href={localeHref('/contacto', locale)} className="text-gray-700 hover:text-gray-900 font-light text-base transition-colors">
                 {t('nav.contact')}
               </Link>
             </li>
@@ -288,14 +279,14 @@ export default function Navbar() {
                 {showUserMenu && (
                   <div data-desktop-menu className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-50">
                     <Link
-                      href="/perfil"
+                      href={localeHref('/perfil', locale)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setShowUserMenu(false)}
                     >
                       {t('nav.myProfile')}
                     </Link>
                     <Link
-                      href="/mis-pedidos"
+                      href={localeHref('/mis-pedidos', locale)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setShowUserMenu(false)}
                     >
@@ -314,7 +305,7 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <Link href="/login" className="text-gray-700 hover:text-gray-900 transition-colors" aria-label={t('nav.login')}>
+              <Link href={localeHref('/login', locale)} className="text-gray-700 hover:text-gray-900 transition-colors" aria-label={t('nav.login')}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -322,7 +313,7 @@ export default function Navbar() {
             )}
 
             {/* Carrito */}
-            <Link href="/carrito" className="relative text-gray-700 hover:text-gray-900 transition-colors" suppressHydrationWarning>
+            <Link href={localeHref('/carrito', locale)} className="relative text-gray-700 hover:text-gray-900 transition-colors" suppressHydrationWarning>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
@@ -348,7 +339,7 @@ export default function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
-                    router.push(`/productos?search=${encodeURIComponent(searchQuery)}`);
+                    router.push(localeHref(`/productos?search=${encodeURIComponent(searchQuery)}`, locale));
                     setShowSearch(false);
                     setSearchQuery('');
                   }
@@ -388,19 +379,17 @@ export default function Navbar() {
               <p className="text-gray-500 text-sm font-medium mb-2">Tipo de flor</p>
               {tiposFlor.length > 0 ? (
                 tiposFlor.map(tipo => (
-                  <a 
-                    key={tipo.id} 
-                    onClick={() => {
-                      window.location.href = `/productos?tipo_flor=${tipo.id}`;
-                      setShowMobileMenu(false);
-                    }}
+                  <Link
+                    key={tipo.id}
+                    href={localeHref(`/productos?tipo_flor=${tipo.id}`, locale)}
+                    onClick={() => setShowMobileMenu(false)}
                     className="block px-2 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer rounded"
                   >
                     {tipo.nombre}
-                  </a>
+                  </Link>
                 ))
               ) : (
-                <span className="block px-2 py-2 text-gray-400 text-sm">Cargando...</span>
+                <span className="block px-2 py-2 text-gray-400 text-sm">{t('nav.loading')}</span>
               )}
             </div>
 
@@ -409,33 +398,31 @@ export default function Navbar() {
               <p className="text-gray-500 text-sm font-medium mb-2">Ocasiones</p>
               {ocasiones.length > 0 ? (
                 ocasiones.map(ocasion => (
-                  <a 
-                    key={ocasion.id} 
-                    onClick={() => {
-                      window.location.href = `/productos?ocasion=${ocasion.id}`;
-                      setShowMobileMenu(false);
-                    }}
+                  <Link
+                    key={ocasion.id}
+                    href={localeHref(`/productos?ocasion=${ocasion.id}`, locale)}
+                    onClick={() => setShowMobileMenu(false)}
                     className="block px-2 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer rounded"
                   >
                     {ocasion.nombre}
-                  </a>
+                  </Link>
                 ))
               ) : (
-                <span className="block px-2 py-2 text-gray-400 text-sm">Cargando...</span>
+                <span className="block px-2 py-2 text-gray-400 text-sm">{t('nav.loading')}</span>
               )}
             </div>
 
             {/* Enlaces adicionales */}
             <div className="pt-2">
               <Link 
-                href="/ayuda" 
+                href={localeHref('/ayuda', locale)}
                 className="block px-2 py-3 text-gray-700 hover:bg-gray-50 rounded font-medium"
                 onClick={() => setShowMobileMenu(false)}
               >
                 Ayuda
               </Link>
               <Link 
-                href="/contacto" 
+                href={localeHref('/contacto', locale)}
                 className="block px-2 py-3 text-gray-700 hover:bg-gray-50 rounded font-medium"
                 onClick={() => setShowMobileMenu(false)}
               >

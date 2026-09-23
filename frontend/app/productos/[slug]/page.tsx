@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { Product } from '@/types/Product';
-import { getProduct, productUrl, SITE_URL } from '@/utils/catalog';
+import { getProduct, productPath, productUrl, SITE_URL } from '@/utils/catalog';
 import ProductPageClient from './ProductPageClient';
 
 interface ProductPageParams {
@@ -30,7 +31,8 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
     return { title: 'Producto no encontrado | Florería Cristina' };
   }
 
-  const url = productUrl(product, getLocale());
+  // Una sola URL canónica por producto: la versión /es, aunque se navegue en /en.
+  const url = productUrl(product, 'es');
   const title = `${product.nombre} | Florería Cristina Tucumán`;
   const description = descripcion(product);
 
@@ -53,35 +55,56 @@ export default async function ProductPage({ params }: ProductPageParams) {
   const product = await getProduct(slug);
   const locale = getLocale();
 
-  const jsonLd = product
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: product.nombre,
-        description: descripcion(product),
-        image: product.imagen_principal ? [product.imagen_principal] : undefined,
-        sku: product.sku || String(product.id),
-        brand: { '@type': 'Brand', name: 'Florería Cristina' },
-        category: product.categoria?.nombre,
-        offers: {
-          '@type': 'Offer',
-          url: productUrl(product, locale),
-          price: precioFinal(product),
-          priceCurrency: 'ARS',
-          availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          seller: { '@type': 'Organization', name: 'Florería Cristina', url: SITE_URL },
+  if (!product) {
+    notFound();
+  }
+
+  // Las URLs viejas por id se consolidan en la del slug.
+  const canonicalPath = productPath(product);
+  if (canonicalPath !== `/productos/${slug}`) {
+    permanentRedirect(`/${locale}${canonicalPath}`);
+  }
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.nombre,
+    description: descripcion(product),
+    image: product.imagen_principal ? [product.imagen_principal] : undefined,
+    sku: product.sku || String(product.id),
+    brand: { '@type': 'Brand', name: 'Florería Cristina' },
+    category: product.categoria?.nombre,
+    offers: {
+      '@type': 'Offer',
+      url: productUrl(product, 'es'),
+      price: precioFinal(product),
+      priceCurrency: 'ARS',
+      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: { '@type': 'Organization', name: 'Florería Cristina', url: SITE_URL },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'AR',
+          addressRegion: 'Tucumán',
         },
-      }
-    : null;
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          // Los pedidos express confirmados antes de las 17:00 se entregan el mismo día.
+          cutoffTime: '17:00:00-03:00',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+        },
+      },
+    },
+  };
 
   return (
     <>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <ProductPageClient slug={slug} initialProduct={product} />
     </>
   );

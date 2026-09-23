@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { TIENDA } from '@/components/paymentInfo';
+import { useI18n } from '@/context/I18nContext';
 import { getExpressAvailability } from '@/utils/deliveryPromise';
+import { localeHref } from '@/utils/localeHref';
 
 import { useShippingConfig, type ShippingZone } from '../hooks/useShippingConfig';
 
@@ -36,6 +38,7 @@ function cheapestZonePrice(zones: ShippingZone[], match: string): number | null 
  * (¿llega a mi zona y cuándo?) antes de que elija un ramo.
  */
 export default function DeliveryFinder() {
+  const { locale } = useI18n();
   const { zones } = useShippingConfig();
   const [area, setArea] = useState<Area>('yerba-buena');
   const [when, setWhen] = useState<When>('hoy');
@@ -76,7 +79,7 @@ export default function DeliveryFinder() {
     };
   }, [expressMessage, isPickup, when]);
 
-  const catalogHref = '/productos?categoria=ramos-de-flores';
+  const catalogHref = localeHref('/productos?categoria=ramos-de-flores', locale);
 
   return (
     <section className="relative z-20 bg-white py-5">
@@ -147,7 +150,7 @@ export default function DeliveryFinder() {
                   </>
                 )}
                 {answer.detail}{' '}
-                <Link href="/zonas" className="text-emerald-700 hover:underline">
+                <Link href={localeHref('/zonas', locale)} className="text-emerald-700 hover:underline">
                   Ver zonas y costos
                 </Link>
               </p>

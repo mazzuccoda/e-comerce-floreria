@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import './globals.css'
 
@@ -13,6 +14,7 @@ import GoogleAnalytics from './components/GoogleAnalytics';
 import FacebookPixel from './components/FacebookPixel';
 import AnalyticsProvider from './components/AnalyticsProvider';
 import LocalBusinessJsonLd from './components/LocalBusinessJsonLd';
+import { getTiposFlor, getOcasiones } from '../utils/taxonomia';
 // import CartDebugMonitor from './components/CartDebugMonitor'; // Disabled for production 
 
 const inter = Inter({ 
@@ -72,13 +74,16 @@ export const viewport = {
   themeColor: '#16a34a',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = headers().get('x-locale') === 'en' ? 'en' : 'es';
+  const [tiposFlor, ocasiones] = await Promise.all([getTiposFlor(locale), getOcasiones(locale)]);
+
   return (
-    <html lang="es">
+    <html lang={locale}>
       <head>
         <GoogleAnalytics />
         <LocalBusinessJsonLd />
@@ -94,7 +99,7 @@ export default function RootLayout({
           <AuthProvider>
             <CartProviderRobust>
               <div className="flex flex-col min-h-screen">
-                <Navbar />
+                <Navbar tiposFlorIniciales={tiposFlor} ocasionesIniciales={ocasiones} />
                 <Toaster />
                 <main className="flex-grow">
                   {children}

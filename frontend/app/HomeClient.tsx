@@ -15,6 +15,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ShoppingBag, CalendarClock, CreditCard } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
+import { localeHref } from '@/utils/localeHref';
 import { Product } from '@/types/Product';
 
 // Cargar el banner de estado sin SSR para evitar errores de hidratación
@@ -86,7 +87,7 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ destacados }: HomeClientProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   
   return (
     <div>
@@ -134,7 +135,7 @@ export default function HomeClient({ destacados }: HomeClientProps) {
 
           <div className="mt-10 flex justify-center">
             <Link
-              href="/productos"
+              href={localeHref('/productos', locale)}
               className="inline-flex items-center rounded-md border border-green-700 px-6 py-3 font-medium text-green-700 transition-colors hover:bg-green-50"
             >
               {t('home.viewAllProducts')}

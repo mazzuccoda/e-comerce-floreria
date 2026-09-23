@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/context/I18nContext';
+import { localeHref } from '@/utils/localeHref';
 import { cloudinaryThumb } from '@/utils/cloudinary';
 
 interface Category {
@@ -110,7 +111,7 @@ export default function CategoriesSection() {
           {categories.map((category) => (
             <Link
               key={category.id}
-              href={`/productos?categoria=${category.slug}`}
+              href={localeHref(`/productos?categoria=${category.slug}`, locale)}
               className="group relative transform overflow-hidden rounded-xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="relative aspect-square overflow-hidden">
