@@ -4,7 +4,7 @@ export const GOOGLE_PROFILE_URL =
   'https://www.google.com/maps/place/Florer%C3%ADa+y+Vivero+Cristina/@-26.8192895,-65.3036622,17z/data=!4m8!3m7!1s0x94224320cbcca66d:0xda8fc85d2067dd5!9m1!1b1';
 
 export const RATING = '4,8';
-export const REVIEW_COUNT = 44;
+export const REVIEW_COUNT = 45;
 
 export const REVIEWS = [
   {

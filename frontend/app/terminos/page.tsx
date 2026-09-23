@@ -177,7 +177,7 @@ export default function TermsPage() {
           <div className="text-gray-700 space-y-1">
             <p><strong>Email:</strong> <a href="mailto:info@floreriacristina.com" className="text-green-600 hover:underline">info@floreriacristina.com</a></p>
             <p><strong>WhatsApp:</strong> +54 381 477-8577</p>
-            <p><strong>Horario de atención:</strong> Lunes a Sábado de 9:00 a 20:00 hs</p>
+            <p><strong>Horario de atención:</strong> Lunes a Sábado de 9:00 a 21:00 hs</p>
             <p><strong>Dirección:</strong> San Miguel de Tucumán, Argentina</p>
             <p className="mt-3"><strong>Reclamos:</strong> <a href="mailto:reclamos@floreriacristina.com" className="text-green-600 hover:underline">reclamos@floreriacristina.com</a></p>
           </div>

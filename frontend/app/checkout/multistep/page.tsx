@@ -547,9 +547,9 @@ const MultiStepCheckoutPage = () => {
         } else if (formData.metodoEnvio === 'retiro' && value && formData.fecha) {
           const [hours, minutes] = value.split(':').map(Number);
           
-          // Lunes a Sábado: 9:00 a 20:00 (domingos están bloqueados en la fecha)
-          if (hours < 9 || hours > 20 || (hours === 20 && minutes > 0)) {
-            error = 'El horario de retiro es de 9:00 a 20:00 hs';
+          // Lunes a Sábado: 9:00 a 21:00 (domingos están bloqueados en la fecha)
+          if (hours < 9 || hours > 21 || (hours === 21 && minutes > 0)) {
+            error = 'El horario de retiro es de 9:00 a 21:00 hs';
           }
         }
         break;
@@ -1446,7 +1446,7 @@ const MultiStepCheckoutPage = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-2 text-purple-600">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          Programa tu retiro (9:00 a 20:00 hs)
+                          Programa tu retiro (9:00 a 21:00 hs)
                         </div>
                       </div>
                     </div>
@@ -1512,7 +1512,7 @@ const MultiStepCheckoutPage = () => {
                           value={formData.hora}
                           onChange={handleInputChange}
                           min="09:00"
-                          max="20:00"
+                          max="21:00"
                           required
                           className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
                             formErrors.hora 
@@ -1539,7 +1539,7 @@ const MultiStepCheckoutPage = () => {
                           <line x1="12" y1="16" x2="12" y2="12"/>
                           <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <span>Horario de retiro: De lunes a sábado de 9:00 a 20:00 hs. Domingos cerrado.</span>
+                        <span>Horario de retiro: De lunes a sábado de 9:00 a 21:00 hs. Domingos cerrado.</span>
                       </p>
                     </div>
                   </div>
