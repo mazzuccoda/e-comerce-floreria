@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Product } from '@/types/Product';
 import { getProduct, productPath, productUrl, SITE_URL } from '@/utils/catalog';
+import { productDescriptor } from '@/utils/productDescriptor';
 import ProductPageClient from './ProductPageClient';
 
 interface ProductPageParams {
@@ -18,9 +19,12 @@ function precioFinal(product: Product): number {
 }
 
 function descripcion(product: Product): string {
+  const descriptor = productDescriptor(product);
   const texto = (product.descripcion_corta || product.descripcion || '').replace(/\s+/g, ' ').trim();
-  if (texto) return texto.slice(0, 160);
-  return `${product.nombre} de Florería Cristina. Entrega en Yerba Buena y San Miguel de Tucumán, o retiro en tienda.`;
+  const cuerpo = texto
+    ? texto.slice(0, 110)
+    : `${product.nombre}${descriptor ? `, ${descriptor}` : ''} de Florería Cristina`;
+  return `${cuerpo} · Envío en Yerba Buena y San Miguel de Tucumán el mismo día hasta las 17 hs.`;
 }
 
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
@@ -33,7 +37,10 @@ export async function generateMetadata({ params }: ProductPageParams): Promise<M
 
   // Una sola URL canónica por producto: la versión /es, aunque se navegue en /en.
   const url = productUrl(product, 'es');
-  const title = `${product.nombre} | Florería Cristina Tucumán`;
+  const descriptor = productDescriptor(product);
+  const title = descriptor
+    ? `${product.nombre} — ${descriptor} | Florería Cristina Tucumán`
+    : `${product.nombre} | Florería Cristina Tucumán`;
   const description = descripcion(product);
 
   return {

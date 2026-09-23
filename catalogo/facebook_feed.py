@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.utils import timezone
 from .models import Producto
-from .text_utils import clean_product_name
+from .text_utils import feed_title
 import xml.etree.ElementTree as ET
 
 # URL pública final del sitio (Next.js sirve las fichas bajo /es para evitar redirects)
@@ -67,7 +67,7 @@ def facebook_product_feed(request):
         ET.SubElement(item, 'g:id').text = str(producto.sku)
         
         # Título
-        ET.SubElement(item, 'g:title').text = clean_product_name(producto.nombre)[:150]  # Max 150 caracteres
+        ET.SubElement(item, 'g:title').text = feed_title(producto)  # Max 150 caracteres
         
         # Descripción
         descripcion = producto.descripcion_corta or producto.descripcion
@@ -118,9 +118,9 @@ def facebook_product_feed(request):
         # Categoría de Google (Flores y Plantas)
         ET.SubElement(item, 'g:google_product_category').text = '985'  # Home & Garden > Plants > Flowers
         
-        # GTIN (opcional, pero recomendado)
-        # Si tienes códigos de barras, agrégalos aquí
-        # ET.SubElement(item, 'g:gtin').text = producto.gtin
+        # Arreglos artesanales: no existen GTIN ni MPN, hay que declararlo
+        # para que Google Merchant Center no rechace el producto.
+        ET.SubElement(item, 'g:identifier_exists').text = 'no'
         
         # Envío (siempre incluir con país Argentina)
         shipping = ET.SubElement(item, 'g:shipping')
@@ -181,7 +181,8 @@ def facebook_product_feed_csv(request):
         'sale_price',
         'additional_image_link',
         'quantity_to_sell_on_facebook',
-        'shipping'
+        'shipping',
+        'identifier_exists'
     ])
     
     # Agregar cada producto
@@ -216,7 +217,7 @@ def facebook_product_feed_csv(request):
         # Escribir fila
         writer.writerow([
             producto.sku,
-            clean_product_name(producto.nombre)[:150],
+            feed_title(producto),
             descripcion[:5000],
             availability,
             'new',
@@ -229,7 +230,8 @@ def facebook_product_feed_csv(request):
             f'{precio_oferta} ARS' if precio_oferta else '',
             additional_images,
             str(max(producto.stock, 1)),
-            f'AR::{_shipping_cost(producto)} ARS'
+            f'AR::{_shipping_cost(producto)} ARS',
+            'no'
         ])
     
     # Retornar respuesta HTTP

@@ -46,7 +46,7 @@ const data = {
         'Saturday',
       ],
       opens: '09:00',
-      closes: '20:00',
+      closes: '21:00',
     },
   ],
   // Pedidos express confirmados hasta las 17:00 se entregan el mismo día.

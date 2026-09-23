@@ -13,7 +13,7 @@ from rest_framework.response import Response
 
 from pedidos.models import ShippingZone
 from .models import Producto
-from .text_utils import clean_product_name, normalize
+from .text_utils import clean_product_name, normalize, product_descriptor
 
 SITE_URL = 'https://floreriacristina.com.ar'
 PRODUCT_URL_TEMPLATE = SITE_URL + '/es/productos/{slug}'
@@ -79,6 +79,7 @@ def _serializar(producto):
     return {
         'sku': producto.sku,
         'nombre': clean_product_name(producto.nombre),
+        'descriptor': product_descriptor(producto),
         'descripcion': (producto.descripcion_corta or producto.descripcion or '').strip(),
         'precio': _precio_vigente(producto),
         'precio_lista': float(producto.precio),
@@ -97,7 +98,13 @@ def _puntaje(producto, terminos):
     """Cuántos términos de la búsqueda aparecen en el producto (nombre pesa más)."""
     nombre = normalize(clean_product_name(producto.nombre))
     texto = ' '.join(
-        normalize(t) for t in (producto.descripcion, producto.descripcion_corta, producto.categoria.nombre if producto.categoria else '')
+        normalize(t)
+        for t in (
+            producto.descripcion,
+            producto.descripcion_corta,
+            product_descriptor(producto),
+            producto.categoria.nombre if producto.categoria else '',
+        )
     )
     puntaje = 0
     for termino in terminos:
@@ -222,7 +229,7 @@ def info_tienda(request):
         'telefono': '+543814778577',
         'whatsapp': '+5493813671352',
         'email': 'eleososatuc@gmail.com',
-        'horario': '9:00 a 20:00 hs',
+        'horario': 'Lunes a sábado de 9:00 a 21:00 hs (domingos cerrado)',
         'zonas_de_entrega': ['Yerba Buena', 'San Miguel de Tucumán'],
         'metodos_de_entrega': ['express', 'programado', 'retiro'],
         'entrega_mismo_dia': _entrega_mismo_dia(datetime.now(LOCAL_TZ)),
