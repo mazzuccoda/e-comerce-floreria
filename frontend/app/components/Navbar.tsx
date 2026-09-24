@@ -10,6 +10,18 @@ import styles from './Navbar.module.css';
 import VacationBanner from './VacationBanner';
 import { localeHref } from '@/utils/localeHref';
 import type { TipoFlor, Ocasion } from '@/utils/taxonomia';
+import { landingForOcasion, landingForTipoFlor, landingPath } from '@/utils/seoLandings';
+
+// La landing SEO si existe; si no, el filtro del catálogo.
+function tipoFlorHref(tipo: TipoFlor): string {
+  const landing = landingForTipoFlor(tipo.nombre);
+  return landing ? landingPath(landing) : `/productos?tipo_flor=${tipo.id}`;
+}
+
+function occasionHref(ocasion: Ocasion): string {
+  const landing = landingForOcasion(ocasion.nombre);
+  return landing ? landingPath(landing) : `/productos?ocasion=${ocasion.id}`;
+}
 
 interface NavbarProps {
   tiposFlorIniciales?: TipoFlor[];
@@ -160,7 +172,7 @@ export default function Navbar({ tiposFlorIniciales = [], ocasionesIniciales = [
                   tiposFlor.map(tipo => (
                     <Link
                       key={tipo.id}
-                      href={localeHref(`/productos?tipo_flor=${tipo.id}`, locale)}
+                      href={localeHref(tipoFlorHref(tipo), locale)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                     >
                       {tipo.nombre}
@@ -191,7 +203,7 @@ export default function Navbar({ tiposFlorIniciales = [], ocasionesIniciales = [
                   ocasiones.map(ocasion => (
                     <Link
                       key={ocasion.id}
-                      href={localeHref(`/productos?ocasion=${ocasion.id}`, locale)}
+                      href={localeHref(occasionHref(ocasion), locale)}
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                     >
                       {ocasion.nombre}
@@ -381,7 +393,7 @@ export default function Navbar({ tiposFlorIniciales = [], ocasionesIniciales = [
                 tiposFlor.map(tipo => (
                   <Link
                     key={tipo.id}
-                    href={localeHref(`/productos?tipo_flor=${tipo.id}`, locale)}
+                    href={localeHref(tipoFlorHref(tipo), locale)}
                     onClick={() => setShowMobileMenu(false)}
                     className="block px-2 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer rounded"
                   >
@@ -400,7 +412,7 @@ export default function Navbar({ tiposFlorIniciales = [], ocasionesIniciales = [
                 ocasiones.map(ocasion => (
                   <Link
                     key={ocasion.id}
-                    href={localeHref(`/productos?ocasion=${ocasion.id}`, locale)}
+                    href={localeHref(occasionHref(ocasion), locale)}
                     onClick={() => setShowMobileMenu(false)}
                     className="block px-2 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer rounded"
                   >

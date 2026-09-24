@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getProducts, productPath, SITE_URL } from '@/utils/catalog'
+import { landingPath, SEO_LANDINGS } from '@/utils/seoLandings'
 
 export const revalidate = 3600
 
@@ -60,20 +61,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
-  const categorias = Array.from(
-    new Set(
-      productos
-        .map((producto) => producto.categoria?.slug)
-        .filter((slug): slug is string => Boolean(slug))
-    )
-  )
-
-  const categoryUrls: MetadataRoute.Sitemap = categorias.map((slug) => ({
-    url: `${baseUrl}/productos?categoria=${slug}`,
+  // Las intenciones prioritarias tienen URL propia. Los filtros del catálogo
+  // (`/productos?categoria=...`) no se publican: su canonical apunta a la
+  // landing equivalente o al catálogo completo.
+  const landingUrls: MetadataRoute.Sitemap = SEO_LANDINGS.map((landing) => ({
+    url: `${baseUrl}${landingPath(landing)}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
-    priority: 0.7,
+    priority: 0.8,
   }))
 
-  return [...staticUrls, ...categoryUrls, ...productUrls]
+  return [...staticUrls, ...landingUrls, ...productUrls]
 }

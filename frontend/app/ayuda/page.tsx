@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { CUTOFF } from '@/utils/businessHours';
+
 interface FAQItem {
   id: number;
   question: string;
@@ -22,7 +24,7 @@ const faqData: FAQItem[] = [
   {
     id: 3,
     question: "¿Cuáles son los horarios de entrega?",
-    answer: "Entregamos de lunes a sábado de 9:00 a 18:00 hs y los domingos de 9:00 a 13:00 hs. Para la entrega en el día, hacé el pedido dentro de esas franjas; después, la entrega pasa al día siguiente desde las 8:00 hs."
+    answer: `Entregamos de lunes a sábado; los domingos no hay entregas. Los pedidos express confirmados hasta las ${CUTOFF} hs se entregan el mismo día; después, la entrega pasa al próximo día hábil desde las 8:00 hs.`
   },
   {
     id: 4,

@@ -1,5 +1,7 @@
 import { GOOGLE_PROFILE_URL, RATING, REVIEW_COUNT } from '../../utils/googleProfile';
 import { SITE_URL } from '../../utils/catalog';
+import { OPENING_HOURS_SPECIFICATION } from '../../utils/businessHours';
+import { BUSINESS } from '../../utils/businessInfo';
 
 const LOGO =
   'https://res.cloudinary.com/dmxc6odsi/image/upload/v1770509496/logo_circular_byx4zs.png';
@@ -8,48 +10,30 @@ const data = {
   '@context': 'https://schema.org',
   '@type': 'Florist',
   '@id': `${SITE_URL}/#negocio`,
-  name: 'Florería Cristina',
-  alternateName: 'Florería y Vivero Cristina',
+  name: BUSINESS.name,
+  alternateName: BUSINESS.alternateName,
   url: `${SITE_URL}/es`,
   image: LOGO,
   logo: LOGO,
-  telephone: '+543814778577',
-  email: 'eleososatuc@gmail.com',
+  telephone: BUSINESS.telephone,
+  email: BUSINESS.email,
   priceRange: '$$',
   currenciesAccepted: 'ARS',
-  paymentAccepted: 'Mercado Pago, Transferencia bancaria, Efectivo (sólo al retirar en tienda)',
+  paymentAccepted: BUSINESS.paymentMethods.join(', '),
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'Solano Vera 480',
-    addressLocality: 'Yerba Buena',
-    addressRegion: 'Tucumán',
-    addressCountry: 'AR',
+    streetAddress: BUSINESS.streetAddress,
+    addressLocality: BUSINESS.locality,
+    addressRegion: BUSINESS.region,
+    addressCountry: BUSINESS.country,
   },
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: -26.8192895,
-    longitude: -65.3062371,
+    latitude: BUSINESS.geo.latitude,
+    longitude: BUSINESS.geo.longitude,
   },
-  areaServed: [
-    { '@type': 'City', name: 'Yerba Buena' },
-    { '@type': 'City', name: 'San Miguel de Tucumán' },
-  ],
-  openingHoursSpecification: [
-    {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-      ],
-      opens: '09:00',
-      closes: '21:00',
-    },
-  ],
-  // Pedidos express confirmados hasta las 17:00 se entregan el mismo día.
+  areaServed: BUSINESS.areaServed.map((name) => ({ '@type': 'City', name })),
+  openingHoursSpecification: OPENING_HOURS_SPECIFICATION,
   hasOfferCatalog: {
     '@type': 'OfferCatalog',
     name: 'Ramos y arreglos florales',

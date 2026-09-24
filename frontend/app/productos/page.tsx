@@ -3,22 +3,43 @@ import type { Metadata } from 'next';
 import ProductListClient from '../components/ProductListClient';
 import { getProducts, productUrl, SITE_URL } from '../../utils/catalog';
 import { Product } from '@/types/Product';
+import { landingForFilters, landingPath } from '@/utils/seoLandings';
+import { getOcasiones, getTiposFlor } from '@/utils/taxonomia';
 
-export const metadata: Metadata = {
-  title: 'Catálogo de ramos, plantas y arreglos florales | Florería Cristina',
-  description:
-    'Todo el catálogo de Florería Cristina: ramos de flores frescas, plantas, arreglos y regalos. Filtrá por categoría, ocasión y tipo de flor, con envío en Tucumán o retiro en tienda.',
-  alternates: {
-    canonical: `${SITE_URL}/es/productos`,
-  },
-  openGraph: {
-    title: 'Catálogo de ramos, plantas y arreglos florales | Florería Cristina',
-    description:
-      'Ramos de flores frescas, plantas, arreglos y regalos con envío en Yerba Buena y San Miguel de Tucumán.',
-    url: `${SITE_URL}/es/productos`,
-    type: 'website',
-  },
-};
+const TITLE = 'Catálogo de ramos, plantas y arreglos florales | Florería Cristina';
+const DESCRIPTION =
+  'Todo el catálogo de Florería Cristina: ramos de flores frescas, plantas, arreglos y regalos. Filtrá por categoría, ocasión y tipo de flor, con envío en Tucumán o retiro en tienda.';
+
+/**
+ * Los filtros siguen funcionando para la UX, pero no compiten en buscadores:
+ * si hay una landing con exactamente los mismos productos, el canonical apunta
+ * a ella; si no, al catálogo completo.
+ */
+export async function generateMetadata({ searchParams }: CatalogoPageProps): Promise<Metadata> {
+  let canonical = `${SITE_URL}/es/productos`;
+  const { categoria, ocasion, tipo_flor: tipoFlor, search } = searchParams;
+  if (categoria || ocasion || tipoFlor || search) {
+    const [tiposFlor, ocasiones] = await Promise.all([
+      tipoFlor ? getTiposFlor() : Promise.resolve([]),
+      ocasion ? getOcasiones() : Promise.resolve([]),
+    ]);
+    const landing = landingForFilters(searchParams, { tiposFlor, ocasiones });
+    if (landing) canonical = `${SITE_URL}/es${landingPath(landing)}`;
+  }
+
+  return {
+    title: TITLE,
+    description: DESCRIPTION,
+    alternates: { canonical },
+    openGraph: {
+      title: TITLE,
+      description:
+        'Ramos de flores frescas, plantas, arreglos y regalos con envío en Yerba Buena y San Miguel de Tucumán.',
+      url: canonical,
+      type: 'website',
+    },
+  };
+}
 
 interface CatalogoPageProps {
   searchParams: { categoria?: string; ocasion?: string; tipo_flor?: string; search?: string };

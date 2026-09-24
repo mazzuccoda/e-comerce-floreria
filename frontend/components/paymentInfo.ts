@@ -1,3 +1,5 @@
+import { CLOSING_HOUR, OPENING_HOUR } from '@/utils/businessHours'
+
 export const TRANSFER_DATA = {
   banco: 'Mercado Pago',
   alias: 'eleososatuc',
@@ -8,7 +10,7 @@ export const TRANSFER_DATA = {
 
 export const TIENDA = {
   direccion: 'Solano Vera 480, Yerba Buena, Tucumán',
-  horario: '9:00 a 20:00 hs',
+  horario: `lunes a sábado de ${OPENING_HOUR}:00 a ${CLOSING_HOUR}:00 hs`,
   whatsapp: '5493813671352',
 }
 
