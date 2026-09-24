@@ -5,6 +5,7 @@ import ProductCard from './ProductCard';
 import Breadcrumbs from './Breadcrumbs';
 import { CUTOFF } from '@/utils/businessHours';
 import { getLandingProducts, productUrl, SITE_URL } from '@/utils/catalog';
+import { cloudinaryScaled } from '@/utils/cloudinary';
 import {
   breadcrumbJsonLd,
   getLanding,
@@ -61,7 +62,7 @@ export default async function SeoProductLanding({ landing }: { landing: SeoLandi
         '@type': 'Product',
         name: product.nombre,
         url: productUrl(product),
-        image: product.imagen_principal || undefined,
+        image: product.imagen_principal ? cloudinaryScaled(product.imagen_principal, 1200) : undefined,
         sku: product.sku,
         offers: {
           '@type': 'Offer',

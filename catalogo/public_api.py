@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from core import horario
 from pedidos.models import ShippingZone
+from .image_utils import feed_image_url
 from .models import Producto
 from .text_utils import clean_product_name, normalize, product_descriptor
 
@@ -86,7 +87,7 @@ def _serializar(producto):
         'tipo_flor': producto.tipo_flor.nombre if producto.tipo_flor else None,
         'ocasiones': [o.nombre for o in producto.ocasiones.all()],
         'url': PRODUCT_URL_TEMPLATE.format(slug=producto.slug),
-        'imagen': imagen.imagen.url if imagen else None,
+        'imagen': feed_image_url(imagen.imagen.url) if imagen else None,
     }
 
 

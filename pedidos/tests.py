@@ -111,6 +111,26 @@ class ShippingQuoteTests(TestCase):
             ['express', 'retiro'],
         )
 
+    def test_acepta_direccion_en_espanol(self):
+        with patch('pedidos.shipping_quote_views.geocode_address') as geocode:
+            geocode.return_value = {
+                'lat': YERBA_BUENA['lat'],
+                'lng': YERBA_BUENA['lng'],
+                'resolved_address': 'Solano Vera 480, Yerba Buena, Tucumán',
+                'source': 'google_geocoding',
+            }
+            response = self.client.post(
+                self.url,
+                {'direccion': 'Solano Vera 480'},
+                content_type='application/json',
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()['address']['resolved'],
+            'Solano Vera 480, Yerba Buena, Tucumán',
+        )
+
     def test_metodo_invalido(self):
         response = self.client.post(
             self.url,

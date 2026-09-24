@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import { API_ROOT } from '@/utils/apiBase';
+import { cloudinaryScaled } from '@/utils/cloudinary';
 
 interface ProductImage {
   id: number;
@@ -30,7 +30,7 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
     ? images 
     : [{ id: 0, imagen: mainImage, alt_text: productName }, ...images];
 
-  const getImageUrl = (url: string) => {
+  const getImageUrl = (url: string, width = 1000) => {
     const fallbackImage = '/images/no-image.jpg';
     
     if (!url || url === 'null' || url === 'undefined') {
@@ -42,7 +42,7 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
     }
     
     if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
+      return cloudinaryScaled(url, width);
     }
     
     return fallbackImage;
@@ -133,9 +133,12 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
                   `}
                 >
                   <img
-                    src={getImageUrl(image.imagen)}
+                    src={getImageUrl(image.imagen, 200)}
                     alt={`${productName} - imagen ${index + 1}`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    width={200}
+                    height={200}
                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/images/no-image.jpg';
@@ -181,7 +184,7 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
           >
             {/* Imagen */}
             <img
-              src={getImageUrl(allImages[modalImageIndex].imagen)}
+              src={getImageUrl(allImages[modalImageIndex].imagen, 1600)}
               alt={allImages[modalImageIndex].alt_text || productName}
               className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -239,9 +242,12 @@ export default function ProductImageGallery({ images, productName, mainImage }: 
                   `}
                 >
                   <img
-                    src={getImageUrl(image.imagen)}
+                    src={getImageUrl(image.imagen, 200)}
                     alt={`Miniatura ${index + 1}`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    width={200}
+                    height={200}
                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                       const target = e.target as HTMLImageElement;
                       target.src = '/images/no-image.jpg';

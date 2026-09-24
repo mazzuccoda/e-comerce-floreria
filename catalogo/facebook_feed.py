@@ -1,7 +1,8 @@
 from django.http import HttpResponse
 from django.utils import timezone
 from .models import Producto
-from .text_utils import feed_title
+from .image_utils import feed_image_url
+from .text_utils import feed_description, feed_title, google_product_category
 import xml.etree.ElementTree as ET
 
 # URL pública final del sitio (Next.js sirve las fichas bajo /es para evitar redirects)
@@ -70,8 +71,7 @@ def facebook_product_feed(request):
         ET.SubElement(item, 'g:title').text = feed_title(producto)  # Max 150 caracteres
         
         # Descripción
-        descripcion = producto.descripcion_corta or producto.descripcion
-        ET.SubElement(item, 'g:description').text = descripcion[:5000]  # Max 5000 caracteres
+        ET.SubElement(item, 'g:description').text = feed_description(producto)
         
         # Disponibilidad
         availability = 'in stock' if producto.stock > 0 else 'out of stock'
@@ -101,12 +101,12 @@ def facebook_product_feed(request):
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
         if not imagen_principal:
             continue
-        ET.SubElement(item, 'g:image_link').text = imagen_principal.imagen.url
+        ET.SubElement(item, 'g:image_link').text = feed_image_url(imagen_principal.imagen.url)
         
         # Imágenes adicionales (máximo 10)
         imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10]
         for img in imagenes_adicionales:
-            ET.SubElement(item, 'g:additional_image_link').text = img.imagen.url
+            ET.SubElement(item, 'g:additional_image_link').text = feed_image_url(img.imagen.url)
         
         # Marca
         ET.SubElement(item, 'g:brand').text = 'Florería Cristina'
@@ -115,8 +115,8 @@ def facebook_product_feed(request):
         if producto.categoria:
             ET.SubElement(item, 'g:product_type').text = producto.categoria.nombre
         
-        # Categoría de Google (Flores y Plantas)
-        ET.SubElement(item, 'g:google_product_category').text = '985'  # Home & Garden > Plants > Flowers
+        # Categoría de Google según lo que sea el producto (ramo, planta, globo...)
+        ET.SubElement(item, 'g:google_product_category').text = google_product_category(producto)
         
         # Arreglos artesanales: no existen GTIN ni MPN, hay que declararlo
         # para que Google Merchant Center no rechace el producto.
@@ -199,17 +199,14 @@ def facebook_product_feed_csv(request):
         
         # Imagen principal
         imagen_principal = producto.imagenes.filter(is_primary=True).first() or producto.imagenes.first()
-        image_link = imagen_principal.imagen.url if imagen_principal else ''
+        image_link = feed_image_url(imagen_principal.imagen.url) if imagen_principal else ''
         
         # Imágenes adicionales
         imagenes_adicionales = producto.imagenes.exclude(id=imagen_principal.id)[:10] if imagen_principal else []
-        additional_images = ','.join([img.imagen.url for img in imagenes_adicionales])
+        additional_images = ','.join([feed_image_url(img.imagen.url) for img in imagenes_adicionales])
         
         # Disponibilidad
         availability = 'in stock' if producto.stock > 0 else 'out of stock'
-        
-        # Descripción
-        descripcion = producto.descripcion_corta or producto.descripcion
         
         # URL del producto
         producto_url = _producto_url(producto)
@@ -218,7 +215,7 @@ def facebook_product_feed_csv(request):
         writer.writerow([
             producto.sku,
             feed_title(producto),
-            descripcion[:5000],
+            feed_description(producto),
             availability,
             'new',
             f'{precio_lista} ARS',
@@ -226,7 +223,7 @@ def facebook_product_feed_csv(request):
             image_link,
             'Florería Cristina',
             producto.categoria.nombre if producto.categoria else '',
-            '985',  # Categoría de Google para Flores
+            google_product_category(producto),
             f'{precio_oferta} ARS' if precio_oferta else '',
             additional_images,
             str(max(producto.stock, 1)),

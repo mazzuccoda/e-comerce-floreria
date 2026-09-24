@@ -6,6 +6,7 @@ import { Product } from '@/types/Product';
 import { useI18n } from '../../context/I18nContext';
 import { API_ROOT } from '@/utils/apiBase';
 import { productPath } from '@/utils/catalog';
+import { cloudinaryThumb } from '@/utils/cloudinary';
 
 interface ProductCardProps {
   product: Product;
@@ -45,7 +46,7 @@ export default function ProductCard({ product, hideDiscountBadge = false }: Prod
       // PASO 3: Si es una URL externa válida (no placeholder)
       if ((url.startsWith('http://') || url.startsWith('https://')) && 
           !url.includes('placeholder.com')) {
-        return url;
+        return cloudinaryThumb(url, { width: 600 });
       }
 
       // PASO 4: Para cualquier otro caso, usar la imagen fallback local
@@ -75,6 +76,8 @@ export default function ProductCard({ product, hideDiscountBadge = false }: Prod
             src={imageUrl}
             alt={product.nombre || 'Producto'}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            width={600}
+            height={450}
             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
               const target = e.target as HTMLImageElement;
               target.src = '/images/no-image.jpg';
