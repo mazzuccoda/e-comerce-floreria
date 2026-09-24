@@ -5,6 +5,7 @@ import { getProducts, productUrl, SITE_URL } from '../../utils/catalog';
 import { Product } from '@/types/Product';
 import { landingForFilters, landingPath } from '@/utils/seoLandings';
 import { getOcasiones, getTiposFlor } from '@/utils/taxonomia';
+import { cloudinaryScaled } from '@/utils/cloudinary';
 
 const TITLE = 'Catálogo de ramos, plantas y arreglos florales | Florería Cristina';
 const DESCRIPTION =
@@ -86,7 +87,7 @@ export default async function ProductosPage({ searchParams }: CatalogoPageProps)
         '@type': 'Product',
         name: product.nombre,
         url: productUrl(product),
-        image: product.imagen_principal || undefined,
+        image: product.imagen_principal ? cloudinaryScaled(product.imagen_principal, 1200) : undefined,
         sku: product.sku,
         offers: {
           '@type': 'Offer',

@@ -27,14 +27,15 @@ def quote_shipping(request):
     POST /api/pedidos/shipping/quote/
 
     Body: {"address": "Av. Aconquija 1234, Yerba Buena"}  o  {"lat": -26.81, "lng": -65.30}
+    También se aceptan los nombres en español: "direccion", "latitud", "longitud".
     Opcionales: "shipping_method" ("express" | "programado"), "order_amount", "cart_items"
 
     Devuelve la distancia hasta la tienda y el costo de cada método disponible,
     más el retiro en tienda.
     """
-    address = (request.data.get('address') or '').strip()
-    lat = request.data.get('lat')
-    lng = request.data.get('lng')
+    address = (request.data.get('address') or request.data.get('direccion') or '').strip()
+    lat = request.data.get('lat', request.data.get('latitud'))
+    lng = request.data.get('lng', request.data.get('longitud'))
     requested_method = request.data.get('shipping_method')
     order_amount = request.data.get('order_amount', 0)
     cart_items = request.data.get('cart_items') or []
@@ -82,7 +83,7 @@ def quote_shipping(request):
             )
     else:
         return Response(
-            {'error': 'Indicá una dirección ("address") o coordenadas ("lat" y "lng")'},
+            {'error': 'Indicá una dirección ("address" o "direccion") o coordenadas ("lat" y "lng")'},
             status=status.HTTP_400_BAD_REQUEST,
         )
 

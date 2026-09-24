@@ -89,6 +89,45 @@ def feed_title(producto):
     return titulo[:150]
 
 
+# IDs de la taxonomía de Google (taxonomy-with-ids.es-ES):
+# 2899 Flores recién cortadas, 985 Casa y jardín > Plantas, 2587 Globos,
+# 4748 Bombones y chocolatinas, 1259 Animales de peluche, 95 Tarjetas de felicitación.
+CATEGORIA_GOOGLE_POR_PATRON = (
+    (re.compile(r'peluche|\boso\b', re.I), '1259'),
+    (re.compile(r'globo', re.I), '2587'),
+    (re.compile(r'chocolate|bomb[óo]n', re.I), '4748'),
+    (re.compile(r'tarjeta', re.I), '95'),
+)
+CATEGORIA_GOOGLE_FLORES_CORTADAS = '2899'
+CATEGORIA_GOOGLE_PLANTAS = '985'
+
+
+def google_product_category(producto):
+    """Categoría de la taxonomía de Google: un ramo no es una planta."""
+    nombre = clean_product_name(producto.nombre)
+    for patron, categoria_google in CATEGORIA_GOOGLE_POR_PATRON:
+        if patron.search(nombre):
+            return categoria_google
+
+    if producto.categoria is not None and producto.categoria.slug == 'plantas':
+        return CATEGORIA_GOOGLE_PLANTAS
+    return CATEGORIA_GOOGLE_FLORES_CORTADAS
+
+
+def feed_description(producto, limite=5000):
+    """Descripción sin comillas decorativas y cortada en palabra entera.
+
+    `descripcion_corta` viene recortada a mitad de palabra desde el admin, así que
+    se prefiere la descripción completa.
+    """
+    texto = producto.descripcion or producto.descripcion_corta or ''
+    texto = re.sub(r'\s+', ' ', texto).strip().strip('\u201c\u201d"\u2018\u2019')
+    if len(texto) <= limite:
+        return texto
+    recortado = texto[:limite].rsplit(' ', 1)[0]
+    return recortado.rstrip(',;:.') + '…'
+
+
 def normalize(texto):
     """Minúsculas sin acentos, para comparar búsquedas escritas de cualquier forma."""
     if not texto:

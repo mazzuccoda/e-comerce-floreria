@@ -6,7 +6,8 @@ from rest_framework.test import APIClient
 from core import horario
 
 from .models import Categoria, Ocasion, Producto, TipoFlor
-from .text_utils import clean_product_name, normalize
+from .image_utils import feed_image_url
+from .text_utils import clean_product_name, feed_description, google_product_category, normalize
 
 
 class TextUtilsTests(TestCase):
@@ -17,6 +18,56 @@ class TextUtilsTests(TestCase):
 
     def test_normalize_saca_acentos(self):
         self.assertEqual(normalize('Ramo Romántico'), 'ramo romantico')
+
+
+class FeedAtributosTests(TestCase):
+    def setUp(self):
+        self.ramos = Categoria.objects.create(nombre='Ramos de flores', slug='ramos-de-flores')
+        self.plantas = Categoria.objects.create(nombre='Plantas', slug='plantas')
+
+    def _producto(self, nombre, categoria, descripcion='Ramo de rosas rojas.'):
+        return Producto.objects.create(
+            nombre=nombre,
+            descripcion=descripcion,
+            categoria=categoria,
+            precio=30000,
+            sku=f'FEED-{nombre[:6]}',
+            stock=50,
+        )
+
+    def test_un_ramo_no_se_clasifica_como_planta(self):
+        ramo = self._producto('Rosas del Alba', self.ramos)
+        self.assertEqual(google_product_category(ramo), '2899')
+
+    def test_las_plantas_mantienen_su_categoria(self):
+        planta = self._producto('Ficus Lyrata', self.plantas, 'Planta de interior.')
+        self.assertEqual(google_product_category(planta), '985')
+
+    def test_los_adicionales_usan_su_propia_categoria(self):
+        globo = self._producto('Globo de cumpleaños', self.ramos, 'Globo metalizado.')
+        peluche = self._producto('Oso de peluche', self.ramos, 'Peluche de 30 cm.')
+        self.assertEqual(google_product_category(globo), '2587')
+        self.assertEqual(google_product_category(peluche), '1259')
+
+    def test_descripcion_sin_comillas_y_cortada_en_palabra_entera(self):
+        producto = self._producto(
+            'Sol de Verano',
+            self.ramos,
+            '“Un ramo lleno de luz y alegría para celebrar”',
+        )
+        self.assertEqual(
+            feed_description(producto),
+            'Un ramo lleno de luz y alegría para celebrar',
+        )
+        self.assertEqual(feed_description(producto, limite=20), 'Un ramo lleno de…')
+
+    def test_imagen_del_feed_va_optimizada(self):
+        original = 'https://res.cloudinary.com/demo/image/upload/v1/media/ramo.jpg'
+        self.assertEqual(
+            feed_image_url(original),
+            'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_1200/v1/media/ramo.jpg',
+        )
+        self.assertEqual(feed_image_url('/media/ramo.jpg'), '/media/ramo.jpg')
 
 
 class PublicApiTests(TestCase):
