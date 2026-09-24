@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth import get_user_model
 from catalogo.models import Producto  # Asume que tu modelo Producto está en la app catalogo
 
@@ -108,19 +108,28 @@ class Pedido(models.Model):
         """
         if self.confirmado:
             return False, "El pedido ya está confirmado"
-        
-        # Verificar stock disponible para todos los productos
-        for item in self.items.all():
-            if item.producto.stock < item.cantidad:
-                return False, f"Stock insuficiente para {item.producto.nombre}. Disponible: {item.producto.stock}, solicitado: {item.cantidad}"
-        
-        # Si hay stock suficiente, reducir stock y confirmar pedido
-        for item in self.items.all():
-            item.producto.stock -= item.cantidad
-            item.producto.save()
-        
-        self.confirmado = True
-        self.save()
+
+        with transaction.atomic():
+            items = list(self.items.select_related('producto'))
+            productos = {
+                producto.pk: producto
+                for producto in Producto.objects.select_for_update().filter(
+                    pk__in=[item.producto_id for item in items]
+                )
+            }
+
+            for item in items:
+                producto = productos[item.producto_id]
+                if producto.stock < item.cantidad:
+                    return False, f"Stock insuficiente para {producto.nombre}. Disponible: {producto.stock}, solicitado: {item.cantidad}"
+
+            for item in items:
+                producto = productos[item.producto_id]
+                producto.stock -= item.cantidad
+                producto.save(update_fields=['stock'])
+
+            self.confirmado = True
+            self.save()
         
         # Activar notificaciones para todos los pedidos
         try:
@@ -260,18 +269,24 @@ El equipo de Florería Cristina
         """
         Cancela el pedido y restaura el stock de los productos
         """
-        if not self.confirmado:
-            return False, "El pedido no está confirmado"
-        
-        # Restaurar stock
-        for item in self.items.all():
-            item.producto.stock += item.cantidad
-            item.producto.save()
-        
-        self.confirmado = False
-        self.estado = 'cancelado'
-        self.save()
-        return True, "Pedido cancelado y stock restaurado"
+        if self.estado == 'cancelado':
+            return False, "El pedido ya está cancelado"
+
+        stock_restaurado = self.confirmado
+
+        with transaction.atomic():
+            if stock_restaurado:
+                for item in self.items.select_related('producto'):
+                    item.producto.stock += item.cantidad
+                    item.producto.save(update_fields=['stock'])
+
+            self.confirmado = False
+            self.estado = 'cancelado'
+            self.save()
+
+        if stock_restaurado:
+            return True, "Pedido cancelado y stock restaurado"
+        return True, "Pedido cancelado"
     
     def validar_stock_disponible(self):
         """
