@@ -150,16 +150,30 @@
                     <label class="text-sm font-semibold text-gray-700 block mb-1">
                         <i class="fas fa-phone text-blue-600 mr-1"></i> Teléfono
                     </label>
-                    <p class="text-gray-900">{{ pedido.telefono_destinatario }}</p>
+                    <p class="text-gray-900">
+                        <a href="tel:{{ pedido.telefono_destinatario }}" class="text-blue-600 hover:underline">{{ pedido.telefono_destinatario }}</a>
+                        <a href="https://wa.me/{{ pedido.telefono_destinatario|cut:" "|cut:"-"|cut:"+" }}" target="_blank" rel="noopener" class="ml-2 text-green-600 hover:underline">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </a>
+                    </p>
                 </div>
                 
                 <div class="md:col-span-2">
                     <label class="text-sm font-semibold text-gray-700 block mb-1">
                         <i class="fas fa-map-marker-alt text-blue-600 mr-1"></i> Dirección
                     </label>
-                    <p class="text-gray-900">{{ pedido.direccion_entrega }}</p>
-                    {% if pedido.ciudad %}
-                        <p class="text-sm text-gray-600 mt-1">{{ pedido.ciudad }}</p>
+                    {% if pedido.tipo_envio == 'retiro' %}
+                        <p class="text-gray-900">Retira en el local</p>
+                    {% else %}
+                        <p class="text-gray-900">{{ pedido.direccion|default:"—" }}</p>
+                        <p class="text-sm text-gray-600 mt-1">{{ pedido.ciudad|default:"Sin ciudad" }}</p>
+                        {% if pedido.direccion %}
+                        <a href="https://www.google.com/maps/search/?api=1&query={{ pedido.direccion|urlencode }}%20{{ pedido.ciudad|default:'Tucumán'|urlencode }}"
+                           target="_blank" rel="noopener"
+                           class="inline-block mt-2 text-sm text-blue-600 hover:underline">
+                            <i class="fas fa-map mr-1"></i> Ver en el mapa
+                        </a>
+                        {% endif %}
                     {% endif %}
                 </div>
                 
@@ -187,12 +201,40 @@
                     </p>
                 </div>
                 
+                {% if pedido.hora_retiro %}
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 block mb-1">
+                        <i class="fas fa-store text-blue-600 mr-1"></i> Hora de retiro
+                    </label>
+                    <p class="text-gray-900">{{ pedido.hora_retiro|time:"H:i" }} hs</p>
+                </div>
+                {% endif %}
+
                 {% if pedido.tipo_envio %}
-                <div class="md:col-span-2">
+                <div>
                     <label class="text-sm font-semibold text-gray-700 block mb-1">
                         <i class="fas fa-shipping-fast text-blue-600 mr-1"></i> Tipo de Envío
                     </label>
                     <p class="text-gray-900 capitalize">{{ pedido.get_tipo_envio_display }}</p>
+                </div>
+                {% endif %}
+
+                {% if pedido.instrucciones %}
+                <div class="md:col-span-2">
+                    <label class="text-sm font-semibold text-gray-700 block mb-1">
+                        <i class="fas fa-info-circle text-blue-600 mr-1"></i> Instrucciones para la entrega
+                    </label>
+                    <p class="text-gray-900">{{ pedido.instrucciones }}</p>
+                </div>
+                {% endif %}
+
+                {% if pedido.regalo_anonimo or pedido.anonimo %}
+                <div class="md:col-span-2">
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 rounded">
+                        <p class="text-gray-900 font-semibold">
+                            <i class="fas fa-user-secret mr-1"></i> Envío anónimo: no revelar quién envía el regalo
+                        </p>
+                    </div>
                 </div>
                 {% endif %}
             </div>
@@ -265,6 +307,14 @@
                         <p class="text-gray-900">{{ pedido.email_comprador }}</p>
                     </div>
                     {% endif %}
+                    {% if pedido.telefono_comprador %}
+                    <div>
+                        <label class="text-sm font-semibold text-gray-700 block mb-1">Teléfono</label>
+                        <p class="text-gray-900">
+                            <a href="tel:{{ pedido.telefono_comprador }}" class="text-blue-600 hover:underline">{{ pedido.telefono_comprador }}</a>
+                        </p>
+                    </div>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
@@ -296,17 +346,26 @@
                     {% endif %}
                 </div>
                 
-                {% if pedido.metodo_pago %}
                 <div>
                     <label class="text-sm font-semibold text-gray-700 block mb-1">Método</label>
-                    <p class="text-gray-900 capitalize">{{ pedido.metodo_pago }}</p>
+                    <p class="text-gray-900">{{ pedido.get_medio_pago_display }}</p>
                 </div>
-                {% endif %}
-                
-                {% if pedido.payment_id %}
+
                 <div>
-                    <label class="text-sm font-semibold text-gray-700 block mb-1">ID de Pago</label>
-                    <p class="text-gray-900 text-sm font-mono">{{ pedido.payment_id }}</p>
+                    <label class="text-sm font-semibold text-gray-700 block mb-1">Stock descontado</label>
+                    <p class="text-gray-900">
+                        {% if pedido.confirmado %}
+                            <i class="fas fa-check-circle text-green-500 mr-1"></i> Sí, pedido confirmado
+                        {% else %}
+                            <i class="fas fa-exclamation-circle text-yellow-500 mr-1"></i> No, falta confirmar
+                        {% endif %}
+                    </p>
+                </div>
+
+                {% if pedido.link_pago %}
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 block mb-1">Link de pago</label>
+                    <a href="{{ pedido.link_pago }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline text-sm break-all">{{ pedido.link_pago }}</a>
                 </div>
                 {% endif %}
             </div>

@@ -44,7 +44,17 @@ def dashboard(request):
         productos_sin_stock = Producto.objects.filter(stock=0).count()
         
         # Pedidos pendientes
-        pedidos_pendientes = Pedido.objects.filter(estado='pendiente').count()
+        pedidos_pendientes = Pedido.objects.filter(
+            estado__in=['recibido', 'preparando']
+        ).count()
+
+        hoy = timezone.localdate()
+        entregas_hoy = Pedido.objects.filter(
+            fecha_entrega=hoy
+        ).exclude(estado__in=['entregado', 'cancelado']).count()
+        entregas_vencidas = Pedido.objects.filter(
+            fecha_entrega__lt=hoy
+        ).exclude(estado__in=['entregado', 'cancelado']).count()
         
         # Actividad reciente (últimos 5 eventos)
         actividad_reciente = []
@@ -53,10 +63,11 @@ def dashboard(request):
         ultimos_pedidos = Pedido.objects.select_related('cliente').order_by('-creado')[:3]
         for pedido in ultimos_pedidos:
             tiempo = timezone.now() - pedido.creado
-            if tiempo.seconds < 3600:
-                tiempo_str = f"Hace {tiempo.seconds // 60} minutos"
-            elif tiempo.seconds < 86400:
-                tiempo_str = f"Hace {tiempo.seconds // 3600} horas"
+            total_segundos = int(tiempo.total_seconds())
+            if total_segundos < 3600:
+                tiempo_str = f"Hace {total_segundos // 60} minutos"
+            elif total_segundos < 86400:
+                tiempo_str = f"Hace {total_segundos // 3600} horas"
             else:
                 tiempo_str = f"Hace {tiempo.days} días"
             
@@ -85,19 +96,21 @@ def dashboard(request):
             'productos_stock_bajo': productos_stock_bajo,
             'productos_sin_stock': productos_sin_stock,
             'pedidos_pendientes': pedidos_pendientes,
+            'entregas_hoy': entregas_hoy,
+            'entregas_vencidas': entregas_vencidas,
             'actividad_reciente': actividad_reciente[:5],  # Máximo 5 items
         }
         
         return render(request, 'admin_simple/dashboard.html', context)
-    except Exception as e:
-        logger.error(f'Error en dashboard: {str(e)}')
+    except Exception:
+        logger.exception('Error en dashboard')
         from django.http import HttpResponse
-        return HttpResponse(f"""
-            <h1>Error en Dashboard</h1>
-            <p>Error: {str(e)}</p>
-            <p>Tipo: {type(e).__name__}</p>
-            <a href="/admin/">Volver al Admin</a>
-        """)
+        return HttpResponse(
+            '<h1>Error en el panel</h1>'
+            '<p>No pudimos cargar el dashboard. El detalle quedó registrado en los logs.</p>'
+            '<a href="/admin/">Volver al Admin</a>',
+            status=500,
+        )
 
 
 @login_required
@@ -113,16 +126,16 @@ def productos_list(request):
     orden = request.GET.get('orden', 'nombre')
     
     # Query base
-    productos = Producto.objects.all()
+    productos = Producto.objects.select_related('categoria')
     
     # Estadísticas para los chips
-    stats = {
-        'total': Producto.objects.count(),
-        'activos': Producto.objects.filter(is_active=True).count(),
-        'inactivos': Producto.objects.filter(is_active=False).count(),
-        'stock_bajo': Producto.objects.filter(stock__lt=5, stock__gt=0).count(),
-        'destacados': Producto.objects.filter(is_featured=True).count(),
-    }
+    stats = Producto.objects.aggregate(
+        total=Count('id'),
+        activos=Count('id', filter=Q(is_active=True)),
+        inactivos=Count('id', filter=Q(is_active=False)),
+        stock_bajo=Count('id', filter=Q(stock__lt=5, stock__gt=0)),
+        destacados=Count('id', filter=Q(is_featured=True)),
+    )
     
     # Aplicar filtros
     if filtro == 'activos':
@@ -508,8 +521,11 @@ def pedidos_list(request):
     filtro_estado = request.GET.get('estado', '')
     filtro_pago = request.GET.get('pago', '')
     filtro_fecha = request.GET.get('fecha', '')
+    filtro_entrega = request.GET.get('entrega', '')
     filtro_envio = request.GET.get('envio', '')
     buscar = request.GET.get('buscar', '')
+    hoy = timezone.localdate()
+    abiertos = ~Q(estado__in=['entregado', 'cancelado'])
     
     # Aplicar filtro de estado
     if filtro_estado:
@@ -532,6 +548,17 @@ def pedidos_list(request):
     elif filtro_fecha == 'mes':
         inicio_mes = timezone.now() - timedelta(days=30)
         pedidos = pedidos.filter(creado__gte=inicio_mes)
+
+    # Filtro por fecha de entrega (agenda de trabajo del día)
+    if filtro_entrega == 'hoy':
+        pedidos = pedidos.filter(Q(fecha_entrega=hoy) & abiertos)
+    elif filtro_entrega == 'manana':
+        pedidos = pedidos.filter(Q(fecha_entrega=hoy + timedelta(days=1)) & abiertos)
+    elif filtro_entrega == 'vencidos':
+        pedidos = pedidos.filter(Q(fecha_entrega__lt=hoy) & abiertos)
+
+    if filtro_entrega:
+        pedidos = pedidos.order_by('fecha_entrega', 'franja_horaria', 'hora_retiro')
     
     # Búsqueda
     if buscar:
@@ -545,39 +572,64 @@ def pedidos_list(request):
             Q(cliente__email__icontains=buscar)
         )
     
-    # Estadísticas para badges
-    total_pedidos = Pedido.objects.count()
-    pedidos_recibidos = Pedido.objects.filter(estado='recibido').count()
-    pedidos_preparando = Pedido.objects.filter(estado='preparando').count()
-    pedidos_en_camino = Pedido.objects.filter(estado='en_camino').count()
-    pedidos_entregados = Pedido.objects.filter(estado='entregado').count()
-    pedidos_cancelados = Pedido.objects.filter(estado='cancelado').count()
-    
-    pagos_pendientes = Pedido.objects.filter(estado_pago='pendiente').count()
-    pagos_aprobados = Pedido.objects.filter(estado_pago='approved').count()
-    pagos_rechazados = Pedido.objects.filter(estado_pago='rejected').count()
+    # Estadísticas para badges (una sola consulta)
+    badges = Pedido.objects.aggregate(
+        total=Count('id'),
+        recibidos=Count('id', filter=Q(estado='recibido')),
+        preparando=Count('id', filter=Q(estado='preparando')),
+        en_camino=Count('id', filter=Q(estado='en_camino')),
+        entregados=Count('id', filter=Q(estado='entregado')),
+        cancelados=Count('id', filter=Q(estado='cancelado')),
+        pago_pendiente=Count('id', filter=Q(estado_pago='pendiente')),
+        pago_aprobado=Count('id', filter=Q(estado_pago='approved')),
+        pago_rechazado=Count('id', filter=Q(estado_pago='rejected')),
+        entrega_hoy=Count('id', filter=Q(fecha_entrega=hoy) & abiertos),
+        entrega_manana=Count('id', filter=Q(fecha_entrega=hoy + timedelta(days=1)) & abiertos),
+        entrega_vencida=Count('id', filter=Q(fecha_entrega__lt=hoy) & abiertos),
+    )
     
     # Paginación
     paginator = Paginator(pedidos, 20)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
+    # Querystring con todos los filtros salvo la página, para que los enlaces
+    # (chips y paginación) no borren lo que el operador ya eligió
+    params = request.GET.copy()
+    params.pop('page', None)
+    filtros_querystring = params.urlencode()
+
+    def querystring_sin(*claves):
+        restantes = params.copy()
+        for clave in claves:
+            restantes.pop(clave, None)
+        return restantes.urlencode()
+
     context = {
         'page_obj': page_obj,
-        'total_pedidos': total_pedidos,
-        'pedidos_recibidos': pedidos_recibidos,
-        'pedidos_preparando': pedidos_preparando,
-        'pedidos_en_camino': pedidos_en_camino,
-        'pedidos_entregados': pedidos_entregados,
-        'pedidos_cancelados': pedidos_cancelados,
-        'pagos_pendientes': pagos_pendientes,
-        'pagos_aprobados': pagos_aprobados,
-        'pagos_rechazados': pagos_rechazados,
+        'hoy': hoy,
+        'total_pedidos': badges['total'],
+        'pedidos_recibidos': badges['recibidos'],
+        'pedidos_preparando': badges['preparando'],
+        'pedidos_en_camino': badges['en_camino'],
+        'pedidos_entregados': badges['entregados'],
+        'pedidos_cancelados': badges['cancelados'],
+        'pagos_pendientes': badges['pago_pendiente'],
+        'pagos_aprobados': badges['pago_aprobado'],
+        'pagos_rechazados': badges['pago_rechazado'],
+        'entregas_hoy': badges['entrega_hoy'],
+        'entregas_manana': badges['entrega_manana'],
+        'entregas_vencidas': badges['entrega_vencida'],
         'filtro_estado': filtro_estado,
         'filtro_pago': filtro_pago,
         'filtro_fecha': filtro_fecha,
+        'filtro_entrega': filtro_entrega,
         'filtro_envio': filtro_envio,
         'buscar_actual': buscar,
+        'filtros_querystring': filtros_querystring,
+        'qs_sin_estado': querystring_sin('estado'),
+        'qs_sin_pago': querystring_sin('pago'),
+        'qs_sin_entrega': querystring_sin('entrega'),
     }
     
     return render(request, 'admin_simple/pedidos_list.html', context)
