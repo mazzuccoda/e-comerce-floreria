@@ -79,7 +79,7 @@ export default function DeliveryFinder() {
     };
   }, [expressMessage, isPickup, when]);
 
-  const catalogHref = localeHref('/productos?categoria=ramos-de-flores', locale);
+  const catalogHref = localeHref('/ramos-de-flores', locale);
 
   return (
     <section className="relative z-20 bg-white py-5">

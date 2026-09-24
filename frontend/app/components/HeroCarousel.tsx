@@ -180,7 +180,7 @@ export default function HeroCarousel() {
                 </p>
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   <Link
-                    href={localeHref('/productos?categoria=ramos-de-flores', locale)}
+                    href={localeHref('/ramos-de-flores', locale)}
                     className="inline-flex items-center justify-center rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-emerald-800 sm:px-6 sm:py-3 sm:text-base"
                   >
                     {t('home.hero.primaryCta')}

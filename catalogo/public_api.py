@@ -4,23 +4,17 @@ A diferencia de `/api/catalogo/`, estos endpoints devuelven datos ya resueltos
 (nombre sin emojis, URL final del producto, precio vigente, disponibilidad) y
 entienden búsquedas en lenguaje natural, con o sin acentos.
 """
-from datetime import datetime, time, timedelta
-from zoneinfo import ZoneInfo
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core import horario
 from pedidos.models import ShippingZone
 from .models import Producto
 from .text_utils import clean_product_name, normalize, product_descriptor
 
 SITE_URL = 'https://floreriacristina.com.ar'
 PRODUCT_URL_TEMPLATE = SITE_URL + '/es/productos/{slug}'
-
-# Los pedidos express confirmados antes de esta hora local se entregan el mismo día.
-SAME_DAY_CUTOFF = time(17, 0)
-LOCAL_TZ = ZoneInfo('America/Argentina/Buenos_Aires')
 
 DEFAULT_LIMIT = 20
 MAX_LIMIT = 50
@@ -88,6 +82,8 @@ def _serializar(producto):
         'stock': producto.stock,
         'envio_gratis': producto.envio_gratis,
         'categoria': producto.categoria.nombre if producto.categoria else None,
+        'categoria_slug': producto.categoria.slug if producto.categoria else None,
+        'tipo_flor': producto.tipo_flor.nombre if producto.tipo_flor else None,
         'ocasiones': [o.nombre for o in producto.ocasiones.all()],
         'url': PRODUCT_URL_TEMPLATE.format(slug=producto.slug),
         'imagen': imagen.imagen.url if imagen else None,
@@ -121,14 +117,29 @@ def buscar_productos(request):
     """
     GET /api/publico/productos?q=ramo romantico&precio_max=50000
 
-    Params: q, precio_min, precio_max, categoria (slug), ocasion (nombre),
+    Params: q, intencion (romantico, cumpleanos, condolencias, nacimiento),
+    precio_min, precio_max, categoria (slug), tipo_flor (nombre), ocasion (nombre),
     incluir_adicionales (true/false), incluir_sin_stock (true/false), limit.
+
+    `intencion` aplica la misma lógica que se infiere de `q`, pero sin depender
+    del texto: la usan las landings del sitio (p. ej. /es/flores-para-novia).
     """
     params = request.query_params
     consulta = normalize(params.get('q') or '')
-    intencion = _detectar_intencion(consulta)
 
-    productos = Producto.objects.filter(is_active=True, precio__gt=0).select_related('categoria').prefetch_related('imagenes', 'ocasiones')
+    intencion = normalize(params.get('intencion') or '') or None
+    if intencion and intencion not in INTENCIONES:
+        return Response(
+            {'error': f'intencion debe ser una de: {", ".join(INTENCIONES)}'},
+            status=400,
+        )
+    intencion = intencion or _detectar_intencion(consulta)
+
+    productos = (
+        Producto.objects.filter(is_active=True, precio__gt=0)
+        .select_related('categoria', 'tipo_flor')
+        .prefetch_related('imagenes', 'ocasiones')
+    )
 
     if params.get('incluir_sin_stock') != 'true':
         productos = productos.filter(stock__gt=0)
@@ -139,6 +150,11 @@ def buscar_productos(request):
     categoria = params.get('categoria')
     if categoria:
         productos = productos.filter(categoria__slug=categoria)
+
+    tipo_flor = normalize(params.get('tipo_flor') or '')
+    if tipo_flor:
+        ids = [p.id for p in productos if p.tipo_flor and tipo_flor in normalize(p.tipo_flor.nombre)]
+        productos = productos.filter(id__in=ids)
 
     ocasion = normalize(params.get('ocasion') or '')
     if ocasion:
@@ -158,7 +174,7 @@ def buscar_productos(request):
     if intencion and INTENCIONES[intencion]['excluir_luto']:
         productos = [p for p in productos if not (p.categoria and p.categoria.slug in LUTO_CATEGORIAS)]
 
-    if consulta:
+    if consulta or intencion:
         terminos = set(consulta.split())
         if intencion:
             terminos |= {normalize(t) for t in INTENCIONES[intencion]['terminos']}
@@ -188,23 +204,6 @@ def buscar_productos(request):
     })
 
 
-def _entrega_mismo_dia(ahora: datetime) -> dict:
-    """Qué puede prometer un agente ahora mismo sobre la entrega del mismo día."""
-    abierto = ahora.time() < SAME_DAY_CUTOFF
-    proxima = ahora.date() if abierto else (ahora + timedelta(days=1)).date()
-    return {
-        'hora_corte': SAME_DAY_CUTOFF.strftime('%H:%M'),
-        'zona_horaria': 'America/Argentina/Buenos_Aires',
-        'hora_local': ahora.strftime('%Y-%m-%d %H:%M'),
-        'acepta_pedidos_para_hoy': abierto,
-        'proxima_fecha_de_entrega': proxima.isoformat(),
-        'detalle': (
-            'Los pedidos express confirmados hasta las 17:00 se entregan el mismo día; '
-            'después de esa hora la entrega pasa al día siguiente.'
-        ),
-    }
-
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def info_tienda(request):
@@ -229,16 +228,24 @@ def info_tienda(request):
         'telefono': '+543814778577',
         'whatsapp': '+5493813671352',
         'email': 'eleososatuc@gmail.com',
-        'horario': 'Lunes a sábado de 9:00 a 21:00 hs (domingos cerrado)',
+        'horario': horario.HORARIO_TEXTO,
+        'horario_estructurado': {
+            'dias': [horario.NOMBRES_DIAS[d] for d in horario.DIAS_ABIERTOS],
+            'abre': horario.APERTURA.strftime('%H:%M'),
+            'cierra': horario.CIERRE.strftime('%H:%M'),
+            'zona_horaria': horario.ZONA_HORARIA,
+        },
         'zonas_de_entrega': ['Yerba Buena', 'San Miguel de Tucumán'],
         'metodos_de_entrega': ['express', 'programado', 'retiro'],
-        'entrega_mismo_dia': _entrega_mismo_dia(datetime.now(LOCAL_TZ)),
+        'entrega_mismo_dia': horario.entrega_mismo_dia(),
         'medios_de_pago': ['Mercado Pago', 'PayPal', 'Transferencia bancaria', 'Efectivo (sólo al retirar en tienda)'],
         'moneda': 'ARS',
         'zonas': zonas,
         'endpoints': {
             'buscar_productos': f'{SITE_URL}/api/publico/productos?q=ramo%20romantico&precio_max=50000',
+            'buscar_por_intencion': f'{SITE_URL}/api/publico/productos?intencion=romantico',
             'cotizar_envio': f'{SITE_URL}/api/publico/envio/cotizar',
+            'precarrito': f'{SITE_URL}/api/publico/carrito',
             'info_tienda': f'{SITE_URL}/api/publico/tienda',
             'feed_productos': f'{SITE_URL}/feeds/facebook-products.xml',
             'sitemap': f'{SITE_URL}/sitemap.xml',
@@ -247,6 +254,59 @@ def info_tienda(request):
             'cancelacion': 'Hasta 24 horas antes de la entrega.',
             'envio_gratis': 'Sólo en productos marcados con envío gratis o al superar el umbral configurado.',
             'tarjeta': 'La dedicatoria se escribe a mano y se entrega con el arreglo.',
-            'entrega_mismo_dia': 'Pedidos express hasta las 17:00 (hora de Argentina).',
+            'entrega_mismo_dia': horario.MISMO_DIA_TEXTO,
         },
+    })
+
+
+MAX_CANTIDAD_PRECARRITO = 10
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def precarrito(request):
+    """
+    POST /api/publico/carrito  {"sku": "10006", "cantidad": 1}
+
+    No crea pedidos ni cobra: valida el producto y devuelve la URL donde la
+    persona completa destinatario, dirección, fecha, dedicatoria, envío y pago.
+    """
+    datos = request.data if isinstance(request.data, dict) else {}
+    sku = str(datos.get('sku') or '').strip()
+    if not sku:
+        return Response({'error': 'sku es obligatorio'}, status=400)
+
+    try:
+        cantidad = int(datos.get('cantidad', 1))
+    except (TypeError, ValueError):
+        return Response({'error': 'cantidad debe ser un número entero'}, status=400)
+    if not 1 <= cantidad <= MAX_CANTIDAD_PRECARRITO:
+        return Response({'error': f'cantidad debe estar entre 1 y {MAX_CANTIDAD_PRECARRITO}'}, status=400)
+
+    producto = (
+        Producto.objects.filter(sku=sku, is_active=True, precio__gt=0)
+        .select_related('categoria', 'tipo_flor')
+        .prefetch_related('imagenes', 'ocasiones')
+        .first()
+    )
+    if producto is None:
+        return Response({'error': 'No existe un producto activo con ese sku'}, status=404)
+    if producto.stock < cantidad:
+        return Response(
+            {'error': 'No hay stock suficiente', 'stock': producto.stock},
+            status=409,
+        )
+
+    return Response({
+        # Todavía no hay carritos compartibles por URL: la ficha del producto es
+        # donde se elige fecha y dedicatoria antes de pasar al checkout.
+        'checkout_url': PRODUCT_URL_TEMPLATE.format(slug=producto.slug),
+        'producto': _serializar(producto),
+        'cantidad': cantidad,
+        'subtotal': _precio_vigente(producto) * cantidad,
+        'moneda': 'ARS',
+        'confirmacion_requerida': (
+            'La compra no está hecha: la persona tiene que abrir checkout_url y confirmar '
+            'destinatario, dirección, fecha, dedicatoria, envío y pago.'
+        ),
     })

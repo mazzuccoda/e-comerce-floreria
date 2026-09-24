@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useI18n } from '../../context/I18nContext';
 import { localeHref } from '@/utils/localeHref';
+import { landingPath, SEO_LANDINGS } from '@/utils/seoLandings';
 
 const Footer = () => {
   const { t, locale } = useI18n();
@@ -20,6 +21,13 @@ const Footer = () => {
               <li><Link href={localeHref('/', locale)} className="text-gray-400 hover:text-white transition-colors">Inicio</Link></li>
               <li><Link href={localeHref('/productos', locale)} className="text-gray-400 hover:text-white transition-colors">Catálogo</Link></li>
               <li><Link href={localeHref('/dia-de-la-madre', locale)} className="text-gray-400 hover:text-white transition-colors">Día de la Madre</Link></li>
+              {SEO_LANDINGS.map((landing) => (
+                <li key={landing.slug}>
+                  <Link href={localeHref(landingPath(landing), locale)} className="text-gray-400 hover:text-white transition-colors">
+                    {landing.name}
+                  </Link>
+                </li>
+              ))}
               <li><Link href={localeHref('/zonas', locale)} className="text-gray-400 hover:text-white transition-colors">Zonas y envíos</Link></li>
               <li><Link href={localeHref('/contacto', locale)} className="text-gray-400 hover:text-white transition-colors">{t('footer.contact')}</Link></li>
             </ul>

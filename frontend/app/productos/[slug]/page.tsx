@@ -3,7 +3,9 @@ import { headers } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Product } from '@/types/Product';
 import { getProduct, productPath, productUrl, SITE_URL } from '@/utils/catalog';
+import { CUTOFF, OPEN_DAYS, SCHEMA_DAY_NAMES, UTC_OFFSET } from '@/utils/businessHours';
 import { productDescriptor } from '@/utils/productDescriptor';
+import { breadcrumbJsonLd, productBreadcrumbs } from '@/utils/seoLandings';
 import ProductPageClient from './ProductPageClient';
 
 interface ProductPageParams {
@@ -24,7 +26,7 @@ function descripcion(product: Product): string {
   const cuerpo = texto
     ? texto.slice(0, 110)
     : `${product.nombre}${descriptor ? `, ${descriptor}` : ''} de Florería Cristina`;
-  return `${cuerpo} · Envío en Yerba Buena y San Miguel de Tucumán el mismo día hasta las 17 hs.`;
+  return `${cuerpo} · Envío en Yerba Buena y San Miguel de Tucumán el mismo día hasta las ${CUTOFF} hs.`;
 }
 
 export async function generateMetadata({ params }: ProductPageParams): Promise<Metadata> {
@@ -97,8 +99,12 @@ export default async function ProductPage({ params }: ProductPageParams) {
         },
         deliveryTime: {
           '@type': 'ShippingDeliveryTime',
-          // Los pedidos express confirmados antes de las 17:00 se entregan el mismo día.
-          cutoffTime: '17:00:00-03:00',
+          // Los pedidos express confirmados antes del corte se entregan el mismo día.
+          cutoffTime: `${CUTOFF}:00${UTC_OFFSET}`,
+          businessDays: {
+            '@type': 'OpeningHoursSpecification',
+            dayOfWeek: OPEN_DAYS.map((day) => SCHEMA_DAY_NAMES[day]),
+          },
           handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 0, unitCode: 'DAY' },
           transitTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
         },
@@ -110,7 +116,12 @@ export default async function ProductPage({ params }: ProductPageParams) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            jsonLd,
+            breadcrumbJsonLd(productBreadcrumbs(product), SITE_URL, productUrl(product, 'es')),
+          ]),
+        }}
       />
       <ProductPageClient slug={slug} initialProduct={product} />
     </>

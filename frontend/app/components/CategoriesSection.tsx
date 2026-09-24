@@ -5,6 +5,13 @@ import Link from 'next/link';
 import { useI18n } from '@/context/I18nContext';
 import { localeHref } from '@/utils/localeHref';
 import { cloudinaryThumb } from '@/utils/cloudinary';
+import { landingForCategoria, landingPath } from '@/utils/seoLandings';
+
+/** La landing SEO de la categoría si existe; si no, el filtro del catálogo. */
+function categoryHref(slug: string): string {
+  const landing = landingForCategoria(slug);
+  return landing ? landingPath(landing) : `/productos?categoria=${slug}`;
+}
 
 interface Category {
   id: number;
@@ -111,7 +118,7 @@ export default function CategoriesSection() {
           {categories.map((category) => (
             <Link
               key={category.id}
-              href={localeHref(`/productos?categoria=${category.slug}`, locale)}
+              href={localeHref(categoryHref(category.slug), locale)}
               className="group relative transform overflow-hidden rounded-xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="relative aspect-square overflow-hidden">

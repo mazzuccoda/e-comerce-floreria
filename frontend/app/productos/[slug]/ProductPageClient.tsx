@@ -17,6 +17,15 @@ import { TIENDA } from '@/components/paymentInfo';
 import GiftMessageCard from '@/components/product/GiftMessageCard';
 import ProductDeliveryInfo from '@/components/product/ProductDeliveryInfo';
 import RelatedProducts from '@/components/product/RelatedProducts';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import { localeHref } from '@/utils/localeHref';
+import {
+  landingForCategoria,
+  landingForOcasion,
+  landingForTipoFlor,
+  landingPath,
+  productBreadcrumbs,
+} from '@/utils/seoLandings';
 
 interface ProductPageClientProps {
   slug: string;
@@ -197,29 +206,13 @@ export default function ProductPageClient({ slug, initialProduct }: ProductPageC
     );
   }
 
+  const categoriaLanding = landingForCategoria(product.categoria?.slug);
+  const tipoFlorLanding = landingForTipoFlor(product.tipo_flor?.nombre);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 lg:pb-8">
-        {/* Breadcrumb */}
-        <nav aria-label="Ubicación" className="mb-6 text-sm text-gray-500">
-          <ol className="flex flex-wrap items-center gap-1.5">
-            <li><Link href="/" className="hover:text-green-700">Inicio</Link></li>
-            <li aria-hidden="true">/</li>
-            <li><Link href="/productos" className="hover:text-green-700">Productos</Link></li>
-            {product.categoria?.slug && (
-              <>
-                <li aria-hidden="true">/</li>
-                <li>
-                  <Link href={`/productos?categoria=${product.categoria.slug}`} className="hover:text-green-700">
-                    {product.categoria.nombre}
-                  </Link>
-                </li>
-              </>
-            )}
-            <li aria-hidden="true">/</li>
-            <li className="text-gray-900" aria-current="page">{product.nombre}</li>
-          </ol>
-        </nav>
+        <Breadcrumbs items={productBreadcrumbs(product)} locale={locale} />
 
         <Link 
           href="/productos" 
@@ -386,29 +379,49 @@ export default function ProductPageClient({ slug, initialProduct }: ProductPageC
                 {product.tipo_flor && (
                   <div className="flex justify-between gap-4 p-4">
                     <dt className="text-gray-500">Tipo de flor</dt>
-                    <dd className="text-right font-medium text-gray-900">{product.tipo_flor.nombre}</dd>
+                    <dd className="text-right font-medium text-gray-900">
+                      {tipoFlorLanding ? (
+                        <Link href={localeHref(landingPath(tipoFlorLanding!), locale)} className="text-emerald-700 hover:underline">
+                          {product.tipo_flor.nombre}
+                        </Link>
+                      ) : (
+                        product.tipo_flor.nombre
+                      )}
+                    </dd>
                   </div>
                 )}
                 {product.ocasiones && product.ocasiones.length > 0 && (
                   <div className="flex justify-between gap-4 p-4">
                     <dt className="text-gray-500">Ideal para</dt>
                     <dd className="flex flex-wrap justify-end gap-x-2 text-right font-medium text-gray-900">
-                      {product.ocasiones.map((ocasion) => (
-                        <Link
-                          key={ocasion.id}
-                          href={`/productos?ocasion=${ocasion.id}`}
-                          className="text-emerald-700 hover:underline"
-                        >
-                          {ocasion.nombre}
-                        </Link>
-                      ))}
+                      {product.ocasiones.map((ocasion) => {
+                        const landing = landingForOcasion(ocasion.nombre);
+                        const href = landing ? landingPath(landing) : `/productos?ocasion=${ocasion.id}`;
+                        return (
+                          <Link
+                            key={ocasion.id}
+                            href={localeHref(href, locale)}
+                            className="text-emerald-700 hover:underline"
+                          >
+                            {ocasion.nombre}
+                          </Link>
+                        );
+                      })}
                     </dd>
                   </div>
                 )}
                 {product.categoria?.nombre && (
                   <div className="flex justify-between gap-4 p-4">
                     <dt className="text-gray-500">Categoría</dt>
-                    <dd className="text-right font-medium text-gray-900">{product.categoria.nombre}</dd>
+                    <dd className="text-right font-medium text-gray-900">
+                      {categoriaLanding ? (
+                        <Link href={localeHref(landingPath(categoriaLanding!), locale)} className="text-emerald-700 hover:underline">
+                          {product.categoria.nombre}
+                        </Link>
+                      ) : (
+                        product.categoria.nombre
+                      )}
+                    </dd>
                   </div>
                 )}
                 {product.sku && (
