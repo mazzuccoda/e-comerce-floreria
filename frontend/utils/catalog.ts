@@ -2,7 +2,10 @@ import { Product } from '@/types/Product';
 import { API_URL } from '@/utils/apiBase';
 import { productMatchesLanding, type SeoLanding } from '@/utils/seoLandings';
 
-const REVALIDATE_SECONDS = 300;
+// Listados (home, catálogo, landings, sitemap): se refrescan como máximo cada
+// minuto. La ficha de producto no usa caché: precio, texto y stock se leen en
+// cada visita, como cuando se cargaban desde el navegador.
+const REVALIDATE_SECONDS = 60;
 
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://floreriacristina.com.ar').replace(/\/+$/, '');
 
@@ -28,11 +31,11 @@ export async function getProducts(): Promise<Product[]> {
   }
 }
 
-async function fetchBySlug(slug: string, fresh: boolean): Promise<Product | null> {
+async function fetchBySlug(slug: string): Promise<Product | null> {
   try {
     const res = await fetch(`${API_URL}/catalogo/productos/?slug=${encodeURIComponent(slug)}`, {
       headers: { Accept: 'application/json' },
-      ...(fresh ? { cache: 'no-store' as const } : { next: { revalidate: REVALIDATE_SECONDS } }),
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -46,23 +49,22 @@ async function fetchBySlug(slug: string, fresh: boolean): Promise<Product | null
 
 /**
  * Resuelve un producto a partir del segmento de URL, que históricamente puede
- * ser el id interno o el slug. Consulta sólo ese producto (no el listado
- * cacheado), así un producto recién creado no da 404.
+ * ser el id interno o el slug. Siempre consulta la API sin caché, así un
+ * cambio de precio, texto o stock en el admin se ve en la próxima visita.
  */
 export async function getProduct(param: string): Promise<Product | null> {
   if (/^\d+$/.test(param)) {
     try {
       const res = await fetch(`${API_URL}/catalogo/productos/${param}/`, {
         headers: { Accept: 'application/json' },
-        next: { revalidate: REVALIDATE_SECONDS },
+        cache: 'no-store',
       });
       if (res.ok) return await res.json();
     } catch {
       // sigue por slug
     }
   }
-  // Primero con caché; si no está (producto nuevo o caché vieja), una vez sin caché antes del 404.
-  return (await fetchBySlug(param, false)) ?? (await fetchBySlug(param, true));
+  return fetchBySlug(param);
 }
 
 /**
