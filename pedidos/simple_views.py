@@ -326,6 +326,7 @@ def simple_checkout_with_items(request):
     
     try:
         from .models import Pedido, PedidoItem, MetodoEnvio
+        from .services.conversion_tracking import build_tracking_context, schedule_purchase_tracking
         from catalogo.models import Producto
         from decimal import Decimal
         
@@ -449,7 +450,8 @@ def simple_checkout_with_items(request):
                 regalo_anonimo=data.get('regalo_anonimo', False),
                 medio_pago=data.get('medio_pago', 'mercadopago'),
                 cliente=request.user if request.user.is_authenticated else None,
-                anonimo=not request.user.is_authenticated
+                anonimo=not request.user.is_authenticated,
+                tracking_context=build_tracking_context(request, data),
             )
             
             print(f"🚚 Tipo de envío guardado: {data.get('metodo_envio')}")
@@ -510,6 +512,9 @@ def simple_checkout_with_items(request):
             success, message = pedido.confirmar_pedido()
             if success:
                 print(f"✅ {message}")
+                # Después del commit. El servicio decide si ya es compra:
+                # transferencia y efectivo sí; Mercado Pago y PayPal esperan el pago.
+                schedule_purchase_tracking(pedido.id)
             else:
                 print(f"⚠️ {message}")
             

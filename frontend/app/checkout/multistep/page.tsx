@@ -15,6 +15,7 @@ import ConfirmedRow from '@/components/checkout/ConfirmedRow';
 import toast from 'react-hot-toast';
 import { trackBeginCheckout, trackCheckoutProgress, trackAddPaymentInfo } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
+import { getTrackingContext } from '@/utils/trackingContext';
 import { 
   saveCheckoutProgress, 
   loadCheckoutProgress, 
@@ -904,7 +905,7 @@ const MultiStepCheckoutPage = () => {
         method: 'POST',
         credentials: 'include',
         headers,
-        body: JSON.stringify(buildOrderPayload()),
+        body: JSON.stringify({ ...buildOrderPayload(), tracking: await getTrackingContext() }),
       });
 
       const result = await response.json();
@@ -962,7 +963,7 @@ const MultiStepCheckoutPage = () => {
         method: 'POST',
         credentials: 'include',
         headers,
-        body: JSON.stringify(buildOrderPayload()),
+        body: JSON.stringify({ ...buildOrderPayload(), tracking: await getTrackingContext() }),
       });
 
       const result = await response.json();

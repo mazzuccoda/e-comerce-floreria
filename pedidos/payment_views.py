@@ -15,8 +15,70 @@ import os
 from .models import Pedido
 from .mercadopago_service import MercadoPagoService
 from .serializers import PedidoReadSerializer
+from .services.conversion_tracking import schedule_purchase_tracking
 
 logger = logging.getLogger(__name__)
+
+# Estado de Mercado Pago -> parámetro `payment` de /checkout/success
+MP_REDIRECT_STATUS = {
+    'approved': 'success',
+    'pending': 'pending',
+    'in_process': 'pending',
+    'authorized': 'pending',
+    'rejected': 'failure',
+    'cancelled': 'failure',
+    'refunded': 'failure',
+    'charged_back': 'failure',
+}
+
+
+def aprobar_pago(pedido_id):
+    """
+    Marca el pago como aprobado y agenda el registro de la compra.
+
+    Idempotente: el webhook de Mercado Pago, la vista de retorno y PayPal pueden
+    llamarla más de una vez; el servicio de tracking envía la compra una sola vez.
+    Si el pedido había quedado sin confirmar (un pago rechazado antes restauró el
+    stock), lo vuelve a confirmar para descontar el stock.
+    """
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id)
+        pedido.estado_pago = 'approved'
+        pedido.save(update_fields=['estado_pago', 'actualizado'])
+        if not pedido.confirmado and pedido.estado != 'cancelado':
+            confirmado, mensaje = pedido.confirmar_pedido()
+            if not confirmado:
+                logger.error('Pedido %s pagado pero sin confirmar: %s', pedido.numero_pedido, mensaje)
+        schedule_purchase_tracking(pedido.pk)
+    return pedido
+
+
+def rechazar_pago(pedido_id):
+    """
+    Marca el pago como rechazado y restaura el stock una sola vez.
+
+    Mercado Pago reintenta los webhooks: el stock sólo se devuelve si el pedido
+    todavía lo tenía descontado (`confirmado=True`). No cancela el pedido para que
+    el cliente pueda reintentar el pago con otro medio.
+    """
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id)
+        if pedido.estado_pago == 'approved':
+            # Un rechazo que llega después de una aprobación (otro intento de pago) no la pisa.
+            logger.info('Pedido %s ya aprobado, se ignora el rechazo', pedido.numero_pedido)
+            return pedido
+        restaurar = pedido.confirmado and pedido.estado != 'cancelado'
+        if restaurar:
+            for item in pedido.items.select_related('producto'):
+                item.producto.stock += item.cantidad
+                item.producto.save(update_fields=['stock'])
+            pedido.confirmado = False
+        pedido.estado_pago = 'rejected'
+        pedido.save(update_fields=['estado_pago', 'confirmado', 'actualizado'])
+        logger.info(
+            'Pedido %s rechazado%s', pedido.numero_pedido, ', stock restaurado' if restaurar else ' (stock ya restaurado)'
+        )
+    return pedido
 
 
 class CreatePaymentView(APIView):
@@ -92,25 +154,17 @@ class MercadoPagoWebhookView(APIView):
                         # Actualizar estado del pedido según el pago
                         payment_status = result.get('status')
                         
-                        with transaction.atomic():
-                            if payment_status == 'approved':
-                                pedido.estado_pago = 'approved'
-                                pedido.confirmado = True
-                                logger.info(f"Pedido {pedido.id} aprobado")
-                                
-                            elif payment_status == 'rejected':
-                                pedido.estado_pago = 'rejected'
-                                # Restaurar stock si el pago fue rechazado
-                                for item in pedido.items.all():
-                                    item.producto.stock += item.cantidad
-                                    item.producto.save()
-                                logger.info(f"Pedido {pedido.id} rechazado, stock restaurado")
-                                
-                            elif payment_status in ['pending', 'in_process']:
-                                pedido.estado_pago = 'pendiente'
-                                logger.info(f"Pedido {pedido.id} pendiente")
-                            
-                            pedido.save()
+                        if payment_status == 'approved':
+                            aprobar_pago(pedido.id)
+                            logger.info(f"Pedido {pedido.id} aprobado")
+
+                        elif payment_status == 'rejected':
+                            rechazar_pago(pedido.id)
+
+                        elif payment_status in ['pending', 'in_process'] and pedido.estado_pago != 'approved':
+                            pedido.estado_pago = 'pendiente'
+                            pedido.save(update_fields=['estado_pago', 'actualizado'])
+                            logger.info(f"Pedido {pedido.id} pendiente")
                         
                         return HttpResponse("OK", status=200)
                         
@@ -148,23 +202,28 @@ class PaymentSuccessView(APIView):
             logger.info(f"✅ Pago exitoso para pedido #{pedido_id}")
             logger.info(f"💳 Payment ID: {payment_id}, Status: {status_mp}")
             
-            # Si hay payment_id, actualizar estado del pedido
+            # El estado del redirect sale del pago verificado contra Mercado Pago,
+            # no del parámetro `status` de la URL.
+            estado_verificado = None
             if payment_id:
                 mp_service = MercadoPagoService()
                 payment_result = mp_service.get_payment_info(payment_id)
                 
                 if payment_result['success']:
-                    payment_info = payment_result['payment']
-                    # Actualizar estado del pedido según el estado del pago
-                    if payment_info.get('status') == 'approved':
-                        pedido.estado_pago = 'approved'
-                        pedido.confirmado = True
-                        pedido.save()
+                    estado_verificado = payment_result['payment'].get('status')
+                    if estado_verificado == 'approved':
+                        aprobar_pago(pedido.id)
                         logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado")
-            
+
+            if estado_verificado is None:
+                # Sin verificación posible, lo que ya sabemos del pedido (p. ej. por el webhook).
+                pedido.refresh_from_db(fields=['estado_pago'])
+                estado_verificado = {'approved': 'approved', 'rejected': 'rejected'}.get(pedido.estado_pago, 'pending')
+            payment_param = MP_REDIRECT_STATUS.get(estado_verificado, 'pending')
+
             # Redirigir al frontend
             frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
-            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=success&payment_id={payment_id or ''}"
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment={payment_param}&payment_id={payment_id or ''}"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
             return redirect(redirect_url)
@@ -297,24 +356,22 @@ class PayPalSuccessView(APIView):
             logger.info(f"✅ Retorno exitoso de PayPal para pedido #{pedido_id}")
             logger.info(f"💳 Payment ID: {payment_id}, Payer ID: {payer_id}")
             
+            payment_param = 'error'
             if payment_id and payer_id:
                 # Ejecutar el pago
                 paypal_service = PayPalService()
                 execute_result = paypal_service.execute_payment(payment_id, payer_id)
                 
                 if execute_result['success']:
-                    # Actualizar estado del pedido
-                    with transaction.atomic():
-                        pedido.estado_pago = 'approved'
-                        pedido.confirmado = True
-                        pedido.save()
-                        logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado (PayPal)")
+                    aprobar_pago(pedido.id)
+                    payment_param = 'success'
+                    logger.info(f"✅ Pedido #{pedido_id} marcado como aprobado (PayPal)")
                 else:
                     logger.error(f"❌ Error ejecutando pago PayPal: {execute_result.get('error')}")
             
             # Redirigir al frontend
             frontend_url = os.getenv('FRONTEND_URL', 'https://floreriacristina.com.ar')
-            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment=success&payment_id={payment_id or ''}&provider=paypal"
+            redirect_url = f"{frontend_url}/checkout/success?pedido={pedido_id}&payment={payment_param}&payment_id={payment_id or ''}&provider=paypal"
             
             logger.info(f"🔄 Redirigiendo a: {redirect_url}")
             return redirect(redirect_url)
