@@ -295,3 +295,33 @@ class PublicApiIntencionTests(TestCase):
             self.client.post('/api/publico/carrito', {'sku': 'INT-1', 'cantidad': 99}, format='json').status_code,
             400,
         )
+
+
+class ProductoPorSlugTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        ramos = Categoria.objects.create(nombre='Ramos de flores', slug='ramos-de-flores')
+        self.calas = Producto.objects.create(
+            nombre='Ramo de Calas', categoria=ramos, precio=45000, sku='SLUG-1', stock=50,
+        )
+        Producto.objects.create(nombre='Ramo de Rosas', categoria=ramos, precio=40000, sku='SLUG-2', stock=50)
+        self.inactivo = Producto.objects.create(
+            nombre='Ramo Retirado', categoria=ramos, precio=30000, sku='SLUG-3', stock=50, is_active=False,
+        )
+
+    def _por_slug(self, slug):
+        respuesta = self.client.get('/api/catalogo/productos/', {'slug': slug})
+        self.assertEqual(respuesta.status_code, 200)
+        datos = respuesta.json()
+        return datos if isinstance(datos, list) else datos['results']
+
+    def test_filtra_exacto_por_slug(self):
+        productos = self._por_slug(self.calas.slug)
+        self.assertEqual(len(productos), 1)
+        self.assertEqual(productos[0]['slug'], self.calas.slug)
+
+    def test_no_devuelve_inactivos_por_slug(self):
+        self.assertEqual(self._por_slug(self.inactivo.slug), [])
+
+    def test_slug_inexistente_devuelve_lista_vacia(self):
+        self.assertEqual(self._por_slug('no-existe'), [])
