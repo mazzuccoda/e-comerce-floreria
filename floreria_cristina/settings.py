@@ -624,3 +624,11 @@ N8N_API_KEY = env('N8N_API_KEY', default='')
 N8N_ENABLED = env.bool('N8N_ENABLED', default=False)
 
 FACEBOOK_PIXEL_ID = env('FACEBOOK_PIXEL_ID', default='')
+
+# Tracking de compras server-side (pedidos/services/conversion_tracking.py).
+# Sin credenciales, cada destino queda en no-op y se loguea skipped_not_configured.
+GA4_MEASUREMENT_ID = env('GA4_MEASUREMENT_ID', default='')
+GA4_API_SECRET = env('GA4_API_SECRET', default='')
+META_CAPI_ACCESS_TOKEN = env('META_CAPI_ACCESS_TOKEN', default='')
+META_GRAPH_API_VERSION = env('META_GRAPH_API_VERSION', default='')
+META_CAPI_TEST_EVENT_CODE = env('META_CAPI_TEST_EVENT_CODE', default='')

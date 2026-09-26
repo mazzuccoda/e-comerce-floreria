@@ -16,9 +16,13 @@ export const pageview = () => {
   }
 };
 
-export const event = (name: string, options = {}) => {
+export const event = (name: string, options = {}, eventOptions?: { eventID: string }) => {
   if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', name, options);
+    if (eventOptions) {
+      window.fbq('track', name, options, eventOptions);
+    } else {
+      window.fbq('track', name, options);
+    }
   }
 };
 
@@ -90,22 +94,32 @@ export const initiateCheckout = (contents: PixelContent[], value: number, curren
   });
 };
 
+/**
+ * `numeroPedido` es el mismo `order_id` que manda el servidor por la Conversions
+ * API, y `eventID` (`order_<numero>`) el mismo `event_id`: Meta deduplica el
+ * evento del navegador contra el del servidor.
+ */
 export const purchase = (
-  orderId: string | number,
+  numeroPedido: string,
   value: number,
   contents: PixelContent[] = [],
   currency = 'ARS'
 ) => {
   const normalized = normalizeContents(contents);
-  event('Purchase', {
-    content_ids: normalized.map((content) => content.id),
-    contents: normalized,
-    content_type: 'product',
-    value: value,
-    currency: currency,
-    num_items: normalized.reduce((total, content) => total + content.quantity, 0),
-    transaction_id: orderId.toString(),
-  });
+  event(
+    'Purchase',
+    {
+      content_ids: normalized.map((content) => content.id),
+      contents: normalized,
+      content_type: 'product',
+      value: value,
+      currency: currency,
+      num_items: normalized.reduce((total, content) => total + content.quantity, 0),
+      order_id: numeroPedido,
+      transaction_id: numeroPedido,
+    },
+    { eventID: `order_${numeroPedido}` }
+  );
 };
 
 export const search = (searchString: string) => {

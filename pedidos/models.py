@@ -57,6 +57,7 @@ class Pedido(models.Model):
         ('mercadopago', 'Mercado Pago'),
         ('paypal', 'PayPal'),
         ('transferencia', 'Transferencia Bancaria'),
+        ('efectivo', 'Efectivo'),
     ]
     medio_pago = models.CharField(max_length=30, choices=MEDIOS_PAGO, default='transferencia')
     regalo_anonimo = models.BooleanField(default=False)
@@ -83,6 +84,15 @@ class Pedido(models.Model):
         null=True,
         help_text="Link de pago generado (Mercado Pago, PayPal, etc.)"
     )
+
+    # Tracking de compras server-side (GA4 + Meta CAPI): una marca por destino
+    # para no enviar dos veces la misma compra. Ver pedidos/services/conversion_tracking.py.
+    ga_purchase_sent_at = models.DateTimeField(null=True, blank=True)
+    meta_purchase_sent_at = models.DateTimeField(null=True, blank=True)
+    # Momento lógico de la compra: se fija la primera vez y se reutiliza en los reintentos.
+    conversion_at = models.DateTimeField(null=True, blank=True)
+    # Contexto de atribución capturado en el checkout (client_id de GA, _fbp, _fbc, IP, user agent).
+    tracking_context = models.JSONField(default=dict, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.numero_pedido:

@@ -7,6 +7,10 @@ import Image from 'next/image';
 import dynamicImport from 'next/dynamic';
 import { trackPurchase } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
+
+// `true` cuando el backend registra la compra en GA4 (GA4_MEASUREMENT_ID y
+// GA4_API_SECRET cargados en Railway): cambiar las dos cosas en el mismo deploy.
+const GA4_SERVER_PURCHASE = process.env.NEXT_PUBLIC_GA4_SERVER_PURCHASE === 'true';
 import TransferPaymentData from '@/components/TransferPaymentData';
 import CashPaymentInfo from '@/components/CashPaymentInfo';
 import { TIENDA } from '@/components/paymentInfo';
@@ -144,24 +148,31 @@ const PaymentSuccessPage = () => {
         const data = JSON.parse(storedData);
         setPedidoData(data);
         
-        // Trackear compra sólo cuando el pago fue efectivamente aprobado
+        // Trackear compra sólo cuando el pago fue efectivamente aprobado.
+        // La compra que cuenta la registra el servidor (GA4 Measurement Protocol y
+        // Meta Conversions API); esta página es sobre todo UX.
         if (data && paymentStatus === 'success') {
-          // Google Analytics
-          trackPurchase({
-            pedido_id: data.pedido_id.toString(),
-            numero_pedido: data.numero_pedido,
-            total: parseFloat(data.total),
-            items: data.items,
-            medio_pago: data.medio_pago,
-            costo_envio: data.costo_envio || 0
-          });
-          
-          // Facebook Pixel
-          fbPixel.purchase(
-            data.pedido_id.toString(),
-            parseFloat(data.total),
-            fbPixel.contentsFromItems(Array.isArray(data.items) ? data.items : [])
-          );
+          // GA4: gtag y Measurement Protocol no se deduplican. Cuando el backend
+          // tiene las credenciales de GA4, este envío se apaga para no duplicar ingresos.
+          if (!GA4_SERVER_PURCHASE) {
+            trackPurchase({
+              pedido_id: data.pedido_id.toString(),
+              numero_pedido: data.numero_pedido,
+              total: parseFloat(data.total),
+              items: data.items,
+              medio_pago: data.medio_pago,
+              costo_envio: data.costo_envio || 0
+            });
+          }
+
+          // Meta: se mantiene junto a la Conversions API; se deduplican por eventID.
+          if (data.numero_pedido) {
+            fbPixel.purchase(
+              data.numero_pedido,
+              parseFloat(data.total),
+              fbPixel.contentsFromItems(Array.isArray(data.items) ? data.items : [])
+            );
+          }
         }
       } catch (error) {
         console.error('Error al parsear datos del pedido:', error);
