@@ -28,14 +28,29 @@ export async function getProducts(): Promise<Product[]> {
   }
 }
 
+async function fetchBySlug(slug: string, fresh: boolean): Promise<Product | null> {
+  try {
+    const res = await fetch(`${API_URL}/catalogo/productos/?slug=${encodeURIComponent(slug)}`, {
+      headers: { Accept: 'application/json' },
+      ...(fresh ? { cache: 'no-store' as const } : { next: { revalidate: REVALIDATE_SECONDS } }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const list: Product[] = Array.isArray(data) ? data : data.results ?? [];
+    // find y no list[0]: si el backend todavía no tiene el filtro ?slug=, devuelve todo.
+    return list.find((p) => p.slug === slug) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Resuelve un producto a partir del segmento de URL, que históricamente puede
- * ser el id interno o el slug.
+ * ser el id interno o el slug. Consulta sólo ese producto (no el listado
+ * cacheado), así un producto recién creado no da 404.
  */
 export async function getProduct(param: string): Promise<Product | null> {
-  const byId = /^\d+$/.test(param);
-
-  if (byId) {
+  if (/^\d+$/.test(param)) {
     try {
       const res = await fetch(`${API_URL}/catalogo/productos/${param}/`, {
         headers: { Accept: 'application/json' },
@@ -43,12 +58,11 @@ export async function getProduct(param: string): Promise<Product | null> {
       });
       if (res.ok) return await res.json();
     } catch {
-      // cae al listado
+      // sigue por slug
     }
   }
-
-  const productos = await getProducts();
-  return productos.find((p) => p.slug === param || String(p.id) === param) ?? null;
+  // Primero con caché; si no está (producto nuevo o caché vieja), una vez sin caché antes del 404.
+  return (await fetchBySlug(param, false)) ?? (await fetchBySlug(param, true));
 }
 
 /**

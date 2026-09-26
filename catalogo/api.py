@@ -44,7 +44,12 @@ class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
         adicionales = self.request.query_params.get('adicionales')
         ordering = self.request.query_params.get('ordering')
         search = self.request.query_params.get('search')
+        slug = self.request.query_params.get('slug')
         
+        # Filtro exacto: la ficha de producto lo usa para no depender del listado cacheado.
+        if slug:
+            queryset = queryset.filter(slug=slug)
+
         if categoria:
             queryset = queryset.filter(categoria__slug=categoria)
         
