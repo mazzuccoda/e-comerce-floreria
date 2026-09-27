@@ -18,7 +18,6 @@ from django.utils import timezone
 from pedidos.models import Pedido
 
 from pedidos.services.conversion_tracking import (
-    MEDIOS_ONLINE,
     ga4_configured,
     track_order_purchase,
     validate_ga4_payload,
@@ -43,9 +42,7 @@ class Command(BaseCommand):
 
         desde = timezone.now() - timedelta(hours=options['horas'])
         pendientes = Q(ga_purchase_sent_at__isnull=True) | Q(meta_purchase_sent_at__isnull=True)
-        elegibles = Q(confirmado=True) & ~Q(estado='cancelado') & (
-            ~Q(medio_pago__in=MEDIOS_ONLINE) | Q(estado_pago='approved')
-        )
+        elegibles = Q(confirmado=True) & ~Q(estado='cancelado') & ~Q(estado_pago='rejected')
         # Ya registrados como compra, o elegibles cuyo tracking nunca llegó a correr.
         ventana = Q(conversion_at__gte=desde) | Q(conversion_at__isnull=True, actualizado__gte=desde)
 

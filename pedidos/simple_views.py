@@ -512,8 +512,8 @@ def simple_checkout_with_items(request):
             success, message = pedido.confirmar_pedido()
             if success:
                 print(f"✅ {message}")
-                # Después del commit. El servicio decide si ya es compra:
-                # transferencia y efectivo sí; Mercado Pago y PayPal esperan el pago.
+                # Después del commit: el pedido generado ya cuenta como compra,
+                # cualquiera sea el medio de pago.
                 schedule_purchase_tracking(pedido.id)
             else:
                 print(f"⚠️ {message}")
