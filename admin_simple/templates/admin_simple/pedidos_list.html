@@ -109,6 +109,8 @@
 <!-- Búsqueda y Filtros Avanzados -->
 <div class="card mb-6">
     <form method="get" class="space-y-4">
+        {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}">{% endif %}
+        {% if filtro_pago %}<input type="hidden" name="pago" value="{{ filtro_pago }}">{% endif %}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Búsqueda -->
             <div class="md:col-span-2">
@@ -365,6 +367,7 @@
                         <i class="fas fa-calendar text-gray-400 w-5"></i>
                         {{ pedido.fecha_entrega|date:"d/m/Y" }} • 
                         {% if pedido.franja_horaria == 'mañana' %}9-12hs{% elif pedido.franja_horaria == 'tarde' %}16-20hs{% else %}Durante el día{% endif %}
+                        {% if pedido.tipo_envio == 'retiro' %} · retiro{% if pedido.hora_retiro %} {{ pedido.hora_retiro|time:"H:i" }}{% endif %}{% endif %}
                     </div>
                 </div>
                 

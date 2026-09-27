@@ -93,6 +93,39 @@ class PanelPedidosTests(TestCase):
         self.assertIn('entrega=hoy', respuesta.context['qs_sin_pago'])
         self.assertNotIn('pago=', respuesta.context['qs_sin_pago'])
 
+    def test_el_formulario_de_busqueda_conserva_estado_y_pago(self):
+        respuesta = self.client.get(
+            reverse('admin_simple:pedidos-list'), {'estado': 'recibido', 'pago': 'pendiente'}
+        )
+
+        contenido = respuesta.content.decode()
+        self.assertIn('<input type="hidden" name="estado" value="recibido">', contenido)
+        self.assertIn('<input type="hidden" name="pago" value="pendiente">', contenido)
+
+    def test_cancelar_sin_confirmar_no_dice_que_restauro_stock(self):
+        pedido = self._pedido()
+
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-cancelar', args=[pedido.pk])
+        )
+
+        self.producto.refresh_from_db()
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertNotIn('stock', respuesta.json()['message'].lower())
+        self.assertEqual(self.producto.stock, 10)
+
+    def test_cancelar_confirmado_avisa_que_restauro_stock(self):
+        pedido = self._pedido()
+        pedido.confirmar_pedido()
+
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-cancelar', args=[pedido.pk])
+        )
+
+        self.producto.refresh_from_db()
+        self.assertIn('stock restaurado', respuesta.json()['message'].lower())
+        self.assertEqual(self.producto.stock, 10)
+
     def test_dashboard_cuenta_pedidos_pendientes_con_estados_reales(self):
         self._pedido(estado='recibido')
         self._pedido(estado='preparando')
