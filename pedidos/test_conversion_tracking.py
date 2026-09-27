@@ -442,3 +442,132 @@ class ValidarGa4Tests(TrackingBase):
         self.assertEqual(self.post.call_args.args[0], conversion_tracking.GA4_DEBUG_URL)
         pedido.refresh_from_db()
         self.assertIsNone(pedido.ga_purchase_sent_at)
+
+
+@override_settings(**CREDENCIALES)
+class DiagnosticoTests(TrackingBase):
+    def test_error_de_meta_loguea_codigo_y_mensaje_sin_datos_personales(self):
+        def post(url, **kwargs):
+            if url == GA4_URL:
+                return respuesta(204)
+            error = respuesta(400)
+            error.json.return_value = {
+                'error': {
+                    'message': 'Invalid OAuth access token.',
+                    'type': 'OAuthException',
+                    'code': 190,
+                    'fbtrace_id': 'AbC123',
+                }
+            }
+            return error
+
+        self.post.side_effect = post
+        with self.assertLogs(conversion_tracking.logger, level='INFO') as logs:
+            pedido = self.checkout('transferencia')
+        salida = '\n'.join(logs.output)
+        self.assertIn(
+            f'TRACKING META pedido={pedido.numero_pedido} error status=400 code=190 fbtrace_id=AbC123 '
+            'message="Invalid OAuth access token."',
+            salida,
+        )
+        for dato in ('ana@example.com', '3814778577', '200.1.2.3', 'token-meta'):
+            self.assertNotIn(dato, salida)
+
+    def test_envio_exitoso_loguea_events_received(self):
+        def post(url, **kwargs):
+            if url == GA4_URL:
+                return respuesta(204)
+            ok = respuesta(200)
+            ok.json.return_value = {'events_received': 1, 'fbtrace_id': 'x'}
+            return ok
+
+        self.post.side_effect = post
+        with override_settings(META_CAPI_TEST_EVENT_CODE='TEST72465'):
+            with self.assertLogs(conversion_tracking.logger, level='INFO') as logs:
+                pedido = self.checkout('transferencia')
+        self.assertIn(
+            f'TRACKING META pedido={pedido.numero_pedido} sent status=200 events_received=1 test_event_code=TEST72465',
+            '\n'.join(logs.output),
+        )
+
+    def test_config_summary(self):
+        self.assertEqual(conversion_tracking.config_summary(), 'GA4=on META=on test_mode=off')
+        with override_settings(META_GRAPH_API_VERSION='', META_CAPI_TEST_EVENT_CODE='TEST1'):
+            self.assertEqual(conversion_tracking.config_summary(), 'GA4=on META=off test_mode=on')
+
+    def test_diagnosticar_tracking_sin_secretos_y_con_envio(self):
+        with override_settings(META_CAPI_ACCESS_TOKEN=''):
+            pedido = self.checkout('transferencia')
+        self.post.reset_mock()
+
+        salida = StringIO()
+        call_command('diagnosticar_tracking', pedido.numero_pedido, stdout=salida)
+        texto = salida.getvalue()
+        self.assertIn('META_CAPI_ACCESS_TOKEN: sí', texto)
+        self.assertIn('GA4_API_SECRET: sí', texto)
+        self.assertIn('enviado a Meta: no', texto)
+        self.assertIn('META_GRAPH_API_VERSION: v21.0', texto)
+        self.assertIn('cuenta como compra: sí', texto)
+        self.assertIn('fbp=sí', texto)
+        self.assertNotIn('secreto-ga', texto)
+        self.assertNotIn('200.1.2.3', texto)
+        self.assertEqual(self.post.call_count, 0)
+
+        salida = StringIO()
+        call_command('diagnosticar_tracking', pedido.numero_pedido, '--enviar', stdout=salida)
+        self.assertIn('META: sent', salida.getvalue())
+        self.assertIn('GA4: skipped_already_sent', salida.getvalue())
+        self.assertEqual(len(self.envios_meta()), 1)
+
+    def test_diagnosticar_pedido_de_mp_pendiente(self):
+        pedido = self.checkout('mercadopago')
+        salida = StringIO()
+        call_command('diagnosticar_tracking', pedido.numero_pedido, stdout=salida)
+        self.assertIn('cuenta como compra: no (pago_pendiente_mp)', salida.getvalue())
+
+
+@override_settings(**CREDENCIALES)
+class PanelesTests(TrackingBase):
+    def setUp(self):
+        super().setUp()
+        from django.contrib.auth import get_user_model
+
+        # Crear un usuario encola el mail de bienvenida en Celery; no es parte de estos tests.
+        with patch('notificaciones.signals.notificar_registro_usuario.delay'):
+            self.admin = get_user_model().objects.create_superuser('admin', 'admin@example.com', 'x')
+        self.client.force_login(self.admin)
+
+    def test_aprobar_pago_a_mano_en_el_panel_registra_la_venta_una_vez(self):
+        pedido = self.checkout('mercadopago')
+        self.assertEqual(self.post.call_count, 0)
+        for _ in range(2):
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(
+                    f'/admin-simple/pedidos/{pedido.pk}/cambiar-estado-pago/', {'estado_pago': 'approved'}
+                )
+            self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(self.envios_ga4()), 1)
+        self.assertEqual(len(self.envios_meta()), 1)
+
+    def test_admin_de_django_muestra_la_venta_registrada(self):
+        from django.conf import settings
+
+        # El admin de Django necesita los estáticos con manifiesto (collectstatic): en tests, sin manifiesto.
+        storages = {
+            **settings.STORAGES,
+            'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+        }
+        with override_settings(STORAGES=storages):
+            self._admin_de_django_muestra_la_venta_registrada()
+
+    def _admin_de_django_muestra_la_venta_registrada(self):
+        pedido = self.checkout('transferencia')
+        listado = self.client.get('/admin/pedidos/pedido/')
+        self.assertEqual(listado.status_code, 200)
+        self.assertContains(listado, '✓ / ✓')
+        detalle = self.client.get(f'/admin/pedidos/pedido/{pedido.pk}/change/')
+        self.assertEqual(detalle.status_code, 200)
+        self.assertContains(detalle, 'fbp: sí')
+        self.assertNotContains(detalle, '200.1.2.3')
+        busqueda = self.client.get('/admin/pedidos/pedido/', {'q': pedido.numero_pedido})
+        self.assertContains(busqueda, '✓ / ✓')

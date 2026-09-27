@@ -731,6 +731,11 @@ def pedido_cambiar_estado_pago(request, pk):
         pedido.confirmado = True
     
     pedido.save()
+
+    if nuevo_estado_pago == 'approved':
+        # Un pago aprobado a mano también es una venta (no se envía dos veces).
+        from pedidos.services.conversion_tracking import schedule_purchase_tracking
+        schedule_purchase_tracking(pedido.id)
     
     logger.info(f'Pedido {pedido.id} cambió estado de pago: {estado_anterior} → {nuevo_estado_pago} por {request.user.username}')
     

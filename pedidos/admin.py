@@ -21,14 +21,25 @@ class PedidoItemInline(admin.TabularInline):
 
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombre_destinatario', 'fecha_entrega', 'hora_retiro', 'tipo_envio', 'estado', 'creado', 'medio_pago')
+    list_display = ('id', 'nombre_destinatario', 'fecha_entrega', 'hora_retiro', 'tipo_envio', 'estado', 'creado', 'medio_pago', 'venta_registrada')
     list_filter = ('estado', 'tipo_envio', 'fecha_entrega', 'medio_pago')
     list_editable = ('estado',)
-    search_fields = ('id', 'nombre_destinatario', 'cliente__username', 'cliente__email')
+    search_fields = ('id', 'numero_pedido', 'nombre_destinatario', 'cliente__username', 'cliente__email')
     date_hierarchy = 'creado'
     inlines = [PedidoItemInline]
-    readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'firmado_como', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'hora_retiro', 'franja_horaria', 'tipo_envio', 'instrucciones', 'regalo_anonimo', 'medio_pago')
-    exclude = ('metodo_envio',)  # Ocultar el campo legacy
+    readonly_fields = ('creado', 'actualizado', 'cliente', 'dedicatoria', 'firmado_como', 'nombre_destinatario', 'direccion', 'telefono_destinatario', 'fecha_entrega', 'hora_retiro', 'franja_horaria', 'tipo_envio', 'instrucciones', 'regalo_anonimo', 'medio_pago', 'conversion_at', 'ga_purchase_sent_at', 'meta_purchase_sent_at', 'contexto_capturado')
+    # tracking_context tiene IP y user agent: sólo se muestra qué se capturó.
+    exclude = ('metodo_envio', 'tracking_context')  # metodo_envio es el campo legacy
+
+    @admin.display(description='Venta registrada (GA4 / Meta)')
+    def venta_registrada(self, obj):
+        return f"{'✓' if obj.ga_purchase_sent_at else '–'} / {'✓' if obj.meta_purchase_sent_at else '–'}"
+
+    @admin.display(description='Contexto del navegador capturado')
+    def contexto_capturado(self, obj):
+        contexto = obj.tracking_context or {}
+        claves = ('ga_client_id', 'ga_session_id', 'fbp', 'fbc', 'client_ip_address', 'client_user_agent')
+        return ', '.join(f"{clave}: {'sí' if contexto.get(clave) else 'no'}" for clave in claves)
 
     def save_model(self, request, obj, form, change):
         # Guardar el estado original antes de guardar los cambios
