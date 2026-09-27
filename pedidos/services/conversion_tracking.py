@@ -243,7 +243,20 @@ def validate_ga4_payload(pedido) -> dict:
     return respuesta.json()
 
 
-def send_ga4(pedido) -> bool:
+def _json(respuesta) -> dict:
+    try:
+        data = respuesta.json()
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _recortar(texto, largo=200) -> str:
+    return ' '.join(str(texto).split())[:largo]
+
+
+def send_ga4(pedido) -> tuple[bool, dict]:
+    """Envía la compra a GA4. Devuelve (ok, detalle) sin datos personales."""
     payload, sintetico = build_ga4_payload(pedido)
     if sintetico:
         _log('GA4', pedido, 'fallback_client_id')
@@ -255,15 +268,18 @@ def send_ga4(pedido) -> bool:
             timeout=TIMEOUT_SECONDS,
         )
     except requests.RequestException as error:
-        _log('GA4', pedido, 'error', tipo=type(error).__name__)
-        return False
+        return False, {'tipo': type(error).__name__}
     if not 200 <= respuesta.status_code < 300:
-        _log('GA4', pedido, 'error', status=respuesta.status_code)
-        return False
-    return True
+        return False, {'status': respuesta.status_code}
+    return True, {'status': respuesta.status_code}
 
 
-def send_meta(pedido) -> bool:
+def send_meta(pedido) -> tuple[bool, dict]:
+    """
+    Envía la compra a la Conversions API. Devuelve (ok, detalle): en éxito,
+    `events_received`; en error, el código y mensaje de Meta y su `fbtrace_id`
+    (nunca el payload ni datos personales).
+    """
     url = (
         f'https://graph.facebook.com/{settings.META_GRAPH_API_VERSION}/'
         f'{settings.FACEBOOK_PIXEL_ID}/events'
@@ -276,12 +292,25 @@ def send_meta(pedido) -> bool:
             timeout=TIMEOUT_SECONDS,
         )
     except requests.RequestException as error:
-        _log('META', pedido, 'error', tipo=type(error).__name__)
-        return False
+        return False, {'tipo': type(error).__name__}
+
+    data = _json(respuesta)
     if respuesta.status_code != 200:
-        _log('META', pedido, 'error', status=respuesta.status_code)
-        return False
-    return True
+        error = data.get('error') if isinstance(data.get('error'), dict) else {}
+        detalle = {'status': respuesta.status_code}
+        for clave in ('code', 'error_subcode', 'fbtrace_id'):
+            if error.get(clave) is not None:
+                detalle[clave] = error[clave]
+        if error.get('message'):
+            detalle['message'] = f'"{_recortar(error["message"])}"'
+        return False, detalle
+
+    detalle = {'status': 200}
+    if 'events_received' in data:
+        detalle['events_received'] = data['events_received']
+    if settings.META_CAPI_TEST_EVENT_CODE:
+        detalle['test_event_code'] = settings.META_CAPI_TEST_EVENT_CODE
+    return True, detalle
 
 
 # (nombre en el log, campo de la marca, ¿configurado?, envío, antigüedad máxima aceptada)
@@ -291,17 +320,36 @@ DESTINOS = (
 )
 
 
-def track_order_purchase(pedido_id: int) -> None:
-    """Envía la compra a GA4 y Meta si el pedido es elegible y el destino no la recibió."""
+def config_summary() -> str:
+    """Estado de la configuración, sin secretos: 'GA4=on META=off test_mode=off'."""
+    return 'GA4={} META={} test_mode={}'.format(
+        'on' if ga4_configured() else 'off',
+        'on' if meta_configured() else 'off',
+        'on' if settings.META_CAPI_TEST_EVENT_CODE else 'off',
+    )
+
+
+def track_order_purchase(pedido_id: int) -> dict:
+    """
+    Envía la compra a GA4 y Meta si el pedido es elegible y el destino no la recibió.
+
+    Devuelve {destino: (resultado, detalle)} para diagnóstico; el resultado es el
+    mismo que va al log (sent, error, skipped_*).
+    """
+    resultados = {}
     pedido = Pedido.objects.prefetch_related('items__producto').filter(pk=pedido_id).first()
     if pedido is None:
-        return
+        return resultados
+
+    def registrar(destino, resultado, **detalle):
+        _log(destino, pedido, resultado, **detalle)
+        resultados[destino] = (resultado, detalle)
 
     motivo = ineligible_reason(pedido)
     if motivo:
         for destino, *_ in DESTINOS:
-            _log(destino, pedido, 'skipped_not_eligible', reason=motivo)
-        return
+            registrar(destino, 'skipped_not_eligible', reason=motivo)
+        return resultados
 
     ahora = timezone.now()
     Pedido.objects.filter(pk=pedido.pk, conversion_at__isnull=True).update(conversion_at=ahora)
@@ -309,28 +357,31 @@ def track_order_purchase(pedido_id: int) -> None:
 
     for destino, campo, configurado, enviar, max_age in DESTINOS:
         if not configurado():
-            _log(destino, pedido, 'skipped_not_configured')
+            registrar(destino, 'skipped_not_configured')
             continue
         if timezone.now() - pedido.conversion_at > max_age:
-            _log(destino, pedido, 'skipped_expired')
+            registrar(destino, 'skipped_expired')
             continue
 
         reclamado = Pedido.objects.filter(pk=pedido.pk, **{f'{campo}__isnull': True}).update(**{campo: timezone.now()})
         if not reclamado:
-            _log(destino, pedido, 'skipped_already_sent')
+            registrar(destino, 'skipped_already_sent')
             continue
 
         try:
-            enviado = enviar(pedido)
+            enviado, detalle = enviar(pedido)
         except Exception:
             logger.exception('TRACKING %-4s pedido=%s error_inesperado', destino, pedido.numero_pedido)
-            enviado = False
+            enviado, detalle = False, {'tipo': 'error_inesperado'}
 
         if enviado:
-            _log(destino, pedido, 'sent')
+            registrar(destino, 'sent', **detalle)
         else:
             # Libera la marca para que el comando reenviar_conversiones lo reintente.
             Pedido.objects.filter(pk=pedido.pk).update(**{campo: None})
+            registrar(destino, 'error', **detalle)
+
+    return resultados
 
 
 def schedule_purchase_tracking(pedido_id: int) -> None:

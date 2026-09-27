@@ -7,6 +7,7 @@ import Image from 'next/image';
 import dynamicImport from 'next/dynamic';
 import { trackPurchase } from '@/utils/analytics';
 import * as fbPixel from '@/utils/fbPixel';
+import { isPurchase } from '@/utils/purchaseRule';
 
 // `true` cuando el backend registra la compra en GA4 (GA4_MEASUREMENT_ID y
 // GA4_API_SECRET cargados en Railway): cambiar las dos cosas en el mismo deploy.
@@ -148,10 +149,12 @@ const PaymentSuccessPage = () => {
         const data = JSON.parse(storedData);
         setPedidoData(data);
         
-        // Trackear compra sólo cuando el pago fue efectivamente aprobado.
+        // Misma regla que el servidor: transferencia y efectivo cuentan como compra
+        // al registrar el pedido; Mercado Pago y PayPal, sólo con el pago aprobado.
         // La compra que cuenta la registra el servidor (GA4 Measurement Protocol y
         // Meta Conversions API); esta página es sobre todo UX.
-        if (data && paymentStatus === 'success') {
+        const esEstePedido = !pedidoId || String(data?.pedido_id) === pedidoId;
+        if (data && esEstePedido && isPurchase(paymentStatus, data.medio_pago)) {
           // GA4: gtag y Measurement Protocol no se deduplican. Cuando el backend
           // tiene las credenciales de GA4, este envío se apaga para no duplicar ingresos.
           if (!GA4_SERVER_PURCHASE) {
@@ -178,7 +181,7 @@ const PaymentSuccessPage = () => {
         console.error('Error al parsear datos del pedido:', error);
       }
     }
-  }, [paymentStatus]);
+  }, [paymentStatus, pedidoId]);
 
   // Función para generar mensaje de WhatsApp completo
   const generateWhatsAppMessage = () => {

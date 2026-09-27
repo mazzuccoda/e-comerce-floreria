@@ -362,6 +362,14 @@
                     </p>
                 </div>
 
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 block mb-1">Venta registrada en GA4 / Meta</label>
+                    <p class="text-gray-900 text-sm">
+                        GA4: {% if pedido.ga_purchase_sent_at %}<i class="fas fa-check-circle text-green-500 mr-1"></i>{{ pedido.ga_purchase_sent_at|date:"d/m H:i" }}{% else %}<span class="text-gray-500">no</span>{% endif %}
+                        · Meta: {% if pedido.meta_purchase_sent_at %}<i class="fas fa-check-circle text-green-500 mr-1"></i>{{ pedido.meta_purchase_sent_at|date:"d/m H:i" }}{% else %}<span class="text-gray-500">no</span>{% endif %}
+                    </p>
+                </div>
+
                 {% if pedido.link_pago %}
                 <div>
                     <label class="text-sm font-semibold text-gray-700 block mb-1">Link de pago</label>
