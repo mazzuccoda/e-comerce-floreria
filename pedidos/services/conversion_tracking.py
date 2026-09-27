@@ -5,9 +5,10 @@ reclama con un UPDATE condicional antes de enviar (así el webhook, la vista de
 éxito y el checkout no pueden mandar la misma compra dos veces) y se libera si el
 envío falla, para que `reenviar_conversiones` lo reintente.
 
-Regla de negocio:
-- Transferencia y efectivo: la compra cuenta al confirmar el pedido.
-- Mercado Pago y PayPal: la compra cuenta cuando el pago queda aprobado.
+Regla de negocio: la compra cuenta cuando se genera el pedido, sin esperar la
+acreditación del pago. Sólo quedan afuera los pedidos cancelados y los pagos
+rechazados (un rechazo de Mercado Pago o PayPal devuelve el stock y deja el
+pedido sin confirmar).
 
 Analytics nunca rompe una venta: timeouts cortos, sin reintentos dentro del
 request y todas las excepciones capturadas. Nunca se loguean tokens, emails,
@@ -30,7 +31,6 @@ from ..models import Pedido
 logger = logging.getLogger(__name__)
 
 TIMEOUT_SECONDS = 3
-MEDIOS_ONLINE = ('mercadopago', 'paypal')
 GA4_MAX_AGE = timedelta(hours=72)
 META_MAX_AGE = timedelta(days=7)
 
@@ -77,8 +77,8 @@ def ineligible_reason(pedido) -> str | None:
         return 'cancelado'
     if not pedido.confirmado:
         return 'no_confirmado'
-    if pedido.medio_pago in MEDIOS_ONLINE and pedido.estado_pago != 'approved':
-        return 'pago_pendiente_mp' if pedido.medio_pago == 'mercadopago' else 'pago_pendiente_paypal'
+    if pedido.estado_pago == 'rejected':
+        return 'pago_rechazado'
     return None
 
 

@@ -149,12 +149,12 @@ const PaymentSuccessPage = () => {
         const data = JSON.parse(storedData);
         setPedidoData(data);
         
-        // Misma regla que el servidor: transferencia y efectivo cuentan como compra
-        // al registrar el pedido; Mercado Pago y PayPal, sólo con el pago aprobado.
-        // La compra que cuenta la registra el servidor (GA4 Measurement Protocol y
-        // Meta Conversions API); esta página es sobre todo UX.
+        // Misma regla que el servidor: la compra cuenta al generar el pedido, sin
+        // esperar la acreditación del pago. La compra que cuenta la registra el
+        // servidor (GA4 Measurement Protocol y Meta Conversions API); esta página
+        // es sobre todo UX y sólo llega si el cliente vuelve al sitio.
         const esEstePedido = !pedidoId || String(data?.pedido_id) === pedidoId;
-        if (data && esEstePedido && isPurchase(paymentStatus, data.medio_pago)) {
+        if (data && esEstePedido && isPurchase(paymentStatus)) {
           // GA4: gtag y Measurement Protocol no se deduplican. Cuando el backend
           // tiene las credenciales de GA4, este envío se apaga para no duplicar ingresos.
           if (!GA4_SERVER_PURCHASE) {

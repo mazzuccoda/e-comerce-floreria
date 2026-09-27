@@ -157,21 +157,20 @@ class ReglaDeCompraTests(TrackingBase):
         self.assertEqual(len(self.envios_ga4()), 1)
         self.assertEqual(len(self.envios_meta()), 1)
 
-    def test_3_mercadopago_solo_envia_al_aprobarse_y_una_vez(self):
+    def test_3_mercadopago_envia_al_generar_el_pedido_y_una_sola_vez(self):
         pedido = self.checkout('mercadopago')
-        self.assertEqual(self.post.call_count, 0)
-
-        self.webhook_mp(pedido, 'approved')
+        self.assertEqual(pedido.estado_pago, 'pendiente')
         self.assertEqual(len(self.envios_ga4()), 1)
         self.assertEqual(len(self.envios_meta()), 1)
 
         self.webhook_mp(pedido, 'approved')
         self.assertEqual(self.post.call_count, 2)
 
-    def test_4_mercadopago_abandonado_no_envia(self):
+    def test_4_mercadopago_abandonado_ya_conto_al_generarse_y_no_se_duplica(self):
         self.checkout('mercadopago')
         call_command('reenviar_conversiones', stdout=StringIO())
-        self.assertEqual(self.post.call_count, 0)
+        self.assertEqual(len(self.envios_ga4()), 1)
+        self.assertEqual(len(self.envios_meta()), 1)
 
     def test_retorno_de_mercadopago_aprobado_envia_y_redirige_con_estado_verificado(self):
         pedido = self.checkout('mercadopago')
@@ -192,7 +191,8 @@ class ReglaDeCompraTests(TrackingBase):
             servicio.return_value.get_payment_info.return_value = {'success': True, 'payment': {'status': 'in_process'}}
             response = self.client.get(f'/api/pedidos/{pedido.id}/payment/success/?payment_id=99')
         self.assertIn('payment=pending', response['Location'])
-        self.assertEqual(self.post.call_count, 0)
+        # La compra ya se registró al generar el pedido; el retorno no la duplica.
+        self.assertEqual(self.post.call_count, 2)
 
     def test_5_paypal_exitoso_envia_una_vez(self):
         pedido = self.checkout('paypal')
@@ -216,7 +216,7 @@ class ReglaDeCompraTests(TrackingBase):
                     f'/api/pedidos/{pedido.id}/payment/paypal/success/?paymentId=PAY-1&PayerID=P1'
                 )
         self.assertIn('payment=error', response['Location'])
-        self.assertEqual(self.post.call_count, 0)
+        self.assertEqual(self.post.call_count, 2)
 
     def test_6_webhook_rechazado_repetido_restaura_stock_una_vez(self):
         pedido = self.checkout('mercadopago')
@@ -230,6 +230,14 @@ class ReglaDeCompraTests(TrackingBase):
         self.assertEqual(self.producto.stock, 50)
         self.assertFalse(pedido.confirmado)
         self.assertEqual(pedido.estado_pago, 'rejected')
+        self.assertEqual(self.post.call_count, 2)
+
+    def test_pago_rechazado_antes_del_envio_no_cuenta_como_compra(self):
+        pedido = self.crear_pedido('mercadopago', estado_pago='rejected')
+        track_order_purchase(pedido.id)
+        self.assertEqual(self.post.call_count, 0)
+
+        call_command('reenviar_conversiones', stdout=StringIO())
         self.assertEqual(self.post.call_count, 0)
 
     def test_aprobado_despues_de_un_rechazo_vuelve_a_descontar_stock(self):
@@ -519,11 +527,16 @@ class DiagnosticoTests(TrackingBase):
         self.assertIn('GA4: skipped_already_sent', salida.getvalue())
         self.assertEqual(len(self.envios_meta()), 1)
 
-    def test_diagnosticar_pedido_de_mp_pendiente(self):
+    def test_diagnosticar_pedido_de_mp_pendiente_y_rechazado(self):
         pedido = self.checkout('mercadopago')
         salida = StringIO()
         call_command('diagnosticar_tracking', pedido.numero_pedido, stdout=salida)
-        self.assertIn('cuenta como compra: no (pago_pendiente_mp)', salida.getvalue())
+        self.assertIn('cuenta como compra: sí', salida.getvalue())
+
+        self.webhook_mp(pedido, 'rejected')
+        salida = StringIO()
+        call_command('diagnosticar_tracking', pedido.numero_pedido, stdout=salida)
+        self.assertIn('cuenta como compra: no (no_confirmado)', salida.getvalue())
 
 
 @override_settings(**CREDENCIALES)
@@ -539,7 +552,7 @@ class PanelesTests(TrackingBase):
 
     def test_aprobar_pago_a_mano_en_el_panel_registra_la_venta_una_vez(self):
         pedido = self.checkout('mercadopago')
-        self.assertEqual(self.post.call_count, 0)
+        self.assertEqual(self.post.call_count, 2)
         for _ in range(2):
             with self.captureOnCommitCallbacks(execute=True):
                 response = self.client.post(
