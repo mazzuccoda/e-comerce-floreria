@@ -800,7 +800,7 @@ def pedido_cancelar(request, pk):
         logger.info(f'Pedido {pedido.id} cancelado por {request.user.username}')
         return JsonResponse({
             'success': True,
-            'message': 'Pedido cancelado exitosamente. Stock restaurado.'
+            'message': mensaje
         })
     else:
         return JsonResponse({
