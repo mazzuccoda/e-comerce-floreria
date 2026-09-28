@@ -8,7 +8,19 @@ declare global {
   }
 }
 
-export const FB_PIXEL_ID = '2362234944085088';
+// Pixels que carga el sitio. El primero es el principal: es propiedad del
+// portafolio empresarial y es el que recibe la API de conversiones (servidor).
+// El segundo es el pixel histórico de la cuenta publicitaria; se mantiene en
+// paralelo unas semanas para no cortar las audiencias y se quita después.
+// fbq('track', ...) envía cada evento a todos los pixels inicializados.
+const DEFAULT_PIXEL_IDS = '1720539689055218,2362234944085088';
+
+export const FB_PIXEL_IDS: string[] = (process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_IDS || DEFAULT_PIXEL_IDS)
+  .split(',')
+  .map((id) => id.trim())
+  .filter((id) => /^\d+$/.test(id));
+
+export const FB_PIXEL_ID = FB_PIXEL_IDS[0] || '';
 
 export const pageview = () => {
   if (typeof window !== 'undefined' && window.fbq) {
