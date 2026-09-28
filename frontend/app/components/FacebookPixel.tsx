@@ -3,16 +3,15 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { FB_PIXEL_IDS } from '@/utils/fbPixel';
+import { FB_PIXEL_IDS, event } from '@/utils/fbPixel';
 
 export default function FacebookPixel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'PageView');
-    }
+    // Espera a que cargue el script: en la primera carga el efecto corre antes.
+    event('PageView');
   }, [pathname, searchParams]);
 
   return (
