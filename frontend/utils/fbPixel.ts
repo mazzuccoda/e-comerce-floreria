@@ -22,20 +22,31 @@ export const FB_PIXEL_IDS: string[] = (process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID
 
 export const FB_PIXEL_ID = FB_PIXEL_IDS[0] || '';
 
-export const pageview = () => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('track', 'PageView');
-  }
-};
+export const pageview = () => event('PageView');
+
+// El script del Pixel se carga con strategy="afterInteractive": en una carga
+// completa (p. ej. la redirección a /checkout/success) los useEffect de la
+// página corren antes de que exista window.fbq. Sin esta espera el evento se
+// descartaba en silencio, y así se perdía el Purchase del navegador.
+const FBQ_RETRY_MS = 250;
+const FBQ_MAX_RETRIES = 40; // ~10 s
 
 export const event = (name: string, options = {}, eventOptions?: { eventID: string }) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    if (eventOptions) {
-      window.fbq('track', name, options, eventOptions);
-    } else {
-      window.fbq('track', name, options);
+  if (typeof window === 'undefined') return;
+
+  const send = (attempt: number) => {
+    if (window.fbq) {
+      if (eventOptions) {
+        window.fbq('track', name, options, eventOptions);
+      } else {
+        window.fbq('track', name, options);
+      }
+    } else if (attempt < FBQ_MAX_RETRIES) {
+      window.setTimeout(() => send(attempt + 1), FBQ_RETRY_MS);
     }
-  }
+  };
+
+  send(0);
 };
 
 // `id` debe coincidir con el `id` del feed de catálogo (el SKU) para que el
