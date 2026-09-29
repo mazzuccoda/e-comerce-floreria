@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from .models import Producto
@@ -22,6 +23,28 @@ def _shipping_cost(producto):
     return 0 if producto.envio_gratis else SHIPPING_COST_ARS
 
 
+
+def productos_del_feed():
+    """
+    Productos activos con precio, SKU y slug, con o sin stock.
+
+    Los agotados se publican con availability "out of stock" en vez de quedar
+    afuera: la web los sigue mostrando, y si faltan en el catálogo el
+    ViewContent del Pixel (content_ids = SKU) no coincide con ningún artículo
+    y baja la tasa de coincidencias. Meta no anuncia artículos agotados.
+    """
+    return (
+        Producto.objects.filter(
+            is_active=True,
+            precio__gt=0,
+            sku__isnull=False,
+            slug__isnull=False,
+        )
+        .exclude(Q(sku='') | Q(slug=''))
+        .prefetch_related('imagenes', 'categoria', 'tipo_flor')
+    )
+
+
 def facebook_product_feed(request):
     """
     Genera un feed XML de productos para Facebook Commerce Manager.
@@ -31,17 +54,7 @@ def facebook_product_feed(request):
     Documentación: https://developers.facebook.com/docs/commerce-platform/catalog/products
     """
     
-    # Obtener productos activos con stock, precio, SKU y slug válidos
-    productos = Producto.objects.filter(
-        is_active=True,
-        stock__gt=0,
-        precio__gt=0,
-        sku__isnull=False,
-        slug__isnull=False,
-    ).exclude(
-        sku='',
-        slug='',
-    ).prefetch_related('imagenes', 'categoria', 'tipo_flor')
+    productos = productos_del_feed()
     
     # Crear estructura XML
     rss = ET.Element('rss', {
@@ -86,7 +99,7 @@ def facebook_product_feed(request):
         ET.SubElement(item, 'g:price').text = f'{int(float(producto.precio))} ARS'
         
         # Cantidad en stock
-        ET.SubElement(item, 'g:quantity_to_sell_on_facebook').text = str(max(producto.stock, 1))
+        ET.SubElement(item, 'g:quantity_to_sell_on_facebook').text = str(max(producto.stock, 0))
         
         # Precio de oferta (sólo si es realmente menor al de lista)
         if producto.precio_descuento and 0 < float(producto.precio_descuento) < float(producto.precio):
@@ -149,17 +162,7 @@ def facebook_product_feed_csv(request):
     import csv
     from io import StringIO
     
-    # Obtener productos activos con stock, precio, SKU y slug válidos
-    productos = Producto.objects.filter(
-        is_active=True,
-        stock__gt=0,
-        precio__gt=0,
-        sku__isnull=False,
-        slug__isnull=False,
-    ).exclude(
-        sku='',
-        slug='',
-    ).prefetch_related('imagenes', 'categoria', 'tipo_flor')
+    productos = productos_del_feed()
     
     # Crear CSV en memoria
     output = StringIO()
@@ -226,7 +229,7 @@ def facebook_product_feed_csv(request):
             google_product_category(producto),
             f'{precio_oferta} ARS' if precio_oferta else '',
             additional_images,
-            str(max(producto.stock, 1)),
+            str(max(producto.stock, 0)),
             f'AR::{_shipping_cost(producto)} ARS',
             'no'
         ])
