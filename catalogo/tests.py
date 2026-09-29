@@ -325,3 +325,57 @@ class ProductoPorSlugTests(TestCase):
 
     def test_slug_inexistente_devuelve_lista_vacia(self):
         self.assertEqual(self._por_slug('no-existe'), [])
+
+
+class FeedProductosAgotadosTests(TestCase):
+    """El feed publica los agotados como out of stock para que el Pixel coincida."""
+
+    def setUp(self):
+        # Stock entre 1 y 5 dispara la notificación de stock bajo (Celery).
+        from unittest.mock import patch
+        patcher = patch('notificaciones.tasks.notificar_stock_bajo')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-feed')
+        self.con_stock = Producto.objects.create(
+            nombre='Ramo Disponible', descripcion='Rosas.', categoria=self.categoria,
+            precio=30000, sku='FEED-OK', stock=5,
+        )
+        self.agotado = Producto.objects.create(
+            nombre='Ramo Agotado', descripcion='Tulipanes.', categoria=self.categoria,
+            precio=30000, sku='FEED-AGOTADO', stock=0,
+        )
+        self.sin_sku = Producto.objects.create(
+            nombre='Ramo Sin SKU', descripcion='Lirios.', categoria=self.categoria,
+            precio=30000, sku='', stock=5,
+        )
+        self.inactivo = Producto.objects.create(
+            nombre='Ramo Inactivo', descripcion='Gerberas.', categoria=self.categoria,
+            precio=30000, sku='FEED-OFF', stock=5, is_active=False,
+        )
+
+    def test_xml_incluye_agotados_como_out_of_stock(self):
+        import xml.etree.ElementTree as ET
+        response = self.client.get('/feeds/facebook-products.xml')
+        self.assertEqual(response.status_code, 200)
+        ns = {'g': 'http://base.google.com/ns/1.0'}
+        items = {
+            item.find('g:id', ns).text: item
+            for item in ET.fromstring(response.content).iter('item')
+        }
+        self.assertIn('FEED-OK', items)
+        self.assertIn('FEED-AGOTADO', items)
+        self.assertNotIn('FEED-OFF', items)
+        self.assertNotIn('', items)
+        self.assertEqual(items['FEED-OK'].find('g:availability', ns).text, 'in stock')
+        self.assertEqual(items['FEED-AGOTADO'].find('g:availability', ns).text, 'out of stock')
+        self.assertEqual(items['FEED-AGOTADO'].find('g:quantity_to_sell_on_facebook', ns).text, '0')
+
+    def test_csv_incluye_agotados(self):
+        response = self.client.get('/feeds/facebook-products.csv')
+        self.assertEqual(response.status_code, 200)
+        contenido = response.content.decode()
+        self.assertIn('FEED-OK', contenido)
+        self.assertIn('FEED-AGOTADO', contenido)
+        self.assertIn('out of stock', contenido)
+        self.assertNotIn('FEED-OFF', contenido)
