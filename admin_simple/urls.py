@@ -10,6 +10,11 @@ urlpatterns = [
 
     # Ventas
     path('ventas/', views.ventas, name='ventas'),
+
+    # Agenda de entregas
+    path('agenda/', views.agenda, name='agenda'),
+    path('agenda/hoja-de-ruta/', views.agenda_pdf, name='agenda-pdf'),
+    path('agenda/calendario/', views.calendario, name='calendario'),
     
     # Productos
     path('productos/', views.productos_list, name='productos-list'),
@@ -32,4 +37,5 @@ urlpatterns = [
     path('pedidos/<int:pk>/confirmar/', views.pedido_confirmar, name='pedido-confirmar'),
     path('pedidos/<int:pk>/cancelar/', views.pedido_cancelar, name='pedido-cancelar'),
     path('pedidos/<int:pk>/pdf/', views.pedido_pdf, name='pedido-pdf'),
+    path('pedidos/<int:pk>/editar/', views.pedido_editar, name='pedido-editar'),
 ]

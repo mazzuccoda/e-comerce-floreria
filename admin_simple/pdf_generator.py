@@ -2,6 +2,7 @@
 Generador de PDF minimalista para pedidos
 Diseñado para caber en una hoja A4
 """
+from html import escape
 from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -307,4 +308,120 @@ def generar_pdf_pedido(pedido):
     pdf = buffer.getvalue()
     buffer.close()
     
+    return pdf
+
+
+def _fila_hoja_de_ruta(pedido, estilo, estilo_chico):
+    """Una línea del reparto: cuándo, a quién, dónde y qué lleva."""
+    if pedido.tipo_envio == 'retiro':
+        cuando = pedido.hora_retiro.strftime('%H:%M') if pedido.hora_retiro else 'A coordinar'
+    else:
+        cuando = pedido.get_franja_horaria_display() or 'Sin franja'
+
+    destino = (
+        f'<b>{escape(pedido.nombre_destinatario)}</b><br/>'
+        f'{escape(pedido.telefono_destinatario or "")}'
+    )
+    if pedido.tipo_envio == 'retiro':
+        direccion = 'Retira en el local'
+    else:
+        direccion = escape(pedido.direccion or 'Sin dirección')
+        if pedido.ciudad:
+            direccion += f'<br/>{escape(pedido.ciudad)}'
+    if pedido.instrucciones:
+        direccion += f'<br/><i>{escape(pedido.instrucciones)}</i>'
+
+    productos = '<br/>'.join(
+        f'{item.cantidad}× '
+        f'{escape(item.producto.nombre) if item.producto else "Producto"}'
+        for item in pedido.items.all()
+    )
+
+    pago = pedido.get_estado_pago_display()
+    if pedido.estado_pago != 'approved':
+        pago = f'<b>COBRAR ${pedido.total:,.0f}</b><br/>{pedido.get_medio_pago_display()}'
+
+    return [
+        Paragraph(cuando, estilo),
+        Paragraph(f'#{pedido.numero_pedido or pedido.id}', estilo_chico),
+        Paragraph(destino, estilo),
+        Paragraph(direccion, estilo),
+        Paragraph(productos, estilo_chico),
+        Paragraph(pago, estilo_chico),
+    ]
+
+
+def generar_hoja_de_ruta(fecha, retiros, grupos):
+    """Hoja de ruta del día: una tabla por franja, pensada para imprimir y salir."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=1*cm,
+        leftMargin=1*cm,
+        topMargin=1*cm,
+        bottomMargin=1*cm,
+    )
+
+    styles = getSampleStyleSheet()
+    titulo_style = ParagraphStyle(
+        'HojaTitulo', parent=styles['Heading1'], fontSize=16,
+        textColor=colors.HexColor('#2d3748'), alignment=TA_CENTER, spaceAfter=0.2*cm,
+    )
+    franja_style = ParagraphStyle(
+        'HojaFranja', parent=styles['Heading2'], fontSize=12,
+        textColor=colors.HexColor('#276749'), spaceBefore=0.4*cm, spaceAfter=0.15*cm,
+    )
+    celda_style = ParagraphStyle(
+        'HojaCelda', parent=styles['Normal'], fontSize=8, leading=10, alignment=TA_LEFT,
+    )
+    celda_chica_style = ParagraphStyle(
+        'HojaCeldaChica', parent=celda_style, fontSize=7, leading=9,
+        textColor=colors.HexColor('#4a5568'),
+    )
+
+    story = [
+        Paragraph('FLORERÍA CRISTINA — HOJA DE RUTA', titulo_style),
+        Paragraph(
+            fecha.strftime('%d/%m/%Y'),
+            ParagraphStyle('HojaFecha', parent=styles['Normal'], alignment=TA_CENTER),
+        ),
+    ]
+
+    encabezado = ['Hora', 'Pedido', 'Destinatario', 'Dirección', 'Lleva', 'Pago']
+    anchos = [2*cm, 2*cm, 4*cm, 5.5*cm, 4*cm, 2.5*cm]
+    estilo_tabla = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e6fffa')),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('GRID', (0, 0), (-1, -1), 0.4, colors.HexColor('#cbd5e0')),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ])
+
+    bloques = []
+    if retiros:
+        bloques.append(('Retiros en tienda', retiros))
+    for grupo in grupos:
+        bloques.append((grupo['etiqueta'], grupo['pedidos']))
+
+    if not bloques:
+        story.append(Spacer(1, 1*cm))
+        story.append(Paragraph('No hay entregas agendadas para este día.', celda_style))
+
+    for etiqueta, pedidos in bloques:
+        story.append(Paragraph(f'{etiqueta} ({len(pedidos)})', franja_style))
+        filas = [encabezado]
+        filas.extend(
+            _fila_hoja_de_ruta(pedido, celda_style, celda_chica_style)
+            for pedido in pedidos
+        )
+        tabla = Table(filas, colWidths=anchos, repeatRows=1)
+        tabla.setStyle(estilo_tabla)
+        story.append(tabla)
+
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
     return pdf

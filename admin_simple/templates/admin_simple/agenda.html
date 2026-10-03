@@ -1,0 +1,122 @@
+{% extends 'admin_simple/base.html' %}
+{% load humanize %}
+
+{% block title %}Agenda - Admin Simple{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Agenda de entregas</h2>
+    <p class="text-sm sm:text-base text-gray-600 mt-1">
+        Lo que hay que preparar y repartir, por fecha de entrega.
+    </p>
+</div>
+
+<!-- Navegación de fechas -->
+<div class="card mb-6">
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+        <a href="?fecha={{ dia_anterior|date:'Y-m-d' }}"
+           class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-semibold">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <a href="?fecha={{ hoy|date:'Y-m-d' }}"
+           class="px-4 py-2 rounded-lg text-sm font-semibold {% if fecha == hoy %}bg-green-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Hoy
+        </a>
+        <a href="?fecha={{ dia_siguiente|date:'Y-m-d' }}"
+           class="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-semibold">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+
+        <form method="get" class="flex items-center gap-2 ml-auto">
+            <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" class="input-field">
+            <button type="submit" class="btn-primary"><i class="fas fa-calendar-day mr-2"></i>Ver</button>
+        </form>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+        <p class="text-lg font-bold text-gray-900">{{ fecha|date:'l j \d\e F Y'|capfirst }}</p>
+        <a href="{% url 'admin_simple:agenda-pdf' %}?fecha={{ fecha|date:'Y-m-d' }}"
+           target="_blank" class="btn-secondary">
+            <i class="fas fa-route mr-2"></i>Hoja de ruta (PDF)
+        </a>
+        <a href="{% url 'admin_simple:calendario' %}?mes={{ mes_valor }}" class="btn-secondary">
+            <i class="fas fa-calendar-alt mr-2"></i>Ver el mes
+        </a>
+    </div>
+</div>
+
+<!-- Resumen del día -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
+    <div class="stat-card from-blue-500 to-blue-600">
+        <p class="text-blue-100 text-sm font-medium mb-1">Entregas del día</p>
+        <p class="text-3xl font-bold">{{ agenda.total }}</p>
+        <p class="text-blue-100 text-xs mt-2">sin contar canceladas</p>
+    </div>
+    <div class="stat-card from-yellow-500 to-orange-500">
+        <p class="text-orange-100 text-sm font-medium mb-1">Pendientes</p>
+        <p class="text-3xl font-bold">{{ agenda.pendientes }}</p>
+        <p class="text-orange-100 text-xs mt-2">{{ agenda.entregados }} ya entregada{{ agenda.entregados|pluralize }}</p>
+    </div>
+    <div class="stat-card from-green-500 to-green-600">
+        <p class="text-green-100 text-sm font-medium mb-1">Facturado del día</p>
+        <p class="text-3xl font-bold">${{ agenda.facturacion|floatformat:0|intcomma }}</p>
+        <p class="text-green-100 text-xs mt-2">por fecha de entrega</p>
+    </div>
+    <div class="stat-card from-purple-500 to-purple-600">
+        <p class="text-purple-100 text-sm font-medium mb-1">Retiros en tienda</p>
+        <p class="text-3xl font-bold">{{ agenda.retiros|length }}</p>
+        <p class="text-purple-100 text-xs mt-2">el resto se reparte</p>
+    </div>
+</div>
+
+{% if agenda.sin_confirmar %}
+<div class="card mb-6 border-l-4 border-yellow-400">
+    <p class="font-semibold text-gray-900">
+        <i class="fas fa-triangle-exclamation text-yellow-500 mr-2"></i>
+        {{ agenda.sin_confirmar|length }} pedido{{ agenda.sin_confirmar|length|pluralize }} de este día sin confirmar
+    </p>
+    <p class="text-sm text-gray-600 mt-1">
+        Sin confirmar no descuentan stock y no cuentan como venta.
+        {% for pedido in agenda.sin_confirmar %}
+            <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}" class="text-green-700 font-semibold hover:underline">#{{ pedido.numero_pedido|default:pedido.id }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+</div>
+{% endif %}
+
+{% if agenda.retiros %}
+<div class="card mb-6">
+    <h3 class="text-lg font-bold text-gray-900 mb-4">
+        <i class="fas fa-store text-purple-500 mr-2"></i>Retiros en tienda ({{ agenda.retiros|length }})
+    </h3>
+    <div class="space-y-3">
+        {% for pedido in agenda.retiros %}
+            {% include 'admin_simple/_agenda_pedido.html' with pedido=pedido cuando=pedido.hora_retiro|date:'H:i'|default:'A coordinar' %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% for grupo in agenda.grupos %}
+<div class="card mb-6">
+    <h3 class="text-lg font-bold text-gray-900 mb-4">
+        <i class="fas fa-clock text-green-600 mr-2"></i>{{ grupo.etiqueta }} ({{ grupo.pedidos|length }})
+    </h3>
+    <div class="space-y-3">
+        {% for pedido in grupo.pedidos %}
+            {% include 'admin_simple/_agenda_pedido.html' with pedido=pedido cuando=grupo.etiqueta %}
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% if not agenda.total %}
+<div class="card text-center py-12">
+    <i class="fas fa-calendar-check text-4xl text-gray-300 mb-3"></i>
+    <p class="text-gray-600 font-semibold">No hay entregas agendadas para este día.</p>
+    <a href="{% url 'admin_simple:calendario' %}?mes={{ mes_valor }}" class="btn-secondary mt-4 inline-block">
+        <i class="fas fa-calendar-alt mr-2"></i>Ver el mes completo
+    </a>
+</div>
+{% endif %}
+{% endblock %}

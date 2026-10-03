@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -412,3 +412,287 @@ class PanelVentasTests(TestCase):
         respuesta = self.client.get(reverse('admin_simple:ventas'))
 
         self.assertEqual(respuesta.status_code, 302)
+
+
+class AgendaTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='agenda-admin',
+            email='agenda@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-agenda')
+        self.producto = Producto.objects.create(
+            nombre='Ramo de Girasoles',
+            descripcion='Girasoles frescos.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='AGENDA-GIRASOLES',
+            stock=10,
+        )
+        self.hoy = timezone.localdate()
+
+    def _pedido(self, **kwargs):
+        datos = dict(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=self.hoy,
+            franja_horaria='tarde',
+            dedicatoria='Te quiero',
+            medio_pago='transferencia',
+            tipo_envio='programado',
+            total=Decimal('30000'),
+            confirmado=True,
+        )
+        datos.update(kwargs)
+        pedido = Pedido.objects.create(**datos)
+        PedidoItem.objects.create(
+            pedido=pedido,
+            producto=self.producto,
+            cantidad=1,
+            precio=self.producto.precio,
+        )
+        return pedido
+
+    def test_la_agenda_agrupa_por_franja_y_separa_los_retiros(self):
+        manana = self._pedido(franja_horaria='mañana')
+        tarde = self._pedido(franja_horaria='tarde')
+        retiro = self._pedido(
+            tipo_envio='retiro', hora_retiro=time(10, 30), direccion=''
+        )
+
+        respuesta = self.client.get(reverse('admin_simple:agenda'))
+
+        contexto = respuesta.context['agenda']
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual([retiro], contexto['retiros'])
+        self.assertEqual(
+            [('mañana', [manana]), ('tarde', [tarde])],
+            [(grupo['clave'], grupo['pedidos']) for grupo in contexto['grupos']],
+        )
+        self.assertEqual(contexto['total'], 3)
+
+    def test_la_agenda_deja_fuera_los_cancelados_y_cuenta_los_entregados(self):
+        self._pedido()
+        self._pedido(estado='entregado')
+        self._pedido(estado='cancelado')
+
+        respuesta = self.client.get(
+            reverse('admin_simple:agenda'), {'fecha': self.hoy.isoformat()}
+        )
+
+        contexto = respuesta.context['agenda']
+        self.assertEqual(contexto['total'], 2)
+        self.assertEqual(contexto['pendientes'], 1)
+        self.assertEqual(contexto['entregados'], 1)
+        self.assertEqual(contexto['facturacion'], Decimal('60000'))
+
+    def test_una_fecha_rota_cae_en_el_dia_de_hoy(self):
+        respuesta = self.client.get(
+            reverse('admin_simple:agenda'), {'fecha': 'treinta-de-febrero'}
+        )
+
+        self.assertEqual(respuesta.context['fecha'], self.hoy)
+
+    def test_el_calendario_muestra_la_carga_de_cada_dia(self):
+        self._pedido()
+        self._pedido(estado='entregado')
+
+        respuesta = self.client.get(
+            reverse('admin_simple:calendario'),
+            {'mes': f'{self.hoy.year:04d}-{self.hoy.month:02d}'},
+        )
+
+        dias = [
+            dia
+            for semana in respuesta.context['semanas']
+            for dia in semana
+            if dia['fecha'] == self.hoy
+        ]
+        self.assertEqual(len(dias), 1)
+        self.assertEqual(dias[0]['pedidos'], 2)
+        self.assertEqual(dias[0]['pendientes'], 1)
+        self.assertEqual(respuesta.context['totales']['pedidos'], 2)
+
+    def test_el_calendario_navega_entre_meses(self):
+        respuesta = self.client.get(
+            reverse('admin_simple:calendario'), {'mes': '2026-01'}
+        )
+
+        self.assertEqual(respuesta.context['mes'].valor, '2026-01')
+        self.assertEqual(respuesta.context['mes_anterior'].valor, '2025-12')
+        self.assertEqual(respuesta.context['mes_siguiente'].valor, '2026-02')
+
+    def test_la_hoja_de_ruta_devuelve_un_pdf(self):
+        self._pedido()
+
+        respuesta = self.client.get(
+            reverse('admin_simple:agenda-pdf'), {'fecha': self.hoy.isoformat()}
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta['Content-Type'], 'application/pdf')
+        self.assertTrue(respuesta.content.startswith(b'%PDF'))
+
+    def test_el_rango_libre_filtra_por_fecha_de_entrega(self):
+        pasado = self._pedido(fecha_entrega=self.hoy - timedelta(days=5))
+        proximo = self._pedido(fecha_entrega=self.hoy + timedelta(days=2))
+
+        respuesta = self.client.get(reverse('admin_simple:pedidos-list'), {
+            'entrega_desde': (self.hoy + timedelta(days=1)).isoformat(),
+            'entrega_hasta': (self.hoy + timedelta(days=3)).isoformat(),
+        })
+
+        pedidos = list(respuesta.context['page_obj'])
+        self.assertIn(proximo, pedidos)
+        self.assertNotIn(pasado, pedidos)
+
+    def test_el_rango_invertido_se_ordena_solo(self):
+        proximo = self._pedido(fecha_entrega=self.hoy + timedelta(days=2))
+
+        respuesta = self.client.get(reverse('admin_simple:pedidos-list'), {
+            'entrega_desde': (self.hoy + timedelta(days=3)).isoformat(),
+            'entrega_hasta': (self.hoy + timedelta(days=1)).isoformat(),
+        })
+
+        self.assertIn(proximo, list(respuesta.context['page_obj']))
+
+    def test_la_agenda_exige_superusuario(self):
+        self.client.logout()
+
+        respuesta = self.client.get(reverse('admin_simple:agenda'))
+
+        self.assertEqual(respuesta.status_code, 302)
+
+
+class EdicionOperativaTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='edicion-admin',
+            email='edicion@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-edicion')
+        self.producto = Producto.objects.create(
+            nombre='Ramo Clásico',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=25000,
+            sku='EDICION-ROSAS',
+            stock=10,
+        )
+        self.pedido = Pedido.objects.create(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=timezone.localdate(),
+            franja_horaria='tarde',
+            dedicatoria='Te quiero',
+            medio_pago='transferencia',
+            tipo_envio='programado',
+            total=Decimal('25000'),
+            confirmado=True,
+        )
+        PedidoItem.objects.create(
+            pedido=self.pedido,
+            producto=self.producto,
+            cantidad=1,
+            precio=self.producto.precio,
+        )
+
+    def _datos(self, **kwargs):
+        datos = {
+            'fecha_entrega': self.pedido.fecha_entrega.isoformat(),
+            'franja_horaria': self.pedido.franja_horaria,
+            'hora_retiro': '',
+            'tipo_envio': self.pedido.tipo_envio,
+            'nombre_destinatario': self.pedido.nombre_destinatario,
+            'telefono_destinatario': self.pedido.telefono_destinatario,
+            'direccion': self.pedido.direccion,
+            'ciudad': self.pedido.ciudad,
+            'dedicatoria': self.pedido.dedicatoria,
+            'instrucciones': '',
+        }
+        datos.update(kwargs)
+        return datos
+
+    def test_corrige_fecha_franja_y_direccion(self):
+        nueva_fecha = timezone.localdate() + timedelta(days=3)
+
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-editar', args=[self.pedido.pk]),
+            self._datos(
+                fecha_entrega=nueva_fecha.isoformat(),
+                franja_horaria='mañana',
+                direccion='Av. Aconquija 1200',
+            ),
+        )
+
+        self.pedido.refresh_from_db()
+        self.assertRedirects(
+            respuesta,
+            reverse('admin_simple:pedido-detail', args=[self.pedido.pk]),
+        )
+        self.assertEqual(self.pedido.fecha_entrega, nueva_fecha)
+        self.assertEqual(self.pedido.franja_horaria, 'mañana')
+        self.assertEqual(self.pedido.direccion, 'Av. Aconquija 1200')
+
+    def test_no_toca_importes_ni_stock(self):
+        self.client.post(
+            reverse('admin_simple:pedido-editar', args=[self.pedido.pk]),
+            self._datos(direccion='Av. Aconquija 1200'),
+        )
+
+        self.pedido.refresh_from_db()
+        self.producto.refresh_from_db()
+        self.assertEqual(self.pedido.total, Decimal('25000'))
+        self.assertEqual(self.producto.stock, 10)
+
+    def test_un_envio_sin_direccion_no_se_guarda(self):
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-editar', args=[self.pedido.pk]),
+            self._datos(direccion='   '),
+        )
+
+        self.pedido.refresh_from_db()
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(self.pedido.direccion, 'Solano Vera 480')
+        self.assertIn('dirección de entrega', respuesta.content.decode())
+
+    def test_un_retiro_necesita_hora(self):
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-editar', args=[self.pedido.pk]),
+            self._datos(tipo_envio='retiro', hora_retiro=''),
+        )
+
+        self.pedido.refresh_from_db()
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(self.pedido.tipo_envio, 'programado')
+
+    def test_el_detalle_trae_el_formulario_de_edicion(self):
+        respuesta = self.client.get(
+            reverse('admin_simple:pedido-detail', args=[self.pedido.pk])
+        )
+
+        contenido = respuesta.content.decode()
+        self.assertIn('Corregir datos de entrega', contenido)
+        self.assertIn('name="fecha_entrega"', contenido)
+
+    def test_editar_exige_superusuario(self):
+        self.client.logout()
+
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-editar', args=[self.pedido.pk]),
+            self._datos(),
+        )
+
+        self.pedido.refresh_from_db()
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertEqual(self.pedido.direccion, 'Solano Vera 480')

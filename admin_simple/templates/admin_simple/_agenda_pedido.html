@@ -1,0 +1,55 @@
+{% load humanize %}
+<div class="border border-gray-200 rounded-xl p-4 hover:border-green-300 transition-all">
+    <div class="flex flex-wrap items-start justify-between gap-2">
+        <div class="min-w-0">
+            <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}"
+               class="font-bold text-gray-900 hover:text-green-700">
+                #{{ pedido.numero_pedido|default:pedido.id }}
+            </a>
+            <span class="text-sm text-gray-500 ml-2">{{ cuando }}</span>
+            <p class="font-semibold text-gray-800 mt-1">{{ pedido.nombre_destinatario }}</p>
+            <p class="text-sm text-gray-600">
+                {% if pedido.tipo_envio == 'retiro' %}
+                    Retira en el local
+                {% else %}
+                    {{ pedido.direccion }}{% if pedido.ciudad %}, {{ pedido.ciudad }}{% endif %}
+                {% endif %}
+            </p>
+            {% if pedido.telefono_destinatario %}
+            <p class="text-sm text-gray-500">
+                <a href="tel:{{ pedido.telefono_destinatario }}" class="hover:underline">
+                    <i class="fas fa-phone mr-1"></i>{{ pedido.telefono_destinatario }}
+                </a>
+            </p>
+            {% endif %}
+            {% if pedido.instrucciones %}
+            <p class="text-sm text-gray-500 italic mt-1">{{ pedido.instrucciones }}</p>
+            {% endif %}
+        </div>
+
+        <div class="text-right">
+            <p class="font-bold text-gray-900">${{ pedido.total|floatformat:0|intcomma }}</p>
+            {% if pedido.estado_pago == 'approved' %}
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Pagado</span>
+            {% else %}
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                    Cobrar · {{ pedido.get_medio_pago_display }}
+                </span>
+            {% endif %}
+            <p class="mt-2">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                    {% if pedido.estado == 'entregado' %}bg-green-100 text-green-700
+                    {% elif pedido.estado == 'en_camino' %}bg-blue-100 text-blue-700
+                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                    {{ pedido.get_estado_display }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <p class="text-sm text-gray-600 mt-3">
+        {% for item in pedido.items.all %}
+            {{ item.cantidad }}× {{ item.producto.nombre|default:'Producto' }}{% if not forloop.last %} · {% endif %}
+        {% endfor %}
+    </p>
+</div>
