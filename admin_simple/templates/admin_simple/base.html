@@ -179,6 +179,11 @@
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
+                <a href="{% url 'admin_simple:ventas' %}" 
+                   class="{% if request.resolver_match.url_name == 'ventas' %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Ventas</span>
+                </a>
                 <a href="{% url 'admin_simple:productos-list' %}" 
                    class="{% if 'productos' in request.resolver_match.url_name %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-box"></i>
@@ -269,6 +274,16 @@
                 </button>
             </div>
             <div class="space-y-3">
+                <a href="{% url 'admin_simple:ventas' %}" 
+                   class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
+                    <div class="bg-green-500 rounded-lg p-3 mr-4">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-gray-900">Ventas</p>
+                        <p class="text-sm text-gray-600">Resumen por período</p>
+                    </div>
+                </a>
                 <a href="{% url 'admin:index' %}" 
                    class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
                     <div class="bg-blue-500 rounded-lg p-3 mr-4">

@@ -1,4 +1,5 @@
 {% extends 'admin_simple/base.html' %}
+{% load humanize %}
 
 {% block title %}Dashboard - Admin Simple{% endblock %}
 
@@ -6,6 +7,29 @@
 <div class="mb-6">
     <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">📊 Dashboard</h2>
     <p class="text-sm sm:text-base text-gray-600 mt-1">Vista general de tu tienda</p>
+</div>
+
+<!-- Hoy -->
+<div class="card mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap gap-6 sm:gap-10">
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase">Facturado hoy</p>
+                <p class="text-2xl sm:text-3xl font-bold text-green-600">${{ hoy.facturacion|floatformat:0|intcomma }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase">Pedidos de hoy</p>
+                <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ hoy.pedidos }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-semibold text-gray-500 uppercase">Entregas pendientes</p>
+                <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ hoy.entregas_pendientes }}</p>
+            </div>
+        </div>
+        <a href="{% url 'admin_simple:ventas' %}" class="btn-primary">
+            <i class="fas fa-chart-line mr-2"></i>Ver resumen de ventas
+        </a>
+    </div>
 </div>
 
 <!-- Stats Cards - Resumen Rápido -->

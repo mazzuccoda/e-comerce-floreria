@@ -7,6 +7,9 @@ app_name = 'admin_simple'
 urlpatterns = [
     path('test/', test_simple, name='test'),
     path('', views.dashboard, name='dashboard'),
+
+    # Ventas
+    path('ventas/', views.ventas, name='ventas'),
     
     # Productos
     path('productos/', views.productos_list, name='productos-list'),

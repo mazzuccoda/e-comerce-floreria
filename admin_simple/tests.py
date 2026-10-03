@@ -1,10 +1,12 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from admin_simple import reportes
 from catalogo.models import Categoria, Producto
 from pedidos.models import Pedido, PedidoItem
 
@@ -187,3 +189,226 @@ class CancelarPedidoTests(TestCase):
 
         self.assertFalse(exito)
         self.assertIn('ya está cancelado', mensaje)
+
+
+class ReportesVentasTests(TestCase):
+    def setUp(self):
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-ventas')
+        self.producto = Producto.objects.create(
+            nombre='Sol de Verano',
+            descripcion='Ramo de girasoles.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='TEST-SOL',
+            stock=20,
+        )
+        self.hoy = timezone.localdate()
+
+    def _venta(self, dias_atras=0, total=40000, costo_envio=7000, cantidad=1, **kwargs):
+        datos = dict(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=self.hoy,
+            franja_horaria='durante_el_dia',
+            medio_pago='transferencia',
+            costo_envio=costo_envio,
+            total=total,
+            confirmado=True,
+        )
+        datos.update(kwargs)
+        pedido = Pedido.objects.create(**datos)
+        PedidoItem.objects.create(
+            pedido=pedido,
+            producto=self.producto,
+            cantidad=cantidad,
+            precio=self.producto.precio,
+        )
+        if dias_atras:
+            nuevo_creado = pedido.creado - timedelta(days=dias_atras)
+            Pedido.objects.filter(pk=pedido.pk).update(creado=nuevo_creado)
+            pedido.refresh_from_db()
+        return pedido
+
+    def test_solo_cuentan_los_pedidos_confirmados_y_no_cancelados(self):
+        self._venta(total=40000)
+        self._venta(total=99000, confirmado=False)
+        self._venta(total=99000, estado='cancelado')
+
+        resumen = reportes.totales(reportes.Periodo('hoy', self.hoy, self.hoy))
+
+        self.assertEqual(resumen['pedidos'], 1)
+        self.assertEqual(resumen['facturacion'], Decimal('40000'))
+
+    def test_la_venta_se_imputa_al_dia_del_pedido_no_al_de_entrega(self):
+        self._venta(dias_atras=3, fecha_entrega=self.hoy)
+
+        de_hoy = reportes.totales(reportes.Periodo('hoy', self.hoy, self.hoy))
+        de_la_semana = reportes.totales(
+            reportes.Periodo('7d', self.hoy - timedelta(days=6), self.hoy)
+        )
+
+        self.assertEqual(de_hoy['pedidos'], 0)
+        self.assertEqual(de_la_semana['pedidos'], 1)
+
+    def test_desglose_de_productos_envio_y_cobrado(self):
+        self._venta(total=52000, costo_envio=7000, estado_pago='approved')
+        self._venta(total=30000, costo_envio=0, estado_pago='pendiente')
+
+        resumen = reportes.totales(reportes.Periodo('hoy', self.hoy, self.hoy))
+
+        self.assertEqual(resumen['facturacion'], Decimal('82000'))
+        self.assertEqual(resumen['envio'], Decimal('7000'))
+        self.assertEqual(resumen['productos'], Decimal('75000'))
+        self.assertEqual(resumen['cobrado'], Decimal('52000'))
+        self.assertEqual(resumen['por_cobrar'], Decimal('30000'))
+        self.assertEqual(resumen['ticket'], Decimal('41000'))
+
+    def test_el_rango_personalizado_invertido_se_ordena(self):
+        periodo = reportes.resolver_periodo(
+            'rango', desde='2026-03-10', hasta='2026-03-01', hoy=self.hoy
+        )
+
+        self.assertEqual(periodo.desde.isoformat(), '2026-03-01')
+        self.assertEqual(periodo.hasta.isoformat(), '2026-03-10')
+        self.assertEqual(periodo.dias, 10)
+
+    def test_el_periodo_anterior_tiene_el_mismo_largo_y_termina_antes(self):
+        periodo = reportes.resolver_periodo('7d', hoy=self.hoy)
+        anterior = periodo.anterior()
+
+        self.assertEqual(anterior.dias, periodo.dias)
+        self.assertEqual(anterior.hasta, periodo.desde - timedelta(days=1))
+
+    def test_la_serie_diaria_devuelve_los_dias_sin_ventas_en_cero(self):
+        self._venta(total=50000)
+
+        serie = reportes.serie_diaria(
+            reportes.Periodo('7d', self.hoy - timedelta(days=6), self.hoy)
+        )
+
+        self.assertEqual(len(serie), 7)
+        self.assertEqual(serie[-1]['facturacion'], Decimal('50000'))
+        self.assertEqual(serie[-1]['altura'], 100)
+        self.assertEqual(serie[0]['facturacion'], Decimal('0'))
+        self.assertEqual(serie[0]['pedidos'], 0)
+
+    def test_top_productos_suma_unidades_y_muestra_el_stock_actual(self):
+        self._venta(cantidad=3)
+        self._venta(cantidad=2)
+
+        top = reportes.top_productos(reportes.Periodo('hoy', self.hoy, self.hoy))
+
+        self.assertEqual(len(top), 1)
+        self.assertEqual(top[0]['unidades'], 5)
+        self.assertEqual(top[0]['facturacion'], Decimal('150000'))
+        self.assertEqual(top[0]['stock'], self.producto.stock)
+
+    def test_atencion_marca_el_cobro_demorado_y_las_entregas_pasadas(self):
+        demorado = self._venta(dias_atras=3, estado_pago='pendiente')
+        self._venta(estado_pago='pendiente')
+        atrasado = self._venta(fecha_entrega=self.hoy - timedelta(days=1))
+
+        atencion = reportes.pedidos_que_necesitan_atencion(hoy=self.hoy)
+
+        self.assertEqual([p.pk for p in atencion['pago_demorado']], [demorado.pk])
+        self.assertIn(atrasado.pk, [p.pk for p in atencion['entregas_atrasadas']])
+
+    def test_resumen_de_hoy_separa_facturacion_de_entregas_pendientes(self):
+        self._venta(total=40000)
+        self._venta(dias_atras=2, fecha_entrega=self.hoy)
+
+        resumen = reportes.resumen_de_hoy(hoy=self.hoy)
+
+        self.assertEqual(resumen['pedidos'], 1)
+        self.assertEqual(resumen['facturacion'], Decimal('40000'))
+        self.assertEqual(resumen['entregas_pendientes'], 2)
+
+
+class PanelVentasTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='admin-ventas',
+            email='admin-ventas@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+
+        self.categoria = Categoria.objects.create(
+            nombre='Ramos', slug='ramos-panel-ventas'
+        )
+        self.producto = Producto.objects.create(
+            nombre='Mix Único',
+            descripcion='Ramo mixto.',
+            categoria=self.categoria,
+            precio=25000,
+            sku='TEST-MIX',
+            stock=8,
+        )
+        self.pedido = Pedido.objects.create(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=timezone.localdate(),
+            franja_horaria='durante_el_dia',
+            medio_pago='transferencia',
+            tipo_envio='express',
+            costo_envio=7000,
+            total=32000,
+            confirmado=True,
+        )
+        PedidoItem.objects.create(
+            pedido=self.pedido,
+            producto=self.producto,
+            cantidad=1,
+            precio=self.producto.precio,
+        )
+
+    def test_la_vista_de_ventas_muestra_el_total_del_periodo(self):
+        respuesta = self.client.get(reverse('admin_simple:ventas'), {'periodo': 'hoy'})
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.context['totales']['facturacion'], Decimal('32000'))
+        self.assertEqual(respuesta.context['periodo'].clave, 'hoy')
+        self.assertEqual(respuesta.context['medios_pago'][0]['etiqueta'],
+                         self.pedido.get_medio_pago_display())
+        self.assertEqual(respuesta.context['top_productos'][0]['nombre'], 'Mix Único')
+
+    def test_el_rango_personalizado_llega_desde_el_querystring(self):
+        hoy = timezone.localdate()
+
+        respuesta = self.client.get(reverse('admin_simple:ventas'), {
+            'desde': hoy.isoformat(), 'hasta': hoy.isoformat(),
+        })
+
+        periodo = respuesta.context['periodo']
+        self.assertEqual(periodo.clave, 'rango')
+        self.assertEqual(periodo.desde, hoy)
+        self.assertEqual(respuesta.context['totales']['pedidos'], 1)
+
+    def test_exporta_csv_con_el_pedido_del_periodo(self):
+        respuesta = self.client.get(reverse('admin_simple:ventas'), {
+            'periodo': 'hoy', 'formato': 'csv',
+        })
+
+        contenido = respuesta.content.decode('utf-8')
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn('text/csv', respuesta['Content-Type'])
+        self.assertIn('attachment;', respuesta['Content-Disposition'])
+        self.assertIn('Numero;Fecha pedido', contenido)
+        self.assertIn('25000.00;7000.00;32000.00', contenido)
+
+    def test_el_dashboard_muestra_la_franja_de_hoy(self):
+        respuesta = self.client.get(reverse('admin_simple:dashboard'))
+
+        self.assertEqual(respuesta.context['hoy']['facturacion'], Decimal('32000'))
+        self.assertIn('Facturado hoy', respuesta.content.decode())
+
+    def test_ventas_exige_superusuario(self):
+        self.client.logout()
+
+        respuesta = self.client.get(reverse('admin_simple:ventas'))
+
+        self.assertEqual(respuesta.status_code, 302)
