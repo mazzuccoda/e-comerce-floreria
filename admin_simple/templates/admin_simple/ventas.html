@@ -1,0 +1,247 @@
+{% extends 'admin_simple/base.html' %}
+{% load humanize %}
+
+{% block title %}Ventas - Admin Simple{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Resumen de ventas</h2>
+    <p class="text-sm sm:text-base text-gray-600 mt-1">
+        Pedidos confirmados y no cancelados, por fecha de pedido.
+    </p>
+</div>
+
+<!-- Selector de período -->
+<div class="card mb-6">
+    <div class="flex flex-wrap gap-2 mb-4">
+        {% for clave, nombre in periodos %}
+            {% if clave != 'rango' %}
+            <a href="?periodo={{ clave }}"
+               class="px-4 py-2 rounded-lg text-sm font-semibold transition-all {% if periodo.clave == clave %}bg-green-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                {{ nombre }}
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <form method="get" class="flex flex-wrap items-end gap-3">
+        <input type="hidden" name="periodo" value="rango">
+        <div>
+            <label for="desde" class="block text-xs font-semibold text-gray-600 mb-1">Desde</label>
+            <input type="date" id="desde" name="desde" value="{{ periodo.desde|date:'Y-m-d' }}" class="input-field">
+        </div>
+        <div>
+            <label for="hasta" class="block text-xs font-semibold text-gray-600 mb-1">Hasta</label>
+            <input type="date" id="hasta" name="hasta" value="{{ periodo.hasta|date:'Y-m-d' }}" class="input-field">
+        </div>
+        <button type="submit" class="btn-primary">
+            <i class="fas fa-filter mr-2"></i>Aplicar
+        </button>
+        <a href="?periodo={{ periodo.clave }}&desde={{ periodo.desde|date:'Y-m-d' }}&hasta={{ periodo.hasta|date:'Y-m-d' }}&formato=csv"
+           class="btn-secondary">
+            <i class="fas fa-file-csv mr-2"></i>Exportar CSV
+        </a>
+    </form>
+
+    <p class="text-sm text-gray-500 mt-4">
+        Mostrando <strong>{{ periodo.etiqueta }}</strong>
+        ({{ periodo.dias }} día{{ periodo.dias|pluralize }}) ·
+        comparado con {{ periodo_anterior.desde|date:'d/m/Y' }} al {{ periodo_anterior.hasta|date:'d/m/Y' }}
+    </p>
+</div>
+
+<!-- Tarjetas -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
+    <div class="stat-card from-green-500 to-green-600">
+        <p class="text-green-100 text-sm font-medium mb-1">Facturado</p>
+        <p class="text-3xl font-bold">${{ totales.facturacion|floatformat:0|intcomma }}</p>
+        <p class="text-green-100 text-xs mt-2">
+            productos ${{ totales.productos|floatformat:0|intcomma }} + envío ${{ totales.envio|floatformat:0|intcomma }}
+        </p>
+        {% if variacion.facturacion is not None %}
+        <p class="text-xs mt-2 font-semibold">
+            {% if variacion.facturacion >= 0 %}+{% endif %}{{ variacion.facturacion }}% vs. período anterior
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="stat-card from-blue-500 to-blue-600">
+        <p class="text-blue-100 text-sm font-medium mb-1">Pedidos</p>
+        <p class="text-3xl font-bold">{{ totales.pedidos }}</p>
+        <p class="text-blue-100 text-xs mt-2">confirmados en el período</p>
+        {% if variacion.pedidos is not None %}
+        <p class="text-xs mt-2 font-semibold">
+            {% if variacion.pedidos >= 0 %}+{% endif %}{{ variacion.pedidos }}% vs. período anterior
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="stat-card from-purple-500 to-purple-600">
+        <p class="text-purple-100 text-sm font-medium mb-1">Ticket promedio</p>
+        <p class="text-3xl font-bold">${{ totales.ticket|floatformat:0|intcomma }}</p>
+        <p class="text-purple-100 text-xs mt-2">{{ totales.unidades }} unidad{{ totales.unidades|pluralize:"es" }} vendida{{ totales.unidades|pluralize }}</p>
+        {% if variacion.ticket is not None %}
+        <p class="text-xs mt-2 font-semibold">
+            {% if variacion.ticket >= 0 %}+{% endif %}{{ variacion.ticket }}% vs. período anterior
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="stat-card from-yellow-500 to-orange-500">
+        <p class="text-yellow-100 text-sm font-medium mb-1">Cobrado</p>
+        <p class="text-3xl font-bold">${{ totales.cobrado|floatformat:0|intcomma }}</p>
+        <p class="text-yellow-100 text-xs mt-2">
+            falta cobrar ${{ totales.por_cobrar|floatformat:0|intcomma }}
+        </p>
+    </div>
+</div>
+
+<!-- Serie diaria -->
+<div class="card mb-6">
+    <h3 class="text-lg font-bold text-gray-900 mb-4">Facturación por día</h3>
+    {% if totales.pedidos %}
+    <div class="overflow-x-auto">
+        <div class="flex items-end gap-1 h-48 min-w-full">
+            {% for dia in serie %}
+            <div class="flex-1 min-w-[14px] flex flex-col items-center justify-end h-full group">
+                <div class="w-full bg-green-500 hover:bg-green-600 rounded-t transition-all relative"
+                     style="height: {{ dia.altura }}%"
+                     title="{{ dia.dia|date:'d/m/Y' }}: ${{ dia.facturacion|floatformat:0|intcomma }} ({{ dia.pedidos }} pedido{{ dia.pedidos|pluralize }})">
+                </div>
+                <span class="text-[10px] text-gray-500 mt-1 whitespace-nowrap">{{ dia.dia|date:'d/m' }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <p class="text-xs text-gray-500 mt-3">Pasá el mouse sobre una barra para ver el detalle del día.</p>
+    {% else %}
+    <p class="text-gray-500 text-sm">No hay ventas confirmadas en este período.</p>
+    {% endif %}
+</div>
+
+<!-- Desgloses -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="card">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Por medio de pago</h3>
+        {% for fila in medios_pago %}
+        <div class="mb-3">
+            <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold text-gray-700">{{ fila.etiqueta }}</span>
+                <span class="text-gray-900">${{ fila.facturacion|floatformat:0|intcomma }}
+                    <span class="text-gray-500">· {{ fila.pedidos }}</span>
+                </span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-green-500 h-2 rounded-full" style="width: {{ fila.porcentaje }}%"></div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-gray-500 text-sm">Sin datos en este período.</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">Por forma de envío</h3>
+        {% for fila in tipos_envio %}
+        <div class="mb-3">
+            <div class="flex justify-between text-sm mb-1">
+                <span class="font-semibold text-gray-700">{{ fila.etiqueta }}</span>
+                <span class="text-gray-900">${{ fila.facturacion|floatformat:0|intcomma }}
+                    <span class="text-gray-500">· {{ fila.pedidos }}</span>
+                </span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+                <div class="bg-blue-500 h-2 rounded-full" style="width: {{ fila.porcentaje }}%"></div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-gray-500 text-sm">Sin datos en este período.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Top productos -->
+<div class="card mb-6">
+    <h3 class="text-lg font-bold text-gray-900 mb-4">Productos más vendidos</h3>
+    {% if top_productos %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead>
+                <tr class="text-left text-gray-500 border-b">
+                    <th class="py-2 pr-4 font-semibold">Producto</th>
+                    <th class="py-2 pr-4 font-semibold text-right">Unidades</th>
+                    <th class="py-2 pr-4 font-semibold text-right">Facturado</th>
+                    <th class="py-2 font-semibold text-right">Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fila in top_productos %}
+                <tr class="border-b last:border-0">
+                    <td class="py-3 pr-4">
+                        <a href="{% url 'admin_simple:producto-edit' fila.producto_id %}"
+                           class="font-semibold text-gray-900 hover:text-green-600">{{ fila.nombre }}</a>
+                    </td>
+                    <td class="py-3 pr-4 text-right font-bold text-gray-900">{{ fila.unidades }}</td>
+                    <td class="py-3 pr-4 text-right text-gray-700">${{ fila.facturacion|floatformat:0|intcomma }}</td>
+                    <td class="py-3 text-right">
+                        {% if fila.stock == 0 %}
+                        <span class="px-2 py-1 rounded-full bg-red-100 text-red-700 font-semibold text-xs">Sin stock</span>
+                        {% elif fila.stock < 5 %}
+                        <span class="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold text-xs">{{ fila.stock }}</span>
+                        {% else %}
+                        <span class="text-gray-700">{{ fila.stock }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500 text-sm">Sin ventas en este período.</p>
+    {% endif %}
+</div>
+
+<!-- Necesitan atención -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card">
+        <h3 class="text-lg font-bold text-gray-900 mb-1">Cobro demorado</h3>
+        <p class="text-xs text-gray-500 mb-4">
+            Pedidos confirmados con pago pendiente hace más de {{ atencion.horas_pago }} horas
+            ({{ atencion.pago_demorado_total }} en total).
+        </p>
+        {% for pedido in atencion.pago_demorado %}
+        <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}"
+           class="flex justify-between items-center py-2 border-b last:border-0 hover:bg-gray-50 rounded px-2 -mx-2">
+            <span class="text-sm">
+                <span class="font-semibold text-gray-900">#{{ pedido.numero_pedido|default:pedido.pk }}</span>
+                <span class="text-gray-600">· {{ pedido.nombre_destinatario }} · {{ pedido.get_medio_pago_display }}</span>
+            </span>
+            <span class="text-sm font-bold text-gray-900">${{ pedido.total|floatformat:0|intcomma }}</span>
+        </a>
+        {% empty %}
+        <p class="text-gray-500 text-sm">Todo cobrado al día.</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h3 class="text-lg font-bold text-gray-900 mb-1">Entregas atrasadas</h3>
+        <p class="text-xs text-gray-500 mb-4">
+            Fecha de entrega pasada y el pedido sigue abierto
+            ({{ atencion.entregas_atrasadas_total }} en total).
+        </p>
+        {% for pedido in atencion.entregas_atrasadas %}
+        <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}"
+           class="flex justify-between items-center py-2 border-b last:border-0 hover:bg-gray-50 rounded px-2 -mx-2">
+            <span class="text-sm">
+                <span class="font-semibold text-gray-900">#{{ pedido.numero_pedido|default:pedido.pk }}</span>
+                <span class="text-gray-600">· {{ pedido.nombre_destinatario }}</span>
+            </span>
+            <span class="text-sm font-semibold text-red-600">{{ pedido.fecha_entrega|date:'d/m/Y' }}</span>
+        </a>
+        {% empty %}
+        <p class="text-gray-500 text-sm">Sin entregas atrasadas.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

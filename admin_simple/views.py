@@ -20,7 +20,10 @@ import requests
 from pedidos.models import Pedido
 from catalogo.models import Producto, Categoria, ProductoImagen
 from django.utils.text import slugify
+import csv
 import uuid
+
+from . import reportes
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +102,7 @@ def dashboard(request):
             'entregas_hoy': entregas_hoy,
             'entregas_vencidas': entregas_vencidas,
             'actividad_reciente': actividad_reciente[:5],  # Máximo 5 items
+            'hoy': reportes.resumen_de_hoy(hoy),
         }
         
         return render(request, 'admin_simple/dashboard.html', context)
@@ -111,6 +115,46 @@ def dashboard(request):
             '<a href="/admin/">Volver al Admin</a>',
             status=500,
         )
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def ventas(request):
+    """
+    Resumen de ventas del período: una venta es un pedido confirmado y no
+    cancelado, imputada al día en que el cliente lo generó.
+    """
+    periodo = reportes.resolver_periodo(
+        request.GET.get('periodo', reportes.PERIODO_POR_DEFECTO),
+        desde=request.GET.get('desde'),
+        hasta=request.GET.get('hasta'),
+    )
+
+    if request.GET.get('formato') == 'csv':
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        nombre = f'ventas_{periodo.desde:%Y%m%d}_{periodo.hasta:%Y%m%d}.csv'
+        response['Content-Disposition'] = f'attachment; filename="{nombre}"'
+        response.write('\ufeff')  # BOM para que Excel abra los acentos bien
+        escritor = csv.writer(response, delimiter=';')
+        for fila in reportes.filas_csv(periodo):
+            escritor.writerow(fila)
+        return response
+
+    comparativa = reportes.comparativa(periodo)
+    context = {
+        'periodo': periodo,
+        'periodos': reportes.PERIODOS,
+        'totales': comparativa['actual'],
+        'anterior': comparativa['anterior'],
+        'variacion': comparativa['variacion'],
+        'periodo_anterior': periodo.anterior(),
+        'serie': reportes.serie_diaria(periodo),
+        'medios_pago': reportes.desglose_medio_pago(periodo),
+        'tipos_envio': reportes.desglose_tipo_envio(periodo),
+        'top_productos': reportes.top_productos(periodo),
+        'atencion': reportes.pedidos_que_necesitan_atencion(),
+    }
+    return render(request, 'admin_simple/ventas.html', context)
 
 
 @login_required
