@@ -23,7 +23,9 @@ from django.utils.text import slugify
 import csv
 import uuid
 
+from . import agenda as agenda_entregas
 from . import reportes
+from .forms import PedidoOperativoForm
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +157,63 @@ def ventas(request):
         'atencion': reportes.pedidos_que_necesitan_atencion(),
     }
     return render(request, 'admin_simple/ventas.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def agenda(request):
+    """
+    Trabajo de un día puntual, ordenado por fecha de entrega: primero los
+    retiros por hora y después el reparto agrupado por franja.
+    """
+    hoy = timezone.localdate()
+    fecha = agenda_entregas.resolver_fecha(request.GET.get('fecha'), hoy)
+    del_dia = agenda_entregas.agenda_del_dia(fecha)
+
+    context = {
+        'agenda': del_dia,
+        'fecha': fecha,
+        'hoy': hoy,
+        'dia_anterior': fecha - timedelta(days=1),
+        'dia_siguiente': fecha + timedelta(days=1),
+        'mes_valor': f'{fecha.year:04d}-{fecha.month:02d}',
+    }
+    return render(request, 'admin_simple/agenda.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def agenda_pdf(request):
+    """Hoja de ruta del día para imprimir y salir a repartir."""
+    from .pdf_generator import generar_hoja_de_ruta
+
+    fecha = agenda_entregas.resolver_fecha(request.GET.get('fecha'))
+    del_dia = agenda_entregas.agenda_del_dia(fecha)
+    pdf = generar_hoja_de_ruta(fecha, del_dia['retiros'], del_dia['grupos'])
+
+    response = HttpResponse(pdf, content_type='application/pdf')
+    nombre = f'hoja_de_ruta_{fecha:%Y%m%d}.pdf'
+    response['Content-Disposition'] = f'inline; filename="{nombre}"'
+    return response
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def calendario(request):
+    """Vista mensual de la carga de entregas, para ver dónde se amontona."""
+    hoy = timezone.localdate()
+    mes = agenda_entregas.resolver_mes(request.GET.get('mes'), hoy)
+
+    context = {
+        'mes': mes,
+        'mes_anterior': mes.desplazado(-1),
+        'mes_siguiente': mes.desplazado(1),
+        'semanas': agenda_entregas.calendario_mensual(mes, hoy),
+        'dias_semana': agenda_entregas.DIAS_SEMANA,
+        'totales': agenda_entregas.totales_del_mes(mes),
+        'hoy': hoy,
+    }
+    return render(request, 'admin_simple/calendario.html', context)
 
 
 @login_required
@@ -568,6 +627,8 @@ def pedidos_list(request):
     filtro_entrega = request.GET.get('entrega', '')
     filtro_envio = request.GET.get('envio', '')
     buscar = request.GET.get('buscar', '')
+    entrega_desde = request.GET.get('entrega_desde', '')
+    entrega_hasta = request.GET.get('entrega_hasta', '')
     hoy = timezone.localdate()
     abiertos = ~Q(estado__in=['entregado', 'cancelado'])
     
@@ -601,7 +662,17 @@ def pedidos_list(request):
     elif filtro_entrega == 'vencidos':
         pedidos = pedidos.filter(Q(fecha_entrega__lt=hoy) & abiertos)
 
-    if filtro_entrega:
+    # Rango libre de fechas de entrega: cualquiera de los dos extremos alcanza
+    desde_fecha = agenda_entregas.parse_fecha(entrega_desde)
+    hasta_fecha = agenda_entregas.parse_fecha(entrega_hasta)
+    if desde_fecha and hasta_fecha and hasta_fecha < desde_fecha:
+        desde_fecha, hasta_fecha = hasta_fecha, desde_fecha
+    if desde_fecha:
+        pedidos = pedidos.filter(fecha_entrega__gte=desde_fecha)
+    if hasta_fecha:
+        pedidos = pedidos.filter(fecha_entrega__lte=hasta_fecha)
+
+    if filtro_entrega or desde_fecha or hasta_fecha:
         pedidos = pedidos.order_by('fecha_entrega', 'franja_horaria', 'hora_retiro')
     
     # Búsqueda
@@ -669,11 +740,14 @@ def pedidos_list(request):
         'filtro_fecha': filtro_fecha,
         'filtro_entrega': filtro_entrega,
         'filtro_envio': filtro_envio,
+        'entrega_desde': entrega_desde,
+        'entrega_hasta': entrega_hasta,
         'buscar_actual': buscar,
         'filtros_querystring': filtros_querystring,
         'qs_sin_estado': querystring_sin('estado'),
         'qs_sin_pago': querystring_sin('pago'),
         'qs_sin_entrega': querystring_sin('entrega'),
+        'qs_sin_rango': querystring_sin('entrega_desde', 'entrega_hasta'),
     }
     
     return render(request, 'admin_simple/pedidos_list.html', context)
@@ -696,9 +770,47 @@ def pedido_detail(request, pk):
     context = {
         'pedido': pedido,
         'subtotal': subtotal,
+        'form': PedidoOperativoForm(instance=pedido),
     }
     
     return render(request, 'admin_simple/pedido_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_POST
+def pedido_editar(request, pk):
+    """
+    Corregir los datos de entrega de un pedido (fecha, franja, dirección,
+    dedicatoria) sin pasar por el admin de Django. No toca importes ni stock.
+    """
+    pedido = get_object_or_404(
+        Pedido.objects.select_related('cliente').prefetch_related('items__producto'),
+        pk=pk,
+    )
+    form = PedidoOperativoForm(request.POST, instance=pedido)
+
+    if not form.is_valid():
+        messages.error(request, 'Revisá los datos marcados: no se guardó el pedido.')
+        subtotal = sum(item.precio * item.cantidad for item in pedido.items.all())
+        return render(request, 'admin_simple/pedido_detail.html', {
+            'pedido': pedido,
+            'subtotal': subtotal,
+            'form': form,
+        })
+
+    cambios = form.resumen_de_cambios()
+    form.save()
+
+    if cambios:
+        messages.success(request, 'Pedido actualizado.')
+        logger.info(
+            'Pedido %s editado por %s — %s', pedido.id, request.user.username, cambios
+        )
+    else:
+        messages.info(request, 'No había cambios para guardar.')
+
+    return redirect('admin_simple:pedido-detail', pk=pedido.pk)
 
 
 @login_required

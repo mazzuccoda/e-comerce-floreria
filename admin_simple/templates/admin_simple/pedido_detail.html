@@ -254,6 +254,45 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Corregir datos de entrega sin salir del panel -->
+            <details class="mt-4 pt-4 border-t border-gray-200" {% if form.errors %}open{% endif %}>
+                <summary class="cursor-pointer font-semibold text-green-700 hover:text-green-800">
+                    <i class="fas fa-pen-to-square mr-1"></i> Corregir datos de entrega
+                </summary>
+                <form method="post" action="{% url 'admin_simple:pedido-editar' pedido.pk %}" class="mt-4">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                    <div class="bg-red-50 border-l-4 border-red-500 p-3 rounded mb-4">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for campo in form %}
+                        <div class="{% if campo.name == 'direccion' or campo.name == 'dedicatoria' %}md:col-span-2{% endif %}">
+                            <label for="{{ campo.id_for_label }}" class="text-sm font-semibold text-gray-700 block mb-1">
+                                {{ campo.label }}
+                            </label>
+                            {{ campo }}
+                            {% if campo.errors %}
+                            <p class="text-sm text-red-600 mt-1">{{ campo.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex flex-wrap gap-3 mt-4">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save mr-2"></i>Guardar cambios
+                        </button>
+                        <a href="{% url 'admin_simple:agenda' %}?fecha={{ pedido.fecha_entrega|date:'Y-m-d' }}" class="btn-secondary">
+                            <i class="fas fa-calendar-day mr-2"></i>Ver la agenda de ese día
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        Cambia la logística del pedido: no modifica productos, importes ni stock.
+                    </p>
+                </form>
+            </details>
         </div>
         
     </div>

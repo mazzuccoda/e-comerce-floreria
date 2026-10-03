@@ -52,7 +52,30 @@
                class="px-4 py-2 rounded-lg font-medium transition-all {% if filtro_entrega == 'vencidos' %}bg-red-500 text-white{% else %}bg-red-50 text-red-700 hover:bg-red-100{% endif %}">
                 <i class="fas fa-triangle-exclamation mr-1"></i> Atrasadas ({{ entregas_vencidas }})
             </a>
+            <a href="{% url 'admin_simple:agenda' %}" class="px-4 py-2 rounded-lg font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all">
+                <i class="fas fa-calendar-alt mr-1"></i> Abrir la agenda
+            </a>
         </div>
+
+        <!-- Rango libre de fechas de entrega -->
+        <form method="get" class="flex flex-wrap items-end gap-3 mt-4">
+            {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}">{% endif %}
+            {% if filtro_pago %}<input type="hidden" name="pago" value="{{ filtro_pago }}">{% endif %}
+            {% if filtro_envio %}<input type="hidden" name="envio" value="{{ filtro_envio }}">{% endif %}
+            {% if buscar_actual %}<input type="hidden" name="buscar" value="{{ buscar_actual }}">{% endif %}
+            <div>
+                <label for="entrega_desde" class="block text-xs font-semibold text-gray-600 mb-1">Entregas desde</label>
+                <input type="date" id="entrega_desde" name="entrega_desde" value="{{ entrega_desde }}" class="input-field">
+            </div>
+            <div>
+                <label for="entrega_hasta" class="block text-xs font-semibold text-gray-600 mb-1">Hasta</label>
+                <input type="date" id="entrega_hasta" name="entrega_hasta" value="{{ entrega_hasta }}" class="input-field">
+            </div>
+            <button type="submit" class="btn-primary"><i class="fas fa-filter mr-2"></i>Aplicar</button>
+            {% if entrega_desde or entrega_hasta %}
+            <a href="?{{ qs_sin_rango }}" class="btn-secondary"><i class="fas fa-times mr-2"></i>Quitar rango</a>
+            {% endif %}
+        </form>
     </div>
 
     <!-- Estados del Pedido -->
