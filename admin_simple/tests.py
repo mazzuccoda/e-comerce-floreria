@@ -893,3 +893,308 @@ class PedidoManualTests(TestCase):
         respuesta = self.client.get(self.url)
 
         self.assertEqual(respuesta.status_code, 302)
+
+
+class HistorialPedidoTests(TestCase):
+    """El panel tiene que poder decir quién tocó el pedido y cuándo."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='historial-admin',
+            email='historial@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+
+        self.categoria = Categoria.objects.create(
+            nombre='Ramos', slug='ramos-historial'
+        )
+        self.producto = Producto.objects.create(
+            nombre='Ramo del Historial',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='HIST-ROSAS',
+            stock=10,
+        )
+        self.pedido = Pedido.objects.create(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=timezone.localdate(),
+            franja_horaria='tarde',
+            dedicatoria='Te quiero',
+            medio_pago='transferencia',
+            tipo_envio='programado',
+            total=Decimal('30000'),
+            confirmado=True,
+        )
+        PedidoItem.objects.create(
+            pedido=self.pedido,
+            producto=self.producto,
+            cantidad=1,
+            precio=self.producto.precio,
+        )
+
+    def test_cambio_de_estado_queda_registrado_con_autor(self):
+        self.client.post(
+            reverse('admin_simple:pedido-cambiar-estado', args=[self.pedido.pk]),
+            {'estado': 'en_camino'},
+        )
+
+        evento = self.pedido.eventos.filter(tipo='estado').first()
+        self.assertIsNotNone(evento)
+        self.assertIn('En camino', evento.descripcion)
+        self.assertEqual(evento.autor, 'historial-admin')
+
+    def test_cambio_de_pago_queda_registrado(self):
+        self.client.post(
+            reverse('admin_simple:pedido-cambiar-estado-pago', args=[self.pedido.pk]),
+            {'estado_pago': 'approved'},
+        )
+
+        self.assertTrue(self.pedido.eventos.filter(tipo='pago').exists())
+
+    def test_correccion_de_entrega_queda_registrada(self):
+        self.client.post(
+            reverse('admin_simple:pedido-editar', args=[self.pedido.pk]),
+            {
+                'fecha_entrega': self.pedido.fecha_entrega.isoformat(),
+                'franja_horaria': self.pedido.franja_horaria,
+                'hora_retiro': '',
+                'tipo_envio': self.pedido.tipo_envio,
+                'nombre_destinatario': self.pedido.nombre_destinatario,
+                'telefono_destinatario': self.pedido.telefono_destinatario,
+                'direccion': 'Av. Aconquija 1200',
+                'ciudad': self.pedido.ciudad,
+                'dedicatoria': self.pedido.dedicatoria,
+                'instrucciones': '',
+            },
+        )
+
+        evento = self.pedido.eventos.filter(tipo='entrega').first()
+        self.assertIsNotNone(evento)
+        self.assertIn('Aconquija', evento.descripcion)
+
+    def test_nota_interna_se_guarda_y_se_ve_en_el_detalle(self):
+        respuesta = self.client.post(
+            reverse('admin_simple:pedido-nota', args=[self.pedido.pk]),
+            {'nota': 'Llamé y no atiende, dejar con el portero'},
+        )
+
+        self.assertRedirects(
+            respuesta,
+            reverse('admin_simple:pedido-detail', args=[self.pedido.pk]),
+        )
+        nota = self.pedido.eventos.filter(tipo='nota').first()
+        self.assertEqual(nota.descripcion, 'Llamé y no atiende, dejar con el portero')
+
+        detalle = self.client.get(
+            reverse('admin_simple:pedido-detail', args=[self.pedido.pk])
+        )
+        self.assertContains(detalle, 'dejar con el portero')
+
+    def test_nota_vacia_no_se_guarda(self):
+        self.client.post(
+            reverse('admin_simple:pedido-nota', args=[self.pedido.pk]),
+            {'nota': '   '},
+        )
+
+        self.assertFalse(self.pedido.eventos.filter(tipo='nota').exists())
+
+
+class AccionesMasivasTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='lote-admin',
+            email='lote@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+        self.url = reverse('admin_simple:pedidos-accion-masiva')
+
+    def _pedido(self, estado='recibido'):
+        return Pedido.objects.create(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            telefono_destinatario='3814778577',
+            fecha_entrega=timezone.localdate(),
+            franja_horaria='tarde',
+            dedicatoria='',
+            medio_pago='transferencia',
+            total=Decimal('30000'),
+            confirmado=True,
+            estado=estado,
+        )
+
+    def test_marca_varios_pedidos_en_camino(self):
+        uno, dos = self._pedido(), self._pedido('preparando')
+
+        self.client.post(
+            self.url, {'accion': 'en_camino', 'pedidos': [uno.pk, dos.pk]}
+        )
+
+        uno.refresh_from_db()
+        dos.refresh_from_db()
+        self.assertEqual(uno.estado, 'en_camino')
+        self.assertEqual(dos.estado, 'en_camino')
+        self.assertTrue(uno.eventos.filter(tipo='estado').exists())
+
+    def test_no_toca_entregados_ni_cancelados(self):
+        entregado = self._pedido('entregado')
+        cancelado = self._pedido('cancelado')
+
+        self.client.post(
+            self.url,
+            {'accion': 'en_camino', 'pedidos': [entregado.pk, cancelado.pk]},
+        )
+
+        entregado.refresh_from_db()
+        cancelado.refresh_from_db()
+        self.assertEqual(entregado.estado, 'entregado')
+        self.assertEqual(cancelado.estado, 'cancelado')
+
+    def test_accion_desconocida_no_cambia_nada(self):
+        pedido = self._pedido()
+
+        self.client.post(self.url, {'accion': 'borrar', 'pedidos': [pedido.pk]})
+
+        pedido.refresh_from_db()
+        self.assertEqual(pedido.estado, 'recibido')
+
+    def test_vuelve_al_listado_conservando_los_filtros(self):
+        pedido = self._pedido()
+        volver = reverse('admin_simple:pedidos-list') + '?estado=recibido'
+
+        respuesta = self.client.post(
+            self.url,
+            {'accion': 'preparando', 'pedidos': [pedido.pk], 'volver': volver},
+        )
+
+        self.assertRedirects(respuesta, volver)
+
+    def test_ignora_un_destino_externo(self):
+        pedido = self._pedido()
+
+        respuesta = self.client.post(
+            self.url,
+            {
+                'accion': 'preparando',
+                'pedidos': [pedido.pk],
+                'volver': 'https://otro-sitio.com/',
+            },
+        )
+
+        self.assertRedirects(respuesta, reverse('admin_simple:pedidos-list'))
+
+
+class PermisosOperadorTests(TestCase):
+    """El operador maneja pedidos; la plata y el catálogo son del dueño."""
+
+    def setUp(self):
+        self.operador = User.objects.create_user(
+            username='operador',
+            email='operador@example.com',
+            password='clave-de-prueba',
+            is_staff=True,
+        )
+        self.categoria = Categoria.objects.create(
+            nombre='Ramos', slug='ramos-permisos'
+        )
+        self.producto = Producto.objects.create(
+            nombre='Ramo Permisos',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='PERM-ROSAS',
+            stock=4,
+        )
+        self.client.force_login(self.operador)
+
+    def test_el_operador_gestiona_pedidos_y_agenda(self):
+        for nombre in ['pedidos-list', 'agenda', 'dashboard', 'pedido-nuevo']:
+            with self.subTest(vista=nombre):
+                respuesta = self.client.get(reverse(f'admin_simple:{nombre}'))
+                self.assertEqual(respuesta.status_code, 200)
+
+    def test_el_operador_no_entra_a_ventas_ni_a_productos(self):
+        for nombre in ['ventas', 'productos-list', 'producto-create']:
+            with self.subTest(vista=nombre):
+                respuesta = self.client.get(reverse(f'admin_simple:{nombre}'))
+                self.assertEqual(respuesta.status_code, 302)
+
+    def test_el_operador_no_puede_tocar_precios_ni_stock(self):
+        respuesta = self.client.post(
+            reverse('admin_simple:producto-update-field', args=[self.producto.pk]),
+            {'field': 'precio', 'value': '1'},
+        )
+
+        self.producto.refresh_from_db()
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertEqual(self.producto.precio, Decimal('30000'))
+
+    def test_el_dashboard_del_operador_no_muestra_la_facturacion(self):
+        respuesta = self.client.get(reverse('admin_simple:dashboard'))
+
+        self.assertNotContains(respuesta, 'Facturado hoy')
+
+    def test_sin_staff_no_entra_al_panel(self):
+        self.client.logout()
+        miron = User.objects.create_user(
+            username='cliente', email='cliente@example.com', password='clave'
+        )
+        self.client.force_login(miron)
+
+        respuesta = self.client.get(reverse('admin_simple:pedidos-list'))
+
+        self.assertEqual(respuesta.status_code, 302)
+
+
+class ReposicionDeStockTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='stock-admin',
+            email='stock@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-stock')
+        self.producto = Producto.objects.create(
+            nombre='Ramo Stock',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='STOCK-ROSAS',
+            stock=2,
+        )
+        self.url = reverse('admin_simple:producto-reponer', args=[self.producto.pk])
+
+    def test_suma_unidades_al_stock(self):
+        respuesta = self.client.post(self.url, {'unidades': '8'})
+
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 10)
+        self.assertRedirects(respuesta, reverse('admin_simple:ventas'))
+
+    def test_rechaza_cantidades_invalidas(self):
+        for valor in ['0', '-3', 'muchas']:
+            with self.subTest(valor=valor):
+                self.client.post(self.url, {'unidades': valor})
+                self.producto.refresh_from_db()
+                self.assertEqual(self.producto.stock, 2)
+
+    def test_el_operador_no_repone_stock(self):
+        self.client.logout()
+        operador = User.objects.create_user(
+            username='operador-stock',
+            email='operador-stock@example.com',
+            password='clave',
+            is_staff=True,
+        )
+        self.client.force_login(operador)
+
+        self.client.post(self.url, {'unidades': '5'})
+
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 2)

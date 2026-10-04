@@ -23,6 +23,8 @@ urlpatterns = [
     path('productos/<int:pk>/toggle/', views.producto_toggle, name='producto-toggle'),
     path('productos/<int:pk>/toggle-destacado/', views.producto_toggle_destacado, name='producto-toggle-destacado'),
     path('productos/<int:pk>/update-field/', views.producto_update_field, name='producto-update-field'),
+    path('productos/<int:pk>/reponer/', views.producto_reponer,
+         name='producto-reponer'),
     path('productos/catalogo-pdf/', views.generar_catalogo_pdf, name='catalogo-pdf'),
     
     # Imágenes de productos
@@ -32,6 +34,8 @@ urlpatterns = [
     # Pedidos
     path('pedidos/', views.pedidos_list, name='pedidos-list'),
     path('pedidos/nuevo/', views.pedido_nuevo, name='pedido-nuevo'),
+    path('pedidos/acciones/', views.pedidos_accion_masiva,
+         name='pedidos-accion-masiva'),
     path('pedidos/<int:pk>/', views.pedido_detail, name='pedido-detail'),
     path('pedidos/<int:pk>/cambiar-estado/', views.pedido_cambiar_estado, name='pedido-cambiar-estado'),
     path('pedidos/<int:pk>/cambiar-estado-pago/', views.pedido_cambiar_estado_pago, name='pedido-cambiar-estado-pago'),
@@ -39,4 +43,5 @@ urlpatterns = [
     path('pedidos/<int:pk>/cancelar/', views.pedido_cancelar, name='pedido-cancelar'),
     path('pedidos/<int:pk>/pdf/', views.pedido_pdf, name='pedido-pdf'),
     path('pedidos/<int:pk>/editar/', views.pedido_editar, name='pedido-editar'),
+    path('pedidos/<int:pk>/nota/', views.pedido_nota, name='pedido-nota'),
 ]

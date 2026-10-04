@@ -332,6 +332,43 @@ El equipo de Florería Cristina
         
         return len(productos_sin_stock) == 0, productos_sin_stock
 
+
+class PedidoEvento(models.Model):
+    """Qué le pasó al pedido y quién lo hizo: historial y notas del taller."""
+
+    TIPOS = [
+        ('estado', 'Cambio de estado'),
+        ('pago', 'Cambio de pago'),
+        ('entrega', 'Datos de entrega'),
+        ('creacion', 'Pedido creado'),
+        ('nota', 'Nota interna'),
+    ]
+
+    pedido = models.ForeignKey(
+        Pedido, related_name='eventos', on_delete=models.CASCADE
+    )
+    tipo = models.CharField(max_length=20, choices=TIPOS, default='nota')
+    descripcion = models.TextField()
+    usuario = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="Queda vacío si lo hizo el sitio o un pago automático",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creado', '-id']
+        verbose_name = "Evento del pedido"
+        verbose_name_plural = "Eventos del pedido"
+        indexes = [models.Index(fields=['pedido', '-creado'])]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} — pedido #{self.pedido.numero}"
+
+    @property
+    def autor(self) -> str:
+        return self.usuario.get_username() if self.usuario else 'Sistema'
+
+
 class PedidoItem(models.Model):
     pedido = models.ForeignKey(Pedido, related_name='items', on_delete=models.CASCADE)
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)

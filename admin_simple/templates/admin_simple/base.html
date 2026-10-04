@@ -179,31 +179,37 @@
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
+                {% if user.is_superuser %}
                 <a href="{% url 'admin_simple:ventas' %}" 
                    class="{% if request.resolver_match.url_name == 'ventas' %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-chart-line"></i>
                     <span>Ventas</span>
                 </a>
+                {% endif %}
                 <a href="{% url 'admin_simple:agenda' %}"
                    class="{% if request.resolver_match.url_name == 'agenda' or request.resolver_match.url_name == 'calendario' %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-calendar-day"></i>
                     <span>Agenda</span>
                 </a>
+                {% if user.is_superuser %}
                 <a href="{% url 'admin_simple:productos-list' %}" 
                    class="{% if 'productos' in request.resolver_match.url_name %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-box"></i>
                     <span>Productos</span>
                 </a>
+                {% endif %}
                 <a href="{% url 'admin_simple:pedidos-list' %}" 
                    class="{% if 'pedidos' in request.resolver_match.url_name %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-shopping-cart"></i>
                     <span>Pedidos</span>
                 </a>
+                {% if user.is_superuser %}
                 <a href="{% url 'admin:index' %}" 
                    class="text-gray-600 hover:bg-gray-50 hover:text-green-600 px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-cog"></i>
                     <span>Configuración</span>
                 </a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -234,20 +240,20 @@
                 <span class="text-xs font-semibold">Inicio</span>
             </a>
             
-            <!-- Productos -->
-            <a href="{% url 'admin_simple:productos-list' %}" 
-               class="flex flex-col items-center justify-center {% if 'productos' in request.resolver_match.url_name %}text-green-600 bg-green-50{% else %}text-gray-600{% endif %} transition-all">
-                <i class="fas fa-box text-xl mb-0.5"></i>
-                <span class="text-xs font-semibold">Productos</span>
+            <!-- Agenda (la pantalla del reparto) -->
+            <a href="{% url 'admin_simple:agenda' %}"
+               class="flex flex-col items-center justify-center {% if request.resolver_match.url_name == 'agenda' or request.resolver_match.url_name == 'calendario' %}text-green-600 bg-green-50{% else %}text-gray-600{% endif %} transition-all">
+                <i class="fas fa-calendar-day text-xl mb-0.5"></i>
+                <span class="text-xs font-semibold">Agenda</span>
             </a>
             
             <!-- Crear (Centro - Destacado) -->
-            <a href="{% url 'admin_simple:producto-create' %}" 
+            <a href="{% url 'admin_simple:pedido-nuevo' %}"
                class="flex flex-col items-center justify-center -mt-6">
                 <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all transform hover:scale-110">
                     <i class="fas fa-plus text-white text-2xl"></i>
                 </div>
-                <span class="text-xs font-semibold text-green-600 mt-1">Crear</span>
+                <span class="text-xs font-semibold text-green-600 mt-1">Pedido</span>
             </a>
             
             <!-- Pedidos -->
@@ -279,6 +285,7 @@
                 </button>
             </div>
             <div class="space-y-3">
+                {% if user.is_superuser %}
                 <a href="{% url 'admin_simple:ventas' %}" 
                    class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
                     <div class="bg-green-500 rounded-lg p-3 mr-4">
@@ -289,6 +296,17 @@
                         <p class="text-sm text-gray-600">Resumen por período</p>
                     </div>
                 </a>
+                <a href="{% url 'admin_simple:productos-list' %}"
+                   class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
+                    <div class="bg-emerald-600 rounded-lg p-3 mr-4">
+                        <i class="fas fa-box text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-gray-900">Productos</p>
+                        <p class="text-sm text-gray-600">Precios, stock y fotos</p>
+                    </div>
+                </a>
+                {% endif %}
                 <a href="{% url 'admin_simple:agenda' %}"
                    class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
                     <div class="bg-purple-500 rounded-lg p-3 mr-4">
@@ -299,6 +317,7 @@
                         <p class="text-sm text-gray-600">Entregas del día y del mes</p>
                     </div>
                 </a>
+                {% if user.is_superuser %}
                 <a href="{% url 'admin:index' %}" 
                    class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
                     <div class="bg-blue-500 rounded-lg p-3 mr-4">
@@ -309,6 +328,7 @@
                         <p class="text-sm text-gray-600">Admin Django completo</p>
                     </div>
                 </a>
+                {% endif %}
                 <a href="{% url 'account_logout' %}" 
                    class="flex items-center p-4 bg-red-50 hover:bg-red-100 rounded-xl transition-all">
                     <div class="bg-red-500 rounded-lg p-3 mr-4">
