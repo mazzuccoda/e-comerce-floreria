@@ -214,7 +214,7 @@
         <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}"
            class="flex justify-between items-center py-2 border-b last:border-0 hover:bg-gray-50 rounded px-2 -mx-2">
             <span class="text-sm">
-                <span class="font-semibold text-gray-900">#{{ pedido.numero_pedido|default:pedido.pk }}</span>
+                <span class="font-semibold text-gray-900">#{{ pedido.numero }}</span>
                 <span class="text-gray-600">· {{ pedido.nombre_destinatario }} · {{ pedido.get_medio_pago_display }}</span>
             </span>
             <span class="text-sm font-bold text-gray-900">${{ pedido.total|floatformat:0|intcomma }}</span>
@@ -234,7 +234,7 @@
         <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}"
            class="flex justify-between items-center py-2 border-b last:border-0 hover:bg-gray-50 rounded px-2 -mx-2">
             <span class="text-sm">
-                <span class="font-semibold text-gray-900">#{{ pedido.numero_pedido|default:pedido.pk }}</span>
+                <span class="font-semibold text-gray-900">#{{ pedido.numero }}</span>
                 <span class="text-gray-600">· {{ pedido.nombre_destinatario }}</span>
             </span>
             <span class="text-sm font-semibold text-red-600">{{ pedido.fecha_entrega|date:'d/m/Y' }}</span>

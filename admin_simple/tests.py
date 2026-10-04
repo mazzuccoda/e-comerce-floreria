@@ -696,3 +696,200 @@ class EdicionOperativaTests(TestCase):
         self.pedido.refresh_from_db()
         self.assertEqual(respuesta.status_code, 302)
         self.assertEqual(self.pedido.direccion, 'Solano Vera 480')
+
+
+class NumeroPedidoTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='numero-admin',
+            email='numero@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-numero')
+        self.producto = Producto.objects.create(
+            nombre='Ramo Primavera',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='NUMERO-ROSAS',
+            stock=10,
+        )
+
+    def _pedido(self):
+        pedido = Pedido.objects.create(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=timezone.localdate(),
+            franja_horaria='tarde',
+            medio_pago='transferencia',
+            tipo_envio='programado',
+            total=Decimal('30000'),
+        )
+        PedidoItem.objects.create(
+            pedido=pedido, producto=self.producto, cantidad=1, precio=self.producto.precio
+        )
+        return pedido
+
+    def test_el_numero_es_correlativo_y_derivado_del_id(self):
+        pedido = self._pedido()
+
+        self.assertEqual(pedido.numero_pedido, str(1000 + pedido.pk))
+        self.assertEqual(pedido.numero, pedido.numero_pedido)
+
+    def test_dos_pedidos_no_comparten_numero(self):
+        primero = self._pedido()
+        segundo = self._pedido()
+
+        self.assertNotEqual(primero.numero, segundo.numero)
+        self.assertEqual(int(segundo.numero) - int(primero.numero), segundo.pk - primero.pk)
+
+    def test_la_busqueda_acepta_el_numero_con_numeral(self):
+        pedido = self._pedido()
+
+        respuesta = self.client.get(reverse('admin_simple:pedidos-list'), {
+            'buscar': f'#{pedido.numero}',
+        })
+
+        self.assertEqual(list(respuesta.context['page_obj']), [pedido])
+
+    def test_el_panel_muestra_el_numero_comercial(self):
+        pedido = self._pedido()
+
+        respuesta = self.client.get(reverse('admin_simple:pedido-detail', args=[pedido.pk]))
+
+        self.assertContains(respuesta, f'Pedido #{pedido.numero}')
+
+
+class PedidoManualTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='manual-admin',
+            email='manual@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-manual')
+        self.producto = Producto.objects.create(
+            nombre='Ramo Telefónico',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=Decimal('30000'),
+            sku='MANUAL-ROSAS',
+            stock=5,
+        )
+        self.url = reverse('admin_simple:pedido-nuevo')
+
+    def _datos(self, **kwargs):
+        datos = {
+            'nombre_comprador': 'Daniel',
+            'telefono_comprador': '3813671352',
+            'email_comprador': '',
+            'nombre_destinatario': 'Ana',
+            'telefono_destinatario': '3814778577',
+            'direccion': 'Av. Aconquija 1200',
+            'ciudad': 'Yerba Buena',
+            'tipo_envio': 'programado',
+            'fecha_entrega': timezone.localdate().isoformat(),
+            'franja_horaria': 'tarde',
+            'hora_retiro': '',
+            'costo_envio': '7000',
+            'medio_pago': 'transferencia',
+            'estado_pago': 'pendiente',
+            'dedicatoria': 'Te quiero',
+            'firmado_como': 'Daniel',
+            'regalo_anonimo': '',
+            'instrucciones': '',
+            'items-TOTAL_FORMS': '3',
+            'items-INITIAL_FORMS': '0',
+            'items-MIN_NUM_FORMS': '0',
+            'items-MAX_NUM_FORMS': '20',
+            'items-0-producto': str(self.producto.pk),
+            'items-0-cantidad': '2',
+            'items-1-producto': '',
+            'items-1-cantidad': '',
+            'items-2-producto': '',
+            'items-2-cantidad': '',
+        }
+        datos.update(kwargs)
+        return datos
+
+    def test_crea_el_pedido_confirmado_y_descuenta_stock(self):
+        respuesta = self.client.post(self.url, self._datos())
+
+        pedido = Pedido.objects.get(nombre_comprador='Daniel')
+        self.assertRedirects(
+            respuesta, reverse('admin_simple:pedido-detail', args=[pedido.pk])
+        )
+        self.assertTrue(pedido.confirmado)
+        self.assertTrue(pedido.origen_manual)
+        self.assertEqual(pedido.total, Decimal('67000'))
+        self.assertEqual(pedido.numero, str(1000 + pedido.pk))
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 3)
+
+    def test_sin_productos_no_crea_nada(self):
+        respuesta = self.client.post(self.url, self._datos(**{
+            'items-0-producto': '',
+            'items-0-cantidad': '',
+        }))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertFalse(Pedido.objects.exists())
+
+    def test_stock_insuficiente_sumando_lineas_repetidas(self):
+        respuesta = self.client.post(self.url, self._datos(**{
+            'items-0-cantidad': '3',
+            'items-1-producto': str(self.producto.pk),
+            'items-1-cantidad': '4',
+        }))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertFalse(Pedido.objects.exists())
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock, 5)
+
+    def test_el_envio_exige_direccion(self):
+        respuesta = self.client.post(self.url, self._datos(direccion=''))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertFalse(Pedido.objects.exists())
+        self.assertIn('direccion', respuesta.context['form'].errors)
+
+    def test_el_retiro_exige_hora(self):
+        respuesta = self.client.post(self.url, self._datos(
+            tipo_envio='retiro', hora_retiro='', direccion=''
+        ))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn('hora_retiro', respuesta.context['form'].errors)
+
+    def test_el_retiro_sin_direccion_queda_como_retiro_en_tienda(self):
+        self.client.post(self.url, self._datos(
+            tipo_envio='retiro',
+            hora_retiro='10:30',
+            direccion='',
+            medio_pago='efectivo',
+            costo_envio='0',
+        ))
+
+        pedido = Pedido.objects.get(nombre_comprador='Daniel')
+        self.assertEqual(pedido.direccion, 'Retiro en tienda')
+        self.assertEqual(pedido.total, Decimal('60000'))
+
+    def test_efectivo_con_envio_se_rechaza(self):
+        respuesta = self.client.post(self.url, self._datos(medio_pago='efectivo'))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn('medio_pago', respuesta.context['form'].errors)
+
+    def test_la_carga_manual_exige_superusuario(self):
+        self.client.logout()
+
+        respuesta = self.client.get(self.url)
+
+        self.assertEqual(respuesta.status_code, 302)

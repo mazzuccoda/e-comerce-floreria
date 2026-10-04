@@ -78,7 +78,7 @@
     <p class="text-sm text-gray-600 mt-1">
         Sin confirmar no descuentan stock y no cuentan como venta.
         {% for pedido in agenda.sin_confirmar %}
-            <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}" class="text-green-700 font-semibold hover:underline">#{{ pedido.numero_pedido|default:pedido.id }}</a>{% if not forloop.last %}, {% endif %}
+            <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}" class="text-green-700 font-semibold hover:underline">#{{ pedido.numero }}</a>{% if not forloop.last %}, {% endif %}
         {% endfor %}
     </p>
 </div>

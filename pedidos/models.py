@@ -19,6 +19,15 @@ ESTADOS_PAGO = [
     ('rejected', 'Rechazado')
 ]
 
+# Los pedidos arrancan en 1001 para que el número no delate cuántas ventas hubo.
+PRIMER_NUMERO_PEDIDO = 1000
+
+
+def numero_desde_id(pedido_id: int) -> str:
+    """Número correlativo del pedido: el mismo para el taller y para el cliente."""
+    return str(PRIMER_NUMERO_PEDIDO + pedido_id)
+
+
 class Pedido(models.Model):
     cliente = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     nombre_comprador = models.CharField(max_length=100, help_text="Nombre de quien realiza la compra (si es invitado)", blank=True, null=True)
@@ -65,6 +74,11 @@ class Pedido(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     confirmado = models.BooleanField(default=False)
     numero_pedido = models.CharField(max_length=20, unique=True, blank=True, null=True)
+    origen_manual = models.BooleanField(
+        default=False,
+        verbose_name="Cargado a mano",
+        help_text="Pedido tomado por teléfono o WhatsApp y cargado desde el panel",
+    )
     token_acceso = models.CharField(
         max_length=32, 
         unique=True, 
@@ -95,21 +109,26 @@ class Pedido(models.Model):
     tracking_context = models.JSONField(default=dict, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.numero_pedido:
-            # Generar número de pedido único
-            import random
-            import string
-            self.numero_pedido = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-        
         if not self.token_acceso:
             # Generar token de acceso único
             import secrets
             self.token_acceso = secrets.token_urlsafe(16)
-        
+
         super().save(*args, **kwargs)
 
+        if not self.numero_pedido:
+            Pedido.objects.filter(pk=self.pk).update(
+                numero_pedido=numero_desde_id(self.pk)
+            )
+            self.numero_pedido = numero_desde_id(self.pk)
+
+    @property
+    def numero(self) -> str:
+        """El número con el que el pedido se nombra en el panel y ante el cliente."""
+        return self.numero_pedido or numero_desde_id(self.pk)
+
     def __str__(self):
-        return f"Pedido #{self.numero_pedido or self.id} para {self.nombre_destinatario} ({self.get_estado_display()})"
+        return f"Pedido #{self.numero} para {self.nombre_destinatario} ({self.get_estado_display()})"
     
     def confirmar_pedido(self):
         """
@@ -212,7 +231,7 @@ El equipo de Florería Cristina
             if usuario and email_destino:
                 # Preparar contexto
                 contexto = {
-                    'pedido_id': self.id,
+                    'pedido_id': self.numero,
                     'nombre': nombre_destino,
                     'total': str(self.total),
                     'fecha': self.creado.strftime('%d/%m/%Y'),

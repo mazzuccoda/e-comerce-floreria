@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_http_methods, require_POST
 from django.http import JsonResponse, HttpResponse
+from django.db import transaction
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.core.paginator import Paginator
@@ -17,7 +18,9 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import requests
 
-from pedidos.models import Pedido
+from decimal import Decimal
+
+from pedidos.models import Pedido, PedidoItem
 from catalogo.models import Producto, Categoria, ProductoImagen
 from django.utils.text import slugify
 import csv
@@ -25,9 +28,13 @@ import uuid
 
 from . import agenda as agenda_entregas
 from . import reportes
-from .forms import PedidoOperativoForm
+from .forms import ItemManualFormSet, PedidoManualForm, PedidoOperativoForm
 
 logger = logging.getLogger(__name__)
+
+
+class StockInsuficiente(Exception):
+    """Corta la creación del pedido manual y deshace la transacción."""
 
 
 def is_superuser(user):
@@ -77,7 +84,7 @@ def dashboard(request):
                 tiempo_str = f"Hace {tiempo.days} días"
             
             actividad_reciente.append({
-                'titulo': f'Nuevo pedido #{pedido.numero_pedido or pedido.id}',
+                'titulo': f'Nuevo pedido #{pedido.numero}',
                 'descripcion': f'${pedido.total:,.0f} - {pedido.nombre_destinatario}',
                 'tiempo': tiempo_str,
                 'icono': 'shopping-cart',
@@ -677,8 +684,10 @@ def pedidos_list(request):
     
     # Búsqueda
     if buscar:
+        # El operador suele escribir el número como lo ve en pantalla: "#1042".
+        buscar_numero = buscar.lstrip('#').strip()
         pedidos = pedidos.filter(
-            Q(numero_pedido__icontains=buscar) |
+            Q(numero_pedido__icontains=buscar_numero) |
             Q(nombre_comprador__icontains=buscar) |
             Q(nombre_destinatario__icontains=buscar) |
             Q(email_comprador__icontains=buscar) |
@@ -774,6 +783,75 @@ def pedido_detail(request, pk):
     }
     
     return render(request, 'admin_simple/pedido_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_http_methods(["GET", "POST"])
+def pedido_nuevo(request):
+    """
+    Cargar a mano un pedido tomado por teléfono o WhatsApp.
+
+    Nace confirmado: descuenta stock igual que un pedido del sitio y suma a
+    Facturado desde el día que se carga. Los precios salen del catálogo.
+    """
+    if request.method == 'GET':
+        return render(request, 'admin_simple/pedido_nuevo.html', {
+            'form': PedidoManualForm(),
+            'items_formset': ItemManualFormSet(prefix='items'),
+        })
+
+    form = PedidoManualForm(request.POST)
+    items_formset = ItemManualFormSet(request.POST, prefix='items')
+
+    if not (form.is_valid() and items_formset.is_valid()):
+        messages.error(request, 'Revisá los datos marcados: el pedido no se creó.')
+        return render(request, 'admin_simple/pedido_nuevo.html', {
+            'form': form,
+            'items_formset': items_formset,
+        })
+
+    lineas = items_formset.lineas()
+
+    try:
+        with transaction.atomic():
+            pedido = form.save(commit=False)
+            pedido.origen_manual = True
+            pedido.save()
+
+            total_productos = Decimal('0.00')
+            for producto, cantidad in lineas:
+                precio = producto.get_precio_final
+                PedidoItem.objects.create(
+                    pedido=pedido,
+                    producto=producto,
+                    cantidad=cantidad,
+                    precio=precio,
+                )
+                total_productos += precio * cantidad
+
+            pedido.total = total_productos + (pedido.costo_envio or Decimal('0.00'))
+            pedido.save(update_fields=['total'])
+
+            confirmado, detalle = pedido.confirmar_pedido()
+            if not confirmado:
+                raise StockInsuficiente(detalle)
+    except StockInsuficiente as error:
+        messages.error(request, str(error))
+        return render(request, 'admin_simple/pedido_nuevo.html', {
+            'form': form,
+            'items_formset': items_formset,
+        })
+
+    logger.info(
+        'Pedido manual %s creado por %s (total %s)',
+        pedido.numero, request.user.username, pedido.total,
+    )
+    messages.success(
+        request,
+        f'Pedido #{pedido.numero} creado y confirmado. Stock descontado.',
+    )
+    return redirect('admin_simple:pedido-detail', pk=pedido.pk)
 
 
 @login_required
@@ -989,7 +1067,7 @@ def pedido_pdf(request, pk):
         
         # Crear respuesta HTTP
         response = HttpResponse(pdf, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="pedido_{pedido.numero_pedido or pedido.id}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="pedido_{pedido.numero}.pdf"'
         
         logger.info(f'PDF generado para pedido {pedido.id} por {request.user.username}')
         

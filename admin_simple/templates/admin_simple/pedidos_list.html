@@ -26,6 +26,11 @@
                 </p>
             </div>
         </div>
+
+        <a href="{% url 'admin_simple:pedido-nuevo' %}"
+           class="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>Nuevo pedido
+        </a>
     </div>
 </div>
 
@@ -234,7 +239,7 @@
                     <tr class="hover:bg-gray-50 transition-colors">
                         <!-- Pedido -->
                         <td class="px-4 py-4">
-                            <div class="font-bold text-blue-600">#{{ pedido.numero_pedido|default:pedido.id }}</div>
+                            <div class="font-bold text-blue-600">#{{ pedido.numero }}</div>
                             <div class="text-xs text-gray-500">{{ pedido.creado|date:"d/m/Y H:i" }}</div>
                         </td>
                         
@@ -348,7 +353,7 @@
                 <!-- Header -->
                 <div class="flex justify-between items-start mb-3">
                     <div>
-                        <div class="font-bold text-lg text-blue-600">#{{ pedido.numero_pedido|default:pedido.id }}</div>
+                        <div class="font-bold text-lg text-blue-600">#{{ pedido.numero }}</div>
                         <div class="text-xs text-gray-500">{{ pedido.creado|date:"d/m/Y H:i" }}</div>
                     </div>
                     {% if pedido.estado == 'recibido' %}
