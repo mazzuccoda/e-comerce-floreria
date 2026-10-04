@@ -107,7 +107,7 @@ def notificar_pedido_confirmado(pedido_id, usuario_id):
             tipo_envio_display = f'📅 Envío Programado ({pedido.get_franja_horaria_display()})'
         
         contexto = {
-            'pedido_id': pedido.id,
+            'pedido_id': pedido.numero,
             'total': pedido.get_total_price(),
             'fecha': pedido.created_at.strftime('%d/%m/%Y'),
             'items_count': pedido.items.count(),

@@ -1,0 +1,184 @@
+{% extends 'admin_simple/base.html' %}
+
+{% block title %}Nuevo pedido - Admin Simple{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex items-center text-sm text-gray-500 mb-4">
+        <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-blue-600 transition-colors">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <a href="{% url 'admin_simple:pedidos-list' %}" class="hover:text-blue-600 transition-colors">Pedidos</a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <span class="text-gray-900 font-medium">Nuevo</span>
+    </div>
+
+    <h2 class="text-3xl font-bold text-gray-900">Nuevo pedido</h2>
+    <p class="text-gray-600 mt-1">
+        Para pedidos tomados por teléfono o WhatsApp. Se crea confirmado y descuenta stock.
+    </p>
+</div>
+
+<form method="post" class="space-y-6 pb-24">
+    {% csrf_token %}
+
+    {% if form.non_field_errors or items_formset.non_form_errors %}
+    <div class="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        {% for error in items_formset.non_form_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Quién compra -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-user text-blue-600 mr-2"></i>Quién compra
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {% for campo in form.comprador_fields %}
+            <div>
+                <label for="{{ campo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ campo.label }}
+                </label>
+                {{ campo }}
+                {% for error in campo.errors %}
+                <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Productos -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-seedling text-green-600 mr-2"></i>Productos
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">Los precios salen del catálogo, con el descuento vigente.</p>
+
+        {{ items_formset.management_form }}
+        <div id="lineas-items" class="space-y-3">
+            {% for item in items_formset %}
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_7rem] gap-3 items-start linea-item">
+                <div>
+                    {{ item.producto }}
+                    {% for error in item.producto.errors %}
+                    <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                <div>
+                    {{ item.cantidad }}
+                    {% for error in item.cantidad.errors %}
+                    <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" id="agregar-linea"
+                class="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-800">
+            <i class="fas fa-plus mr-1"></i>Agregar otro producto
+        </button>
+    </div>
+
+    <!-- Entrega -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-truck text-purple-600 mr-2"></i>Entrega
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {% for campo in form.entrega_fields %}
+            <div>
+                <label for="{{ campo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ campo.label }}
+                </label>
+                {{ campo }}
+                {% if campo.help_text %}
+                <p class="text-xs text-gray-500 mt-1">{{ campo.help_text }}</p>
+                {% endif %}
+                {% for error in campo.errors %}
+                <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pago -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-cash-register text-green-600 mr-2"></i>Pago
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {% for campo in form.pago_fields %}
+            <div>
+                <label for="{{ campo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ campo.label }}
+                </label>
+                {{ campo }}
+                {% if campo.help_text %}
+                <p class="text-xs text-gray-500 mt-1">{{ campo.help_text }}</p>
+                {% endif %}
+                {% for error in campo.errors %}
+                <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tarjeta -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-envelope-open-text text-pink-600 mr-2"></i>Tarjeta e instrucciones
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {% for campo in form.tarjeta_fields %}
+            <div>
+                <label for="{{ campo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ campo.label }}
+                </label>
+                {{ campo }}
+                {% for error in campo.errors %}
+                <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex gap-3 justify-end z-20">
+        <a href="{% url 'admin_simple:pedidos-list' %}"
+           class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium">Cancelar</a>
+        <button type="submit"
+                class="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700">
+            <i class="fas fa-check mr-2"></i>Crear pedido
+        </button>
+    </div>
+</form>
+
+<script>
+document.getElementById('agregar-linea').addEventListener('click', function () {
+    const contenedor = document.getElementById('lineas-items');
+    const total = document.getElementById('id_items-TOTAL_FORMS');
+    const indice = parseInt(total.value, 10);
+    const plantilla = contenedor.querySelector('.linea-item');
+    const nueva = plantilla.cloneNode(true);
+
+    nueva.querySelectorAll('p').forEach(function (error) { error.remove(); });
+    nueva.querySelectorAll('select, input').forEach(function (campo) {
+        campo.name = campo.name.replace(/items-\d+-/, 'items-' + indice + '-');
+        campo.id = campo.id.replace(/items-\d+-/, 'items-' + indice + '-');
+        if (campo.tagName === 'SELECT') {
+            campo.selectedIndex = 0;
+        } else {
+            campo.value = '1';
+        }
+    });
+
+    contenedor.appendChild(nueva);
+    total.value = indice + 1;
+});
+</script>
+{% endblock %}

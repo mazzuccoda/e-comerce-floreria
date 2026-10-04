@@ -91,7 +91,7 @@ def notificar_cambio_estado_pedido(sender, instance, created, **kwargs):
                                 tipo_envio_display = f'📅 Envío Programado ({instance.get_franja_horaria_display()})'
                             
                             contexto = {
-                                'pedido_id': instance.id,
+                                'pedido_id': instance.numero,
                                 'estado': instance.get_estado_display(),
                                 'fecha': instance.actualizado.strftime('%d/%m/%Y %H:%M'),
                                 'total': instance.total,

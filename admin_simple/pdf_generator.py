@@ -78,7 +78,7 @@ def generar_pdf_pedido(pedido):
     
     # === ENCABEZADO ===
     story.append(Paragraph("🌸 FLORERÍA CRISTINA", titulo_style))
-    story.append(Paragraph(f"Pedido #{pedido.numero_pedido or pedido.id}", subtitulo_style))
+    story.append(Paragraph(f"Pedido #{pedido.numero}", subtitulo_style))
     story.append(Paragraph(f"{pedido.creado.strftime('%d/%m/%Y %H:%M')}", small_style))
     story.append(Spacer(1, 0.5*cm))
     
@@ -343,7 +343,7 @@ def _fila_hoja_de_ruta(pedido, estilo, estilo_chico):
 
     return [
         Paragraph(cuando, estilo),
-        Paragraph(f'#{pedido.numero_pedido or pedido.id}', estilo_chico),
+        Paragraph(f'#{pedido.numero}', estilo_chico),
         Paragraph(destino, estilo),
         Paragraph(direccion, estilo),
         Paragraph(productos, estilo_chico),

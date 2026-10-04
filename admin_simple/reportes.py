@@ -317,7 +317,7 @@ def filas_csv(periodo: Periodo):
     ventas = ventas_del_periodo(periodo).order_by('creado')
     for pedido in ventas:
         yield [
-            pedido.numero_pedido or pedido.id,
+            pedido.numero,
             timezone.localtime(pedido.creado).strftime('%d/%m/%Y %H:%M'),
             pedido.fecha_entrega.strftime('%d/%m/%Y') if pedido.fecha_entrega else '',
             pedido.nombre_destinatario,

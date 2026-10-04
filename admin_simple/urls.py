@@ -31,6 +31,7 @@ urlpatterns = [
     
     # Pedidos
     path('pedidos/', views.pedidos_list, name='pedidos-list'),
+    path('pedidos/nuevo/', views.pedido_nuevo, name='pedido-nuevo'),
     path('pedidos/<int:pk>/', views.pedido_detail, name='pedido-detail'),
     path('pedidos/<int:pk>/cambiar-estado/', views.pedido_cambiar_estado, name='pedido-cambiar-estado'),
     path('pedidos/<int:pk>/cambiar-estado-pago/', views.pedido_cambiar_estado_pago, name='pedido-cambiar-estado-pago'),

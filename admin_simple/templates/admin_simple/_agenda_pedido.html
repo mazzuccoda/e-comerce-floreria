@@ -4,7 +4,7 @@
         <div class="min-w-0">
             <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}"
                class="font-bold text-gray-900 hover:text-green-700">
-                #{{ pedido.numero_pedido|default:pedido.id }}
+                #{{ pedido.numero }}
             </a>
             <span class="text-sm text-gray-500 ml-2">{{ cuando }}</span>
             <p class="font-semibold text-gray-800 mt-1">{{ pedido.nombre_destinatario }}</p>
