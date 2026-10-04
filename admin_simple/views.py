@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_http_methods, require_POST
 from django.http import JsonResponse, HttpResponse
 from django.db import transaction
-from django.db.models import Q, Count, Sum
+from django.db.models import F, Q, Count
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.core.paginator import Paginator
 from django.contrib import messages
 from datetime import timedelta
@@ -27,6 +29,7 @@ import csv
 import uuid
 
 from . import agenda as agenda_entregas
+from . import historial
 from . import reportes
 from .forms import ItemManualFormSet, PedidoManualForm, PedidoOperativoForm
 
@@ -38,12 +41,22 @@ class StockInsuficiente(Exception):
 
 
 def is_superuser(user):
-    """Verificar que el usuario sea superusuario"""
+    """Dueño: además de operar, ve la plata y toca el catálogo."""
     return user.is_authenticated and user.is_superuser
 
 
+def es_operador(user):
+    """
+    Quien atiende los pedidos del día.
+
+    Cualquier usuario de staff: puede mover estados, cobrar, corregir la
+    entrega y cargar pedidos, pero no entra a productos ni a Ventas.
+    """
+    return user.is_authenticated and user.is_staff
+
+
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def dashboard(request):
     """
     Dashboard principal con estadísticas y actividad reciente
@@ -111,7 +124,8 @@ def dashboard(request):
             'entregas_hoy': entregas_hoy,
             'entregas_vencidas': entregas_vencidas,
             'actividad_reciente': actividad_reciente[:5],  # Máximo 5 items
-            'hoy': reportes.resumen_de_hoy(hoy),
+            # La plata del día es sólo del dueño; el operador ve su trabajo.
+            'hoy': reportes.resumen_de_hoy(hoy) if request.user.is_superuser else None,
         }
         
         return render(request, 'admin_simple/dashboard.html', context)
@@ -167,7 +181,7 @@ def ventas(request):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def agenda(request):
     """
     Trabajo de un día puntual, ordenado por fecha de entrega: primero los
@@ -189,7 +203,7 @@ def agenda(request):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def agenda_pdf(request):
     """Hoja de ruta del día para imprimir y salir a repartir."""
     from .pdf_generator import generar_hoja_de_ruta
@@ -205,7 +219,7 @@ def agenda_pdf(request):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def calendario(request):
     """Vista mensual de la carga de entregas, para ver dónde se amontona."""
     hoy = timezone.localdate()
@@ -614,12 +628,47 @@ def producto_update_field(request, pk):
         }, status=400)
 
 
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_POST
+def producto_reponer(request, pk):
+    """
+    Sumar unidades al stock desde donde se ve el faltante (el top de
+    productos de Ventas), sin entrar a editar el producto.
+    """
+    producto = get_object_or_404(Producto, pk=pk)
+    volver = request.POST.get('volver') or reverse('admin_simple:ventas')
+    if not url_has_allowed_host_and_scheme(volver, allowed_hosts=None):
+        volver = reverse('admin_simple:ventas')
+
+    try:
+        unidades = int(request.POST.get('unidades', ''))
+    except ValueError:
+        unidades = 0
+
+    if unidades < 1:
+        messages.error(request, 'Indicá cuántas unidades reponés.')
+        return redirect(volver)
+
+    Producto.objects.filter(pk=producto.pk).update(stock=F('stock') + unidades)
+    producto.refresh_from_db(fields=['stock'])
+    logger.info(
+        'Stock de %s repuesto en %s por %s (queda %s)',
+        producto.id, unidades, request.user.username, producto.stock,
+    )
+    messages.success(
+        request,
+        f'{producto.nombre}: +{unidades}. Queda {producto.stock} en stock.',
+    )
+    return redirect(volver)
+
+
 # ============================================
 # GESTIÓN DE PEDIDOS
 # ============================================
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def pedidos_list(request):
     """
     Lista de pedidos con filtros y búsqueda
@@ -763,7 +812,7 @@ def pedidos_list(request):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def pedido_detail(request, pk):
     """
     Vista detallada de un pedido específico
@@ -780,13 +829,93 @@ def pedido_detail(request, pk):
         'pedido': pedido,
         'subtotal': subtotal,
         'form': PedidoOperativoForm(instance=pedido),
+        'eventos': pedido.eventos.select_related('usuario'),
     }
     
     return render(request, 'admin_simple/pedido_detail.html', context)
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
+@require_POST
+def pedido_nota(request, pk):
+    """Nota interna del taller: "llamé y no atiende", "dejar con el portero"."""
+    pedido = get_object_or_404(Pedido, pk=pk)
+    texto = (request.POST.get('nota') or '').strip()
+
+    if not texto:
+        messages.error(request, 'Escribí la nota antes de guardarla.')
+    else:
+        historial.registrar(pedido, 'nota', texto[:1000], request.user)
+        messages.success(request, 'Nota agregada al historial.')
+
+    return redirect('admin_simple:pedido-detail', pk=pedido.pk)
+
+
+ACCIONES_MASIVAS = {
+    'preparando': 'Preparando',
+    'en_camino': 'En camino',
+    'entregado': 'Entregado',
+}
+
+
+@login_required
+@user_passes_test(es_operador, login_url='/admin/')
+@require_POST
+def pedidos_accion_masiva(request):
+    """
+    Mover varios pedidos de estado de una vez (lo que se hace al salir el
+    reparto y al volver). No toca stock ni avisa al cliente: para eso está
+    el detalle del pedido.
+    """
+    destino = request.POST.get('accion', '')
+    seleccionados = request.POST.getlist('pedidos')
+    listado = reverse('admin_simple:pedidos-list')
+    volver = request.POST.get('volver') or listado
+    if not url_has_allowed_host_and_scheme(volver, allowed_hosts=None):
+        volver = listado
+
+    if destino not in ACCIONES_MASIVAS:
+        messages.error(request, 'Elegí qué hacer con los pedidos marcados.')
+        return redirect(volver)
+
+    pedidos = list(
+        Pedido.objects.filter(pk__in=seleccionados)
+        .exclude(estado__in=['entregado', 'cancelado'])
+    )
+    if not pedidos:
+        messages.error(
+            request,
+            'No hay pedidos para cambiar: marcá alguno que no esté entregado '
+            'ni cancelado.',
+        )
+        return redirect(volver)
+
+    etiqueta = ACCIONES_MASIVAS[destino]
+    with transaction.atomic():
+        for pedido in pedidos:
+            anterior = pedido.get_estado_display()
+            pedido.estado = destino
+            pedido.save(update_fields=['estado'])
+            historial.registrar(
+                pedido, 'estado',
+                f'{anterior} → {etiqueta} (cambio en lote)', request.user,
+            )
+
+    logger.info(
+        '%s pedidos pasados a %s por %s',
+        len(pedidos), destino, request.user.username,
+    )
+    messages.success(
+        request,
+        f'{len(pedidos)} pedido(s) pasaron a {etiqueta}. '
+        'El cliente no recibió aviso.',
+    )
+    return redirect(volver)
+
+
+@login_required
+@user_passes_test(es_operador, login_url='/admin/')
 @require_http_methods(["GET", "POST"])
 def pedido_nuevo(request):
     """
@@ -843,6 +972,11 @@ def pedido_nuevo(request):
             'items_formset': items_formset,
         })
 
+    historial.registrar(
+        pedido, 'creacion',
+        f'Pedido cargado a mano en el panel por ${pedido.total:,.0f}',
+        request.user,
+    )
     logger.info(
         'Pedido manual %s creado por %s (total %s)',
         pedido.numero, request.user.username, pedido.total,
@@ -855,7 +989,7 @@ def pedido_nuevo(request):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 @require_POST
 def pedido_editar(request, pk):
     """
@@ -882,6 +1016,7 @@ def pedido_editar(request, pk):
 
     if cambios:
         messages.success(request, 'Pedido actualizado.')
+        historial.registrar(pedido, 'entrega', cambios, request.user)
         logger.info(
             'Pedido %s editado por %s — %s', pedido.id, request.user.username, cambios
         )
@@ -892,7 +1027,7 @@ def pedido_editar(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 @require_http_methods(["POST"])
 def pedido_cambiar_estado(request, pk):
     """
@@ -909,8 +1044,17 @@ def pedido_cambiar_estado(request, pk):
         }, status=400)
     
     estado_anterior = pedido.estado
+    etiqueta_anterior = pedido.get_estado_display()
     pedido.estado = nuevo_estado
     pedido.save()
+
+    if estado_anterior != nuevo_estado:
+        aviso = 'con aviso al cliente' if enviar_notificacion else 'sin aviso'
+        historial.registrar(
+            pedido, 'estado',
+            f'{etiqueta_anterior} → {pedido.get_estado_display()} ({aviso})',
+            request.user,
+        )
 
     # Solo enviar notificación si el usuario lo confirmó
     if estado_anterior != nuevo_estado and enviar_notificacion:
@@ -940,7 +1084,7 @@ def pedido_cambiar_estado(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 @require_http_methods(["POST"])
 def pedido_cambiar_estado_pago(request, pk):
     """
@@ -958,6 +1102,7 @@ def pedido_cambiar_estado_pago(request, pk):
         }, status=400)
     
     estado_anterior = pedido.estado_pago
+    etiqueta_anterior = pedido.get_estado_pago_display()
     pedido.estado_pago = nuevo_estado_pago
     
     # Si se marca como aprobado, también confirmar el pedido
@@ -970,6 +1115,13 @@ def pedido_cambiar_estado_pago(request, pk):
         # Un pago aprobado a mano también es una venta (no se envía dos veces).
         from pedidos.services.conversion_tracking import schedule_purchase_tracking
         schedule_purchase_tracking(pedido.id)
+
+    if estado_anterior != nuevo_estado_pago:
+        historial.registrar(
+            pedido, 'pago',
+            f'Pago: {etiqueta_anterior} → {pedido.get_estado_pago_display()}',
+            request.user,
+        )
     
     logger.info(f'Pedido {pedido.id} cambió estado de pago: {estado_anterior} → {nuevo_estado_pago} por {request.user.username}')
     
@@ -981,7 +1133,7 @@ def pedido_cambiar_estado_pago(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 @require_http_methods(["POST"])
 def pedido_confirmar(request, pk):
     """
@@ -999,6 +1151,9 @@ def pedido_confirmar(request, pk):
     exito, mensaje = pedido.confirmar_pedido()
     
     if exito:
+        historial.registrar(
+            pedido, 'estado', 'Pedido confirmado: stock descontado', request.user,
+        )
         logger.info(f'Pedido {pedido.id} confirmado por {request.user.username}')
         return JsonResponse({
             'success': True,
@@ -1012,7 +1167,7 @@ def pedido_confirmar(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 @require_http_methods(["POST"])
 def pedido_cancelar(request, pk):
     """
@@ -1036,6 +1191,7 @@ def pedido_cancelar(request, pk):
     exito, mensaje = pedido.cancelar_pedido()
     
     if exito:
+        historial.registrar(pedido, 'estado', mensaje, request.user)
         logger.info(f'Pedido {pedido.id} cancelado por {request.user.username}')
         return JsonResponse({
             'success': True,
@@ -1049,7 +1205,7 @@ def pedido_cancelar(request, pk):
 
 
 @login_required
-@user_passes_test(is_superuser, login_url='/admin/')
+@user_passes_test(es_operador, login_url='/admin/')
 def pedido_pdf(request, pk):
     """
     Generar PDF del pedido

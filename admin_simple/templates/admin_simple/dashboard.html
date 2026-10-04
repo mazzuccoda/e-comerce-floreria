@@ -10,6 +10,7 @@
 </div>
 
 <!-- Hoy -->
+{% if hoy %}
 <div class="card mb-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex flex-wrap gap-6 sm:gap-10">
@@ -31,6 +32,7 @@
         </a>
     </div>
 </div>
+{% endif %}
 
 <!-- Stats Cards - Resumen Rápido -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
@@ -130,6 +132,7 @@
         </a>
         
         <!-- Revisar Stock Bajo -->
+        {% if user.is_superuser %}
         {% if productos_stock_bajo > 0 %}
         <a href="{% url 'admin_simple:productos-list' %}?filtro=stock_bajo" 
            class="group relative overflow-hidden bg-gradient-to-br from-yellow-50 to-orange-100 hover:from-yellow-100 hover:to-orange-200 rounded-xl p-4 sm:p-6 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border-2 border-yellow-200">
@@ -158,6 +161,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         {% endif %}
         
         <!-- Generar PDF de Catálogo -->

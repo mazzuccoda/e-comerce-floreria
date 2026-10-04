@@ -206,11 +206,38 @@
 <!-- Lista de Pedidos -->
 <div class="card">
     {% if page_obj %}
+    <form method="post" action="{% url 'admin_simple:pedidos-accion-masiva' %}" id="form-lote">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+
+        <!-- Barra de acciones en lote -->
+        <div class="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <span class="text-sm text-gray-700">
+                <span id="lote-contador" class="font-bold">0</span> pedido(s) marcado(s)
+            </span>
+            <select name="accion" class="input-field w-auto py-2">
+                <option value="">Cambiar estado a…</option>
+                <option value="preparando">Preparando</option>
+                <option value="en_camino">En camino</option>
+                <option value="entregado">Entregado</option>
+            </select>
+            <button type="submit" class="btn-primary py-2">
+                <i class="fas fa-bolt mr-2"></i>Aplicar
+            </button>
+            <span class="text-xs text-gray-500">
+                No avisa al cliente ni toca el stock. Los entregados y cancelados se ignoran.
+            </span>
+        </div>
+
         <!-- Vista Desktop (Tabla) -->
         <div class="hidden lg:block overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b-2 border-gray-200">
                     <tr>
+                        <th class="px-4 py-3 text-left">
+                            <input type="checkbox" id="lote-todos" class="h-4 w-4"
+                                   aria-label="Marcar todos los pedidos de esta página">
+                        </th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                             Pedido
                         </th>
@@ -237,6 +264,11 @@
                 <tbody class="divide-y divide-gray-200">
                     {% for pedido in page_obj %}
                     <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-4 py-4">
+                            <input type="checkbox" name="pedidos" value="{{ pedido.pk }}"
+                                   class="lote-item h-4 w-4"
+                                   aria-label="Marcar el pedido #{{ pedido.numero }}">
+                        </td>
                         <!-- Pedido -->
                         <td class="px-4 py-4">
                             <div class="font-bold text-blue-600">#{{ pedido.numero }}</div>
@@ -352,9 +384,14 @@
             <div class="border-2 border-gray-200 rounded-xl p-4 hover:shadow-lg transition-shadow">
                 <!-- Header -->
                 <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <div class="font-bold text-lg text-blue-600">#{{ pedido.numero }}</div>
-                        <div class="text-xs text-gray-500">{{ pedido.creado|date:"d/m/Y H:i" }}</div>
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" name="pedidos" value="{{ pedido.pk }}"
+                               class="lote-item h-5 w-5 mt-1"
+                               aria-label="Marcar el pedido #{{ pedido.numero }}">
+                        <div>
+                            <div class="font-bold text-lg text-blue-600">#{{ pedido.numero }}</div>
+                            <div class="text-xs text-gray-500">{{ pedido.creado|date:"d/m/Y H:i" }}</div>
+                        </div>
                     </div>
                     {% if pedido.estado == 'recibido' %}
                         <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
@@ -420,7 +457,8 @@
             </div>
             {% endfor %}
         </div>
-        
+    </form>
+
         <!-- Paginación -->
         {% if page_obj.has_other_pages %}
         <div class="mt-6 flex justify-center">
@@ -453,4 +491,34 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    const form = document.getElementById('form-lote');
+    if (!form) return;
+    const contador = document.getElementById('lote-contador');
+    const todos = document.getElementById('lote-todos');
+    const items = () => Array.from(form.querySelectorAll('.lote-item'));
+    const visibles = () => items().filter(c => c.offsetParent !== null);
+
+    function actualizar() {
+        contador.textContent = items().filter(c => c.checked).length;
+    }
+
+    items().forEach(c => c.addEventListener('change', actualizar));
+    if (todos) {
+        todos.addEventListener('change', () => {
+            visibles().forEach(c => { c.checked = todos.checked; });
+            actualizar();
+        });
+    }
+    form.addEventListener('submit', (e) => {
+        if (!items().some(c => c.checked)) {
+            e.preventDefault();
+            alert('Marcá al menos un pedido.');
+        }
+    });
+    actualizar();
+})();
+</script>
 {% endblock %}

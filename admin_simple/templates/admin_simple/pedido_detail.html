@@ -299,7 +299,67 @@
                 </form>
             </details>
         </div>
-        
+
+        <!-- Historial: qué pasó con este pedido y quién lo hizo -->
+        <div class="card">
+            <div class="flex items-center mb-4">
+                <div class="bg-gradient-to-r from-slate-600 to-slate-700 rounded-lg p-2">
+                    <i class="fas fa-clock-rotate-left text-white text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 ml-3">Historial y notas</h3>
+            </div>
+
+            <form method="post" action="{% url 'admin_simple:pedido-nota' pedido.pk %}" class="mb-5">
+                {% csrf_token %}
+                <label for="nota" class="text-sm font-semibold text-gray-700 block mb-1">
+                    Nota interna
+                </label>
+                <textarea id="nota" name="nota" rows="2" class="input-field"
+                          placeholder="Ej.: llamé y no atiende, dejar con el portero"></textarea>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-xs text-gray-500">La ve el equipo, nunca el cliente.</p>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i>Agregar nota
+                    </button>
+                </div>
+            </form>
+
+            <ol class="space-y-3">
+                {% for evento in eventos %}
+                <li class="flex gap-3">
+                    <div class="pt-1">
+                        {% if evento.tipo == 'nota' %}
+                        <i class="fas fa-note-sticky text-amber-500"></i>
+                        {% elif evento.tipo == 'pago' %}
+                        <i class="fas fa-credit-card text-green-600"></i>
+                        {% elif evento.tipo == 'entrega' %}
+                        <i class="fas fa-truck text-blue-600"></i>
+                        {% elif evento.tipo == 'creacion' %}
+                        <i class="fas fa-file-circle-plus text-purple-600"></i>
+                        {% else %}
+                        <i class="fas fa-arrow-right text-slate-500"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 {% if evento.tipo == 'nota' %}bg-amber-50 border-l-4 border-amber-400 p-3 rounded{% endif %}">
+                        <p class="text-gray-900 whitespace-pre-line">{{ evento.descripcion }}</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                            {{ evento.autor }} · {{ evento.creado|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </li>
+                {% endfor %}
+                <li class="flex gap-3">
+                    <div class="pt-1"><i class="fas fa-flag-checkered text-gray-400"></i></div>
+                    <div class="flex-1">
+                        <p class="text-gray-900">
+                            Pedido creado{% if pedido.origen_manual %} a mano en el panel{% else %} desde el sitio{% endif %}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">{{ pedido.creado|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </li>
+            </ol>
+        </div>
+
     </div>
     
     <!-- Columna Lateral (1/3) -->
