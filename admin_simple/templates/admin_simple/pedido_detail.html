@@ -4,27 +4,27 @@
 
 {% block content %}
 <!-- Header con Breadcrumb -->
-<div class="mb-6">
-    <div class="flex items-center text-sm text-gray-500 mb-4">
-        <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-blue-600 transition-colors">
+<div class="mb-4 sm:mb-6">
+    <div class="flex items-center text-sm text-gray-500 mb-3 sm:mb-4">
+        <a href="{% url 'admin_simple:dashboard' %}" class="hidden sm:inline hover:text-blue-600 transition-colors">
             <i class="fas fa-home"></i> Dashboard
         </a>
-        <i class="fas fa-chevron-right mx-2 text-xs"></i>
-        <a href="{% url 'admin_simple:pedidos-list' %}" class="hover:text-blue-600 transition-colors">
-            Pedidos
+        <i class="fas fa-chevron-right mx-2 text-xs hidden sm:inline"></i>
+        <a href="{% url 'admin_simple:pedidos-list' %}" class="hover:text-blue-600 transition-colors font-semibold">
+            <i class="fas fa-arrow-left mr-1 sm:hidden"></i>Pedidos
         </a>
         <i class="fas fa-chevron-right mx-2 text-xs"></i>
         <span class="text-gray-900 font-medium">#{{ pedido.numero }}</span>
     </div>
-    
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div class="flex items-center">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-3 shadow-lg">
+            <div class="hidden sm:block bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-3 shadow-lg">
                 <i class="fas fa-file-invoice text-white text-2xl"></i>
             </div>
-            <div class="ml-4">
-                <h2 class="text-3xl font-bold text-gray-900">Pedido #{{ pedido.numero }}</h2>
-                <p class="text-gray-600 mt-1">
+            <div class="sm:ml-4">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Pedido #{{ pedido.numero }}</h2>
+                <p class="text-sm sm:text-base text-gray-600 mt-1">
                     <i class="fas fa-calendar text-blue-600 mr-2"></i>
                     {{ pedido.creado|date:"d/m/Y H:i" }}
                 </p>
@@ -63,10 +63,56 @@
     </div>
 </div>
 
+<!-- Lo que se hace con el celular en la mano: arriba y sin bajar hasta el final -->
+{% if pedido.estado != 'cancelado' and pedido.estado != 'entregado' %}
+<div class="card mb-4 lg:hidden">
+    <p class="text-xs font-semibold text-gray-500 uppercase mb-3">Acciones rápidas</p>
+    <div class="grid grid-cols-2 gap-2">
+        {% if pedido.telefono_destinatario %}
+        <a href="tel:{{ pedido.telefono_destinatario }}"
+           class="text-center px-3 py-3 rounded-lg bg-gray-100 text-gray-800 text-sm font-semibold">
+            <i class="fas fa-phone mr-1"></i>Llamar
+        </a>
+        <a href="https://wa.me/{{ pedido.telefono_destinatario|cut:" "|cut:"-"|cut:"+" }}" target="_blank" rel="noopener"
+           class="text-center px-3 py-3 rounded-lg bg-green-50 text-green-700 text-sm font-semibold">
+            <i class="fab fa-whatsapp mr-1"></i>WhatsApp
+        </a>
+        {% endif %}
+        {% if pedido.tipo_envio != 'retiro' and pedido.direccion %}
+        <a href="https://www.google.com/maps/dir/?api=1&destination={{ pedido.direccion|urlencode }}{% if pedido.ciudad %}%2C%20{{ pedido.ciudad|urlencode }}{% endif %}"
+           target="_blank" rel="noopener"
+           class="text-center px-3 py-3 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
+            <i class="fas fa-map-location-dot mr-1"></i>Cómo llegar
+        </a>
+        {% endif %}
+        {% if pedido.estado != 'en_camino' %}
+        <form method="post" action="{% url 'admin_simple:pedidos-accion-masiva' %}">
+            {% csrf_token %}
+            <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+            <input type="hidden" name="pedidos" value="{{ pedido.pk }}">
+            <input type="hidden" name="accion" value="en_camino">
+            <button type="submit" class="w-full px-3 py-3 rounded-lg bg-purple-50 text-purple-700 text-sm font-semibold">
+                <i class="fas fa-truck mr-1"></i>En camino
+            </button>
+        </form>
+        {% endif %}
+        <form method="post" action="{% url 'admin_simple:pedidos-accion-masiva' %}">
+            {% csrf_token %}
+            <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+            <input type="hidden" name="pedidos" value="{{ pedido.pk }}">
+            <input type="hidden" name="accion" value="entregado">
+            <button type="submit" class="w-full px-3 py-3 rounded-lg bg-green-600 text-white text-sm font-semibold">
+                <i class="fas fa-check mr-1"></i>Entregado
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <!-- Grid Principal -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
     <!-- Columna Principal (2/3) -->
-    <div class="lg:col-span-2 space-y-6">
+    <div class="lg:col-span-2 space-y-4 lg:space-y-6">
         
         <!-- Productos del Pedido -->
         <div class="card">
@@ -79,9 +125,9 @@
             
             <div class="space-y-4">
                 {% for item in pedido.items.all %}
-                <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <!-- Imagen del Producto -->
-                    <div class="w-20 h-20 flex-shrink-0">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
                         {% if item.producto.get_primary_image_url %}
                             <img src="{{ item.producto.get_primary_image_url }}" 
                                  alt="{{ item.producto.nombre }}"
@@ -95,7 +141,7 @@
                     </div>
                     
                     <!-- Info del Producto -->
-                    <div class="flex-1">
+                    <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-gray-900">{{ item.producto.nombre }}</h4>
                         <p class="text-sm text-gray-600 mt-1">
                             Cantidad: <span class="font-semibold">{{ item.cantidad }}</span> × 
@@ -363,7 +409,7 @@
     </div>
     
     <!-- Columna Lateral (1/3) -->
-    <div class="space-y-6">
+    <div class="space-y-4 lg:space-y-6">
         
         <!-- Información del Cliente -->
         <div class="card">
@@ -497,7 +543,7 @@
                 <!-- Cambiar Estado del Pedido -->
                 <div>
                     <label class="text-sm font-semibold text-gray-700 block mb-2">Cambiar Estado del Pedido:</label>
-                    <select id="estadoSelect" class="input-field mb-2">
+                    <select id="estadoSelect" class="input-field mb-2" aria-label="Nuevo estado del pedido">
                         <option value="recibido" {% if pedido.estado == 'recibido' %}selected{% endif %}>🆕 Recibido</option>
                         <option value="preparando" {% if pedido.estado == 'preparando' %}selected{% endif %}>⚙️ Preparando</option>
                         <option value="en_camino" {% if pedido.estado == 'en_camino' %}selected{% endif %}>🚚 En Camino</option>
@@ -512,7 +558,7 @@
                 <!-- Cambiar Estado del Pago -->
                 <div>
                     <label class="text-sm font-semibold text-gray-700 block mb-2">Cambiar Estado del Pago:</label>
-                    <select id="estadoPagoSelect" class="input-field mb-2">
+                    <select id="estadoPagoSelect" class="input-field mb-2" aria-label="Nuevo estado del pago">
                         <option value="pendiente" {% if pedido.estado_pago == 'pendiente' %}selected{% endif %}>🕐 Pendiente</option>
                         <option value="approved" {% if pedido.estado_pago == 'approved' %}selected{% endif %}>✅ Aprobado</option>
                         <option value="rejected" {% if pedido.estado_pago == 'rejected' %}selected{% endif %}>❌ Rechazado</option>
@@ -535,7 +581,7 @@
                 </button>
                 {% endif %}
                 
-                <button onclick="window.print()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
+                <button onclick="window.print()" class="hidden sm:block w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
                     <i class="fas fa-print mr-2"></i> Imprimir
                 </button>
                 
@@ -551,7 +597,7 @@
 </div>
 
 <!-- Botón Volver -->
-<div class="mt-6">
+<div class="mt-6 no-print">
     <a href="{% url 'admin_simple:pedidos-list' %}" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold transition-colors">
         <i class="fas fa-arrow-left mr-2"></i> Volver a la lista de pedidos
     </a>
