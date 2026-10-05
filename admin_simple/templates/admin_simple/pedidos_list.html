@@ -4,23 +4,23 @@
 
 {% block content %}
 <!-- Header con Breadcrumb -->
-<div class="mb-6">
-    <div class="flex items-center text-sm text-gray-500 mb-4">
+<div class="mb-4 sm:mb-6">
+    <div class="hidden sm:flex items-center text-sm text-gray-500 mb-4">
         <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-blue-600 transition-colors">
             <i class="fas fa-home"></i> Dashboard
         </a>
         <i class="fas fa-chevron-right mx-2 text-xs"></i>
         <span class="text-gray-900 font-medium">Pedidos</span>
     </div>
-    
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div class="flex items-center">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-3 shadow-lg">
+            <div class="hidden sm:block bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-3 shadow-lg">
                 <i class="fas fa-shopping-cart text-white text-2xl"></i>
             </div>
-            <div class="ml-4">
-                <h2 class="text-3xl font-bold text-gray-900">Pedidos</h2>
-                <p class="text-gray-600 mt-1">
+            <div class="sm:ml-4">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Pedidos</h2>
+                <p class="text-sm sm:text-base text-gray-600 mt-1">
                     <i class="fas fa-box text-blue-600 mr-2"></i>
                     Total: <span class="font-bold">{{ total_pedidos }}</span> pedidos
                 </p>
@@ -28,23 +28,26 @@
         </div>
 
         <a href="{% url 'admin_simple:pedido-nuevo' %}"
-           class="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition-colors">
+           class="w-full sm:w-auto text-center px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition-colors">
             <i class="fas fa-plus mr-2"></i>Nuevo pedido
         </a>
     </div>
 </div>
 
-<!-- Filtros Rápidos por Estado -->
-<div class="card mb-6">
-    <div class="flex items-center mb-4">
+<!-- Filtros Rápidos por Estado: en celular arrancan plegados para no tapar la lista -->
+<details class="card mb-4 sm:mb-6 filtros" {% if filtro_estado or filtro_pago or filtro_entrega or entrega_desde or entrega_hasta %}open{% endif %}>
+    <summary class="flex items-center cursor-pointer">
         <i class="fas fa-filter text-blue-600 mr-2"></i>
-        <h3 class="text-lg font-bold text-gray-900">Filtros Rápidos</h3>
-    </div>
-    
+        <span class="text-lg font-bold text-gray-900">Filtros rápidos</span>
+        {% if filtro_estado or filtro_pago or filtro_entrega or entrega_desde or entrega_hasta %}
+        <span class="ml-2 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">activos</span>
+        {% endif %}
+    </summary>
+
     <!-- Agenda de entregas -->
-    <div class="mb-4">
+    <div class="mb-4 mt-4">
         <p class="text-sm font-semibold text-gray-700 mb-2">Entregas (por fecha de entrega, sin entregados ni cancelados):</p>
-        <div class="flex flex-wrap gap-2">
+        <div class="chips-scroll md:flex-wrap">
             <a href="?entrega=hoy{% if qs_sin_entrega %}&{{ qs_sin_entrega }}{% endif %}"
                class="px-4 py-2 rounded-lg font-medium transition-all {% if filtro_entrega == 'hoy' %}bg-blue-500 text-white{% else %}bg-blue-50 text-blue-700 hover:bg-blue-100{% endif %}">
                 <i class="fas fa-truck-fast mr-1"></i> Hoy ({{ entregas_hoy }})
@@ -63,7 +66,7 @@
         </div>
 
         <!-- Rango libre de fechas de entrega -->
-        <form method="get" class="flex flex-wrap items-end gap-3 mt-4">
+        <form method="get" class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-3 mt-4">
             {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}">{% endif %}
             {% if filtro_pago %}<input type="hidden" name="pago" value="{{ filtro_pago }}">{% endif %}
             {% if filtro_envio %}<input type="hidden" name="envio" value="{{ filtro_envio }}">{% endif %}
@@ -76,9 +79,9 @@
                 <label for="entrega_hasta" class="block text-xs font-semibold text-gray-600 mb-1">Hasta</label>
                 <input type="date" id="entrega_hasta" name="entrega_hasta" value="{{ entrega_hasta }}" class="input-field">
             </div>
-            <button type="submit" class="btn-primary"><i class="fas fa-filter mr-2"></i>Aplicar</button>
+            <button type="submit" class="btn-primary w-full sm:w-auto"><i class="fas fa-filter mr-2"></i>Aplicar</button>
             {% if entrega_desde or entrega_hasta %}
-            <a href="?{{ qs_sin_rango }}" class="btn-secondary"><i class="fas fa-times mr-2"></i>Quitar rango</a>
+            <a href="?{{ qs_sin_rango }}" class="btn-secondary w-full sm:w-auto"><i class="fas fa-times mr-2"></i>Quitar rango</a>
             {% endif %}
         </form>
     </div>
@@ -86,7 +89,7 @@
     <!-- Estados del Pedido -->
     <div class="mb-4">
         <p class="text-sm font-semibold text-gray-700 mb-2">Estado del Pedido:</p>
-        <div class="flex flex-wrap gap-2">
+        <div class="chips-scroll md:flex-wrap">
             <a href="{% url 'admin_simple:pedidos-list' %}" 
                class="px-4 py-2 rounded-lg font-medium transition-all {% if not filtro_estado %}bg-blue-500 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
                 <i class="fas fa-list mr-1"></i> Todos ({{ total_pedidos }})
@@ -117,7 +120,7 @@
     <!-- Estados de Pago -->
     <div>
         <p class="text-sm font-semibold text-gray-700 mb-2">Estado de Pago:</p>
-        <div class="flex flex-wrap gap-2">
+        <div class="chips-scroll md:flex-wrap">
             <a href="?pago=pendiente{% if qs_sin_pago %}&{{ qs_sin_pago }}{% endif %}" 
                class="px-4 py-2 rounded-lg font-medium transition-all {% if filtro_pago == 'pendiente' %}bg-orange-500 text-white{% else %}bg-orange-50 text-orange-700 hover:bg-orange-100{% endif %}">
                 <i class="fas fa-clock mr-1"></i> Pendientes ({{ pagos_pendientes }})
@@ -132,11 +135,15 @@
             </a>
         </div>
     </div>
-</div>
+</details>
 
 <!-- Búsqueda y Filtros Avanzados -->
-<div class="card mb-6">
-    <form method="get" class="space-y-4">
+<details class="card mb-4 sm:mb-6 filtros" {% if buscar_actual or filtro_fecha or filtro_envio %}open{% endif %}>
+    <summary class="flex items-center cursor-pointer">
+        <i class="fas fa-magnifying-glass text-blue-600 mr-2"></i>
+        <span class="text-lg font-bold text-gray-900">Buscar</span>
+    </summary>
+    <form method="get" class="space-y-4 mt-4">
         {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}">{% endif %}
         {% if filtro_pago %}<input type="hidden" name="pago" value="{{ filtro_pago }}">{% endif %}
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -192,7 +199,7 @@
             </div>
         </div>
         
-        <div class="flex gap-2">
+        <div class="grid grid-cols-2 sm:flex gap-2">
             <button type="submit" class="btn-primary">
                 <i class="fas fa-search mr-2"></i> Buscar
             </button>
@@ -201,7 +208,7 @@
             </a>
         </div>
     </form>
-</div>
+</details>
 
 <!-- Lista de Pedidos -->
 <div class="card">
@@ -210,21 +217,24 @@
         {% csrf_token %}
         <input type="hidden" name="volver" value="{{ request.get_full_path }}">
 
-        <!-- Barra de acciones en lote -->
-        <div class="flex flex-wrap items-center gap-3 mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <!-- Barra de acciones en lote: en celular aparece sobre la navegación
+             recién cuando hay algo marcado, para no robar pantalla -->
+        <div id="lote-barra"
+             class="hidden flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mb-4 p-3 border border-gray-200 rounded-lg
+                    fixed lg:static bottom-20 left-3 right-3 z-40 bg-white lg:bg-gray-50 shadow-2xl lg:shadow-none">
             <span class="text-sm text-gray-700">
                 <span id="lote-contador" class="font-bold">0</span> pedido(s) marcado(s)
             </span>
-            <select name="accion" class="input-field w-auto py-2">
+            <select name="accion" class="input-field w-full sm:w-auto py-2" aria-label="Nuevo estado para los pedidos marcados">
                 <option value="">Cambiar estado a…</option>
                 <option value="preparando">Preparando</option>
                 <option value="en_camino">En camino</option>
                 <option value="entregado">Entregado</option>
             </select>
-            <button type="submit" class="btn-primary py-2">
+            <button type="submit" class="btn-primary py-2 w-full sm:w-auto">
                 <i class="fas fa-bolt mr-2"></i>Aplicar
             </button>
-            <span class="text-xs text-gray-500">
+            <span class="hidden lg:inline text-xs text-gray-500">
                 No avisa al cliente ni toca el stock. Los entregados y cancelados se ignoran.
             </span>
         </div>
@@ -437,9 +447,9 @@
                 </div>
                 
                 <!-- Footer -->
-                <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200 gap-3">
                     <div>
-                        <div class="text-2xl font-bold text-green-600">${{ pedido.total|floatformat:0 }}</div>
+                        <div class="text-xl font-bold text-green-600">${{ pedido.total|floatformat:0 }}</div>
                         {% if pedido.estado_pago == 'approved' %}
                             <span class="text-xs text-green-600"><i class="fas fa-check mr-1"></i>Pago Aprobado</span>
                         {% elif pedido.estado_pago == 'rejected' %}
@@ -449,8 +459,14 @@
                         {% endif %}
                     </div>
                     <div class="flex gap-2">
+                        {% if pedido.telefono_destinatario %}
+                        <a href="tel:{{ pedido.telefono_destinatario }}" aria-label="Llamar al destinatario"
+                           class="btn-secondary py-2 px-4">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                        {% endif %}
                         <a href="{% url 'admin_simple:pedido-detail' pedido.pk %}" class="btn-primary py-2 px-4">
-                            <i class="fas fa-eye mr-2"></i> Ver Detalle
+                            <i class="fas fa-eye mr-2"></i> Ver
                         </a>
                     </div>
                 </div>
@@ -501,9 +517,16 @@
     const items = () => Array.from(form.querySelectorAll('.lote-item'));
     const visibles = () => items().filter(c => c.offsetParent !== null);
 
+    const barra = document.getElementById('lote-barra');
+    const esMobile = () => window.matchMedia('(max-width: 1023px)').matches;
+
     function actualizar() {
-        contador.textContent = items().filter(c => c.checked).length;
+        const marcados = items().filter(c => c.checked).length;
+        contador.textContent = marcados;
+        if (barra) barra.classList.toggle('hidden', esMobile() && marcados === 0);
     }
+
+    window.addEventListener('resize', actualizar);
 
     items().forEach(c => c.addEventListener('change', actualizar));
     if (todos) {
@@ -516,6 +539,11 @@
         if (!items().some(c => c.checked)) {
             e.preventDefault();
             alert('Marcá al menos un pedido.');
+            return;
+        }
+        if (!form.querySelector('[name="accion"]').value) {
+            e.preventDefault();
+            alert('Elegí a qué estado pasarlos.');
         }
     });
     actualizar();

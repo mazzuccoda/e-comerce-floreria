@@ -8,12 +8,12 @@
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
             <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-2 mr-3">
+                <div class="hidden sm:block bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-2 mr-3">
                     <i class="fas fa-box text-white text-xl sm:text-2xl"></i>
                 </div>
-                📦 Productos
+                Productos
             </h2>
-            <p class="text-xs sm:text-sm text-gray-600 mt-1 ml-0 sm:ml-14">Gestión completa de inventario</p>
+            <p class="text-xs sm:text-sm text-gray-600 mt-1 sm:ml-14">Gestión completa de inventario</p>
         </div>
         <a href="{% url 'admin_simple:producto-create' %}" 
            class="btn-primary whitespace-nowrap group w-full sm:w-auto text-center shadow-lg">
@@ -26,7 +26,7 @@
 
 <!-- Filtros Rápidos (Chips) -->
 <div class="mb-4 sm:mb-6">
-    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div class="chips-scroll">
         <a href="{% url 'admin_simple:productos-list' %}" 
            class="filter-chip {% if not filtro_actual or filtro_actual == 'todos' %}active{% endif %}">
             <i class="fas fa-th mr-1.5"></i>
@@ -109,15 +109,16 @@
 }
 </style>
 
-<!-- Filters and Search -->
-<div class="card mb-6 bg-gradient-to-br from-white to-gray-50">
-    <div class="flex items-center mb-4">
+<!-- Filters and Search: plegado en celular, abierto si hay búsqueda activa -->
+<details class="card mb-4 sm:mb-6 bg-gradient-to-br from-white to-gray-50 filtros"
+         {% if buscar_actual or categoria_actual %}open{% endif %}>
+    <summary class="flex items-center cursor-pointer">
         <div class="bg-blue-500 rounded-lg p-2">
             <i class="fas fa-filter text-white"></i>
         </div>
-        <h3 class="text-lg font-bold text-gray-900 ml-3">Filtros y Búsqueda</h3>
-    </div>
-    <form method="get" class="space-y-4">
+        <h3 class="text-lg font-bold text-gray-900 ml-3">Buscar y ordenar</h3>
+    </summary>
+    <form method="get" class="space-y-4 mt-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <!-- Search -->
             <div class="md:col-span-2">
@@ -163,41 +164,16 @@
             </div>
         </div>
 
-        <!-- Filter Buttons -->
-        <div class="border-t pt-4 mt-4">
-            <div class="flex items-center justify-between mb-3">
-                <p class="text-sm font-semibold text-gray-700">
-                    <i class="fas fa-sliders-h text-indigo-600"></i> Filtros Rápidos
-                </p>
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="?filtro=todos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'todos' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-green-500{% endif %}">
-                    <i class="fas fa-th-large"></i> Todos
-                </a>
-                <a href="?filtro=activos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'activos' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-green-500{% endif %}">
-                    <i class="fas fa-check-circle text-green-600"></i> Activos
-                </a>
-                <a href="?filtro=inactivos{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'inactivos' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-red-500{% endif %}">
-                    <i class="fas fa-eye-slash text-red-600"></i> Inactivos
-                </a>
-                <a href="?filtro=stock_bajo{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'stock_bajo' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-yellow-500{% endif %}">
-                    <i class="fas fa-exclamation-triangle text-yellow-600"></i> Stock Bajo
-                </a>
-                <a href="?filtro=sin_stock{% if buscar_actual %}&buscar={{ buscar_actual }}{% endif %}" 
-                   class="px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 {% if filtro_actual == 'sin_stock' %}bg-gradient-to-r from-green-600 to-green-700 text-white shadow-md{% else %}bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 hover:border-red-500{% endif %}">
-                    <i class="fas fa-times-circle text-red-600"></i> Sin Stock
-                </a>
-            </div>
+        <div class="grid grid-cols-2 sm:flex gap-2">
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-search mr-2"></i>Buscar
+            </button>
+            <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary text-center">
+                <i class="fas fa-redo mr-2"></i>Limpiar
+            </a>
         </div>
     </form>
-</div>
+</details>
 
 <!-- Products Table - Desktop View -->
 <div class="card overflow-hidden hidden md:block">
@@ -332,10 +308,10 @@
 </div>
 
 <!-- Products Cards - Mobile View -->
-<div class="md:hidden space-y-4">
+<div class="md:hidden space-y-3">
     {% for producto in page_obj %}
     <div class="card hover:shadow-lg transition-shadow duration-200">
-        <div class="flex items-start space-x-4 p-5">
+        <div class="flex items-start gap-3">
             <!-- Imagen más grande para móvil -->
             <div class="flex-shrink-0">
                 {% if producto.get_primary_image_url %}
@@ -363,44 +339,30 @@
                     <p class="text-sm text-gray-500">{{ producto.categoria.nombre }}</p>
                 </div>
                 
-                <!-- Toggle disponible - En su propia línea -->
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium text-gray-700">
-                        <i class="fas fa-toggle-on text-green-600 mr-1"></i>
-                        Estado:
-                    </span>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-xs text-gray-500">Inactivo</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" 
-                                   class="disponible-toggle" 
+                <!-- Visible en la tienda y destacado, uno al lado del otro -->
+                <div class="flex items-center gap-4 mb-3">
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <span class="toggle-switch flex-shrink-0">
+                            <input type="checkbox"
+                                   class="disponible-toggle"
                                    data-producto-id="{{ producto.id }}"
                                    {% if producto.is_active %}checked{% endif %}>
                             <span class="slider"></span>
-                        </label>
-                        <span class="text-xs text-green-600 font-medium">Activo</span>
-                    </div>
-                </div>
-                
-                <!-- Toggle destacado -->
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-sm font-medium text-gray-700">
-                        <i class="fas fa-star text-yellow-500 mr-1"></i>
-                        Destacado:
-                    </span>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-xs text-gray-500">No</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" 
-                                   class="destacado-toggle" 
+                        </span>
+                        <span>En la tienda</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-gray-700">
+                        <span class="toggle-switch flex-shrink-0">
+                            <input type="checkbox"
+                                   class="destacado-toggle"
                                    data-producto-id="{{ producto.id }}"
                                    {% if producto.is_featured %}checked{% endif %}>
                             <span class="slider slider-yellow"></span>
-                        </label>
-                        <span class="text-xs text-yellow-600 font-medium">Sí</span>
-                    </div>
+                        </span>
+                        <span>Destacado</span>
+                    </label>
                 </div>
-                
+
                 <!-- Precio y Stock en línea -->
                 <div class="flex items-center justify-between mb-3">
                     <!-- Precio editable -->
@@ -433,10 +395,10 @@
                 </div>
                 
                 <!-- Botón de editar -->
-                <div class="flex justify-end pt-2 border-t border-gray-100">
+                <div class="pt-2 border-t border-gray-100">
                     <a href="{% url 'admin_simple:producto-edit' producto.id %}" 
-                       class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors duration-200 shadow-sm hover:shadow-md">
-                        <i class="fas fa-edit mr-2"></i> Editar Producto
+                       class="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors duration-200 shadow-sm hover:shadow-md">
+                        <i class="fas fa-edit mr-2"></i> Editar producto
                     </a>
                 </div>
             </div>

@@ -3,7 +3,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#047857">
     <title>{% block title %}Admin Simple - Florería Cristina{% endblock %}</title>
     
     <!-- Tailwind CSS CDN -->
@@ -18,6 +19,19 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
+        /* El panel se usa con el celular en una mano: nada por debajo de 44px
+           de alto y nada de 16px de fuente para abajo (iOS hace zoom solo). */
+        .btn-primary, .btn-secondary, .btn-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 2.75rem;
+        }
+        .input-field, select.input-field, textarea.input-field {
+            font-size: 1rem;
+            min-height: 2.75rem;
+        }
+
         .btn-primary {
             background: linear-gradient(to right, #059669, #047857);
             color: white;
@@ -133,6 +147,45 @@
         input:checked + .slider-yellow {
             background-color: #f59e0b;
         }
+
+        /* Barra inferior del celular: no quedar tapada por el gesto de inicio */
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        @media (max-width: 767px) {
+            .card {
+                padding: 1rem;
+            }
+            .stat-card {
+                padding: 1rem;
+            }
+        }
+        /* Menú inferior: que entre siempre y se pueda desplazar si es largo */
+        #mobile-menu {
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        /* Chips de filtro: una sola fila que se desliza, en vez de un muro */
+        .chips-scroll {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 0.25rem;
+        }
+        .chips-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .chips-scroll > * {
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        @media print {
+            header, nav, footer, .no-print {
+                display: none !important;
+            }
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
@@ -141,29 +194,30 @@
     <!-- Header -->
     <header class="bg-gradient-to-r from-green-600 to-green-700 shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-5">
-                <div class="flex items-center space-x-4">
-                    <div class="bg-white rounded-full p-3 shadow-md">
-                        <i class="fas fa-flower text-green-600 text-2xl"></i>
+            <div class="flex justify-between items-center py-3 md:py-5">
+                <div class="flex items-center space-x-3 md:space-x-4 min-w-0">
+                    <div class="bg-white rounded-full p-2 md:p-3 shadow-md">
+                        <i class="fas fa-flower text-green-600 text-lg md:text-2xl"></i>
                     </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-white">
+                    <div class="min-w-0">
+                        <h1 class="text-lg md:text-2xl font-bold text-white truncate">
                             Florería Cristina
                         </h1>
-                        <span class="text-sm text-green-100">Panel de Administración</span>
+                        <span class="hidden md:block text-sm text-green-100">Panel de Administración</span>
                     </div>
                 </div>
-                <div class="flex items-center space-x-6">
-                    <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+                <div class="flex items-center space-x-3 md:space-x-6">
+                    <div class="hidden sm:block bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
                         <span class="text-sm text-white font-medium">
                             <i class="fas fa-user-shield mr-2"></i>
                             {{ user.username }}
                         </span>
                     </div>
-                    <a href="{% url 'account_logout' %}" 
-                       class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Salir
+                    <a href="{% url 'account_logout' %}"
+                       aria-label="Cerrar sesión"
+                       class="bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 h-11 rounded-lg text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center">
+                        <i class="fas fa-sign-out-alt md:mr-2"></i>
+                        <span class="hidden md:inline">Salir</span>
                     </a>
                 </div>
             </div>
@@ -218,20 +272,24 @@
     {% if messages %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
         {% for message in messages %}
-        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} border px-4 py-3 rounded relative mb-4" role="alert">
-            <span class="block sm:inline">{{ message }}</span>
+        <div class="{% if message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% elif message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} border px-4 py-3 rounded relative mb-4 flex items-start gap-3" role="alert">
+            <i class="fas {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %} mt-1"></i>
+            <span class="flex-1">{{ message }}</span>
+            <button type="button" onclick="this.closest('[role=alert]').remove()"
+                    aria-label="Cerrar aviso" class="px-2 -my-1 text-lg leading-none opacity-60 hover:opacity-100">&times;</button>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8 pb-28 md:pb-8">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Bottom Navigation (Mobile Only) -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50">
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50 safe-bottom"
+         aria-label="Navegación principal">
         <div class="grid grid-cols-5 h-16">
             <!-- Dashboard -->
             <a href="{% url 'admin_simple:dashboard' %}" 
@@ -264,7 +322,7 @@
             </a>
             
             <!-- Más -->
-            <button onclick="toggleMobileMenu()" 
+            <button onclick="toggleMobileMenu()" aria-controls="mobile-menu" aria-expanded="false" id="mobile-menu-boton"
                     class="flex flex-col items-center justify-center text-gray-600 transition-all">
                 <i class="fas fa-bars text-xl mb-0.5"></i>
                 <span class="text-xs font-semibold">Más</span>
@@ -276,7 +334,8 @@
     <div id="mobile-menu-overlay" class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" onclick="toggleMobileMenu()"></div>
     
     <!-- Mobile Menu Drawer -->
-    <div id="mobile-menu" class="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 transform translate-y-full transition-transform duration-300">
+    <div id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menú"
+         class="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 transform translate-y-full transition-transform duration-300 safe-bottom">
         <div class="p-6">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-gray-900">Menú</h3>
@@ -356,15 +415,25 @@
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
             const overlay = document.getElementById('mobile-menu-overlay');
-            
-            if (menu.classList.contains('translate-y-full')) {
-                menu.classList.remove('translate-y-full');
-                overlay.classList.remove('hidden');
-            } else {
-                menu.classList.add('translate-y-full');
-                overlay.classList.add('hidden');
-            }
+            const boton = document.getElementById('mobile-menu-boton');
+            const abierto = menu.classList.toggle('translate-y-full');
+            overlay.classList.toggle('hidden', abierto);
+            if (boton) boton.setAttribute('aria-expanded', String(!abierto));
         }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const menu = document.getElementById('mobile-menu');
+            if (menu && !menu.classList.contains('translate-y-full')) toggleMobileMenu();
+        });
+
+        // Los paneles de filtros van plegados en celular y abiertos en escritorio.
+        function sincronizarFiltros() {
+            if (window.innerWidth < 768) return;
+            document.querySelectorAll('details.filtros').forEach(d => { d.open = true; });
+        }
+        sincronizarFiltros();
+        window.addEventListener('resize', sincronizarFiltros);
     </script>
 
     <!-- jQuery (para AJAX) -->

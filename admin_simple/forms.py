@@ -39,7 +39,7 @@ class PedidoOperativoForm(forms.ModelForm):
             'tipo_envio': forms.Select(attrs={'class': _CLASE_INPUT}),
             'nombre_destinatario': forms.TextInput(attrs={'class': _CLASE_INPUT}),
             'telefono_destinatario': forms.TextInput(
-                attrs={'class': _CLASE_INPUT, 'type': 'tel'}
+                attrs={'class': _CLASE_INPUT, 'type': 'tel', 'inputmode': 'tel'}
             ),
             'direccion': forms.TextInput(attrs={'class': _CLASE_INPUT}),
             'ciudad': forms.TextInput(attrs={'class': _CLASE_INPUT}),
@@ -105,10 +105,16 @@ class PedidoManualForm(forms.ModelForm):
         ]
         widgets = {
             'nombre_comprador': forms.TextInput(attrs={'class': _CLASE_INPUT}),
-            'telefono_comprador': forms.TextInput(attrs={'class': _CLASE_INPUT, 'type': 'tel'}),
-            'email_comprador': forms.EmailInput(attrs={'class': _CLASE_INPUT}),
+            'telefono_comprador': forms.TextInput(
+                attrs={'class': _CLASE_INPUT, 'type': 'tel', 'inputmode': 'tel'}
+            ),
+            'email_comprador': forms.EmailInput(
+                attrs={'class': _CLASE_INPUT, 'inputmode': 'email'}
+            ),
             'nombre_destinatario': forms.TextInput(attrs={'class': _CLASE_INPUT}),
-            'telefono_destinatario': forms.TextInput(attrs={'class': _CLASE_INPUT, 'type': 'tel'}),
+            'telefono_destinatario': forms.TextInput(
+                attrs={'class': _CLASE_INPUT, 'type': 'tel', 'inputmode': 'tel'}
+            ),
             'direccion': forms.TextInput(attrs={'class': _CLASE_INPUT}),
             'ciudad': forms.TextInput(attrs={'class': _CLASE_INPUT}),
             'tipo_envio': forms.Select(attrs={'class': _CLASE_INPUT}),
@@ -119,7 +125,9 @@ class PedidoManualForm(forms.ModelForm):
             'hora_retiro': forms.TimeInput(
                 attrs={'type': 'time', 'class': _CLASE_INPUT}, format='%H:%M'
             ),
-            'costo_envio': forms.NumberInput(attrs={'class': _CLASE_INPUT, 'step': '100', 'min': '0'}),
+            'costo_envio': forms.NumberInput(
+                attrs={'class': _CLASE_INPUT, 'step': '100', 'min': '0', 'inputmode': 'numeric'}
+            ),
             'medio_pago': forms.Select(attrs={'class': _CLASE_INPUT}),
             'estado_pago': forms.Select(attrs={'class': _CLASE_INPUT}),
             'dedicatoria': forms.Textarea(attrs={'class': _CLASE_INPUT, 'rows': 3}),
@@ -216,7 +224,9 @@ class ItemManualForm(forms.Form):
         min_value=1,
         initial=1,
         required=False,
-        widget=forms.NumberInput(attrs={'class': _CLASE_INPUT, 'min': '1'}),
+        widget=forms.NumberInput(
+            attrs={'class': _CLASE_INPUT, 'min': '1', 'inputmode': 'numeric'}
+        ),
         label='Cantidad',
     )
 

@@ -4,8 +4,8 @@
 
 {% block content %}
 <!-- Header con Breadcrumb -->
-<div class="mb-6">
-    <div class="flex items-center text-xs sm:text-sm text-gray-500 mb-4 flex-wrap">
+<div class="mb-4 sm:mb-6">
+    <div class="flex items-center text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex-wrap">
         <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-green-600 transition-colors">
             <i class="fas fa-home"></i> <span class="hidden sm:inline">Dashboard</span>
         </a>
@@ -19,14 +19,14 @@
     
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="flex items-center">
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-2 sm:p-3 shadow-lg">
+            <div class="hidden sm:block bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-2 sm:p-3 shadow-lg">
                 <i class="fas fa-edit text-white text-xl sm:text-2xl"></i>
             </div>
-            <div class="ml-3 sm:ml-4">
+            <div class="sm:ml-4">
                 <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Editar Producto</h2>
                 <p class="text-sm sm:text-base text-gray-600 mt-1 flex items-center">
                     <i class="fas fa-tag text-green-600 mr-2"></i>
-                    <span class="truncate max-w-[200px] sm:max-w-none">{{ producto.nombre }}</span>
+                    <span class="truncate" style="max-width: 200px">{{ producto.nombre }}</span>
                 </p>
             </div>
         </div>
@@ -98,7 +98,8 @@
                               name="descripcion_corta" 
                               rows="4" 
                               maxlength="200"
-                              class="input-field resize-y text-base leading-relaxed min-h-[100px]"
+                              class="input-field resize-y text-base leading-relaxed"
+                              style="min-height: 100px"
                               placeholder="Una breve descripción que capte la atención...">{{ producto.descripcion_corta }}</textarea>
                     <div class="flex justify-between mt-2">
                         <p class="text-sm text-gray-600">
@@ -118,7 +119,8 @@
                               name="descripcion" 
                               rows="8" 
                               maxlength="500"
-                              class="input-field resize-y text-base leading-relaxed min-h-[200px]"
+                              class="input-field resize-y text-base leading-relaxed"
+                              style="min-height: 200px"
                               placeholder="Describe el producto en detalle: características, colores, tamaño, etc.">{{ producto.descripcion }}</textarea>
                     <div class="flex justify-between mt-2">
                         <p class="text-sm text-gray-600">
@@ -231,7 +233,7 @@
         </div>
 
         <!-- Botones de Acción -->
-        <div class="card bg-gradient-to-r from-gray-50 to-white sticky bottom-0 lg:relative z-10 shadow-2xl lg:shadow-lg">
+        <div class="card bg-gradient-to-r from-gray-50 to-white sticky bottom-20 lg:bottom-0 lg:relative z-10 shadow-2xl lg:shadow-lg">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                 <a href="{% url 'admin_simple:productos-list' %}" class="btn-secondary group text-center py-3 sm:py-2.5 text-base sm:text-sm">
                     <i class="fas fa-times group-hover:rotate-90 transition-transform"></i> Cancelar
@@ -242,7 +244,7 @@
                     <span class="sm:hidden">Guardar Cambios</span>
                 </button>
             </div>
-            <p class="text-xs sm:text-sm text-gray-500 mt-3 text-center">
+            <p class="hidden sm:block text-sm text-gray-500 mt-3 text-center">
                 <i class="fas fa-keyboard"></i> Atajo: <kbd class="px-2 py-1 bg-gray-200 rounded font-mono">Ctrl + S</kbd>
             </p>
         </div>

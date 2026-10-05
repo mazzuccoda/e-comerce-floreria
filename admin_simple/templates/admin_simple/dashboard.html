@@ -4,47 +4,66 @@
 {% block title %}Dashboard - Admin Simple{% endblock %}
 
 {% block content %}
-<div class="mb-6">
+<div class="mb-4 sm:mb-6">
     <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">📊 Dashboard</h2>
     <p class="text-sm sm:text-base text-gray-600 mt-1">Vista general de tu tienda</p>
 </div>
 
 <!-- Hoy -->
 {% if hoy %}
-<div class="card mb-6">
+<div class="card mb-4 sm:mb-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex flex-wrap gap-6 sm:gap-10">
-            <div>
+        <div class="grid grid-cols-3 gap-3 sm:gap-10 w-full sm:w-auto sm:flex sm:flex-wrap">
+            <div class="min-w-0">
                 <p class="text-xs font-semibold text-gray-500 uppercase">Facturado hoy</p>
-                <p class="text-2xl sm:text-3xl font-bold text-green-600">${{ hoy.facturacion|floatformat:0|intcomma }}</p>
+                <p class="text-xl sm:text-3xl font-bold text-green-600 break-words">${{ hoy.facturacion|floatformat:0|intcomma }}</p>
             </div>
             <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase">Pedidos de hoy</p>
-                <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ hoy.pedidos }}</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase">Pedidos</p>
+                <p class="text-xl sm:text-3xl font-bold text-gray-900">{{ hoy.pedidos }}</p>
             </div>
             <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase">Entregas pendientes</p>
-                <p class="text-2xl sm:text-3xl font-bold text-gray-900">{{ hoy.entregas_pendientes }}</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase">A entregar</p>
+                <p class="text-xl sm:text-3xl font-bold text-gray-900">{{ hoy.entregas_pendientes }}</p>
             </div>
         </div>
-        <a href="{% url 'admin_simple:ventas' %}" class="btn-primary">
+        <a href="{% url 'admin_simple:ventas' %}" class="btn-primary w-full sm:w-auto">
             <i class="fas fa-chart-line mr-2"></i>Ver resumen de ventas
         </a>
     </div>
 </div>
 {% endif %}
 
+<!-- Lo que se toca a diario, primero y al alcance del pulgar -->
+<div class="grid grid-cols-2 gap-3 mb-4 sm:mb-6">
+    <a href="{% url 'admin_simple:agenda' %}"
+       class="card flex flex-col items-center justify-center text-center py-5 hover:border-green-300">
+        <i class="fas fa-calendar-day text-2xl text-green-600 mb-2"></i>
+        <span class="font-bold text-gray-900">Agenda del día</span>
+        {% if entregas_hoy %}
+        <span class="text-xs text-gray-600 mt-1">{{ entregas_hoy }} entrega{{ entregas_hoy|pluralize }} hoy</span>
+        {% endif %}
+    </a>
+    <a href="{% url 'admin_simple:pedido-nuevo' %}"
+       class="card flex flex-col items-center justify-center text-center py-5 hover:border-green-300">
+        <i class="fas fa-plus-circle text-2xl text-green-600 mb-2"></i>
+        <span class="font-bold text-gray-900">Nuevo pedido</span>
+        <span class="text-xs text-gray-600 mt-1">Por teléfono o WhatsApp</span>
+    </a>
+</div>
+
 <!-- Stats Cards - Resumen Rápido -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+    {# El ícono grande se oculta en celular: el número es lo que importa #}
     <!-- Total Productos -->
     <div class="stat-card from-blue-500 to-blue-600">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-blue-100 text-sm font-medium mb-1">Total Productos</p>
-                <p class="text-4xl font-bold">{{ total_productos }}</p>
+                <p class="text-3xl sm:text-4xl font-bold">{{ total_productos }}</p>
                 <p class="text-blue-100 text-xs mt-2">En catálogo</p>
             </div>
-            <div class="bg-white/20 rounded-full p-4">
+            <div class="hidden sm:block bg-white/20 rounded-full p-4">
                 <i class="fas fa-box text-3xl"></i>
             </div>
         </div>
@@ -55,10 +74,10 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-green-100 text-sm font-medium mb-1">Activos</p>
-                <p class="text-4xl font-bold">{{ productos_activos }}</p>
+                <p class="text-3xl sm:text-4xl font-bold">{{ productos_activos }}</p>
                 <p class="text-green-100 text-xs mt-2">Visibles en tienda</p>
             </div>
-            <div class="bg-white/20 rounded-full p-4">
+            <div class="hidden sm:block bg-white/20 rounded-full p-4">
                 <i class="fas fa-check-circle text-3xl"></i>
             </div>
         </div>
@@ -69,10 +88,10 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-yellow-100 text-sm font-medium mb-1">Stock Bajo</p>
-                <p class="text-4xl font-bold">{{ productos_stock_bajo }}</p>
+                <p class="text-3xl sm:text-4xl font-bold">{{ productos_stock_bajo }}</p>
                 <p class="text-yellow-100 text-xs mt-2">Menos de 5 unidades</p>
             </div>
-            <div class="bg-white/20 rounded-full p-4">
+            <div class="hidden sm:block bg-white/20 rounded-full p-4">
                 <i class="fas fa-exclamation-triangle text-3xl"></i>
             </div>
         </div>
@@ -83,10 +102,10 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-red-100 text-sm font-medium mb-1">Sin Stock</p>
-                <p class="text-4xl font-bold">{{ productos_sin_stock }}</p>
+                <p class="text-3xl sm:text-4xl font-bold">{{ productos_sin_stock }}</p>
                 <p class="text-red-100 text-xs mt-2">Requieren reposición</p>
             </div>
-            <div class="bg-white/20 rounded-full p-4">
+            <div class="hidden sm:block bg-white/20 rounded-full p-4">
                 <i class="fas fa-times-circle text-3xl"></i>
             </div>
         </div>
@@ -215,7 +234,7 @@
 </div>
 
 <!-- Info Box -->
-<div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-6 rounded-xl shadow-md">
+<div class="hidden sm:block mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-6 rounded-xl shadow-md">
     <div class="flex items-start">
         <div class="flex-shrink-0 bg-blue-500 rounded-full p-3">
             <i class="fas fa-lightbulb text-white text-xl"></i>
