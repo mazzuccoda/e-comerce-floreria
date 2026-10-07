@@ -258,6 +258,7 @@ def productos_list(request):
         activos=Count('id', filter=Q(is_active=True)),
         inactivos=Count('id', filter=Q(is_active=False)),
         stock_bajo=Count('id', filter=Q(stock__lt=5, stock__gt=0)),
+        sin_stock=Count('id', filter=Q(stock=0)),
         destacados=Count('id', filter=Q(is_featured=True)),
     )
     

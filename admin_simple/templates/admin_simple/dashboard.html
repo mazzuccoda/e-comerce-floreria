@@ -84,7 +84,7 @@
     </div>
 
     <!-- Stock Bajo -->
-    <div class="stat-card from-yellow-500 to-orange-500">
+    <a href="{% url 'admin_simple:productos-list' %}?filtro=stock_bajo" class="stat-card from-yellow-500 to-orange-500 block">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-yellow-100 text-sm font-medium mb-1">Stock Bajo</p>
@@ -95,10 +95,10 @@
                 <i class="fas fa-exclamation-triangle text-3xl"></i>
             </div>
         </div>
-    </div>
+    </a>
 
     <!-- Sin Stock -->
-    <div class="stat-card from-red-500 to-red-600">
+    <a href="{% url 'admin_simple:productos-list' %}?filtro=sin_stock" class="stat-card from-red-500 to-red-600 block">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-red-100 text-sm font-medium mb-1">Sin Stock</p>
@@ -109,7 +109,7 @@
                 <i class="fas fa-times-circle text-3xl"></i>
             </div>
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- Acciones Principales -->
