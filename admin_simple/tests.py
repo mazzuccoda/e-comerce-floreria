@@ -1198,3 +1198,108 @@ class ReposicionDeStockTests(TestCase):
 
         self.producto.refresh_from_db()
         self.assertEqual(self.producto.stock, 2)
+
+
+class EnvioAnonimoTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='anonimo-admin',
+            email='anonimo@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-anonimo')
+        self.producto = Producto.objects.create(
+            nombre='Ramo Anónimo',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='ANON-ROSAS',
+            stock=5,
+        )
+
+    def _pedido(self, **kwargs):
+        datos = dict(
+            nombre_destinatario='Ana',
+            direccion='Solano Vera 480',
+            ciudad='Yerba Buena',
+            telefono_destinatario='3814778577',
+            fecha_entrega=timezone.localdate(),
+            franja_horaria='durante_el_dia',
+            dedicatoria='Te quiero',
+            medio_pago='transferencia',
+            total=30000,
+        )
+        datos.update(kwargs)
+        return Pedido.objects.create(**datos)
+
+    def _detalle(self, pedido):
+        respuesta = self.client.get(
+            reverse('admin_simple:pedido-detail', args=[pedido.pk])
+        )
+        return respuesta.content.decode()
+
+    def test_compra_de_invitado_no_es_regalo_anonimo(self):
+        pedido = self._pedido(anonimo=True, regalo_anonimo=False)
+
+        self.assertNotIn('Envío anónimo', self._detalle(pedido))
+
+    def test_solo_avisa_cuando_el_cliente_lo_pidio(self):
+        pedido = self._pedido(anonimo=True, regalo_anonimo=True)
+
+        self.assertIn('Envío anónimo', self._detalle(pedido))
+
+
+class ProductosSinStockTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='sinstock-admin',
+            email='sinstock@example.com',
+            password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+        self.categoria = Categoria.objects.create(nombre='Ramos', slug='ramos-sin-stock')
+        self.agotado = Producto.objects.create(
+            nombre='Ramo Agotado',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='SIN-STOCK',
+            stock=0,
+        )
+        self.disponible = Producto.objects.create(
+            nombre='Ramo Disponible',
+            descripcion='Rosas.',
+            categoria=self.categoria,
+            precio=30000,
+            sku='CON-STOCK',
+            stock=7,
+        )
+
+    def test_filtro_sin_stock_lista_solo_los_agotados(self):
+        respuesta = self.client.get(
+            reverse('admin_simple:productos-list'), {'filtro': 'sin_stock'}
+        )
+
+        productos = list(respuesta.context['page_obj'])
+        self.assertEqual(productos, [self.agotado])
+        self.assertEqual(respuesta.context['stats']['sin_stock'], 1)
+
+    def test_listado_completo_incluye_los_agotados(self):
+        respuesta = self.client.get(reverse('admin_simple:productos-list'))
+
+        productos = list(respuesta.context['page_obj'])
+        self.assertIn(self.agotado, productos)
+        self.assertIn(self.disponible, productos)
+
+    def test_repone_stock_y_vuelve_al_listado_filtrado(self):
+        volver = reverse('admin_simple:productos-list') + '?filtro=sin_stock'
+
+        respuesta = self.client.post(
+            reverse('admin_simple:producto-reponer', args=[self.agotado.pk]),
+            {'unidades': '6', 'volver': volver},
+        )
+
+        self.agotado.refresh_from_db()
+        self.assertEqual(self.agotado.stock, 6)
+        self.assertRedirects(respuesta, volver)

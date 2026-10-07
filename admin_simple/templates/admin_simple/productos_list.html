@@ -51,6 +51,12 @@
             <span>Stock Bajo</span>
             <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.stock_bajo }}</span>
         </a>
+        <a href="{% url 'admin_simple:productos-list' %}?filtro=sin_stock" 
+           class="filter-chip filter-chip-red {% if filtro_actual == 'sin_stock' %}active{% endif %}">
+            <i class="fas fa-ban mr-1.5"></i>
+            <span>Sin stock</span>
+            <span class="ml-1.5 px-2 py-0.5 bg-white/30 rounded-full text-xs font-bold">{{ stats.sin_stock }}</span>
+        </a>
         <a href="{% url 'admin_simple:productos-list' %}?filtro=destacados" 
            class="filter-chip filter-chip-orange {% if filtro_actual == 'destacados' %}active{% endif %}">
             <i class="fas fa-star mr-1.5"></i>
@@ -288,6 +294,20 @@
 
                     <!-- Acciones -->
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        {% if producto.stock == 0 %}
+                        <form method="post" class="flex items-center justify-center gap-1 mb-2"
+                              action="{% url 'admin_simple:producto-reponer' producto.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                            <input type="number" name="unidades" min="1" value="5"
+                                   inputmode="numeric"
+                                   class="input-field w-16 py-1 text-center"
+                                   aria-label="Unidades a reponer de {{ producto.nombre }}">
+                            <button type="submit" class="btn-secondary py-1 px-2 text-xs whitespace-nowrap">
+                                <i class="fas fa-plus mr-1"></i>Reponer
+                            </button>
+                        </form>
+                        {% endif %}
                         <a href="{% url 'admin_simple:producto-edit' producto.id %}" 
                            class="text-green-600 hover:text-green-900">
                             <i class="fas fa-edit"></i> Editar
@@ -394,6 +414,21 @@
                     </div>
                 </div>
                 
+                {% if producto.stock == 0 %}
+                <form method="post" class="flex items-center gap-2 mb-3"
+                      action="{% url 'admin_simple:producto-reponer' producto.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                    <input type="number" name="unidades" min="1" value="5"
+                           inputmode="numeric"
+                           class="input-field w-20 text-center"
+                           aria-label="Unidades a reponer de {{ producto.nombre }}">
+                    <button type="submit" class="btn-secondary flex-1 py-2 text-sm whitespace-nowrap">
+                        <i class="fas fa-plus mr-1"></i>Reponer stock
+                    </button>
+                </form>
+                {% endif %}
+
                 <!-- Botón de editar -->
                 <div class="pt-2 border-t border-gray-100">
                     <a href="{% url 'admin_simple:producto-edit' producto.id %}" 
