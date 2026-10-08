@@ -33,6 +33,11 @@
                     <i class="fas fa-phone mr-2"></i>Cargado a mano en el panel
                 </span>
                 {% endif %}
+                {% if pedido.canal != 'web' %}
+                <span class="inline-flex items-center mt-2 px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
+                    <i class="fas fa-robot mr-2"></i>Armado por IA{% if pedido.agente_nombre %}: {{ pedido.agente_nombre|truncatechars:40 }}{% endif %}
+                </span>
+                {% endif %}
             </div>
         </div>
         

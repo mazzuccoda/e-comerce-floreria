@@ -45,6 +45,20 @@ export function buildLlmsTxt(): string {
   Body: {"sku": "10006", "cantidad": 1}
   No crea el pedido ni cobra: valida stock y devuelve checkout_url, donde la persona confirma
   destinatario, dirección, fecha, dedicatoria, envío y pago.
+- Ficha de un producto por SKU: GET ${SITE_URL}/api/publico/productos/10006
+- Fechas y franjas disponibles: GET ${SITE_URL}/api/publico/entrega/disponibilidad?fecha=2026-10-05
+- Validar un pedido completo sin crear nada: POST ${SITE_URL}/api/publico/pedidos/validar
+- Armar un pedido para que la persona confirme: POST ${SITE_URL}/api/publico/pedidos
+  Body: {"items": [{"sku": "10006", "cantidad": 1}], "entrega": {"metodo": "express",
+  "fecha": "2026-10-05", "franja": "tarde", "direccion": "Av. Aconquija 1500", "ciudad": "Yerba Buena"},
+  "destinatario": {"nombre": "...", "telefono": "..."}, "comprador": {"nombre": "...", "email": "...",
+  "telefono": "..."}, "tarjeta": {"dedicatoria": "...", "firma": "..."}, "medio_pago": "mercadopago"}
+  Precio, envío y total los calcula el servidor: lo que mande el agente se ignora.
+  Devuelve confirmar_url (el link que hay que darle a la persona), expira_en y el resumen con el total.
+  NO crea el pedido ni reserva stock: el pedido nace cuando la persona abre ese link y confirma.
+  Máximo 10 productos por pedido y 5 unidades por producto. Enviar el header Idempotency-Key
+  para que un reintento devuelva el mismo link en lugar de duplicarlo.
+- Estado de la solicitud: GET ${SITE_URL}/api/publico/pedidos/solicitud/<token>
 
 ## Catálogo
 - Catálogo completo: ${SITE_URL}/es/productos
@@ -58,6 +72,8 @@ ${landings}
 
 ## Compra
 La compra se completa en el sitio: ${SITE_URL}/es
-Un agente nunca puede pagar ni confirmar un pedido: para pedidos asistidos, WhatsApp ${BUSINESS.whatsappDisplay}.
+Un agente nunca puede pagar ni confirmar un pedido: arma la solicitud, le muestra a la persona el resumen
+con el total y le pasa confirmar_url para que confirme y pague desde su navegador.
+También se puede pedir por WhatsApp ${BUSINESS.whatsappDisplay}.
 `;
 }

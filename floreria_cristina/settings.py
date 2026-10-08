@@ -164,8 +164,17 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'publico_lectura': env('THROTTLE_PUBLICO_LECTURA', default='120/hour'),
         'publico_cotizar': env('THROTTLE_PUBLICO_COTIZAR', default='30/hour'),
+        'publico_pedido': env('THROTTLE_PUBLICO_PEDIDO', default='10/hour'),
+        'publico_confirmar': env('THROTTLE_PUBLICO_CONFIRMAR', default='10/hour'),
     },
 }
+
+# Pedidos armados por agentes de IA: la solicitud vence si nadie la confirma.
+AGENT_SOLICITUD_TTL_MIN = env.int('AGENT_SOLICITUD_TTL_MIN', default=120)
+
+# Cloudflare Turnstile: prueba de que la confirmación la hizo una persona.
+TURNSTILE_SITE_KEY = env('TURNSTILE_SITE_KEY', default='')
+TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', default='')
 
 
 # Application definition
