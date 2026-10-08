@@ -20,3 +20,11 @@ class LecturaPublicaThrottle(_PorIP):
 
 class CotizacionPublicaThrottle(_PorIP):
     scope = 'publico_cotizar'
+
+
+class PedidoPublicoThrottle(_PorIP):
+    scope = 'publico_pedido'
+
+
+class ConfirmacionPublicaThrottle(_PorIP):
+    scope = 'publico_confirmar'

@@ -116,6 +116,17 @@ def _puntaje(producto, terminos):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @throttle_classes([LecturaPublicaThrottle])
+def producto_por_sku(request, sku):
+    """GET /api/publico/productos/<sku> — la ficha que el agente necesita para armar el pedido."""
+    producto = Producto.objects.filter(sku=sku, is_active=True).first()
+    if producto is None:
+        return Response({'error': f'No existe un producto activo con sku {sku}'}, status=404)
+    return Response(_serializar(producto))
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@throttle_classes([LecturaPublicaThrottle])
 def buscar_productos(request):
     """
     GET /api/publico/productos?q=ramo romantico&precio_max=50000

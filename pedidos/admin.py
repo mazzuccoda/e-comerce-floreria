@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pedido, PedidoItem, CarritoAbandonado
+from .models import CarritoAbandonado, Pedido, PedidoItem, SolicitudPedidoAgente
 from .notificaciones import enviar_whatsapp_actualizacion_estado
 
 # Importar modelos de shipping solo si existen (para evitar errores antes de migrar)
@@ -208,3 +208,27 @@ class CarritoAbandonadoAdmin(admin.ModelAdmin):
     estado_display.short_description = 'Estado'
 
 
+
+
+@admin.register(SolicitudPedidoAgente)
+class SolicitudPedidoAgenteAdmin(admin.ModelAdmin):
+    """Sólo lectura: la solicitud la crea el agente y la confirma la persona."""
+
+    list_display = ('token_corto', 'estado', 'agente_nombre', 'total', 'expira_en', 'pedido', 'creado')
+    list_filter = ('estado',)
+    search_fields = ('token', 'idempotency_key', 'agente_nombre')
+    readonly_fields = (
+        'token', 'datos', 'resumen', 'estado', 'expira_en', 'agente_nombre',
+        'ip_hash', 'idempotency_key', 'pedido', 'creado',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    @admin.display(description='Token')
+    def token_corto(self, obj):
+        return f'{obj.token[:10]}…'
+
+    @admin.display(description='Total')
+    def total(self, obj):
+        return obj.resumen.get('total') if isinstance(obj.resumen, dict) else None

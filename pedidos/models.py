@@ -13,6 +13,12 @@ ESTADOS = [
     ('cancelado', 'Cancelado'),
 ]
 
+CANALES = [
+    ('web', 'Web'),
+    ('agente', 'Agente de IA'),
+    ('agente_api', 'Integración con clave'),
+]
+
 ESTADOS_PAGO = [
     ('pendiente', 'Pendiente'),
     ('approved', 'Aprobado'),
@@ -78,6 +84,21 @@ class Pedido(models.Model):
         default=False,
         verbose_name="Cargado a mano",
         help_text="Pedido tomado por teléfono o WhatsApp y cargado desde el panel",
+    )
+    canal = models.CharField(
+        max_length=20,
+        choices=CANALES,
+        default='web',
+        db_index=True,
+        verbose_name="Canal",
+        help_text="Por dónde entró el pedido",
+    )
+    agente_nombre = models.CharField(
+        max_length=80,
+        blank=True,
+        default='',
+        verbose_name="Agente",
+        help_text="Qué asistente de IA armó el pedido",
     )
     token_acceso = models.CharField(
         max_length=32, 
@@ -611,3 +632,53 @@ class CarritoAbandonado(models.Model):
         self.cancelado = True
         self.cancelado_at = timezone.now()
         self.save(update_fields=['cancelado', 'cancelado_at'])
+
+
+class SolicitudPedidoAgente(models.Model):
+    """Pedido armado por un agente de IA que todavía no existe como pedido.
+
+    No descuenta stock, no llega al taller y no cuenta como venta: eso pasa
+    cuando la persona abre el link, revisa el resumen y confirma.
+    """
+
+    ESTADOS = [
+        ('pendiente', 'Pendiente de confirmación'),
+        ('confirmada', 'Confirmada'),
+        ('vencida', 'Vencida'),
+        ('rechazada', 'Rechazada'),
+    ]
+
+    token = models.CharField(max_length=64, unique=True)
+    datos = models.JSONField(default=dict)
+    resumen = models.JSONField(default=dict)
+    estado = models.CharField(max_length=12, choices=ESTADOS, default='pendiente', db_index=True)
+    expira_en = models.DateTimeField(db_index=True)
+    agente_nombre = models.CharField(max_length=80, blank=True, default='')
+    ip_hash = models.CharField(max_length=64, blank=True, default='')
+    idempotency_key = models.CharField(max_length=100, blank=True, default='', db_index=True)
+    pedido = models.OneToOneField(
+        Pedido, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='solicitud_agente',
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creado']
+        verbose_name = "Solicitud de pedido por agente"
+        verbose_name_plural = "Solicitudes de pedido por agente"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['idempotency_key', 'ip_hash'],
+                condition=models.Q(estado='pendiente') & ~models.Q(idempotency_key=''),
+                name='solicitud_agente_idempotencia_pendiente',
+            ),
+        ]
+
+    def __str__(self):
+        return f"Solicitud {self.token[:8]}… ({self.get_estado_display()})"
+
+    @property
+    def vencida(self) -> bool:
+        """El vencimiento se calcula al leer: no depende de que el cron corra en hora."""
+        from django.utils import timezone
+        return self.estado == 'pendiente' and self.expira_en <= timezone.now()
