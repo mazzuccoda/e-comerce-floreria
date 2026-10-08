@@ -44,13 +44,18 @@ def _ip(request):
     return reenviada.split(',')[0].strip() if reenviada else request.META.get('REMOTE_ADDR', '')
 
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @permission_classes([AllowAny])
 @throttle_classes([CotizacionPublicaThrottle])
 def validar_pedido(request):
-    """POST /api/publico/pedidos/validar — cotiza sin guardar nada."""
+    """POST (JSON) o GET (parámetros) /api/publico/pedidos/validar — cotiza sin guardar nada."""
+    entrada = (
+        pedido_agente.entrada_desde_parametros(request.query_params)
+        if request.method == 'GET'
+        else request.data
+    )
     try:
-        datos = pedido_agente.validar_y_cotizar(request.data)
+        datos = pedido_agente.validar_y_cotizar(entrada)
     except pedido_agente.ErroresValidacion as invalido:
         return Response(invalido.como_respuesta(), status=422)
 
@@ -61,24 +66,24 @@ def validar_pedido(request):
     return Response(pedido_agente.resumen_publico(datos))
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-@throttle_classes([PedidoPublicoThrottle])
-def crear_pedido_publico(request):
-    """POST /api/publico/pedidos — deja la solicitud lista para que la confirme la persona."""
-    clave = request.headers.get('Idempotency-Key', '')
+def _respuesta_solicitud(solicitud, *, creada):
+    return Response({
+        'estado': 'pendiente_confirmacion',
+        **_urls(solicitud),
+        'expira_en': solicitud.expira_en.isoformat(),
+        'resumen': solicitud.resumen,
+        'instrucciones_para_el_agente': INSTRUCCIONES_AGENTE,
+    }, status=201 if creada else 200)
+
+
+def _armar_solicitud(request, entrada, clave=''):
+    """Núcleo compartido por el POST con JSON y el GET con parámetros."""
     repetida = pedido_agente.solicitud_pendiente_con_clave(clave, request)
     if repetida is not None:
-        return Response({
-            'estado': 'pendiente_confirmacion',
-            **_urls(repetida),
-            'expira_en': repetida.expira_en.isoformat(),
-            'resumen': repetida.resumen,
-            'instrucciones_para_el_agente': INSTRUCCIONES_AGENTE,
-        })
+        return _respuesta_solicitud(repetida, creada=False)
 
     try:
-        datos = pedido_agente.validar_y_cotizar(request.data)
+        datos = pedido_agente.validar_y_cotizar(entrada)
     except pedido_agente.ErroresValidacion as invalido:
         return Response(invalido.como_respuesta(), status=422)
 
@@ -87,13 +92,86 @@ def crear_pedido_publico(request):
         'AGENTE solicitud creada token=%s… agente=%s expira=%s',
         solicitud.token[:8], solicitud.agente_nombre, solicitud.expira_en.isoformat(),
     )
-    return Response({
-        'estado': 'pendiente_confirmacion',
-        **_urls(solicitud),
-        'expira_en': solicitud.expira_en.isoformat(),
-        'resumen': solicitud.resumen,
-        'instrucciones_para_el_agente': INSTRUCCIONES_AGENTE,
-    }, status=201)
+    return _respuesta_solicitud(solicitud, creada=True)
+
+
+COMO_USAR = {
+    'que_hace': (
+        'Arma una solicitud de pedido y devuelve confirmar_url. No crea el pedido '
+        'ni reserva stock: el pedido nace cuando la persona abre ese link y confirma.'
+    ),
+    'con_json': 'POST /api/publico/pedidos con el cuerpo del ejemplo',
+    'sin_json': (
+        'GET /api/publico/pedidos/preparar?sku=1014&cantidad=1&metodo=express'
+        '&fecha=YYYY-MM-DD&franja=tarde&direccion=Av.+Aconquija+1500&ciudad=Yerba+Buena'
+        '&destinatario=Nombre&destinatario_telefono=3815551234&comprador=Nombre'
+        '&email=mail@ejemplo.com&comprador_telefono=3815551234&dedicatoria=Te+quiero'
+    ),
+    'ejemplo_json': {
+        'items': [{'sku': '1014', 'cantidad': 1}],
+        'entrega': {
+            'metodo': 'express',
+            'fecha': 'YYYY-MM-DD',
+            'franja': 'tarde',
+            'direccion': 'Av. Aconquija 1500',
+            'ciudad': 'Yerba Buena',
+        },
+        'destinatario': {'nombre': 'Nombre', 'telefono': '3815551234'},
+        'comprador': {
+            'nombre': 'Nombre',
+            'email': 'mail@ejemplo.com',
+            'telefono': '3815551234',
+        },
+        'tarjeta': {'dedicatoria': 'Te quiero', 'firma': 'D'},
+        'medio_pago': 'mercadopago',
+    },
+    'antes_de_pedir': {
+        'productos': f'{SITE_URL}/api/publico/productos?q=ramo%20romantico&precio_max=50000',
+        'fechas_y_franjas': f'{SITE_URL}/api/publico/entrega/disponibilidad',
+        'documentacion': f'{SITE_URL}/llms.txt',
+    },
+}
+
+
+@api_view(['POST', 'GET'])
+@permission_classes([AllowAny])
+@throttle_classes([PedidoPublicoThrottle])
+def crear_pedido_publico(request):
+    """POST /api/publico/pedidos — deja la solicitud lista para que la confirme la persona.
+
+    En GET no falla con un 405 pelado: si vienen los datos en el query string se
+    comporta como `/pedidos/preparar`, y si no, explica cómo usar el endpoint.
+    """
+    if request.method == 'GET':
+        if not request.query_params:
+            return Response(COMO_USAR)
+        return _armar_solicitud(
+            request,
+            pedido_agente.entrada_desde_parametros(request.query_params),
+            clave=str(request.query_params.get('idempotency_key') or ''),
+        )
+
+    return _armar_solicitud(
+        request, request.data, clave=request.headers.get('Idempotency-Key', ''),
+    )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@throttle_classes([PedidoPublicoThrottle])
+def preparar_pedido(request):
+    """GET /api/publico/pedidos/preparar?... — lo mismo que el POST, con parámetros.
+
+    Muchos asistentes sólo pueden abrir URLs: no mandan JSON ni cabeceras. Esta
+    ruta acepta los mismos datos en el query string y devuelve el mismo
+    `confirmar_url`. Tampoco crea el pedido ni reserva stock.
+    """
+    return _armar_solicitud(
+        request,
+        pedido_agente.entrada_desde_parametros(request.query_params),
+        clave=request.headers.get('Idempotency-Key', '')
+        or str(request.query_params.get('idempotency_key') or ''),
+    )
 
 
 @api_view(['GET'])

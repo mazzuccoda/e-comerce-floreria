@@ -385,3 +385,113 @@ class FichaPorSkuTests(CanalPublicoBase):
 
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn('productos', respuesta.json())
+
+
+class AgenteSoloGetTests(CanalPublicoBase):
+    """Asistentes que sólo pueden abrir URLs: ni JSON ni cabeceras propias."""
+
+    def parametros(self, **cambios):
+        datos = {
+            'sku': 'ROSAS-12',
+            'cantidad': '1',
+            'metodo': 'express',
+            'fecha': proxima_fecha(),
+            'franja': 'tarde',
+            'direccion': 'Av. Aconquija 1234',
+            'ciudad': 'Yerba Buena',
+            'destinatario': 'Ana Pérez',
+            'destinatario_telefono': '3815551234',
+            'comprador': 'Daniel',
+            'email': 'daniel@example.com',
+            'comprador_telefono': '3815559876',
+            'dedicatoria': 'Te quiero',
+        }
+        datos.update(cambios)
+        return datos
+
+    def test_preparar_con_parametros_devuelve_el_link_de_confirmacion(self):
+        respuesta = self.client.get('/api/publico/pedidos/preparar', self.parametros())
+
+        self.assertEqual(respuesta.status_code, 201, respuesta.json())
+        cuerpo = respuesta.json()
+        self.assertIn('/es/pedido/confirmar/', cuerpo['confirmar_url'])
+        self.assertEqual(cuerpo['resumen']['total'], 52000.0)
+        self.assertEqual(Pedido.objects.count(), 0)
+        self.assertEqual(Producto.objects.get(sku='ROSAS-12').stock, 10)
+
+    def test_varios_productos_en_un_solo_parametro(self):
+        cuerpo = self.client.get(
+            '/api/publico/pedidos/preparar',
+            self.parametros(items='ROSAS-12:2', sku=''),
+        ).json()
+
+        self.assertEqual(cuerpo['resumen']['items'][0]['cantidad'], 2)
+        self.assertEqual(cuerpo['resumen']['total'], 97000.0)
+
+    def test_los_datos_incompletos_devuelven_los_errores_en_castellano(self):
+        respuesta = self.client.get(
+            '/api/publico/pedidos/preparar', self.parametros(email='no-es-un-mail')
+        )
+
+        self.assertEqual(respuesta.status_code, 422)
+        campos = [error['campo'] for error in respuesta.json()['errores']]
+        self.assertIn('comprador.email', campos)
+
+    def test_idempotencia_por_parametro(self):
+        primera = self.client.get(
+            '/api/publico/pedidos/preparar', self.parametros(idempotency_key='abc')
+        ).json()
+        segunda = self.client.get(
+            '/api/publico/pedidos/preparar', self.parametros(idempotency_key='abc')
+        ).json()
+
+        self.assertEqual(primera['confirmar_url'], segunda['confirmar_url'])
+        self.assertEqual(SolicitudPedidoAgente.objects.count(), 1)
+
+    def test_validar_tambien_acepta_get(self):
+        cuerpo = self.client.get(URL_VALIDAR, self.parametros()).json()
+
+        self.assertTrue(cuerpo['valido'])
+        self.assertEqual(cuerpo['total'], 52000.0)
+        self.assertEqual(SolicitudPedidoAgente.objects.count(), 0)
+
+    def test_get_sin_parametros_explica_como_usar_el_endpoint(self):
+        respuesta = self.client.get(URL_CREAR)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn('ejemplo_json', respuesta.json())
+
+    def test_get_con_parametros_en_la_ruta_del_post(self):
+        respuesta = self.client.get(URL_CREAR, self.parametros())
+
+        self.assertEqual(respuesta.status_code, 201, respuesta.json())
+        self.assertIn('confirmar_url', respuesta.json())
+
+
+class CorsApiPublicaTests(CanalPublicoBase):
+    """Un agente que corre en un navegador necesita las cabeceras CORS."""
+
+    def test_la_api_publica_responde_a_cualquier_origen(self):
+        respuesta = self.client.get(
+            '/api/publico/productos?q=rosas', HTTP_ORIGIN='https://chatgpt.com'
+        )
+
+        self.assertEqual(respuesta['Access-Control-Allow-Origin'], '*')
+
+    def test_el_preflight_permite_post_con_idempotency_key(self):
+        respuesta = self.client.options(
+            URL_CREAR,
+            HTTP_ORIGIN='https://chatgpt.com',
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='content-type,idempotency-key',
+        )
+
+        self.assertEqual(respuesta.status_code, 204)
+        self.assertEqual(respuesta['Access-Control-Allow-Origin'], '*')
+        self.assertIn('POST', respuesta['Access-Control-Allow-Methods'])
+        self.assertIn('Idempotency-Key', respuesta['Access-Control-Allow-Headers'])
+
+    def test_el_resto_del_sitio_sigue_con_la_lista_cerrada(self):
+        respuesta = self.client.get('/api/pedidos/', HTTP_ORIGIN='https://ajeno.com')
+
+        self.assertNotEqual(respuesta.get('Access-Control-Allow-Origin'), '*')
