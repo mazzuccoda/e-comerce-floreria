@@ -29,6 +29,7 @@ const Footer = () => {
                 </li>
               ))}
               <li><Link href={localeHref('/zonas', locale)} className="text-gray-400 hover:text-white transition-colors">Zonas y envíos</Link></li>
+              <li><Link href={localeHref('/pedidos-por-asistentes', locale)} className="text-gray-400 hover:text-white transition-colors">Pedidos por asistentes de IA</Link></li>
               <li><Link href={localeHref('/contacto', locale)} className="text-gray-400 hover:text-white transition-colors">{t('footer.contact')}</Link></li>
             </ul>
           </div>
