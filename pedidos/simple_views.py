@@ -4,7 +4,12 @@ from django.views.decorators.http import require_http_methods
 from django.db import transaction
 from rest_framework.authtoken.models import Token
 import json
+import logging
 from datetime import date
+
+from .shipping_service import costo_envio_servidor
+
+logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
@@ -489,7 +494,24 @@ def simple_checkout_with_items(request):
                     pedido.delete()
                     return JsonResponse({'error': str(e)}, status=400)
             
-            # Calcular total usando el costo_envio del frontend
+            # El costo de envío se recalcula acá: el del navegador es editable
+            costo_servidor = costo_envio_servidor(
+                data.get('metodo_envio') or data.get('tipo_envio'),
+                data['direccion'],
+                ciudad=data.get('ciudad', ''),
+                order_amount=float(total_productos),
+                cart_items=items_data,
+            )
+
+            if costo_servidor is not None:
+                if costo_servidor != costo_envio:
+                    logger.warning(
+                        'Costo de envío recalculado: el navegador envió %s y corresponde %s (pedido %s)',
+                        costo_envio, costo_servidor, pedido.id,
+                    )
+                costo_envio = costo_servidor
+                pedido.costo_envio = costo_envio
+
             pedido.total = total_productos + costo_envio
             pedido.save()
             

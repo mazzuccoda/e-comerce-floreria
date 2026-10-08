@@ -3,9 +3,11 @@ import logging
 
 import requests
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+
+from core.throttling import CotizacionPublicaThrottle
 
 from .models import ShippingConfig
 from .shipping_service import (
@@ -22,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([CotizacionPublicaThrottle])
 def quote_shipping(request):
     """
     POST /api/pedidos/shipping/quote/

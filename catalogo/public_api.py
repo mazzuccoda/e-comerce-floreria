@@ -4,11 +4,12 @@ A diferencia de `/api/catalogo/`, estos endpoints devuelven datos ya resueltos
 (nombre sin emojis, URL final del producto, precio vigente, disponibilidad) y
 entienden búsquedas en lenguaje natural, con o sin acentos.
 """
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from core import horario
+from core.throttling import CotizacionPublicaThrottle, LecturaPublicaThrottle
 from pedidos.models import ShippingZone
 from .image_utils import feed_image_url
 from .models import Producto
@@ -114,6 +115,7 @@ def _puntaje(producto, terminos):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([LecturaPublicaThrottle])
 def buscar_productos(request):
     """
     GET /api/publico/productos?q=ramo romantico&precio_max=50000
@@ -207,6 +209,7 @@ def buscar_productos(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([LecturaPublicaThrottle])
 def info_tienda(request):
     """GET /api/publico/tienda — datos operativos que un agente necesita antes de recomendar."""
     zonas = [
@@ -265,6 +268,7 @@ MAX_CANTIDAD_PRECARRITO = 10
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([CotizacionPublicaThrottle])
 def precarrito(request):
     """
     POST /api/publico/carrito  {"sku": "10006", "cantidad": 1}
