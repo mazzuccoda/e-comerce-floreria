@@ -86,11 +86,11 @@ urlpatterns = [
     
     # Sistema de zonas con Distance Matrix
     path('shipping/config/', get_shipping_config, name='shipping-config'),
+    path('shipping/zones/save/', create_or_update_zone, name='shipping-zone-save'),
     path('shipping/zones/<str:method>/', get_shipping_zones, name='shipping-zones'),
     path('shipping/calculate/', calculate_shipping_cost, name='shipping-calculate'),
     path('shipping/quote/', quote_shipping, name='shipping-quote'),
     path('shipping/config/update/', update_shipping_config, name='shipping-config-update'),
-    path('shipping/zones/save/', create_or_update_zone, name='shipping-zone-save'),
     path('shipping/init/', init_shipping_data, name='shipping-init'),  # Endpoint temporal
     
     # Carritos abandonados

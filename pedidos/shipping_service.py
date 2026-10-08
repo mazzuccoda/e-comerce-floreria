@@ -2,11 +2,14 @@
 Cotización de envío sin navegador: resuelve una dirección a coordenadas,
 mide la distancia hasta la tienda y aplica las zonas y reglas configuradas.
 """
+import hashlib
 import logging
+from decimal import Decimal
 from math import asin, cos, radians, sin, sqrt
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 
 from catalogo.models import Producto
 
@@ -24,6 +27,9 @@ GEOCODE_CONTEXT = 'Tucumán, Argentina'
 GEOCODE_TIMEOUT = 8
 
 PICKUP_HOURS = '9:00 a 20:00 hs'
+
+# Cada cotización cuesta dos llamadas pagas a Google (geocoding + distancia)
+GEOCODE_CACHE_SECONDS = 24 * 60 * 60
 
 
 class GeocodingError(Exception):
@@ -90,18 +96,32 @@ def _geocode_nominatim(address):
     }
 
 
+def _cache_key(prefix, *partes):
+    firma = hashlib.sha256('|'.join(str(parte) for parte in partes).encode()).hexdigest()[:32]
+    return f'envio:{prefix}:{firma}'
+
+
 def geocode_address(address):
     """Resuelve una dirección de Tucumán a coordenadas."""
     query = address if GEOCODE_CONTEXT.lower() in address.lower() else f'{address}, {GEOCODE_CONTEXT}'
+    clave = _cache_key('geocode', query.strip().lower())
+    cacheado = cache.get(clave)
+    if cacheado:
+        return cacheado
+
     api_key = _google_api_key()
 
     if api_key:
         try:
-            return _geocode_google(query, api_key)
+            location = _geocode_google(query, api_key)
+            cache.set(clave, location, GEOCODE_CACHE_SECONDS)
+            return location
         except (requests.RequestException, GeocodingError, KeyError, ValueError) as exc:
             logger.warning('Geocoding con Google falló para %r: %s', address, exc)
 
-    return _geocode_nominatim(query)
+    location = _geocode_nominatim(query)
+    cache.set(clave, location, GEOCODE_CACHE_SECONDS)
+    return location
 
 
 def _driving_distance_google(config, lat, lng, api_key):
@@ -130,9 +150,16 @@ def distance_from_store_km(config, lat, lng):
     api_key = _google_api_key()
 
     if api_key and config.use_distance_matrix:
+        clave = _cache_key('distancia', config.store_lat, config.store_lng, round(lat, 5), round(lng, 5))
+        cacheado = cache.get(clave)
+        if cacheado is not None:
+            return cacheado, 'google_distance_matrix'
+
         try:
             distance = _driving_distance_google(config, lat, lng, api_key)
-            return round(distance, 2), 'google_distance_matrix'
+            distance = round(distance, 2)
+            cache.set(clave, distance, GEOCODE_CACHE_SECONDS)
+            return distance, 'google_distance_matrix'
         except (requests.RequestException, GeocodingError, KeyError, IndexError, ValueError) as exc:
             logger.warning('Distance Matrix falló: %s', exc)
 
@@ -227,6 +254,44 @@ def quote_method(shipping_method, distance_km, order_amount=0, cart_items=None):
         'free_shipping_reason': free_reason,
         'free_shipping_threshold': threshold,
     }
+
+
+def costo_envio_servidor(tipo_envio, direccion, ciudad='', order_amount=0, cart_items=None):
+    """Costo de envío calculado acá, sin confiar en lo que mande el navegador.
+
+    Devuelve None cuando no se puede resolver (sin configuración, sin dirección,
+    geocodificación caída o fuera de zona): en esos casos el llamador decide.
+    """
+    if tipo_envio == 'retiro':
+        return Decimal('0.00')
+
+    if tipo_envio not in SHIPPING_METHODS:
+        return None
+
+    config = ShippingConfig.get_config()
+    direccion = (direccion or '').strip()
+    if not config or not direccion:
+        return None
+
+    consulta = f'{direccion}, {ciudad}'.strip(', ') if ciudad else direccion
+
+    try:
+        location = geocode_address(consulta)
+        distancia, _ = distance_from_store_km(config, location['lat'], location['lng'])
+        cotizacion = quote_method(
+            tipo_envio,
+            distancia,
+            order_amount=order_amount,
+            cart_items=cart_items,
+        )
+    except Exception as exc:  # el checkout no puede caerse porque Google no responda
+        logger.warning('No se pudo cotizar el envío para %r: %s', consulta, exc)
+        return None
+
+    if not cotizacion.get('available'):
+        return None
+
+    return Decimal(str(cotizacion['shipping_cost']))
 
 
 def pickup_option(config):

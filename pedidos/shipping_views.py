@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from decimal import Decimal
@@ -231,7 +231,7 @@ def calculate_shipping_cost(request):
 
 
 @api_view(['PUT'])
-@permission_classes([AllowAny])  # TODO: Cambiar a IsAdminUser en producción
+@permission_classes([IsAdminUser])
 def update_shipping_config(request):
     """
     Actualiza la configuración de envíos (solo admin)
@@ -271,7 +271,7 @@ def update_shipping_config(request):
 
 
 @api_view(['POST', 'PUT'])
-@permission_classes([AllowAny])  # TODO: Cambiar a IsAdminUser en producción
+@permission_classes([IsAdminUser])
 def create_or_update_zone(request):
     """
     Crea o actualiza una zona de envío (solo admin)
@@ -312,7 +312,7 @@ def create_or_update_zone(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdminUser])
 def init_shipping_data(request):
     """
     Endpoint temporal para inicializar datos de shipping zones
