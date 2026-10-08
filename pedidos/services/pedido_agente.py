@@ -299,6 +299,57 @@ def _validar_contacto(entrada, errores):
     return datos
 
 
+def entrada_desde_parametros(parametros):
+    """Traduce un query string plano al cuerpo que espera `validar_y_cotizar`.
+
+    `items` admite dos formas: `sku` + `cantidad` para un solo producto, o
+    `items=sku:cantidad,sku:cantidad` para varios. El resto de los campos son
+    los mismos del JSON con punto reemplazado por guión bajo
+    (`entrega.fecha` → `fecha`, `comprador.email` → `email`).
+    """
+    def valor(*nombres):
+        for nombre in nombres:
+            if parametros.get(nombre):
+                return str(parametros.get(nombre))
+        return ''
+
+    items = []
+    lista = valor('items')
+    if lista:
+        for parte in lista.split(','):
+            sku, _, cantidad = parte.partition(':')
+            items.append({'sku': sku.strip(), 'cantidad': cantidad.strip() or 1})
+    elif valor('sku'):
+        items.append({'sku': valor('sku'), 'cantidad': valor('cantidad') or 1})
+
+    return {
+        'items': items,
+        'entrega': {
+            'metodo': valor('metodo', 'metodo_entrega'),
+            'fecha': valor('fecha'),
+            'franja': valor('franja'),
+            'direccion': valor('direccion'),
+            'ciudad': valor('ciudad'),
+            'hora_retiro': valor('hora_retiro'),
+        },
+        'destinatario': {
+            'nombre': valor('destinatario', 'destinatario_nombre'),
+            'telefono': valor('destinatario_telefono', 'telefono'),
+        },
+        'comprador': {
+            'nombre': valor('comprador', 'comprador_nombre'),
+            'email': valor('email', 'comprador_email'),
+            'telefono': valor('comprador_telefono', 'telefono'),
+        },
+        'tarjeta': {
+            'dedicatoria': valor('dedicatoria'),
+            'firma': valor('firma'),
+            'anonimo': valor('anonimo').lower() in ('1', 'true', 'si', 'sí'),
+        },
+        'medio_pago': valor('medio_pago') or 'mercadopago',
+    }
+
+
 def validar_y_cotizar(entrada):
     """Valida la entrada del agente y devuelve los datos normalizados con el total.
 
@@ -413,7 +464,11 @@ def _hash_ip(request):
 
 
 def nombre_del_agente(request):
-    nombre = request.headers.get('X-Agent-Name') or request.META.get('HTTP_USER_AGENT', '')
+    nombre = (
+        request.headers.get('X-Agent-Name')
+        or request.GET.get('agente')
+        or request.META.get('HTTP_USER_AGENT', '')
+    )
     return _texto(nombre, 80)
 
 

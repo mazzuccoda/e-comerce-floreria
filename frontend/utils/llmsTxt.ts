@@ -58,7 +58,15 @@ export function buildLlmsTxt(): string {
   NO crea el pedido ni reserva stock: el pedido nace cuando la persona abre ese link y confirma.
   Máximo 10 productos por pedido y 5 unidades por producto. Enviar el header Idempotency-Key
   para que un reintento devuelva el mismo link en lugar de duplicarlo.
+- Lo mismo sin POST ni JSON (para asistentes que sólo abren URLs):
+  GET ${SITE_URL}/api/publico/pedidos/preparar?sku=10006&cantidad=1&metodo=express&fecha=2026-10-05
+  &franja=tarde&direccion=Av.+Aconquija+1500&ciudad=Yerba+Buena&destinatario=Ana&destinatario_telefono=3815551234
+  &comprador=Daniel&email=daniel@example.com&comprador_telefono=3815559876&dedicatoria=Te+quiero
+  Devuelve el mismo confirmar_url. Varios productos: items=10006:2,10007:1
+  También funciona en GET ${SITE_URL}/api/publico/pedidos/validar con los mismos parámetros.
 - Estado de la solicitud: GET ${SITE_URL}/api/publico/pedidos/solicitud/<token>
+
+La API pública admite cualquier origen (CORS abierto), así que se puede llamar desde el navegador.
 
 ## Catálogo
 - Catálogo completo: ${SITE_URL}/es/productos

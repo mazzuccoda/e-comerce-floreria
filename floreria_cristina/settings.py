@@ -81,6 +81,7 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
     'x-http-method-override',
     'x-api-key',  # Agregado para carritos abandonados y n8n
+    'idempotency-key',  # Reintentos de los agentes de IA en la API pública
     'cache-control',  # Agregado para permitir control de caché
     'pragma',  # Agregado para compatibilidad con caché
 ]
@@ -163,8 +164,11 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'publico_lectura': env('THROTTLE_PUBLICO_LECTURA', default='120/hour'),
-        'publico_cotizar': env('THROTTLE_PUBLICO_COTIZAR', default='30/hour'),
-        'publico_pedido': env('THROTTLE_PUBLICO_PEDIDO', default='10/hour'),
+        'publico_cotizar': env('THROTTLE_PUBLICO_COTIZAR', default='60/hour'),
+        # Los agentes de IA salen por IPs compartidas: la solicitud no crea
+        # pedido ni reserva stock, así que el cupo es holgado. El que importa
+        # es publico_confirmar, que sí crea el pedido.
+        'publico_pedido': env('THROTTLE_PUBLICO_PEDIDO', default='60/hour'),
         'publico_confirmar': env('THROTTLE_PUBLICO_CONFIRMAR', default='10/hour'),
     },
 }
@@ -248,6 +252,7 @@ ACCOUNT_SESSION_REMEMBER = True
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise para archivos estáticos en Railway
+    'core.cors_publico.CorsApiPublicaMiddleware',  # CORS abierto sólo en /api/publico/
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
