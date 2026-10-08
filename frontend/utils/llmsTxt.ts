@@ -65,6 +65,7 @@ export function buildLlmsTxt(): string {
 ${landings}
 - Día de la Madre: ${SITE_URL}/es/dia-de-la-madre
 - Zonas y costos de envío: ${SITE_URL}/es/zonas
+- Cómo pedir desde un asistente de IA (explicado en texto): ${SITE_URL}/es/pedidos-por-asistentes
 - Feed de productos (XML): ${SITE_URL}/feeds/facebook-products.xml
 - Feed de productos (CSV): ${SITE_URL}/feeds/facebook-products.csv
 - Sitemap: ${SITE_URL}/sitemap.xml
