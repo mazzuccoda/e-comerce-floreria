@@ -27,6 +27,7 @@ import { useShippingConfig } from '@/app/hooks/useShippingConfig';
 import { useSiteSettings } from '@/app/hooks/useSiteSettings';
 import { useAbandonedCart } from '@/app/hooks/useAbandonedCart';
 import { getExpressAvailability } from '@/utils/deliveryPromise';
+import { isOpenDate, scheduleFor } from '@/utils/businessHours';
 import { clearGiftDraft, readGiftDraft } from '@/utils/giftMessage';
 
 // API URL configuration
@@ -182,6 +183,9 @@ const MultiStepCheckoutPage = () => {
   // Obtener franjas horarias disponibles para una fecha
   const getAvailableTimeSlots = (selectedDate: string) => {
     if (!selectedDate) return ['tarde']; // Por defecto solo tarde si no hay fecha
+
+    // Un día que cierra temprano (feriado, medio día) sólo entrega por la mañana
+    if (scheduleFor(selectedDate).closingHour <= 14) return ['mañana'];
     
     const now = new Date();
     const currentHour = now.getHours();
@@ -533,12 +537,8 @@ const MultiStepCheckoutPage = () => {
           error = 'Selecciona una fecha para el envío programado';
         } else if (formData.metodoEnvio === 'retiro' && !value) {
           error = 'Selecciona una fecha para el retiro';
-        } else if (formData.metodoEnvio === 'retiro' && value) {
-          // Validar que no sea domingo
-          const selectedDate = new Date(value + 'T00:00:00');
-          if (selectedDate.getDay() === 0) {
-            error = 'No se puede retirar los domingos. Selecciona de lunes a sábado.';
-          }
+        } else if (formData.metodoEnvio === 'retiro' && value && !isOpenDate(value)) {
+          error = 'Ese día el local está cerrado. Elegí otra fecha.';
         }
         break;
       
@@ -547,10 +547,10 @@ const MultiStepCheckoutPage = () => {
           error = 'Selecciona una hora para el retiro';
         } else if (formData.metodoEnvio === 'retiro' && value && formData.fecha) {
           const [hours, minutes] = value.split(':').map(Number);
-          
-          // Lunes a Sábado: 9:00 a 21:00 (domingos están bloqueados en la fecha)
-          if (hours < 9 || hours > 21 || (hours === 21 && minutes > 0)) {
-            error = 'El horario de retiro es de 9:00 a 21:00 hs';
+          const { openingHour, closingHour } = scheduleFor(formData.fecha);
+
+          if (hours < openingHour || hours > closingHour || (hours === closingHour && minutes > 0)) {
+            error = `Ese día el retiro es de ${openingHour}:00 a ${closingHour}:00 hs`;
           }
         }
         break;
@@ -1512,8 +1512,8 @@ const MultiStepCheckoutPage = () => {
                           name="hora"
                           value={formData.hora}
                           onChange={handleInputChange}
-                          min="09:00"
-                          max="21:00"
+                          min={`${String(scheduleFor(formData.fecha || '').openingHour).padStart(2, '0')}:00`}
+                          max={`${String(scheduleFor(formData.fecha || '').closingHour).padStart(2, '0')}:00`}
                           required
                           className={`p-4 rounded-xl bg-white border-2 font-medium transition-all ${
                             formErrors.hora 
@@ -1540,7 +1540,11 @@ const MultiStepCheckoutPage = () => {
                           <line x1="12" y1="16" x2="12" y2="12"/>
                           <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <span>Horario de retiro: De lunes a sábado de 9:00 a 21:00 hs. Domingos cerrado.</span>
+                        <span>
+                          {formData.fecha && scheduleFor(formData.fecha).message
+                            ? scheduleFor(formData.fecha).message
+                            : 'Horario de retiro: De lunes a sábado de 9:00 a 21:00 hs. Domingos cerrado.'}
+                        </span>
                       </p>
                     </div>
                   </div>

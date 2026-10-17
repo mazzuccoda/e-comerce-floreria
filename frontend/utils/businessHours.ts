@@ -36,6 +36,48 @@ export function isOpenDay(day: number): boolean {
   return (OPEN_DAYS as readonly number[]).includes(day);
 }
 
+export interface DaySchedule {
+  open: boolean;
+  openingHour: number;
+  closingHour: number;
+  cutoffHour: number;
+  /** Aviso para mostrar en el checkout cuando el día tiene horario especial. */
+  message?: string;
+}
+
+/**
+ * Días con horario distinto al habitual (feriados, Día de la Madre, medio día).
+ * Pisan al horario semanal, incluso para abrir un domingo.
+ * Espejo de `DIAS_ESPECIALES` en `core/horario.py`.
+ */
+export const SPECIAL_DAYS: Record<string, DaySchedule> = {
+  '2026-10-18': {
+    open: true,
+    openingHour: 9,
+    closingHour: 13,
+    cutoffHour: 12,
+    message:
+      'Día de la Madre: abrimos de 9:00 a 13:00 hs. Tomamos pedidos para entrega y retiro hasta las 12:00.',
+  },
+};
+
+/** Horario vigente para una fecha YYYY-MM-DD: la excepción si existe, si no el semanal. */
+export function scheduleFor(isoDate: string): DaySchedule {
+  const special = SPECIAL_DAYS[isoDate];
+  if (special) return special;
+  const day = new Date(`${isoDate}T12:00:00Z`).getUTCDay();
+  return {
+    open: Number.isNaN(day) ? false : isOpenDay(day),
+    openingHour: OPENING_HOUR,
+    closingHour: CLOSING_HOUR,
+    cutoffHour: SAME_DAY_CUTOFF_HOUR,
+  };
+}
+
+export function isOpenDate(isoDate: string): boolean {
+  return scheduleFor(isoDate).open;
+}
+
 export interface LocalTime {
   /** Fecha local en formato YYYY-MM-DD. */
   date: string;
@@ -74,8 +116,9 @@ function addDays(isoDate: string, days: number): string {
 }
 
 export function acceptsSameDay(now: Date = new Date()): boolean {
-  const { day, hour } = localTime(now);
-  return isOpenDay(day) && hour < SAME_DAY_CUTOFF_HOUR;
+  const { date, hour } = localTime(now);
+  const today = scheduleFor(date);
+  return today.open && hour < today.cutoffHour;
 }
 
 export interface NextDelivery {
@@ -86,14 +129,14 @@ export interface NextDelivery {
   isToday: boolean;
 }
 
-/** Fecha más próxima en la que un pedido express hecho `now` puede entregarse. Nunca un domingo. */
+/** Fecha más próxima en la que un pedido express hecho `now` puede entregarse. */
 export function nextDelivery(now: Date = new Date()): NextDelivery {
   const local = localTime(now);
   if (acceptsSameDay(now)) {
     return { date: local.date, day: local.day, isToday: true };
   }
   let offset = 1;
-  while (!isOpenDay((local.day + offset) % 7)) offset += 1;
+  while (!isOpenDate(addDays(local.date, offset))) offset += 1;
   return { date: addDays(local.date, offset), day: (local.day + offset) % 7, isToday: false };
 }
 

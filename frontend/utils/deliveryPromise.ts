@@ -34,7 +34,7 @@ export function getExpressAvailability(now: Date = new Date()): ExpressAvailabil
       available: true,
       deliveryType: isTomorrow ? 'tomorrow' : 'next-open-day',
       message: `✅ Entrega ${when} desde las 8:00 am`,
-      detail: `Los pedidos entran de lunes a sábado hasta las ${CUTOFF} hs para entrega el mismo día`,
+      detail: `Los pedidos entran hasta las ${CUTOFF} hs para entrega el mismo día`,
     };
   }
 

@@ -3,7 +3,11 @@
 La API pública, el feed y cualquier texto que hable de "entrega en el día" deben
 salir de acá. El frontend replica estas mismas constantes en
 `frontend/utils/businessHours.ts`; si cambia algo, cambiarlo en los dos lados.
+
+Los días con horario distinto al habitual (feriados, Día de la Madre, medio día)
+se cargan en `DIAS_ESPECIALES`: una fila por fecha, que pisa al horario semanal.
 """
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
@@ -28,12 +32,48 @@ MISMO_DIA_TEXTO = (
 )
 
 
+@dataclass(frozen=True)
+class HorarioDelDia:
+    """Cómo atiende el local una fecha concreta."""
+    abierto: bool
+    apertura: time = APERTURA
+    cierre: time = CIERRE
+    hora_corte: time = HORA_CORTE_MISMO_DIA
+    mensaje: str = ''
+
+
+CERRADO = HorarioDelDia(abierto=False)
+HABITUAL = HorarioDelDia(abierto=True)
+
+# Excepciones por fecha. Pisan al horario semanal, incluso para abrir un domingo.
+DIAS_ESPECIALES: dict[date, HorarioDelDia] = {
+    date(2026, 10, 18): HorarioDelDia(
+        abierto=True,
+        apertura=time(9, 0),
+        cierre=time(13, 0),
+        hora_corte=time(12, 0),
+        mensaje=(
+            'Día de la Madre: abrimos de 9:00 a 13:00 hs. '
+            'Tomamos pedidos para entrega y retiro hasta las 12:00.'
+        ),
+    ),
+}
+
+
+def horario_de(dia: date) -> HorarioDelDia:
+    """Horario vigente para una fecha: la excepción si existe, si no el semanal."""
+    especial = DIAS_ESPECIALES.get(dia)
+    if especial is not None:
+        return especial
+    return HABITUAL if dia.weekday() in DIAS_ABIERTOS else CERRADO
+
+
 def ahora_local() -> datetime:
     return datetime.now(LOCAL_TZ)
 
 
 def es_dia_abierto(dia: date) -> bool:
-    return dia.weekday() in DIAS_ABIERTOS
+    return horario_de(dia).abierto
 
 
 def proximo_dia_abierto(desde: date) -> date:
@@ -45,7 +85,8 @@ def proximo_dia_abierto(desde: date) -> date:
 
 
 def acepta_pedidos_para_hoy(ahora: datetime) -> bool:
-    return es_dia_abierto(ahora.date()) and ahora.time() < HORA_CORTE_MISMO_DIA
+    hoy = horario_de(ahora.date())
+    return hoy.abierto and ahora.time() < hoy.hora_corte
 
 
 def proxima_fecha_de_entrega(ahora: datetime) -> date:
@@ -59,8 +100,9 @@ def entrega_mismo_dia(ahora: datetime | None = None) -> dict:
     """Qué puede prometer un agente ahora mismo sobre la entrega del mismo día."""
     ahora = (ahora or ahora_local()).astimezone(LOCAL_TZ)
     proxima = proxima_fecha_de_entrega(ahora)
-    return {
-        'hora_corte': HORA_CORTE_MISMO_DIA.strftime('%H:%M'),
+    hoy = horario_de(ahora.date())
+    datos = {
+        'hora_corte': hoy.hora_corte.strftime('%H:%M'),
         'zona_horaria': ZONA_HORARIA,
         'hora_local': ahora.strftime('%Y-%m-%d %H:%M'),
         'dias_de_entrega': [NOMBRES_DIAS[d] for d in DIAS_ABIERTOS],
@@ -69,3 +111,11 @@ def entrega_mismo_dia(ahora: datetime | None = None) -> dict:
         'proximo_dia_de_entrega': NOMBRES_DIAS[proxima.weekday()],
         'detalle': MISMO_DIA_TEXTO,
     }
+    avisos = [
+        {'fecha': fecha.isoformat(), 'mensaje': especial.mensaje}
+        for fecha, especial in sorted(DIAS_ESPECIALES.items())
+        if especial.mensaje and ahora.date() <= fecha <= ahora.date() + timedelta(days=7)
+    ]
+    if avisos:
+        datos['dias_especiales'] = avisos
+    return datos

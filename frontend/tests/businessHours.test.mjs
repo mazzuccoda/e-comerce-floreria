@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { acceptsSameDay, isOpenDay, nextDelivery } from '../utils/businessHours.ts';
+import { acceptsSameDay, isOpenDate, isOpenDay, nextDelivery, scheduleFor } from '../utils/businessHours.ts';
 import { getExpressAvailability } from '../utils/deliveryPromise.ts';
 
 // Horas de Argentina (UTC-3). 2026-09-21 es lunes; 2026-09-26, sábado; 2026-09-27, domingo.
@@ -41,6 +41,26 @@ test('la próxima entrega nunca cae en un día cerrado', () => {
       assert.ok(isOpenDay(next.day), `${dia} ${hora}: ${next.date}`);
     }
   }
+});
+
+test('el domingo del Día de la Madre abre medio día', () => {
+  assert.equal(isOpenDate('2026-10-18'), true);
+  assert.deepEqual(scheduleFor('2026-10-18'), {
+    open: true,
+    openingHour: 9,
+    closingHour: 13,
+    cutoffHour: 12,
+    message:
+      'Día de la Madre: abrimos de 9:00 a 13:00 hs. Tomamos pedidos para entrega y retiro hasta las 12:00.',
+  });
+  assert.equal(acceptsSameDay(ar('2026-10-18', '11:00')), true);
+  assert.equal(acceptsSameDay(ar('2026-10-18', '12:00')), false);
+  assert.equal(nextDelivery(ar('2026-10-17', '18:00')).date, '2026-10-18');
+});
+
+test('el domingo siguiente sigue cerrado', () => {
+  assert.equal(isOpenDate('2026-10-25'), false);
+  assert.equal(acceptsSameDay(ar('2026-10-25', '10:00')), false);
 });
 
 test('usa la hora de Argentina aunque el reloj esté en UTC', () => {
