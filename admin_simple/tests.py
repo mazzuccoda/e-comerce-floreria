@@ -2,11 +2,12 @@ from datetime import time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from admin_simple import reportes
+from admin_simple.pdf_generator import _texto_de_tarjeta
 from catalogo.models import Categoria, Producto
 from pedidos.models import Pedido, PedidoItem
 
@@ -1303,3 +1304,18 @@ class ProductosSinStockTests(TestCase):
         self.agotado.refresh_from_db()
         self.assertEqual(self.agotado.stock, 6)
         self.assertRedirects(respuesta, volver)
+
+
+class TextoDeTarjetaTests(SimpleTestCase):
+    def test_baja_a_minuscula_la_dedicatoria_gritada(self):
+        self.assertEqual(
+            _texto_de_tarjeta('FELIZ CUMPLE MAMÁ. TE QUIERO'),
+            'Feliz cumple mamá. Te quiero',
+        )
+
+    def test_respeta_la_dedicatoria_escrita_normal(self):
+        original = 'Feliz cumple, MAMÁ querida'
+        self.assertEqual(_texto_de_tarjeta(original), original)
+
+    def test_no_rompe_con_texto_sin_letras(self):
+        self.assertEqual(_texto_de_tarjeta('123 !!!'), '123 !!!')
