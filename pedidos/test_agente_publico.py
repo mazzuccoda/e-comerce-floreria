@@ -3,7 +3,7 @@
 Nada sale a internet en estos tests: Google Maps, Turnstile, GA4 y Meta están
 simulados.
 """
-from datetime import timedelta
+from datetime import time, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -51,6 +51,14 @@ def crear_config():
 
 def proxima_fecha():
     return horario.proxima_fecha_de_entrega(horario.ahora_local()).isoformat()
+
+
+def proximo_domingo_cerrado():
+    """Primer domingo futuro sin horario especial, para no atarse a una fecha fija."""
+    dia = horario.ahora_local().date() + timedelta(days=1)
+    while dia.weekday() != 6 or horario.es_dia_abierto(dia):
+        dia += timedelta(days=1)
+    return dia
 
 
 class CanalPublicoBase(TestCase):
@@ -184,6 +192,36 @@ class ValidacionTests(CanalPublicoBase):
 
         respuesta = self.client.post(URL_VALIDAR, entrada, content_type='application/json')
 
+        self.assertEqual(respuesta.status_code, 422)
+        self.assertEqual(respuesta.json()['errores'][0]['codigo'], 'fuera_de_horario')
+
+    def test_retiro_en_dia_especial_usa_el_horario_de_ese_dia(self):
+        hoy = horario.ahora_local().date()
+        futuros = [(dia, h) for dia, h in sorted(horario.DIAS_ESPECIALES.items()) if dia >= hoy and h.abierto]
+        if not futuros:
+            self.skipTest('no hay días especiales futuros cargados')
+        dia, especial = futuros[0]
+
+        dentro = self.entrada()
+        dentro['entrega'] = {
+            'metodo': 'retiro',
+            'fecha': dia.isoformat(),
+            'hora_retiro': especial.apertura.strftime('%H:%M'),
+        }
+        self.assertEqual(
+            self.client.post(URL_VALIDAR, dentro, content_type='application/json').status_code, 200,
+        )
+
+        fuera = self.entrada()
+        fuera['entrega'] = {
+            'metodo': 'retiro',
+            'fecha': dia.isoformat(),
+            'hora_retiro': (
+                especial.cierre.replace(hour=especial.cierre.hour + 1)
+                if especial.cierre.hour < 23 else time(23, 59)
+            ).strftime('%H:%M'),
+        }
+        respuesta = self.client.post(URL_VALIDAR, fuera, content_type='application/json')
         self.assertEqual(respuesta.status_code, 422)
         self.assertEqual(respuesta.json()['errores'][0]['codigo'], 'fuera_de_horario')
 
@@ -359,14 +397,28 @@ class DisponibilidadTests(CanalPublicoBase):
         self.assertTrue(respuesta.json()['disponible'])
 
     def test_domingo_no_disponible(self):
-        from datetime import date
-
-        domingo = date(2026, 10, 11)
+        domingo = proximo_domingo_cerrado()
         respuesta = self.client.get(f'/api/publico/entrega/disponibilidad?fecha={domingo.isoformat()}')
 
         cuerpo = respuesta.json()
         self.assertFalse(cuerpo['disponible'])
         self.assertEqual(cuerpo['motivo'], 'fecha_cerrado')
+
+    def test_dia_especial_abre_medio_dia(self):
+        dia, especial = next(iter(sorted(horario.DIAS_ESPECIALES.items())), (None, None))
+        if dia is None or dia < horario.ahora_local().date():
+            self.skipTest('no hay días especiales futuros cargados')
+
+        cuerpo = self.client.get(
+            f'/api/publico/entrega/disponibilidad?fecha={dia.isoformat()}'
+        ).json()
+
+        self.assertTrue(cuerpo['disponible'])
+        self.assertEqual(cuerpo['horario_del_dia']['apertura'], especial.apertura.strftime('%H:%M'))
+        self.assertEqual(cuerpo['horario_del_dia']['cierre'], especial.cierre.strftime('%H:%M'))
+        self.assertEqual(cuerpo['horario_del_dia']['hora_corte'], especial.hora_corte.strftime('%H:%M'))
+        if especial.cierre <= time(14, 0):
+            self.assertEqual([franja['valor'] for franja in cuerpo['franjas']], ['mañana'])
 
 
 class FichaPorSkuTests(CanalPublicoBase):

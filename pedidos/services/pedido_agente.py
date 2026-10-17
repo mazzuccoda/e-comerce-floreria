@@ -166,14 +166,15 @@ def _validar_fecha(entrega, errores):
         return None
     if not horario.es_dia_abierto(fecha):
         errores.append(_error(
-            'entrega.fecha', 'fecha_cerrado', 'Los domingos no hay entregas',
+            'entrega.fecha', 'fecha_cerrado', 'Ese día el local está cerrado',
             sugerencia=horario.proximo_dia_abierto(fecha + timedelta(days=1)).isoformat(),
         ))
         return None
     if fecha == hoy and not horario.acepta_pedidos_para_hoy(ahora):
+        corte = horario.horario_de(hoy).hora_corte
         errores.append(_error(
             'entrega.fecha', 'fuera_de_horario',
-            f'Para hoy ya pasó el corte de las {horario.HORA_CORTE_MISMO_DIA.strftime("%H:%M")}',
+            f'Para hoy ya pasó el corte de las {corte.strftime("%H:%M")}',
             sugerencia=proxima.isoformat(),
         ))
         return None
@@ -196,22 +197,23 @@ def _validar_vacaciones(metodo, fecha, errores):
         ))
 
 
-def _validar_envio(metodo, entrega, total_productos, items, errores):
+def _validar_envio(metodo, entrega, total_productos, items, errores, fecha=None):
     """Costo de envío según las zonas configuradas. Nunca lo manda el agente."""
     if metodo == 'retiro':
+        del_dia = horario.horario_de(fecha) if fecha else horario.HABITUAL
         hora_bruta = str(entrega.get('hora_retiro') or '').strip()
         try:
             hora = time.fromisoformat(hora_bruta)
         except ValueError:
             errores.append(_error(
                 'entrega.hora_retiro', 'dato_invalido',
-                f'Indicá la hora de retiro (HH:MM) entre {horario.APERTURA:%H:%M} y {horario.CIERRE:%H:%M}',
+                f'Indicá la hora de retiro (HH:MM) entre {del_dia.apertura:%H:%M} y {del_dia.cierre:%H:%M}',
             ))
             return None, None
-        if not horario.APERTURA <= hora <= horario.CIERRE:
+        if not del_dia.apertura <= hora <= del_dia.cierre:
             errores.append(_error(
                 'entrega.hora_retiro', 'fuera_de_horario',
-                f'El local atiende de {horario.APERTURA:%H:%M} a {horario.CIERRE:%H:%M}',
+                f'Ese día el local atiende de {del_dia.apertura:%H:%M} a {del_dia.cierre:%H:%M}',
             ))
             return None, None
         return hora, {'metodo': 'retiro', 'costo': 0.0, 'gratis': False, 'zona': None, 'distancia_km': None}
@@ -387,7 +389,9 @@ def validar_y_cotizar(entrada):
     hora_retiro = None
     envio = None
     if metodo:
-        hora_retiro, envio = _validar_envio(metodo, entrega, total_productos, items, errores)
+        hora_retiro, envio = _validar_envio(
+            metodo, entrega, total_productos, items, errores, fecha=fecha,
+        )
 
     medio_pago = str(entrada.get('medio_pago') or 'mercadopago').strip()
     if medio_pago not in MEDIOS_PAGO:
@@ -612,7 +616,7 @@ def disponibilidad(fecha_bruta):
         'hoy': ahora.date().isoformat(),
         'hora_local': ahora.strftime('%H:%M'),
         'proxima_fecha_de_entrega': horario.proxima_fecha_de_entrega(ahora).isoformat(),
-        'hora_corte_mismo_dia': horario.HORA_CORTE_MISMO_DIA.strftime('%H:%M'),
+        'hora_corte_mismo_dia': horario.horario_de(ahora.date()).hora_corte.strftime('%H:%M'),
         'franjas': [
             {'valor': 'mañana', 'horario': '9:00 a 12:00'},
             {'valor': 'tarde', 'horario': '16:00 a 20:00'},
@@ -641,6 +645,19 @@ def disponibilidad(fecha_bruta):
     datos['metodos'] = (
         ['programado'] if ajustes.is_vacation_active() else list(METODOS_ENTREGA)
     )
+
+    del_dia = horario.horario_de(fecha)
+    datos['horario_del_dia'] = {
+        'apertura': del_dia.apertura.strftime('%H:%M'),
+        'cierre': del_dia.cierre.strftime('%H:%M'),
+        'hora_corte': del_dia.hora_corte.strftime('%H:%M'),
+    }
+    if del_dia.mensaje:
+        datos['horario_del_dia']['mensaje'] = del_dia.mensaje
+    if del_dia.abierto and del_dia.cierre <= time(14, 0):
+        datos['franjas'] = [
+            franja for franja in datos['franjas'] if franja['valor'] == 'mañana'
+        ]
     return datos
 
 
