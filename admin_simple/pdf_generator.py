@@ -33,7 +33,6 @@ import requests
 TINTA = colors.HexColor('#2d3748')
 TINTA_SUAVE = colors.HexColor('#718096')
 COBRO = colors.HexColor('#c53030')
-ROSA = colors.HexColor('#fdf2f4')
 BORDE = colors.HexColor('#cbd5e0')
 
 ANCHO_UTIL = 18 * cm
@@ -295,7 +294,6 @@ def generar_pdf_pedido(pedido):
             [[contenido]],
             colWidths=[ANCHO_UTIL],
             style=TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), ROSA),
                 ('BOX', (0, 0), (-1, -1), 0.7, BORDE),
                 ('TOPPADDING', (0, 0), (-1, -1), 0),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
