@@ -37,6 +37,7 @@ ROSA = colors.HexColor('#fdf2f4')
 BORDE = colors.HexColor('#cbd5e0')
 
 ANCHO_UTIL = 18 * cm
+ALTO_TARJETA = 7 * cm
 DIAS = ('LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO')
 MANUSCRITA = 'Caveat'
 RUTA_MANUSCRITA = os.path.join(os.path.dirname(__file__), 'fonts', 'Caveat-Regular.ttf')
@@ -200,6 +201,10 @@ def generar_pdf_pedido(pedido):
     telefono_style = ParagraphStyle(
         'Telefono', parent=base, fontName='Helvetica-Bold', fontSize=18, leading=22, textColor=TINTA,
     )
+    recibo_style = ParagraphStyle(
+        'Recibo', parent=base, fontName='Helvetica', fontSize=9, leading=14,
+        textColor=TINTA_SUAVE,
+    )
     cobro_style = ParagraphStyle(
         'Cobro', parent=base, fontName='Helvetica-Bold', fontSize=14, leading=18, textColor=COBRO,
     )
@@ -272,21 +277,28 @@ def generar_pdf_pedido(pedido):
 
     # === TARJETA: se corta, se dobla y viaja con el ramo ===
     if pedido.dedicatoria:
-        tarjeta = [[Paragraph(escape(_texto_de_tarjeta(pedido.dedicatoria)), dedicatoria_style)]]
+        contenido = [Paragraph(escape(_texto_de_tarjeta(pedido.dedicatoria)), dedicatoria_style)]
         if pedido.firmado_como and not (pedido.anonimo or pedido.regalo_anonimo):
-            tarjeta.append([Paragraph(escape(pedido.firmado_como), firma_style)])
+            contenido.append(Paragraph(escape(pedido.firmado_como), firma_style))
         elif pedido.anonimo or pedido.regalo_anonimo:
-            tarjeta.append([Paragraph('De alguien que te quiere', firma_style)])
+            contenido.append(Paragraph('De alguien que te quiere', firma_style))
+
+        # Una tarjeta corta sigue siendo una tarjeta: se rellena hasta ALTO_TARJETA
+        # repartiendo el aire arriba y abajo del texto.
+        ancho_texto = ANCHO_UTIL - 2 * 24
+        usado = sum(bloque.wrap(ancho_texto, ALTO_TARJETA)[1] for bloque in contenido)
+        aire = max(0.0, (ALTO_TARJETA - usado) / 2)
+        contenido = [Spacer(1, aire)] + contenido + [Spacer(1, aire)]
 
         story.extend(_linea_de_corte(corte_style))
         story.append(KeepTogether(Table(
-            tarjeta,
+            [[contenido]],
             colWidths=[ANCHO_UTIL],
             style=TableStyle([
                 ('BACKGROUND', (0, 0), (-1, -1), ROSA),
                 ('BOX', (0, 0), (-1, -1), 0.7, BORDE),
-                ('TOPPADDING', (0, 0), (0, 0), 22),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 22),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ('LEFTPADDING', (0, 0), (-1, -1), 24),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 24),
             ]),
@@ -318,6 +330,12 @@ def generar_pdf_pedido(pedido):
         '[&nbsp;&nbsp;&nbsp;&nbsp;] Entregado &nbsp;&nbsp;&nbsp;&nbsp;'
         '[&nbsp;&nbsp;&nbsp;&nbsp;] No estaba &nbsp;&nbsp;&nbsp;&nbsp; Hora: ______',
         talon_style,
+    ))
+    datos.append(Spacer(1, 0.7 * cm))
+    datos.append(Paragraph(
+        'Recibí conforme: ____________________ &nbsp;&nbsp;'
+        'Aclaración: ____________________',
+        recibo_style,
     ))
 
     mapa = _mapa_estatico(direccion, 4.6 * cm)
