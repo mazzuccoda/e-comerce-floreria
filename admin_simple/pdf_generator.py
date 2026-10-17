@@ -1,313 +1,359 @@
 """
-Generador de PDF minimalista para pedidos
-Diseñado para caber en una hoja A4
+Hoja de pedido imprimible: taller, tarjeta de dedicatoria y talón del repartidor
+en una sola A4, separados por dos líneas de corte.
 """
+import os
 from html import escape
 from io import BytesIO
-from reportlab.lib.pagesizes import A4
+from urllib.parse import quote_plus
+
+from django.conf import settings
+from pedidos.models import ShippingConfig
+from reportlab.graphics.barcode import qr
+from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
-from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import (
+    HRFlowable,
+    Image,
+    KeepTogether,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 import requests
-from PIL import Image as PILImage
+
+TINTA = colors.HexColor('#2d3748')
+TINTA_SUAVE = colors.HexColor('#718096')
+COBRO = colors.HexColor('#c53030')
+ROSA = colors.HexColor('#fdf2f4')
+BORDE = colors.HexColor('#cbd5e0')
+
+ANCHO_UTIL = 18 * cm
+DIAS = ('LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO')
+MANUSCRITA = 'Caveat'
+RUTA_MANUSCRITA = os.path.join(os.path.dirname(__file__), 'fonts', 'Caveat-Regular.ttf')
+
+
+def _fuente_manuscrita():
+    """Registra la letra de la tarjeta; si falta el archivo, cae en la cursiva de sistema."""
+    if MANUSCRITA in pdfmetrics.getRegisteredFontNames():
+        return MANUSCRITA
+    try:
+        pdfmetrics.registerFont(TTFont(MANUSCRITA, RUTA_MANUSCRITA))
+        return MANUSCRITA
+    except Exception:
+        return 'Helvetica-Oblique'
+
+
+def _imagen_remota(url, lado):
+    """La foto del producto; una hoja sin foto se imprime igual que una con foto."""
+    if not url or url.startswith('https://via.placeholder.com'):
+        return None
+    try:
+        respuesta = requests.get(url, timeout=10)
+        if respuesta.status_code != 200:
+            return None
+        return Image(BytesIO(respuesta.content), width=lado, height=lado)
+    except Exception:
+        return None
+
+
+def _texto_de_tarjeta(texto):
+    """Baja a minúscula las dedicatorias escritas enteras en mayúscula."""
+    letras = [c for c in texto if c.isalpha()]
+    if not letras or sum(1 for c in letras if c.isupper()) < len(letras) * 0.7:
+        return texto
+
+    resultado = []
+    inicio_de_oracion = True
+    for caracter in texto.lower():
+        resultado.append(caracter.upper() if inicio_de_oracion and caracter.isalpha() else caracter)
+        if caracter.isalpha() or caracter.isdigit():
+            inicio_de_oracion = False
+        elif caracter in '.!?¡¿\n':
+            inicio_de_oracion = True
+    return ''.join(resultado)
+
+
+def _dia_y_fecha(fecha):
+    return f'{DIAS[fecha.weekday()]} {fecha.strftime("%d/%m")}'
+
+
+def _cuando(pedido):
+    """Cuándo sale el pedido, con la hora elegida cuando el cliente retira."""
+    if pedido.tipo_envio == 'retiro' and pedido.hora_retiro:
+        return pedido.hora_retiro.strftime('%H:%M')
+    return pedido.get_franja_horaria_display() or 'A coordinar'
+
+
+def _modalidad(pedido):
+    return {
+        'retiro': 'RETIRA EN EL LOCAL',
+        'express': 'ENVÍO EXPRESS',
+        'programado': 'ENVÍO PROGRAMADO',
+    }.get(pedido.tipo_envio, 'ENVÍO')
+
+
+def _direccion_de_entrega(pedido):
+    """La dirección a la que hay que ir: la del local cuando el pedido se retira."""
+    if pedido.tipo_envio == 'retiro':
+        config = ShippingConfig.get_config()
+        local = getattr(config, 'store_address', '') or 'Solano Vera 480'
+        if 'tucum' not in local.lower():
+            local = f'{local}, Yerba Buena, Tucumán'
+        return local
+    partes = [pedido.direccion or '', pedido.ciudad or '', 'Tucumán, Argentina']
+    return ', '.join(parte for parte in partes if parte)
+
+
+def _linea_de_corte(estilo):
+    """Dos milímetros de tijera: lo que está debajo se corta y viaja solo."""
+    return [
+        Spacer(1, 0.35 * cm),
+        HRFlowable(width='100%', thickness=0.7, color=BORDE, dash=(3, 3)),
+        Paragraph('cortar por aquí', estilo),
+    ]
+
+
+def _codigo_qr(url, lado):
+    """QR con la dirección: el repartidor la abre en el mapa sin tipear nada."""
+    if not url:
+        return None
+    widget = qr.QrCodeWidget(url, barLevel='M')
+    limites = widget.getBounds()
+    ancho = limites[2] - limites[0]
+    alto = limites[3] - limites[1]
+    dibujo = Drawing(lado, lado, transform=[lado / ancho, 0, 0, lado / alto, 0, 0])
+    dibujo.add(widget)
+    return dibujo
+
+
+def _mapa_estatico(direccion, lado):
+    """Mini mapa impreso para ubicarse antes de salir; sin API key no se imprime."""
+    clave = getattr(settings, 'GOOGLE_MAPS_API_KEY', '') or ''
+    if not clave or not direccion:
+        return None
+    destino = quote_plus(direccion)
+    url = (
+        'https://maps.googleapis.com/maps/api/staticmap'
+        f'?center={destino}&zoom=15&size=320x320&scale=2&maptype=roadmap'
+        f'&markers=color:0xc53030%7C{destino}&key={clave}'
+    )
+    return _imagen_remota(url, lado)
 
 
 def generar_pdf_pedido(pedido):
-    """
-    Genera un PDF minimalista del pedido que cabe en una hoja A4
-    """
+    """Hoja de trabajo del pedido: taller arriba, tarjeta al medio, talón abajo."""
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=1.5*cm,
-        leftMargin=1.5*cm,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm
+        rightMargin=1.5 * cm,
+        leftMargin=1.5 * cm,
+        topMargin=1.2 * cm,
+        bottomMargin=1.2 * cm,
+        title=f'Pedido {pedido.numero}',
     )
-    
-    # Estilos
-    styles = getSampleStyleSheet()
-    
-    # Estilo para título
-    titulo_style = ParagraphStyle(
-        'Titulo',
-        parent=styles['Heading1'],
-        fontSize=18,
-        textColor=colors.HexColor('#2d3748'),
-        spaceAfter=0.3*cm,
-        alignment=TA_CENTER,
-        fontName='Helvetica-Bold'
+
+    base = getSampleStyleSheet()['Normal']
+    manuscrita = _fuente_manuscrita()
+
+    numero_style = ParagraphStyle(
+        'Numero', parent=base, fontName='Helvetica-Bold', fontSize=26, leading=28, textColor=TINTA,
     )
-    
-    # Estilo para subtítulos
-    subtitulo_style = ParagraphStyle(
-        'Subtitulo',
-        parent=styles['Heading2'],
-        fontSize=12,
-        textColor=colors.HexColor('#4a5568'),
-        spaceAfter=0.2*cm,
-        spaceBefore=0.3*cm,
-        fontName='Helvetica-Bold'
+    cuando_style = ParagraphStyle(
+        'Cuando', parent=base, fontName='Helvetica-Bold', fontSize=16, leading=19,
+        alignment=TA_RIGHT, textColor=TINTA,
     )
-    
-    # Estilo para texto normal
+    producto_style = ParagraphStyle(
+        'Producto', parent=base, fontName='Helvetica-Bold', fontSize=15, leading=18, textColor=TINTA,
+    )
     normal_style = ParagraphStyle(
-        'Normal',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#2d3748'),
-        fontName='Helvetica'
+        'Cuerpo', parent=base, fontName='Helvetica', fontSize=10, leading=14, textColor=TINTA,
     )
-    
-    # Estilo para texto pequeño
-    small_style = ParagraphStyle(
-        'Small',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#718096'),
-        fontName='Helvetica'
+    etiqueta_style = ParagraphStyle(
+        'Etiqueta', parent=base, fontName='Helvetica-Bold', fontSize=8, leading=11,
+        textColor=TINTA_SUAVE,
     )
-    
-    # Contenido del PDF
+    corte_style = ParagraphStyle(
+        'Corte', parent=base, fontName='Helvetica', fontSize=7, leading=9,
+        alignment=TA_LEFT, textColor=TINTA_SUAVE, spaceBefore=1,
+    )
+    dedicatoria_style = ParagraphStyle(
+        'Dedicatoria', parent=base, fontName=manuscrita, fontSize=19, leading=25,
+        alignment=TA_CENTER, textColor=TINTA,
+    )
+    firma_style = ParagraphStyle(
+        'Firma', parent=dedicatoria_style, fontSize=17, leading=21, alignment=TA_RIGHT,
+    )
+    talon_style = ParagraphStyle(
+        'Talon', parent=base, fontName='Helvetica', fontSize=11, leading=15, textColor=TINTA,
+    )
+    telefono_style = ParagraphStyle(
+        'Telefono', parent=base, fontName='Helvetica-Bold', fontSize=18, leading=22, textColor=TINTA,
+    )
+    cobro_style = ParagraphStyle(
+        'Cobro', parent=base, fontName='Helvetica-Bold', fontSize=14, leading=18, textColor=COBRO,
+    )
+
     story = []
-    
-    # === ENCABEZADO ===
-    story.append(Paragraph("🌸 FLORERÍA CRISTINA", titulo_style))
-    story.append(Paragraph(f"Pedido #{pedido.numero}", subtitulo_style))
-    story.append(Paragraph(f"{pedido.creado.strftime('%d/%m/%Y %H:%M')}", small_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    # === PRODUCTOS ===
-    story.append(Paragraph("PRODUCTOS", subtitulo_style))
-    
-    # Tabla de productos con imágenes
-    productos_data = [['Imagen', 'Producto', 'Cant.', 'Precio', 'Subtotal']]
-    
-    for item in pedido.items.all():
-        # Intentar obtener la imagen del producto
-        img = None
-        try:
-            # Obtener la URL de la imagen principal del producto
-            image_url = item.producto.get_primary_image_url
-            
-            if image_url and not image_url.startswith('https://via.placeholder.com'):
-                # Descargar la imagen desde Cloudinary o cualquier URL
-                response = requests.get(image_url, timeout=10)
-                if response.status_code == 200:
-                    img_buffer = BytesIO(response.content)
-                    img = Image(img_buffer, width=1.5*cm, height=1.5*cm)
-        except Exception as e:
-            # Si falla, usar un placeholder de texto
-            pass
-        
-        if img is None:
-            img = Paragraph("📦", normal_style)
-        
-        productos_data.append([
-            img,
-            Paragraph(item.producto.nombre, normal_style),
-            str(item.cantidad),
-            f"${item.precio:,.0f}".replace(',', '.'),
-            f"${item.precio * item.cantidad:,.0f}".replace(',', '.')
-        ])
-    
-    productos_table = Table(productos_data, colWidths=[2*cm, 6.5*cm, 1.5*cm, 3*cm, 3*cm])
-    productos_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f7fafc')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#2d3748')),
-        ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Imagen centrada
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),    # Producto a la izquierda
-        ('ALIGN', (2, 0), (-1, -1), 'CENTER'), # Resto centrado
-        ('ALIGN', (4, 0), (4, -1), 'RIGHT'),   # Subtotal a la derecha
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # Alineación vertical
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 9),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-        ('TOPPADDING', (0, 0), (-1, 0), 8),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-        ('TOPPADDING', (0, 1), (-1, -1), 6),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
-        ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#cbd5e0')),
-    ]))
-    
-    story.append(productos_table)
-    story.append(Spacer(1, 0.3*cm))
-    
-    # === TOTALES ===
-    subtotal = sum(item.precio * item.cantidad for item in pedido.items.all())
-    
-    # Calcular costo de envío
-    costo_envio = 0
-    if pedido.tipo_envio == 'express':
-        costo_envio = 10000
-    elif pedido.tipo_envio == 'programado':
-        costo_envio = 5000
-    
-    totales_data = [
-        ['Subtotal:', f"${subtotal:,.0f}".replace(',', '.')],
+
+    # === TALLER: qué armar y para cuándo (sin precios: esta parte queda en la mesa) ===
+    story.append(Table(
+        [[
+            Paragraph(f'PEDIDO #{escape(pedido.numero)}', numero_style),
+            Paragraph(
+                f'{_dia_y_fecha(pedido.fecha_entrega)}<br/>{escape(_cuando(pedido))}',
+                cuando_style,
+            ),
+        ]],
+        colWidths=[ANCHO_UTIL * 0.55, ANCHO_UTIL * 0.45],
+        style=TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('LINEBELOW', (0, 0), (-1, -1), 1.5, TINTA),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]),
+    ))
+    story.append(Spacer(1, 0.4 * cm))
+
+    items = list(pedido.items.all())
+    lado_foto = 6 * cm if len(items) == 1 else 3.6 * cm
+    filas = []
+    for item in items:
+        producto = item.producto
+        foto = _imagen_remota(getattr(producto, 'get_primary_image_url', ''), lado_foto)
+        detalle = [Paragraph(escape(producto.nombre), producto_style)]
+        if item.cantidad > 1:
+            detalle.append(Paragraph(f'<b>{item.cantidad} unidades</b>', normal_style))
+        descriptor = (getattr(producto, 'descripcion', '') or '').strip()
+        if descriptor:
+            detalle.append(Paragraph(escape(descriptor[:180]), normal_style))
+        filas.append([foto or Paragraph('(sin foto)', etiqueta_style), detalle])
+
+    story.append(Table(
+        filas,
+        colWidths=[lado_foto + 0.4 * cm, ANCHO_UTIL - lado_foto - 0.4 * cm],
+        style=TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (0, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]),
+    ))
+
+    entrega = [
+        Paragraph(
+            f'<b>{_modalidad(pedido)}</b> &nbsp;·&nbsp; para {escape(pedido.nombre_destinatario)}',
+            normal_style,
+        ),
     ]
-    
-    if costo_envio > 0:
-        totales_data.append(['Envío:', f"${costo_envio:,.0f}".replace(',', '.')])
-    
-    totales_data.append(['TOTAL:', f"${pedido.total:,.0f}".replace(',', '.')])
-    
-    totales_table = Table(totales_data, colWidths=[13*cm, 3*cm])
-    totales_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -2), 9),
-        ('FONTSIZE', (0, -1), (-1, -1), 11),
-        ('TEXTCOLOR', (0, -1), (-1, -1), colors.HexColor('#2d3748')),
-        ('LINEABOVE', (0, -1), (-1, -1), 1, colors.HexColor('#cbd5e0')),
-        ('TOPPADDING', (0, -1), (-1, -1), 8),
-    ]))
-    
-    story.append(totales_table)
-    story.append(Spacer(1, 0.5*cm))
-    
-    # === INFORMACIÓN DE ENTREGA ===
-    story.append(Paragraph("INFORMACIÓN DE ENTREGA", subtitulo_style))
-    
-    entrega_data = [
-        ['Destinatario:', pedido.nombre_destinatario],
-        ['Teléfono:', pedido.telefono_destinatario],
-        ['Dirección:', pedido.direccion],
-        ['Fecha:', pedido.fecha_entrega.strftime('%d/%m/%Y')],
-        ['Horario:', 'Mañana (9-12hs)' if pedido.franja_horaria == 'mañana' else ('Tarde (16-20hs)' if pedido.franja_horaria == 'tarde' else 'Durante el día')],
-    ]
-    
-    if pedido.tipo_envio:
-        tipo_envio_display = {
-            'retiro': '🏪 Retiro en tienda',
-            'express': '⚡ Envío Express (2-4 horas)',
-            'programado': '📅 Envío Programado'
-        }.get(pedido.tipo_envio, pedido.tipo_envio)
-        entrega_data.append(['Tipo de Envío:', tipo_envio_display])
-    
     if pedido.instrucciones:
-        entrega_data.append(['Instrucciones:', pedido.instrucciones])
-    
-    entrega_table = Table(entrega_data, colWidths=[4*cm, 12*cm])
-    entrega_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    
-    story.append(entrega_table)
-    
-    # === DEDICATORIA ===
+        entrega.append(Paragraph(f'Instrucciones: {escape(pedido.instrucciones)}', normal_style))
+    story.append(Table(
+        [[entrega]],
+        colWidths=[ANCHO_UTIL],
+        style=TableStyle([
+            ('BOX', (0, 0), (-1, -1), 0.7, BORDE),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ]),
+    ))
+
+    # === TARJETA: se corta, se dobla y viaja con el ramo ===
     if pedido.dedicatoria:
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph("DEDICATORIA", subtitulo_style))
-        
-        # Crear contenido de dedicatoria con firma si existe
-        dedicatoria_text = f'"{pedido.dedicatoria}"'
-        if pedido.firmado_como:
-            # Estilo para la firma (alineado a la derecha)
-            firma_style = ParagraphStyle(
-                'Firma',
-                parent=normal_style,
-                alignment=TA_RIGHT,
-                fontSize=9,
-                textColor=colors.HexColor('#4a5568')
-            )
-            dedicatoria_content = [
-                [Paragraph(dedicatoria_text, normal_style)],
-                [Paragraph(f'— {pedido.firmado_como}', firma_style)]
-            ]
-            dedicatoria_table = Table(dedicatoria_content, colWidths=[16*cm])
-        else:
-            dedicatoria_table = Table([[Paragraph(dedicatoria_text, normal_style)]], colWidths=[16*cm])
-        
-        dedicatoria_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fef5f5')),
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#feb2b2')),
+        tarjeta = [[Paragraph(escape(_texto_de_tarjeta(pedido.dedicatoria)), dedicatoria_style)]]
+        if pedido.firmado_como and not (pedido.anonimo or pedido.regalo_anonimo):
+            tarjeta.append([Paragraph(escape(pedido.firmado_como), firma_style)])
+        elif pedido.anonimo or pedido.regalo_anonimo:
+            tarjeta.append([Paragraph('De alguien que te quiere', firma_style)])
+
+        story.extend(_linea_de_corte(corte_style))
+        story.append(KeepTogether(Table(
+            tarjeta,
+            colWidths=[ANCHO_UTIL],
+            style=TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), ROSA),
+                ('BOX', (0, 0), (-1, -1), 0.7, BORDE),
+                ('TOPPADDING', (0, 0), (0, 0), 22),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 22),
+                ('LEFTPADDING', (0, 0), (-1, -1), 24),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 24),
+            ]),
+        )))
+
+    # === TALÓN: se corta y va en el bolsillo de quien lleva el pedido ===
+    direccion = _direccion_de_entrega(pedido)
+    datos = [
+        Paragraph(
+            f'<b>#{escape(pedido.numero)}</b> &nbsp;·&nbsp; {_dia_y_fecha(pedido.fecha_entrega)}'
+            f' &nbsp;·&nbsp; {escape(_cuando(pedido))}',
+            talon_style,
+        ),
+        Paragraph(f'<b>{escape(pedido.nombre_destinatario)}</b>', producto_style),
+        Paragraph(escape(pedido.telefono_destinatario or 'Sin teléfono'), telefono_style),
+        Paragraph(escape(direccion), talon_style),
+    ]
+    if pedido.instrucciones:
+        datos.append(Paragraph(f'<i>{escape(pedido.instrucciones)}</i>', talon_style))
+    if pedido.estado_pago != 'approved':
+        datos.append(Spacer(1, 0.2 * cm))
+        datos.append(Paragraph(
+            f'COBRAR ${pedido.total:,.0f}'.replace(',', '.')
+            + f' &nbsp;({escape(pedido.get_medio_pago_display())})',
+            cobro_style,
+        ))
+    datos.append(Spacer(1, 0.2 * cm))
+    datos.append(Paragraph(
+        '[&nbsp;&nbsp;&nbsp;&nbsp;] Entregado &nbsp;&nbsp;&nbsp;&nbsp;'
+        '[&nbsp;&nbsp;&nbsp;&nbsp;] No estaba &nbsp;&nbsp;&nbsp;&nbsp; Hora: ______',
+        talon_style,
+    ))
+
+    mapa = _mapa_estatico(direccion, 4.6 * cm)
+    codigo = _codigo_qr(
+        f'https://www.google.com/maps/search/?api=1&query={quote_plus(direccion)}',
+        3.2 * cm,
+    )
+    columna_mapa = [[mapa or Paragraph('', etiqueta_style)]] if mapa else []
+    columna_mapa.append([codigo or Paragraph('', etiqueta_style)])
+    columna_mapa.append([Paragraph('Escaneá para ir', etiqueta_style)])
+
+    story.extend(_linea_de_corte(corte_style))
+    story.append(KeepTogether(Table(
+        [[
+            datos,
+            Table(columna_mapa, style=TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ])),
+        ]],
+        colWidths=[ANCHO_UTIL - 5.2 * cm, 5.2 * cm],
+        style=TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOX', (0, 0), (-1, -1), 0.7, BORDE),
             ('TOPPADDING', (0, 0), (-1, -1), 10),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ]))
-        
-        story.append(dedicatoria_table)
-    
-    story.append(Spacer(1, 0.5*cm))
-    
-    # === CLIENTE ===
-    story.append(Paragraph("CLIENTE", subtitulo_style))
-    
-    cliente_data = []
-    if pedido.cliente:
-        cliente_data.append(['Nombre:', pedido.cliente.get_full_name() or pedido.cliente.username])
-        cliente_data.append(['Email:', pedido.cliente.email])
-    else:
-        if pedido.nombre_comprador:
-            cliente_data.append(['Nombre:', pedido.nombre_comprador])
-        if pedido.email_comprador:
-            cliente_data.append(['Email:', pedido.email_comprador])
-        if pedido.telefono_comprador:
-            cliente_data.append(['Teléfono:', pedido.telefono_comprador])
-    
-    if cliente_data:
-        cliente_table = Table(cliente_data, colWidths=[4*cm, 12*cm])
-        cliente_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ]))
-        
-        story.append(cliente_table)
-    
-    story.append(Spacer(1, 0.3*cm))
-    
-    # === ESTADO Y PAGO ===
-    info_data = [
-        ['Estado:', pedido.get_estado_display()],
-        ['Estado Pago:', pedido.get_estado_pago_display() if hasattr(pedido, 'estado_pago') else 'N/A'],
-        ['Método Pago:', pedido.get_medio_pago_display() if hasattr(pedido, 'medio_pago') else 'N/A'],
-    ]
-    
-    info_table = Table(info_data, colWidths=[4*cm, 12*cm])
-    info_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-    ]))
-    
-    story.append(info_table)
-    
-    # === PIE DE PÁGINA ===
-    story.append(Spacer(1, 0.5*cm))
-    story.append(Paragraph(
-        "Florería Cristina - Yerba Buena, Tucumán",
-        ParagraphStyle('Footer', parent=small_style, alignment=TA_CENTER)
-    ))
-    
-    # Construir PDF
+            ('LEFTPADDING', (0, 0), (0, -1), 10),
+        ]),
+    )))
+
     doc.build(story)
-    
-    # Obtener el valor del buffer
     pdf = buffer.getvalue()
     buffer.close()
-    
     return pdf
 
 
