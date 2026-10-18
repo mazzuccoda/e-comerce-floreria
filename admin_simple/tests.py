@@ -2,6 +2,7 @@ from datetime import time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -9,6 +10,8 @@ from django.utils import timezone
 from admin_simple import reportes
 from admin_simple.pdf_generator import _texto_de_tarjeta
 from catalogo.models import Categoria, Producto
+from core import horario
+from core.models import DiaEspecial, HorarioSemanal
 from pedidos.models import Pedido, PedidoItem
 
 User = get_user_model()
@@ -1319,3 +1322,138 @@ class TextoDeTarjetaTests(SimpleTestCase):
 
     def test_no_rompe_con_texto_sin_letras(self):
         self.assertEqual(_texto_de_tarjeta('123 !!!'), '123 !!!')
+
+
+class PanelHorariosTests(TestCase):
+    """La pantalla con la que el dueño cambia el horario sin tocar código."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='horarios-admin', email='horarios@example.com', password='clave-de-prueba',
+        )
+        self.client.force_login(self.admin)
+        self.url = reverse('admin_simple:horarios')
+        cache.clear()
+
+    def _datos_semana(self, **cambios):
+        """POST del formset con la semana tal como está, más los cambios pedidos."""
+        filas = list(HorarioSemanal.objects.order_by('dia'))
+        datos = {
+            'guardar_semana': '1',
+            'semana-TOTAL_FORMS': str(len(filas)),
+            'semana-INITIAL_FORMS': str(len(filas)),
+        }
+        for indice, fila in enumerate(filas):
+            datos[f'semana-{indice}-id'] = str(fila.pk)
+            if fila.abierto:
+                datos[f'semana-{indice}-abierto'] = 'on'
+            datos[f'semana-{indice}-apertura'] = fila.apertura.strftime('%H:%M')
+            datos[f'semana-{indice}-cierre'] = fila.cierre.strftime('%H:%M')
+            datos[f'semana-{indice}-hora_corte'] = fila.hora_corte.strftime('%H:%M')
+            if fila.acepta_retiro:
+                datos[f'semana-{indice}-acepta_retiro'] = 'on'
+            if fila.acepta_envio:
+                datos[f'semana-{indice}-acepta_envio'] = 'on'
+        datos.update(cambios)
+        return datos
+
+    def test_la_pantalla_muestra_los_siete_dias(self):
+        respuesta = self.client.get(self.url)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(len(respuesta.context['formset'].forms), 7)
+
+    def test_el_operador_sin_permisos_no_entra(self):
+        operador = User.objects.create_user(
+            username='operador-horarios', password='clave-de-prueba', is_staff=True,
+        )
+        self.client.force_login(operador)
+
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+    def test_cambiar_el_corte_de_la_semana_afecta_la_promesa_de_entrega(self):
+        datos = self._datos_semana()
+        for indice in range(7):
+            datos[f'semana-{indice}-hora_corte'] = '15:00'
+
+        self.client.post(self.url, datos)
+
+        self.assertEqual(HorarioSemanal.objects.get(dia=0).hora_corte, time(15, 0))
+        self.assertEqual(horario.horario_semanal()[0].hora_corte, time(15, 0))
+
+    def test_rechaza_un_cierre_anterior_a_la_apertura(self):
+        datos = self._datos_semana(**{'semana-0-cierre': '08:00'})
+
+        respuesta = self.client.post(self.url, datos)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(HorarioSemanal.objects.get(dia=0).cierre, time(21, 0))
+
+    def test_cargar_un_dia_especial_lo_deja_vigente(self):
+        fecha = timezone.localdate() + timedelta(days=3)
+
+        respuesta = self.client.post(self.url, {
+            'guardar_especial': '1',
+            'especial-fecha': fecha.isoformat(),
+            'especial-abierto': 'on',
+            'especial-apertura': '09:00',
+            'especial-cierre': '13:00',
+            'especial-hora_corte': '12:00',
+            'especial-acepta_retiro': 'on',
+            'especial-acepta_envio': 'on',
+            'especial-mensaje': 'Día de la Madre: medio día',
+        })
+
+        self.assertRedirects(respuesta, self.url)
+        del_dia = horario.horario_de(fecha)
+        self.assertEqual(del_dia.cierre, time(13, 0))
+        self.assertEqual(del_dia.hora_corte, time(12, 0))
+        self.assertTrue(del_dia.especial)
+
+    def test_un_domingo_puede_abrirse_como_dia_especial(self):
+        domingo = timezone.localdate() + timedelta(days=1)
+        while domingo.weekday() != 6:
+            domingo += timedelta(days=1)
+
+        self.client.post(self.url, {
+            'guardar_especial': '1',
+            'especial-fecha': domingo.isoformat(),
+            'especial-abierto': 'on',
+            'especial-apertura': '09:00',
+            'especial-cierre': '13:00',
+            'especial-hora_corte': '12:00',
+            'especial-acepta_retiro': 'on',
+            'especial-acepta_envio': 'on',
+        })
+
+        self.assertTrue(horario.es_dia_abierto(domingo))
+
+    def test_rechaza_un_dia_especial_en_una_fecha_pasada(self):
+        ayer = timezone.localdate() - timedelta(days=1)
+
+        self.client.post(self.url, {
+            'guardar_especial': '1',
+            'especial-fecha': ayer.isoformat(),
+            'especial-abierto': 'on',
+            'especial-apertura': '09:00',
+            'especial-cierre': '13:00',
+            'especial-hora_corte': '12:00',
+            'especial-acepta_retiro': 'on',
+            'especial-acepta_envio': 'on',
+        })
+
+        self.assertFalse(DiaEspecial.objects.exists())
+
+    def test_quitar_el_dia_especial_devuelve_el_horario_habitual(self):
+        fecha = timezone.localdate() + timedelta(days=4)
+        especial = DiaEspecial.objects.create(
+            fecha=fecha, abierto=False, mensaje='Cerrado por inventario',
+        )
+        cache.clear()
+
+        self.client.post(
+            reverse('admin_simple:dia-especial-eliminar', args=[especial.pk])
+        )
+
+        self.assertFalse(DiaEspecial.objects.exists())
+        self.assertEqual(horario.es_dia_abierto(fecha), fecha.weekday() != 6)

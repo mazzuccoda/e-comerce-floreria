@@ -28,6 +28,7 @@ import { useSiteSettings } from '@/app/hooks/useSiteSettings';
 import { useAbandonedCart } from '@/app/hooks/useAbandonedCart';
 import { getExpressAvailability } from '@/utils/deliveryPromise';
 import { isOpenDate, scheduleFor } from '@/utils/businessHours';
+import { useBusinessHours } from '@/app/hooks/useBusinessHours';
 import { clearGiftDraft, readGiftDraft } from '@/utils/giftMessage';
 
 // API URL configuration
@@ -59,6 +60,7 @@ const MultiStepCheckoutPage = () => {
   const { t } = useI18n();
   const { token } = useAuth();
   const { settings: siteSettings } = useSiteSettings();
+  const { loaded: horarioCargado } = useBusinessHours();
   const [currentStep, setCurrentStep] = useState(0);
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
   const [savedProgressAge, setSavedProgressAge] = useState<string | null>(null);
@@ -180,11 +182,20 @@ const MultiStepCheckoutPage = () => {
   // Obtener mensaje de disponibilidad de Express
   const getExpressAvailabilityMessage = () => getExpressAvailability();
 
+  // Qué horario de retiro mostrar: el aviso del día especial o el de esa fecha
+  const textoHorarioRetiro = (selectedDate: string) => {
+    if (!selectedDate) return 'Elegí la fecha y te mostramos el horario de ese día.';
+    const delDia = scheduleFor(selectedDate);
+    if (delDia.message) return delDia.message;
+    if (!delDia.open) return 'Ese día el local está cerrado. Elegí otra fecha.';
+    return `Horario de retiro de ese día: de ${delDia.openingHour}:00 a ${delDia.closingHour}:00 hs.`;
+  };
+
   // Obtener franjas horarias disponibles para una fecha
   const getAvailableTimeSlots = (selectedDate: string) => {
     if (!selectedDate) return ['tarde']; // Por defecto solo tarde si no hay fecha
 
-    // Un día que cierra temprano (feriado, medio día) sólo entrega por la mañana
+    // Un día que cierra temprano (feriado, medio día) no tiene franja de tarde
     if (scheduleFor(selectedDate).closingHour <= 14) return ['mañana'];
     
     const now = new Date();
@@ -687,6 +698,25 @@ const MultiStepCheckoutPage = () => {
     }
   };
   
+  // El horario llega del servidor después del primer render: si la fecha elegida
+  // quedó cerrada (feriado cargado desde el panel), hay que avisar y limpiar la franja.
+  useEffect(() => {
+    if (!horarioCargado || !formData.fecha) return;
+
+    const error = validateField('fecha', formData.fecha);
+    setFormErrors(prev => {
+      const siguientes = { ...prev };
+      if (error) siguientes.fecha = error;
+      else delete siguientes.fecha;
+      return siguientes;
+    });
+
+    const franjas = getAvailableTimeSlots(formData.fecha);
+    if (formData.franjaHoraria && !franjas.includes(formData.franjaHoraria)) {
+      setFormData(prev => ({ ...prev, franjaHoraria: '' }));
+    }
+  }, [horarioCargado]);
+
   // Maneja los cambios en los inputs
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -1540,11 +1570,7 @@ const MultiStepCheckoutPage = () => {
                           <line x1="12" y1="16" x2="12" y2="12"/>
                           <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        <span>
-                          {formData.fecha && scheduleFor(formData.fecha).message
-                            ? scheduleFor(formData.fecha).message
-                            : 'Horario de retiro: De lunes a sábado de 9:00 a 21:00 hs. Domingos cerrado.'}
-                        </span>
+                        <span>{textoHorarioRetiro(formData.fecha)}</span>
                       </p>
                     </div>
                   </div>

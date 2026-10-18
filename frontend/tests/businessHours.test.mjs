@@ -2,7 +2,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { acceptsSameDay, isOpenDate, isOpenDay, nextDelivery, scheduleFor } from '../utils/businessHours.ts';
+import {
+  acceptsSameDay,
+  applySchedule,
+  isOpenDate,
+  isOpenDay,
+  nextDelivery,
+  resetSchedule,
+  scheduleFor,
+} from '../utils/businessHours.ts';
 import { getExpressAvailability } from '../utils/deliveryPromise.ts';
 
 // Horas de Argentina (UTC-3). 2026-09-21 es lunes; 2026-09-26, sábado; 2026-09-27, domingo.
@@ -43,24 +51,58 @@ test('la próxima entrega nunca cae en un día cerrado', () => {
   }
 });
 
-test('el domingo del Día de la Madre abre medio día', () => {
-  assert.equal(isOpenDate('2026-10-18'), true);
-  assert.deepEqual(scheduleFor('2026-10-18'), {
-    open: true,
-    openingHour: 9,
-    closingHour: 13,
-    cutoffHour: 12,
-    message:
-      'Día de la Madre: abrimos de 9:00 a 13:00 hs. Tomamos pedidos para entrega y retiro hasta las 12:00.',
+// Lo que devolvería `GET /api/publico/entrega/horario` con un domingo habilitado.
+const semanaHabitual = [0, 1, 2, 3, 4, 5, 6].map((dia) => ({
+  dia,
+  abierto: dia !== 6,
+  apertura: '09:00',
+  cierre: '21:00',
+  hora_corte: '17:00',
+  acepta_retiro: dia !== 6,
+  acepta_envio: dia !== 6,
+}));
+
+test('un domingo cargado como día especial abre medio día', (t) => {
+  t.after(resetSchedule);
+  applySchedule({
+    semana: semanaHabitual,
+    dias_especiales: [{
+      fecha: '2026-10-18',
+      abierto: true,
+      apertura: '09:00',
+      cierre: '13:00',
+      hora_corte: '12:00',
+      acepta_retiro: true,
+      acepta_envio: true,
+      mensaje: 'Día de la Madre: abrimos de 9 a 13',
+    }],
   });
+
+  assert.equal(isOpenDate('2026-10-18'), true);
+  assert.equal(scheduleFor('2026-10-18').closingHour, 13);
+  assert.equal(scheduleFor('2026-10-18').message, 'Día de la Madre: abrimos de 9 a 13');
   assert.equal(acceptsSameDay(ar('2026-10-18', '11:00')), true);
   assert.equal(acceptsSameDay(ar('2026-10-18', '12:00')), false);
   assert.equal(nextDelivery(ar('2026-10-17', '18:00')).date, '2026-10-18');
+  // el domingo siguiente, sin excepción, sigue cerrado
+  assert.equal(isOpenDate('2026-10-25'), false);
 });
 
-test('el domingo siguiente sigue cerrado', () => {
-  assert.equal(isOpenDate('2026-10-25'), false);
-  assert.equal(acceptsSameDay(ar('2026-10-25', '10:00')), false);
+test('el horario del servidor pisa al corte de las constantes', (t) => {
+  t.after(resetSchedule);
+  applySchedule({
+    semana: semanaHabitual.map((dia) => ({ ...dia, hora_corte: '15:00' })),
+    dias_especiales: [],
+  });
+
+  // lunes 16:00: con corte a las 15 ya no entra para hoy
+  assert.equal(acceptsSameDay(ar('2026-09-21', '16:00')), false);
+  assert.equal(scheduleFor('2026-09-21').cutoffHour, 15);
+});
+
+test('sin respuesta del servidor rige el horario habitual', () => {
+  assert.equal(scheduleFor('2026-09-21').cutoffHour, 17);
+  assert.equal(isOpenDate('2026-10-18'), false);
 });
 
 test('usa la hora de Argentina aunque el reloj esté en UTC', () => {

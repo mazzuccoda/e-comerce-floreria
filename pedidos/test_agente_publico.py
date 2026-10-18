@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from catalogo.models import Categoria, Producto
 from core import horario
+from core.models import DiaEspecial
 
 from .models import Pedido, ShippingConfig, ShippingZone, SolicitudPedidoAgente
 
@@ -59,6 +60,14 @@ def proximo_domingo_cerrado():
     while dia.weekday() != 6 or horario.es_dia_abierto(dia):
         dia += timedelta(days=1)
     return dia
+
+
+def crear_dia_especial(**campos):
+    """Carga una excepción en el primer día hábil próximo y devuelve su fecha."""
+    fecha = horario.proximo_dia_abierto(horario.ahora_local().date() + timedelta(days=2))
+    DiaEspecial.objects.create(fecha=fecha, **campos)
+    cache.clear()  # el horario se cachea por proceso
+    return fecha
 
 
 class CanalPublicoBase(TestCase):
@@ -196,34 +205,40 @@ class ValidacionTests(CanalPublicoBase):
         self.assertEqual(respuesta.json()['errores'][0]['codigo'], 'fuera_de_horario')
 
     def test_retiro_en_dia_especial_usa_el_horario_de_ese_dia(self):
-        hoy = horario.ahora_local().date()
-        futuros = [(dia, h) for dia, h in sorted(horario.DIAS_ESPECIALES.items()) if dia >= hoy and h.abierto]
-        if not futuros:
-            self.skipTest('no hay días especiales futuros cargados')
-        dia, especial = futuros[0]
+        dia = crear_dia_especial(cierre=time(13, 0), hora_corte=time(12, 0))
 
         dentro = self.entrada()
-        dentro['entrega'] = {
-            'metodo': 'retiro',
-            'fecha': dia.isoformat(),
-            'hora_retiro': especial.apertura.strftime('%H:%M'),
-        }
+        dentro['entrega'] = {'metodo': 'retiro', 'fecha': dia.isoformat(), 'hora_retiro': '10:00'}
         self.assertEqual(
             self.client.post(URL_VALIDAR, dentro, content_type='application/json').status_code, 200,
         )
 
         fuera = self.entrada()
-        fuera['entrega'] = {
-            'metodo': 'retiro',
-            'fecha': dia.isoformat(),
-            'hora_retiro': (
-                especial.cierre.replace(hour=especial.cierre.hour + 1)
-                if especial.cierre.hour < 23 else time(23, 59)
-            ).strftime('%H:%M'),
-        }
+        fuera['entrega'] = {'metodo': 'retiro', 'fecha': dia.isoformat(), 'hora_retiro': '18:00'}
         respuesta = self.client.post(URL_VALIDAR, fuera, content_type='application/json')
         self.assertEqual(respuesta.status_code, 422)
         self.assertEqual(respuesta.json()['errores'][0]['codigo'], 'fuera_de_horario')
+
+    def test_dia_especial_cerrado_rechaza_la_fecha_con_su_mensaje(self):
+        dia = crear_dia_especial(abierto=False, mensaje='Cerrado por inventario')
+
+        entrada = self.entrada()
+        entrada['entrega']['fecha'] = dia.isoformat()
+
+        cuerpo = self.client.post(URL_VALIDAR, entrada, content_type='application/json').json()
+        error = cuerpo['errores'][0]
+        self.assertEqual(error['codigo'], 'fecha_cerrado')
+        self.assertEqual(error['mensaje'], 'Cerrado por inventario')
+
+    def test_dia_especial_sin_retiro_sugiere_envio(self):
+        dia = crear_dia_especial(acepta_retiro=False)
+
+        entrada = self.entrada()
+        entrada['entrega'] = {'metodo': 'retiro', 'fecha': dia.isoformat(), 'hora_retiro': '10:00'}
+
+        cuerpo = self.client.post(URL_VALIDAR, entrada, content_type='application/json').json()
+        self.assertEqual(cuerpo['errores'][0]['codigo'], 'fecha_cerrado')
+        self.assertEqual(cuerpo['errores'][0]['sugerencia'], 'express')
 
     def test_fuera_de_zona(self):
         with patch(
@@ -405,20 +420,48 @@ class DisponibilidadTests(CanalPublicoBase):
         self.assertEqual(cuerpo['motivo'], 'fecha_cerrado')
 
     def test_dia_especial_abre_medio_dia(self):
-        dia, especial = next(iter(sorted(horario.DIAS_ESPECIALES.items())), (None, None))
-        if dia is None or dia < horario.ahora_local().date():
-            self.skipTest('no hay días especiales futuros cargados')
+        dia = crear_dia_especial(
+            cierre=time(13, 0), hora_corte=time(12, 0), mensaje='Día de la Madre: medio día',
+        )
 
         cuerpo = self.client.get(
             f'/api/publico/entrega/disponibilidad?fecha={dia.isoformat()}'
         ).json()
 
         self.assertTrue(cuerpo['disponible'])
-        self.assertEqual(cuerpo['horario_del_dia']['apertura'], especial.apertura.strftime('%H:%M'))
-        self.assertEqual(cuerpo['horario_del_dia']['cierre'], especial.cierre.strftime('%H:%M'))
-        self.assertEqual(cuerpo['horario_del_dia']['hora_corte'], especial.hora_corte.strftime('%H:%M'))
-        if especial.cierre <= time(14, 0):
-            self.assertEqual([franja['valor'] for franja in cuerpo['franjas']], ['mañana'])
+        self.assertEqual(cuerpo['horario_del_dia']['cierre'], '13:00')
+        self.assertEqual(cuerpo['horario_del_dia']['hora_corte'], '12:00')
+        self.assertEqual(cuerpo['horario_del_dia']['mensaje'], 'Día de la Madre: medio día')
+        # A las 13 no hay tarde: sólo quedan las franjas que entran en el horario.
+        self.assertEqual(
+            [franja['valor'] for franja in cuerpo['franjas']], ['mañana', 'durante_el_dia'],
+        )
+
+    def test_domingo_habilitado_como_dia_especial_queda_disponible(self):
+        domingo = proximo_domingo_cerrado()
+        DiaEspecial.objects.create(
+            fecha=domingo, abierto=True, apertura=time(9, 0), cierre=time(13, 0),
+            hora_corte=time(12, 0),
+        )
+        cache.clear()
+
+        cuerpo = self.client.get(
+            f'/api/publico/entrega/disponibilidad?fecha={domingo.isoformat()}'
+        ).json()
+
+        self.assertTrue(cuerpo['disponible'])
+
+    def test_horario_publico_devuelve_la_semana_y_los_especiales(self):
+        dia = crear_dia_especial(mensaje='Feriado')
+
+        cuerpo = self.client.get('/api/publico/entrega/horario').json()
+
+        self.assertEqual(len(cuerpo['semana']), 7)
+        self.assertEqual(
+            [d['abierto'] for d in cuerpo['semana']],
+            [True, True, True, True, True, True, False],
+        )
+        self.assertIn(dia.isoformat(), [e['fecha'] for e in cuerpo['dias_especiales']])
 
 
 class FichaPorSkuTests(CanalPublicoBase):

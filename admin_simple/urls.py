@@ -16,6 +16,11 @@ urlpatterns = [
     path('agenda/hoja-de-ruta/', views.agenda_pdf, name='agenda-pdf'),
     path('agenda/calendario/', views.calendario, name='calendario'),
     
+    # Horarios de atención
+    path('horarios/', views.horarios, name='horarios'),
+    path('horarios/especial/<int:pk>/eliminar/', views.dia_especial_eliminar,
+         name='dia-especial-eliminar'),
+
     # Productos
     path('productos/', views.productos_list, name='productos-list'),
     path('productos/nuevo/', views.producto_create, name='producto-create'),

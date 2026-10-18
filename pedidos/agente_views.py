@@ -10,6 +10,7 @@ from rest_framework.decorators import api_view, permission_classes, throttle_cla
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core import horario
 from core.throttling import (
     ConfirmacionPublicaThrottle,
     CotizacionPublicaThrottle,
@@ -261,3 +262,22 @@ def confirmar_solicitud(request, token):
 def disponibilidad_entrega(request):
     """GET /api/publico/entrega/disponibilidad?fecha=YYYY-MM-DD"""
     return Response(pedido_agente.disponibilidad(request.query_params.get('fecha')))
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@throttle_classes([LecturaPublicaThrottle])
+def horario_publico(request):
+    """GET /api/publico/entrega/horario — horario semanal + días especiales próximos.
+
+    Lo consume el checkout para saber qué fechas ofrecer sin replicar el horario.
+    """
+    ahora = horario.ahora_local()
+    return Response({
+        'zona_horaria': horario.ZONA_HORARIA,
+        'hoy': ahora.date().isoformat(),
+        'hora_local': ahora.strftime('%H:%M'),
+        'horario_texto': horario.horario_texto(),
+        'semana': horario.semana_publica(),
+        'dias_especiales': horario.especiales_publicos(ahora.date()),
+    })

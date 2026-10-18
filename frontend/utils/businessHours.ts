@@ -41,37 +41,105 @@ export interface DaySchedule {
   openingHour: number;
   closingHour: number;
   cutoffHour: number;
+  acceptsPickup: boolean;
+  acceptsDelivery: boolean;
   /** Aviso para mostrar en el checkout cuando el día tiene horario especial. */
   message?: string;
 }
 
-/**
- * Días con horario distinto al habitual (feriados, Día de la Madre, medio día).
- * Pisan al horario semanal, incluso para abrir un domingo.
- * Espejo de `DIAS_ESPECIALES` en `core/horario.py`.
- */
-export const SPECIAL_DAYS: Record<string, DaySchedule> = {
-  '2026-10-18': {
-    open: true,
-    openingHour: 9,
-    closingHour: 13,
-    cutoffHour: 12,
-    message:
-      'Día de la Madre: abrimos de 9:00 a 13:00 hs. Tomamos pedidos para entrega y retiro hasta las 12:00.',
-  },
-};
+/** Lo que devuelve `GET /api/publico/entrega/horario`. */
+export interface SchedulePayload {
+  semana: {
+    dia: number;
+    abierto: boolean;
+    apertura: string;
+    cierre: string;
+    hora_corte: string;
+    acepta_retiro: boolean;
+    acepta_envio: boolean;
+  }[];
+  dias_especiales: {
+    fecha: string;
+    abierto: boolean;
+    apertura: string;
+    cierre: string;
+    hora_corte: string;
+    acepta_retiro: boolean;
+    acepta_envio: boolean;
+    mensaje?: string;
+  }[];
+}
 
-/** Horario vigente para una fecha YYYY-MM-DD: la excepción si existe, si no el semanal. */
-export function scheduleFor(isoDate: string): DaySchedule {
-  const special = SPECIAL_DAYS[isoDate];
-  if (special) return special;
-  const day = new Date(`${isoDate}T12:00:00Z`).getUTCDay();
+const hourOf = (value: string) => Number(value.split(':')[0]);
+
+/**
+ * El horario real lo manda el backend (`core/horario.py`, editable desde el panel).
+ * Hasta que la respuesta llega se usa el habitual de las constantes de arriba, que
+ * es también el que publican el JSON-LD y `llms.txt`.
+ */
+let weekly: Record<number, DaySchedule> | null = null;
+let specialDays: Record<string, DaySchedule> = {};
+
+export function applySchedule(payload: SchedulePayload): void {
+  weekly = Object.fromEntries(
+    payload.semana.map((dia) => [
+      // el backend usa 0 = lunes y `Date.getDay()` 0 = domingo
+      (dia.dia + 1) % 7,
+      {
+        open: dia.abierto,
+        openingHour: hourOf(dia.apertura),
+        closingHour: hourOf(dia.cierre),
+        cutoffHour: hourOf(dia.hora_corte),
+        acceptsPickup: dia.acepta_retiro,
+        acceptsDelivery: dia.acepta_envio,
+      },
+    ]),
+  );
+  specialDays = Object.fromEntries(
+    payload.dias_especiales.map((especial) => [
+      especial.fecha,
+      {
+        open: especial.abierto,
+        openingHour: hourOf(especial.apertura),
+        closingHour: hourOf(especial.cierre),
+        cutoffHour: hourOf(especial.hora_corte),
+        acceptsPickup: especial.acepta_retiro,
+        acceptsDelivery: especial.acepta_envio,
+        message: especial.mensaje || undefined,
+      },
+    ]),
+  );
+}
+
+/** Sólo para los tests: vuelve al horario habitual de las constantes. */
+export function resetSchedule(): void {
+  weekly = null;
+  specialDays = {};
+}
+
+function weeklyFor(day: number): DaySchedule {
+  const cargado = weekly?.[day];
+  if (cargado) return cargado;
+  const open = isOpenDay(day);
   return {
-    open: Number.isNaN(day) ? false : isOpenDay(day),
+    open,
     openingHour: OPENING_HOUR,
     closingHour: CLOSING_HOUR,
     cutoffHour: SAME_DAY_CUTOFF_HOUR,
+    acceptsPickup: open,
+    acceptsDelivery: open,
   };
+}
+
+/** Horario vigente para una fecha YYYY-MM-DD: la excepción si existe, si no el semanal. */
+export function scheduleFor(isoDate: string): DaySchedule {
+  const special = specialDays[isoDate];
+  if (special) return special;
+  const day = new Date(`${isoDate}T12:00:00Z`).getUTCDay();
+  if (Number.isNaN(day)) {
+    return { ...weeklyFor(1), open: false };
+  }
+  return weeklyFor(day);
 }
 
 export function isOpenDate(isoDate: string): boolean {

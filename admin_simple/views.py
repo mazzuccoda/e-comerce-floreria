@@ -24,6 +24,8 @@ from decimal import Decimal
 
 from pedidos.models import Pedido, PedidoItem
 from catalogo.models import Producto, Categoria, ProductoImagen
+from core import horario
+from core.models import DiaEspecial, HorarioSemanal
 from django.utils.text import slugify
 import csv
 import uuid
@@ -31,7 +33,13 @@ import uuid
 from . import agenda as agenda_entregas
 from . import historial
 from . import reportes
-from .forms import ItemManualFormSet, PedidoManualForm, PedidoOperativoForm
+from .forms import (
+    DiaEspecialForm,
+    HorarioSemanalFormSet,
+    ItemManualFormSet,
+    PedidoManualForm,
+    PedidoOperativoForm,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1025,6 +1033,85 @@ def pedido_editar(request, pk):
         messages.info(request, 'No había cambios para guardar.')
 
     return redirect('admin_simple:pedido-detail', pk=pedido.pk)
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+def horarios(request):
+    """
+    Horario de atención: la semana habitual y las fechas que la pisan.
+
+    De acá salen el corte de pedidos del día, las horas de retiro y qué fechas
+    ofrece el checkout; el sitio lo lee por `/api/publico/entrega/horario`.
+    """
+    semana = HorarioSemanal.objects.order_by('dia')
+    if semana.count() < 7:  # base vieja o filas borradas a mano
+        HorarioSemanal.objects.bulk_create([
+            HorarioSemanal(dia=dia, abierto=dia != 6, acepta_retiro=dia != 6, acepta_envio=dia != 6)
+            for dia in range(7)
+            if dia not in set(semana.values_list('dia', flat=True))
+        ])
+        semana = HorarioSemanal.objects.order_by('dia')
+
+    formset = HorarioSemanalFormSet(queryset=semana, prefix='semana')
+    form_especial = DiaEspecialForm(prefix='especial')
+
+    if request.method == 'POST':
+        if 'guardar_semana' in request.POST:
+            formset = HorarioSemanalFormSet(request.POST, queryset=semana, prefix='semana')
+            if formset.is_valid():
+                formset.save()
+                horario.limpiar_cache()
+                messages.success(request, 'Horario semanal actualizado.')
+                return redirect('admin_simple:horarios')
+            messages.error(request, 'Revisá el horario: hay datos que no cierran.')
+        else:
+            form_especial = DiaEspecialForm(request.POST, prefix='especial')
+            if form_especial.is_valid():
+                especial = form_especial.save()
+                horario.limpiar_cache()
+                aviso = f'Día especial guardado para el {especial.fecha:%d/%m/%Y}.'
+                if not especial.abierto:
+                    comprometidos = Pedido.objects.filter(
+                        fecha_entrega=especial.fecha,
+                    ).exclude(estado__in=['entregado', 'cancelado']).count()
+                    if comprometidos:
+                        aviso += (
+                            f' Ojo: ya hay {comprometidos} pedido(s) con entrega ese día; '
+                            'resolvelos a mano desde la agenda.'
+                        )
+                messages.success(request, aviso)
+                return redirect('admin_simple:horarios')
+            messages.error(request, 'Revisá el día especial: hay datos que no cierran.')
+
+    hoy = timezone.localdate()
+    return render(request, 'admin_simple/horarios.html', {
+        'formset': formset,
+        'form_especial': form_especial,
+        'especiales': DiaEspecial.objects.filter(fecha__gte=hoy).order_by('fecha'),
+        'pasados': DiaEspecial.objects.filter(fecha__lt=hoy).order_by('-fecha')[:5],
+        'horario_texto': horario.horario_texto(),
+    })
+
+
+@login_required
+@user_passes_test(is_superuser, login_url='/admin/')
+@require_POST
+def dia_especial_eliminar(request, pk):
+    """Vuelve esa fecha al horario habitual."""
+    especial = get_object_or_404(DiaEspecial, pk=pk)
+    fecha = especial.fecha
+    pendientes = Pedido.objects.filter(fecha_entrega=fecha).exclude(
+        estado__in=['entregado', 'cancelado']
+    ).count()
+    especial.delete()
+    horario.limpiar_cache()
+
+    aviso = f'El {fecha:%d/%m/%Y} vuelve al horario habitual.'
+    if pendientes:
+        aviso += f' Ojo: hay {pendientes} pedido(s) con entrega ese día.'
+    messages.success(request, aviso)
+    return redirect('admin_simple:horarios')
 
 
 @login_required

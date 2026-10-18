@@ -38,6 +38,12 @@ MAX_DIAS_ADELANTE = 60
 MAX_DEDICATORIA = 500
 
 FRANJAS = ('mañana', 'tarde', 'durante_el_dia')
+# La ventana horaria de cada franja, para recortarla al horario del día.
+VENTANAS_DE_FRANJA = (
+    ('mañana', time(9, 0), time(12, 0)),
+    ('tarde', time(16, 0), time(20, 0)),
+    ('durante_el_dia', time(9, 0), time(20, 0)),
+)
 METODOS_ENTREGA = ('express', 'programado', 'retiro')
 MEDIOS_PAGO = ('mercadopago', 'paypal', 'transferencia', 'efectivo')
 
@@ -164,9 +170,11 @@ def _validar_fecha(entrega, errores):
             f'Como máximo se puede reservar {MAX_DIAS_ADELANTE} días hacia adelante',
         ))
         return None
-    if not horario.es_dia_abierto(fecha):
+    del_dia = horario.horario_de(fecha)
+    if not del_dia.abierto:
         errores.append(_error(
-            'entrega.fecha', 'fecha_cerrado', 'Ese día el local está cerrado',
+            'entrega.fecha', 'fecha_cerrado',
+            del_dia.mensaje or 'Ese día el local está cerrado',
             sugerencia=horario.proximo_dia_abierto(fecha + timedelta(days=1)).isoformat(),
         ))
         return None
@@ -201,6 +209,12 @@ def _validar_envio(metodo, entrega, total_productos, items, errores, fecha=None)
     """Costo de envío según las zonas configuradas. Nunca lo manda el agente."""
     if metodo == 'retiro':
         del_dia = horario.horario_de(fecha) if fecha else horario.HABITUAL
+        if not del_dia.acepta_retiro:
+            errores.append(_error(
+                'entrega.metodo', 'fecha_cerrado',
+                'Ese día no hay retiro en el local', sugerencia='express',
+            ))
+            return None, None
         hora_bruta = str(entrega.get('hora_retiro') or '').strip()
         try:
             hora = time.fromisoformat(hora_bruta)
@@ -217,6 +231,13 @@ def _validar_envio(metodo, entrega, total_productos, items, errores, fecha=None)
             ))
             return None, None
         return hora, {'metodo': 'retiro', 'costo': 0.0, 'gratis': False, 'zona': None, 'distancia_km': None}
+
+    if fecha and not horario.horario_de(fecha).acepta_envio:
+        errores.append(_error(
+            'entrega.metodo', 'fecha_cerrado',
+            'Ese día no hacemos envíos a domicilio', sugerencia='retiro',
+        ))
+        return None, None
 
     direccion = _texto(entrega.get('direccion'), 255)
     if not direccion:
@@ -642,23 +663,38 @@ def disponibilidad(fecha_bruta):
         datos['motivo'] = errores[0]['codigo']
         datos['mensaje'] = errores[0]['mensaje']
         datos['sugerencia'] = errores[0].get('sugerencia')
-    datos['metodos'] = (
-        ['programado'] if ajustes.is_vacation_active() else list(METODOS_ENTREGA)
-    )
-
     del_dia = horario.horario_de(fecha)
+    if ajustes.is_vacation_active():
+        metodos = ['programado']
+    else:
+        metodos = [
+            metodo for metodo in METODOS_ENTREGA
+            if (del_dia.acepta_retiro if metodo == 'retiro' else del_dia.acepta_envio)
+        ]
+    datos['metodos'] = metodos
+
     datos['horario_del_dia'] = {
         'apertura': del_dia.apertura.strftime('%H:%M'),
         'cierre': del_dia.cierre.strftime('%H:%M'),
         'hora_corte': del_dia.hora_corte.strftime('%H:%M'),
+        'acepta_retiro': del_dia.acepta_retiro,
+        'acepta_envio': del_dia.acepta_envio,
+        'especial': del_dia.especial,
     }
     if del_dia.mensaje:
         datos['horario_del_dia']['mensaje'] = del_dia.mensaje
-    if del_dia.abierto and del_dia.cierre <= time(14, 0):
-        datos['franjas'] = [
-            franja for franja in datos['franjas'] if franja['valor'] == 'mañana'
-        ]
+    if del_dia.abierto:
+        datos['franjas'] = _franjas_del_dia(del_dia)
     return datos
+
+
+def _franjas_del_dia(del_dia):
+    """Sólo las franjas que entran en el horario de atención de esa fecha."""
+    return [
+        {'valor': valor, 'horario': f'{max(desde, del_dia.apertura):%H:%M} a {min(hasta, del_dia.cierre):%H:%M}'}
+        for valor, desde, hasta in VENTANAS_DE_FRANJA
+        if max(desde, del_dia.apertura) < min(hasta, del_dia.cierre)
+    ]
 
 
 def marcar_vencidas():

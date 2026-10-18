@@ -10,6 +10,7 @@ from pedidos.agente_views import (
     crear_pedido_publico,
     disponibilidad_entrega,
     estado_solicitud,
+    horario_publico,
     preparar_pedido,
     validar_pedido,
 )
@@ -30,6 +31,8 @@ urlpatterns = [
     path('envio/cotizar/', quote_shipping),
     path('entrega/disponibilidad', disponibilidad_entrega, name='entrega-disponibilidad'),
     path('entrega/disponibilidad/', disponibilidad_entrega),
+    path('entrega/horario', horario_publico, name='entrega-horario'),
+    path('entrega/horario/', horario_publico),
     path('pedidos/validar', validar_pedido, name='pedidos-validar'),
     path('pedidos/validar/', validar_pedido),
     path('pedidos/preparar', preparar_pedido, name='pedidos-preparar'),

@@ -6,6 +6,7 @@ from django import forms
 from django.utils import timezone
 
 from catalogo.models import Producto
+from core.models import DiaEspecial, HorarioSemanal
 from pedidos.models import Pedido
 
 _CLASE_INPUT = 'input-field'
@@ -289,3 +290,101 @@ class BaseItemManualFormSet(forms.BaseFormSet):
 ItemManualFormSet = forms.formset_factory(
     ItemManualForm, formset=BaseItemManualFormSet, extra=3, max_num=20
 )
+
+
+_HORA = forms.TimeInput(attrs={'type': 'time', 'class': _CLASE_INPUT}, format='%H:%M')
+
+
+class _HorarioBaseForm(forms.ModelForm):
+    """Validaciones comunes del horario semanal y de los días especiales."""
+
+    def clean(self):
+        datos = super().clean()
+        if not datos.get('abierto'):
+            return datos
+
+        apertura, cierre = datos.get('apertura'), datos.get('cierre')
+        corte = datos.get('hora_corte')
+        if apertura and cierre and apertura >= cierre:
+            self.add_error('cierre', 'El cierre tiene que ser posterior a la apertura.')
+        if corte and apertura and cierre and not (apertura <= corte <= cierre):
+            self.add_error(
+                'hora_corte',
+                'La hora de corte tiene que caer dentro del horario de atención.',
+            )
+        if not datos.get('acepta_retiro') and not datos.get('acepta_envio'):
+            self.add_error(
+                'acepta_envio',
+                'Si no hay retiro ni envío, marcá el día como cerrado.',
+            )
+        return datos
+
+
+class HorarioSemanalForm(_HorarioBaseForm):
+    """Un día de la semana del horario habitual."""
+
+    class Meta:
+        model = HorarioSemanal
+        fields = [
+            'abierto', 'apertura', 'cierre', 'hora_corte',
+            'acepta_retiro', 'acepta_envio',
+        ]
+        widgets = {
+            'apertura': _HORA,
+            'cierre': _HORA,
+            'hora_corte': _HORA,
+        }
+        labels = {
+            'abierto': 'Abre',
+            'apertura': 'Desde',
+            'cierre': 'Hasta',
+            'hora_corte': 'Corte',
+            'acepta_retiro': 'Retiro',
+            'acepta_envio': 'Envío',
+        }
+
+
+HorarioSemanalFormSet = forms.modelformset_factory(
+    HorarioSemanal, form=HorarioSemanalForm, extra=0,
+)
+
+
+class DiaEspecialForm(_HorarioBaseForm):
+    """Una fecha con horario distinto al habitual."""
+
+    class Meta:
+        model = DiaEspecial
+        fields = [
+            'fecha', 'abierto', 'apertura', 'cierre', 'hora_corte',
+            'acepta_retiro', 'acepta_envio', 'mensaje',
+        ]
+        widgets = {
+            'fecha': forms.DateInput(
+                attrs={'type': 'date', 'class': _CLASE_INPUT}, format='%Y-%m-%d'
+            ),
+            'apertura': _HORA,
+            'cierre': _HORA,
+            'hora_corte': _HORA,
+            'mensaje': forms.TextInput(
+                attrs={
+                    'class': _CLASE_INPUT,
+                    'placeholder': 'Día de la Madre: abrimos de 9 a 13',
+                }
+            ),
+        }
+        labels = {
+            'fecha': 'Fecha',
+            'abierto': 'Ese día abre',
+            'apertura': 'Abre a las',
+            'cierre': 'Cierra a las',
+            'hora_corte': 'Toma pedidos hasta las',
+            'acepta_retiro': 'Permite retiro en el local',
+            'acepta_envio': 'Permite envío a domicilio',
+            'mensaje': 'Aviso para el cliente',
+        }
+
+    def clean_fecha(self):
+        fecha = self.cleaned_data['fecha']
+        if fecha < timezone.localdate():
+            raise forms.ValidationError('Esa fecha ya pasó.')
+        return fecha
