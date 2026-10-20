@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 
 from django.db import models
 
@@ -70,3 +70,71 @@ class SiteSettings(models.Model):
             return self.reopen_date
 
         return today
+
+
+DIAS_SEMANA = (
+    (0, 'Lunes'),
+    (1, 'Martes'),
+    (2, 'Miércoles'),
+    (3, 'Jueves'),
+    (4, 'Viernes'),
+    (5, 'Sábado'),
+    (6, 'Domingo'),
+)
+
+
+class HorarioSemanal(models.Model):
+    """Cómo atiende el local cada día de la semana (lo normal, sin excepciones)."""
+
+    dia = models.PositiveSmallIntegerField(
+        choices=DIAS_SEMANA, unique=True,
+        help_text='0 = lunes … 6 = domingo',
+    )
+    abierto = models.BooleanField(default=True)
+    apertura = models.TimeField(default=time(9, 0))
+    cierre = models.TimeField(default=time(21, 0))
+    hora_corte = models.TimeField(
+        default=time(17, 0),
+        help_text='Hasta qué hora se toman pedidos para entregar ese mismo día.',
+    )
+    acepta_retiro = models.BooleanField(default=True)
+    acepta_envio = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['dia']
+        verbose_name = 'Horario semanal'
+        verbose_name_plural = 'Horario semanal'
+
+    def __str__(self):
+        if not self.abierto:
+            return f'{self.get_dia_display()}: cerrado'
+        return f'{self.get_dia_display()}: {self.apertura:%H:%M} a {self.cierre:%H:%M}'
+
+
+class DiaEspecial(models.Model):
+    """Una fecha puntual que pisa al horario semanal (feriado, medio día, cierre)."""
+
+    fecha = models.DateField(unique=True)
+    abierto = models.BooleanField(
+        default=True, help_text='Desmarcá para cerrar ese día.',
+    )
+    apertura = models.TimeField(default=time(9, 0))
+    cierre = models.TimeField(default=time(21, 0))
+    hora_corte = models.TimeField(default=time(17, 0))
+    acepta_retiro = models.BooleanField(default=True)
+    acepta_envio = models.BooleanField(default=True)
+    mensaje = models.CharField(
+        max_length=200, blank=True,
+        help_text='Se muestra en el checkout y se publica para los asistentes de IA.',
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['fecha']
+        verbose_name = 'Día especial'
+        verbose_name_plural = 'Días especiales'
+
+    def __str__(self):
+        if not self.abierto:
+            return f'{self.fecha:%d/%m/%Y}: cerrado'
+        return f'{self.fecha:%d/%m/%Y}: {self.apertura:%H:%M}-{self.cierre:%H:%M}'

@@ -258,6 +258,11 @@
                     <span>Pedidos</span>
                 </a>
                 {% if user.is_superuser %}
+                <a href="{% url 'admin_simple:horarios' %}"
+                   class="{% if 'horario' in request.resolver_match.url_name %}bg-green-100 text-green-700 border-b-2 border-green-600{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-600{% endif %} px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
+                    <i class="fas fa-clock"></i>
+                    <span>Horarios</span>
+                </a>
                 <a href="{% url 'admin:index' %}" 
                    class="text-gray-600 hover:bg-gray-50 hover:text-green-600 px-4 py-3 rounded-t-lg text-sm font-semibold transition-all duration-200 flex items-center space-x-2">
                     <i class="fas fa-cog"></i>
@@ -377,6 +382,16 @@
                     </div>
                 </a>
                 {% if user.is_superuser %}
+                <a href="{% url 'admin_simple:horarios' %}"
+                   class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
+                    <div class="bg-orange-500 rounded-lg p-3 mr-4">
+                        <i class="fas fa-clock text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-gray-900">Horarios</p>
+                        <p class="text-sm text-gray-600">Semana y días especiales</p>
+                    </div>
+                </a>
                 <a href="{% url 'admin:index' %}" 
                    class="flex items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">
                     <div class="bg-blue-500 rounded-lg p-3 mr-4">

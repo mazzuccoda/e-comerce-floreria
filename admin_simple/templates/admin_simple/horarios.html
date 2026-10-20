@@ -1,0 +1,190 @@
+{% extends 'admin_simple/base.html' %}
+
+{% block title %}Horarios - Admin Simple{% endblock %}
+
+{% block content %}
+<div class="mb-4 sm:mb-6">
+    <div class="flex items-center text-sm text-gray-500 mb-3 sm:mb-4">
+        <a href="{% url 'admin_simple:dashboard' %}" class="hover:text-blue-600 transition-colors font-semibold">
+            <i class="fas fa-arrow-left mr-1 sm:hidden"></i><i class="fas fa-home hidden sm:inline"></i> Dashboard
+        </a>
+        <i class="fas fa-chevron-right mx-2 text-xs"></i>
+        <span class="text-gray-900 font-medium">Horarios</span>
+    </div>
+
+    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Horarios de atención</h2>
+    <p class="text-sm sm:text-base text-gray-600 mt-1">
+        De acá sale hasta qué hora se toman pedidos para el día, las horas de retiro
+        y qué fechas ofrece la web. Hoy: {{ horario_texto }}
+    </p>
+</div>
+
+<!-- Horario de la semana -->
+<form method="post" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    <h3 class="text-lg font-semibold text-gray-900 mb-1">
+        <i class="fas fa-calendar-week text-blue-600 mr-2"></i>Semana habitual
+    </h3>
+    <p class="text-sm text-gray-500 mb-4">
+        "Corte" es la hora límite para que un pedido se entregue ese mismo día.
+    </p>
+
+    <!-- Tabla en escritorio -->
+    <table class="hidden md:table w-full text-sm">
+        <thead>
+            <tr class="text-left text-gray-500 border-b border-gray-100">
+                <th class="py-2">Día</th>
+                <th class="py-2">Abre</th>
+                <th class="py-2">Desde</th>
+                <th class="py-2">Hasta</th>
+                <th class="py-2">Corte</th>
+                <th class="py-2">Retiro</th>
+                <th class="py-2">Envío</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for form in formset %}
+            <tr class="border-b border-gray-50">
+                {{ form.id }}
+                <td class="py-2 font-medium text-gray-900">{{ form.instance.get_dia_display }}</td>
+                <td class="py-2">{{ form.abierto }}</td>
+                <td class="py-2">{{ form.apertura }}</td>
+                <td class="py-2">{{ form.cierre }}</td>
+                <td class="py-2">{{ form.hora_corte }}</td>
+                <td class="py-2">{{ form.acepta_retiro }}</td>
+                <td class="py-2">{{ form.acepta_envio }}</td>
+            </tr>
+            {% if form.errors %}
+            <tr><td colspan="7" class="pb-2">
+                {% for errores in form.errors.values %}
+                    {% for error in errores %}<p class="text-sm text-red-600">{{ error }}</p>{% endfor %}
+                {% endfor %}
+            </td></tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Tarjetas en celular -->
+    <div class="md:hidden space-y-3">
+        {% for form in formset %}
+        <div class="border border-gray-100 rounded-lg p-3">
+            {{ form.id }}
+            <div class="flex items-center justify-between mb-2">
+                <span class="font-medium text-gray-900">{{ form.instance.get_dia_display }}</span>
+                <label class="text-sm text-gray-600">{{ form.abierto }} Abre</label>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <label class="text-xs text-gray-500">Desde{{ form.apertura }}</label>
+                <label class="text-xs text-gray-500">Hasta{{ form.cierre }}</label>
+                <label class="text-xs text-gray-500">Corte{{ form.hora_corte }}</label>
+            </div>
+            <div class="flex gap-4 mt-2 text-sm text-gray-600">
+                <label>{{ form.acepta_retiro }} Retiro</label>
+                <label>{{ form.acepta_envio }} Envío</label>
+            </div>
+            {% for errores in form.errors.values %}
+                {% for error in errores %}<p class="text-sm text-red-600 mt-1">{{ error }}</p>{% endfor %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="submit" name="guardar_semana" value="1" class="btn-primary w-full sm:w-auto mt-4">
+        <i class="fas fa-save mr-2"></i>Guardar la semana
+    </button>
+</form>
+
+<!-- Días especiales -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-1">
+        <i class="fas fa-star text-orange-500 mr-2"></i>Días especiales
+    </h3>
+    <p class="text-sm text-gray-500 mb-4">
+        Una fecha puntual que pisa a la semana: feriados, medio día, un domingo que abrís.
+    </p>
+
+    {% if especiales %}
+    <div class="space-y-2 mb-5">
+        {% for especial in especiales %}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-gray-100 rounded-lg p-3">
+            <div class="min-w-0">
+                <p class="font-medium text-gray-900">
+                    {{ especial.fecha|date:"l j \d\e F" }}
+                    {% if especial.abierto %}
+                    <span class="text-sm font-normal text-gray-600">
+                        — {{ especial.apertura|time:"H:i" }} a {{ especial.cierre|time:"H:i" }},
+                        pedidos hasta las {{ especial.hora_corte|time:"H:i" }}
+                    </span>
+                    {% else %}
+                    <span class="text-sm font-normal text-red-600">— cerrado</span>
+                    {% endif %}
+                </p>
+                {% if especial.abierto and not especial.acepta_retiro %}
+                <p class="text-xs text-gray-500">Sin retiro en el local</p>
+                {% endif %}
+                {% if especial.abierto and not especial.acepta_envio %}
+                <p class="text-xs text-gray-500">Sin envíos a domicilio</p>
+                {% endif %}
+                {% if especial.mensaje %}
+                <p class="text-sm text-gray-600 mt-1">“{{ especial.mensaje }}”</p>
+                {% endif %}
+            </div>
+            <form method="post" action="{% url 'admin_simple:dia-especial-eliminar' especial.pk %}"
+                  onsubmit="return confirm('¿Volver esa fecha al horario habitual?');">
+                {% csrf_token %}
+                <button type="submit" class="text-red-600 hover:text-red-700 text-sm font-medium px-3 py-2">
+                    <i class="fas fa-trash mr-1"></i>Quitar
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-500 mb-5">No hay días especiales cargados: rige la semana habitual.</p>
+    {% endif %}
+
+    <form method="post" class="border-t border-gray-100 pt-4">
+        {% csrf_token %}
+        <p class="font-medium text-gray-900 mb-3">Agregar un día especial</p>
+
+        {% for error in form_especial.non_field_errors %}
+        <p class="text-sm text-red-600 mb-2">{{ error }}</p>
+        {% endfor %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for campo in form_especial %}
+            <div{% if campo.name == 'mensaje' %} class="sm:col-span-2 lg:col-span-4"{% endif %}>
+                <label for="{{ campo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ campo.label }}
+                </label>
+                {{ campo }}
+                {% if campo.help_text %}
+                <p class="text-xs text-gray-500 mt-1">{{ campo.help_text }}</p>
+                {% endif %}
+                {% for error in campo.errors %}
+                <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" name="guardar_especial" value="1" class="btn-primary w-full sm:w-auto mt-4">
+            <i class="fas fa-plus mr-2"></i>Guardar el día especial
+        </button>
+    </form>
+</div>
+
+{% if pasados %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+    <h3 class="text-base font-semibold text-gray-700 mb-2">Días especiales que ya pasaron</h3>
+    <ul class="text-sm text-gray-500 space-y-1">
+        {% for especial in pasados %}
+        <li>{{ especial.fecha|date:"d/m/Y" }} — {% if especial.abierto %}{{ especial.apertura|time:"H:i" }} a {{ especial.cierre|time:"H:i" }}{% else %}cerrado{% endif %}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

@@ -243,12 +243,13 @@ def info_tienda(request):
         'telefono': '+543814778577',
         'whatsapp': '+5493813671352',
         'email': 'eleososatuc@gmail.com',
-        'horario': horario.HORARIO_TEXTO,
+        'horario': horario.horario_texto(),
         'horario_estructurado': {
-            'dias': [horario.NOMBRES_DIAS[d] for d in horario.DIAS_ABIERTOS],
-            'abre': horario.APERTURA.strftime('%H:%M'),
-            'cierra': horario.CIERRE.strftime('%H:%M'),
+            'dias': [horario.NOMBRES_DIAS[d] for d in horario.dias_abiertos()],
+            'abre': horario.apertura_habitual().strftime('%H:%M'),
+            'cierra': horario.cierre_habitual().strftime('%H:%M'),
             'zona_horaria': horario.ZONA_HORARIA,
+            'por_dia': horario.semana_publica(),
         },
         'zonas_de_entrega': ['Yerba Buena', 'San Miguel de Tucumán'],
         'metodos_de_entrega': ['express', 'programado', 'retiro'],
@@ -269,7 +270,7 @@ def info_tienda(request):
             'cancelacion': 'Hasta 24 horas antes de la entrega.',
             'envio_gratis': 'Sólo en productos marcados con envío gratis o al superar el umbral configurado.',
             'tarjeta': 'La dedicatoria se escribe a mano y se entrega con el arreglo.',
-            'entrega_mismo_dia': horario.MISMO_DIA_TEXTO,
+            'entrega_mismo_dia': horario.mismo_dia_texto(),
         },
     })
 
