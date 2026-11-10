@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from admin_simple import reportes
-from admin_simple.pdf_generator import _texto_de_tarjeta
+from admin_simple.pdf_generator import FIRMA_ANONIMA, _firma_de_tarjeta, _texto_de_tarjeta
 from catalogo.models import Categoria, Producto
 from core import horario
 from core.models import DiaEspecial, HorarioSemanal
@@ -1252,6 +1252,55 @@ class EnvioAnonimoTests(TestCase):
         pedido = self._pedido(anonimo=True, regalo_anonimo=True)
 
         self.assertIn('Envío anónimo', self._detalle(pedido))
+
+    def test_avisa_que_la_firma_no_se_imprime_en_regalo_anonimo(self):
+        pedido = self._pedido(regalo_anonimo=True, firmado_como='Juan')
+
+        self.assertIn('no se imprime: envío anónimo', self._detalle(pedido))
+
+    def test_no_avisa_si_la_firma_se_imprime(self):
+        pedido = self._pedido(anonimo=True, regalo_anonimo=False, firmado_como='Juan')
+
+        self.assertNotIn('no se imprime: envío anónimo', self._detalle(pedido))
+
+
+class FirmaDeTarjetaTests(SimpleTestCase):
+    def _firma(self, **kwargs):
+        return _firma_de_tarjeta(Pedido(**kwargs))
+
+    def test_invitado_con_firma_imprime_la_firma(self):
+        # Caso del pedido #1358: compra de invitado firmada, sin regalo anónimo.
+        self.assertEqual(
+            self._firma(anonimo=True, regalo_anonimo=False, firmado_como='Sambiro'),
+            'Sambiro',
+        )
+
+    def test_cliente_con_cuenta_imprime_la_firma(self):
+        self.assertEqual(
+            self._firma(anonimo=False, regalo_anonimo=False, firmado_como='Juan'),
+            'Juan',
+        )
+
+    def test_sin_firma_ni_regalo_anonimo_va_sin_firma(self):
+        for firma in ('', None, '   '):
+            with self.subTest(firma=firma):
+                self.assertIsNone(
+                    self._firma(anonimo=True, regalo_anonimo=False, firmado_como=firma)
+                )
+
+    def test_regalo_anonimo_sin_firma(self):
+        self.assertEqual(self._firma(regalo_anonimo=True), FIRMA_ANONIMA)
+
+    def test_regalo_anonimo_oculta_la_firma(self):
+        self.assertEqual(
+            self._firma(regalo_anonimo=True, firmado_como='Juan'), FIRMA_ANONIMA
+        )
+
+    def test_pedido_de_agente_imprime_la_firma(self):
+        self.assertEqual(
+            self._firma(anonimo=True, regalo_anonimo=False, firmado_como='Ana'),
+            'Ana',
+        )
 
 
 class ProductosSinStockTests(TestCase):
