@@ -66,6 +66,21 @@ def _imagen_remota(url, lado):
         return None
 
 
+FIRMA_ANONIMA = 'De alguien que te quiere'
+
+
+def _firma_de_tarjeta(pedido):
+    """Firma que va debajo de la dedicatoria, o None si va sin firma.
+
+    Solo `regalo_anonimo` oculta a quien envía. `anonimo` marca una compra de
+    invitado y no tiene nada que ver con la tarjeta.
+    """
+    if pedido.regalo_anonimo:
+        return FIRMA_ANONIMA
+    firma = (pedido.firmado_como or '').strip()
+    return firma or None
+
+
 def _texto_de_tarjeta(texto):
     """Baja a minúscula las dedicatorias escritas enteras en mayúscula."""
     letras = [c for c in texto if c.isalpha()]
@@ -277,10 +292,9 @@ def generar_pdf_pedido(pedido):
     # === TARJETA: se corta, se dobla y viaja con el ramo ===
     if pedido.dedicatoria:
         contenido = [Paragraph(escape(_texto_de_tarjeta(pedido.dedicatoria)), dedicatoria_style)]
-        if pedido.firmado_como and not (pedido.anonimo or pedido.regalo_anonimo):
-            contenido.append(Paragraph(escape(pedido.firmado_como), firma_style))
-        elif pedido.anonimo or pedido.regalo_anonimo:
-            contenido.append(Paragraph('De alguien que te quiere', firma_style))
+        firma = _firma_de_tarjeta(pedido)
+        if firma:
+            contenido.append(Paragraph(escape(firma), firma_style))
 
         # Una tarjeta corta sigue siendo una tarjeta: se rellena hasta ALTO_TARJETA
         # repartiendo el aire arriba y abajo del texto.

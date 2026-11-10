@@ -305,6 +305,9 @@
                     {% if pedido.firmado_como %}
                     <p class="text-gray-700 text-sm mt-2 text-right">
                         — {{ pedido.firmado_como }}
+                        {% if pedido.regalo_anonimo %}
+                        <span class="text-yellow-700">(no se imprime: envío anónimo)</span>
+                        {% endif %}
                     </p>
                     {% endif %}
                 </div>
